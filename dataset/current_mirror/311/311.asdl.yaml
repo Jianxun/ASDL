@@ -1,0 +1,143 @@
+\
+.defaults: &DEF
+  NMOS4: &NMOS4 {model: nmos4, B: VSS}
+  PMOS4: &PMOS4 {model: pmos4, B: VDD}
+
+modules:
+  # --- Reused Modules (from previous or standard) ---
+  nmos_diode:
+    nets: {port: io, s: gnd} # 'port' is the common Drain/Gate
+    parameters: {base_name: "M_diode"}
+    circuits:
+      - {<<: *NMOS4, name: ${base_name}, D: port, G: port, S: s}
+
+  nmos_cascode_current_sink: # Generic 2-NMOS cascode
+    nets: {v_out: out, v_cas: in, vbn: in, vss: gnd}
+    circuits:
+      - {<<: *NMOS4, name: M_CS, D: v_int, G: vbn, S: vss}
+      - {<<: *NMOS4, name: M_cas, D: v_out, G: v_cas, S: v_int}
+
+  differential_nmos_current_sink:
+    nets: {v_out_p: out, v_out_n: out, v_cas: in, vbn: in, vss: gnd}
+    circuits:
+      - leg_p: {model: nmos_cascode_current_sink,
+                v_out: v_out_p, v_cas: v_cas, vbn: vbn, vss: gnd}
+      - leg_n: {model: nmos_cascode_current_sink,
+                v_out: v_out_n, v_cas: v_cas, vbn: vbn, vss: gnd}
+
+  nmos_differential_pair:
+    nets: {in_p: in, in_n: in, out_p: out, out_n: out, tail: io}
+    circuits:
+      - {<<: *NMOS4, name: MN_P, D: out_p, G: in_p, S: tail}
+      - {<<: *NMOS4, name: MN_N, D: out_n, G: in_n, S: tail}
+
+  # --- New Modules based on design intent ---
+  pmos_diode:
+    nets: {port: io, s: pwr}
+    circuits:
+      - {<<: *PMOS4, name: MP_DI, D: port, G: port, S: s}
+
+  
+  pmos_current_folding_stage: # Single leg of PMOS current folding stage (e.g. M13/M8)
+    nets: {v_out: out, v_cas: in, vbp: in, v_mirror: io, vdd: pwr}
+    circuits:
+      - {<<: *PMOS4, name: MP_MIR, D: v_mirror, G: vbp, S: vdd}
+      - {<<: *PMOS4, name: MP_CAS, D: v_out, G: v_cas, S: v_mirror}
+
+  differential_pmos_current_folding_stage:
+    nets: {v_out_p: out, v_out_n: out, v_cas: in, vbp: in,
+           v_mirror_p: io, v_mirror_n: io, vdd: pwr}
+    circuits:
+      - leg_p: {model: pmos_current_folding_stage,
+                v_out: v_out_p, v_cas: v_cas, vbp: vbp, v_mirror: v_mirror_p, vdd: vdd}
+      - leg_n: {model: pmos_current_folding_stage,
+                v_out: v_out_n, v_cas: v_cas, vbp: vbp, v_mirror: v_mirror_n, vdd: vdd}
+
+  nmos_cmfb_vcr_pair: # Voltage Controlled Resistors for CMFB
+    nets: {v_com: out, v_vcr_p: in, v_vcr_n: in, vss: gnd}
+    circuits:
+      - {<<: *NMOS4, name: MN_VCR_P, D: v_com, G: v_vcr_p, S: vss}
+      - {<<: *NMOS4, name: MN_VCR_N, D: v_com, G: v_vcr_n, S: vss}
+
+  # --- Main circuit_311, using new hierarchical blocks ---
+  circuit_311:
+    nets:
+      VDD: pwr
+      VSS: gnd
+      VIN1: in
+      VIN2: in
+      VOUT1: out
+      VOUT2: out
+      VB1: io # NMOS cascode output stage gate
+      VB2: io # PMOS cascode output stage gate
+      VB3: io # NMOS main output stage gate (leg P)
+      IB1: io # Bias current (feeds M2 diode & M15 cascode gate & M12 tail gate)
+      VREF1: in # NMOS main output stage gate (leg N) & M16 cascode bias main gate
+    circuits:
+      # Bias Generation
+      - bias_cascode: # M16 (main), M15 (cascode)
+          model: nmos_cascode_current_sink
+          name_main: M16
+          name_cas: M15
+          D_out: net07      # Output of this bias block, feeds M0 and PMOS output stage mirror gates
+          G_cas: IB1
+          G_main: VREF1
+          S_main: VSS
+
+      - M0_diode_ref: # M0, PMOS diode reference for PMOS output stage
+          model: pmos_diode
+          base_name: M0
+          port: net07 # Gate and Drain connected to bias_cascode output
+          s: VDD
+
+      - M2_diode_bias: # M2
+          model: nmos_diode
+          base_name: M2
+          port: IB1 # Connected to IB1 bias node
+          s: VSS
+
+      # CMFB Voltage Controlled Resistors (M10, M11)
+      - cmfb_vcr:
+          model: nmos_cmfb_vcr_pair
+          v_com: tail     # Common drain, sources M12
+          v_vcr_p: VOUT1    # Controlled by VOUT1
+          v_vcr_n: VOUT2    # Controlled by VOUT2
+          vss: VSS
+
+      # Tail Current Source (M12) for Differential Pair
+      - tail_current_M12:
+          model: nmos_output_driver_transistor # Using this for its explicit S_node
+          base_name: M12
+          D: net11          # Output current to diff pair S_com
+          G: IB1            # Gate bias
+          S_node: net039    # Source connected to CMFB VCRs output
+
+      # Input Differential Pair (M7, M6)
+      - input_stage:
+          model: nmos_differential_pair
+          v_in_p: VIN1
+          v_in_n: VIN2
+          v_out_p: net045       # Output to PMOS active load/output stage P-side
+          v_out_n: net043       # Output to PMOS active load/output stage N-side
+          tail: tail      # Common source from tail_current_M12
+
+      # PMOS Output Stage / Active Load (M13/M8, M14/M9)
+      - pmos_current_folding_stage:
+          nets: {v_out_p: out, v_out_n: out, v_cas: in, vbp: in,
+           v_mirror_p: io, v_mirror_n: io, vdd: pwr}
+          model: differential_pmos_current_folding_stage
+          v_out_p: VOUT1
+          v_out_n: VOUT2
+          v_cas: VB2
+          v_mirror_p: net045 # From input_stage D_p
+          v_mirror_n: net043 # From input_stage D_n
+          vdd: VDD
+
+      # NMOS Output Stage (M1/M4, M3/M5)
+      - nmos_output_stage_load:
+          model: differential_nmos_current_sink
+          v_out_p: VOUT1
+          v_out_n: VOUT2
+          v_cas: VB1
+          vbn: VB3
+          vss: VSS 

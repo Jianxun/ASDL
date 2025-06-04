@@ -1,0 +1,14 @@
+#───────────────────────────────────────────────────────────────────────────────
+#  ASDL_DRAFT 1.1 — Basic 2-Device PMOS Current Mirror
+#───────────────────────────────────────────────────────────────────────────────
+modules:
+  mirror_basic_2dev:
+    notes: |-
+      Two identical PMOS devices share the same VGS (MP_REF is diode-connected).
+      Assuming channel-length modulation is small, the drain current of MP_OUT
+      mirrors IREF into the load.  Smallest area / headroom, but accuracy is
+      limited by VDS mismatch and λ.
+    nets: {iref: input, out: output, VDD: supply, VSS: supply}
+    circuits:
+      MP_REF: {model: pmos_unit, D: iref, G: iref, S: VDD, B: VDD}
+      MP_OUT: {model: pmos_unit, D: out,  G: iref, S: VDD, B: VDD}

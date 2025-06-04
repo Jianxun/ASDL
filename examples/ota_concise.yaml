@@ -1,0 +1,84 @@
+# ── common anchors ────────────────────────────────────────────────────────────
+.defaults: &DEF
+  NMOS: &NMOS {model: nmos_unit, B: GND}
+  PMOS: &PMOS {model: pmos_unit, B: VDD}
+  CAP:  &CAP  {model: capacitor_unit}
+
+# ── helper: net-role shorthand ────────────────────────────────────────────────
+#   in  → input      out → output
+#   pwr → power      gnd → ground
+#   io  → input_output         (tool chain expands roles automatically)
+# ──────────────────────────────────────────────────────────────────────────────
+
+modules:
+
+  #▌ Differential NMOS pair ▐───────────────────────────────────────────────────
+  diff_pair:
+    nets: {in_p: in, in_n: in, out_p: out, out_n: out, tail: io}
+    parameters: {M: 1}
+    circuits:
+      - {<<: *NMOS, name: MN_P, S: tail, D: out_p, G: in_p, multi: ${M}}
+      - {<<: *NMOS, name: MN_N, S: tail, D: out_n, G: in_n, multi: ${M}}
+
+  #▌ Simple NMOS current mirror ▐───────────────────────────────────────────────
+  current_mirror:
+    nets: {iref: in, out1: out, out2: out}
+    parameters: {M: {ref: 1, out1: 1, out2: 1}}
+    circuits:
+      - {<<: *NMOS, name: MN_ref,  D: iref, S: GND, G: iref, multi: ${M.ref}}
+      - {<<: *NMOS, name: MN_out1, D: out1, S: GND, G: iref, multi: ${M.out1}}
+      - {<<: *NMOS, name: MN_out2, D: out2, S: GND, G: iref, multi: ${M.out2}}
+
+  #▌ PMOS active load (diff → single) ▐─────────────────────────────────────────
+  pmos_active_load:
+    nets: {dp_drain_p: in, dp_drain_n: in, VDD: pwr}
+    parameters: {M_load: 1}
+    circuits:
+      - {<<: *PMOS, name: MPL1, S: VDD, D: dp_drain_p, G: dp_drain_p, multi: ${M_load}}
+      - {<<: *PMOS, name: MPL2, S: VDD, D: dp_drain_n, G: dp_drain_p, multi: ${M_load}}
+
+  #▌ Common-source output stage ▐───────────────────────────────────────────────
+  common_source_output_stage:
+    nets: {in: in, out: out, bias: in, VDD: pwr, GND: gnd}
+    parameters: {M: {drv: 1, load: 1}}
+    circuits:
+      - {<<: *PMOS, name: MP_drv,  S: VDD, D: out, G: in,   multi: ${M.drv}}
+      - {<<: *NMOS, name: MN_load, S: GND, D: out, G: bias, multi: ${M.load}}
+
+  #▌ Top-level OTA ▐────────────────────────────────────────────────────────────
+  ota:
+    nets: {
+      in_p: in, in_n: in, out: out,
+      VDD: pwr, GND: gnd,
+      bias_tail_iref: in,  bias_cs_nload_in: in
+    }
+
+    # All sizing & comp-cap values in one block
+    parameters:
+      M: {diff: 4, tail_ref: 1, tail_out: 8, load: 4, drv: 16, nload: 4}
+      Cc: 1pF
+
+    circuits:
+
+      # (1) Differential pair
+      diff: {model: diff_pair, M: ${M.diff},
+             nets: {in_p: in_p, in_n: in_n,
+                    out_p: n_p, out_n: n1, tail: n_tail}}
+
+      # (2) Tail current mirror
+      tail: {model: current_mirror,
+             M: {ref: ${M.tail_ref}, out1: ${M.tail_out}},
+             nets: {iref: bias_tail_iref, out1: n_tail}}
+
+      # (3) Active PMOS load
+      load: {model: pmos_active_load, M_load: ${M.load},
+             nets: {dp_drain_p: n_p, dp_drain_n: n1, VDD: VDD}}
+
+      # (4) Second-stage common-source
+      cs:   {model: common_source_output_stage,
+             M: {drv: ${M.drv}, load: ${M.nload}},
+             nets: {in: n1, out: out, bias: bias_cs_nload_in,
+                    VDD: VDD, GND: GND}}
+
+      # (5) Miller compensation capacitor
+      Cc:   {<<: *CAP, value: ${Cc}, p1: n1, p2: out}
