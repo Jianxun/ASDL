@@ -45,7 +45,7 @@ class ASDLFile:
     """Represents a complete ASDL file."""
     version: str = ""
     top_module: str = ""
-    defaults: Dict[str, Any] = field(default_factory=dict)    # YAML anchors
+    models: Dict[str, Any] = field(default_factory=dict)      # Physical device models
     modules: Dict[str, ASDLModule] = field(default_factory=dict)
     
     def get_top_module(self) -> Optional[ASDLModule]:
@@ -110,5 +110,5 @@ class ASDLFile:
             marker = "🎯" if module_name == self.top_module else "📦"
             print(f"   {marker} {module_name}: {len(module.circuits)} circuits, {len(module.nets)} nets")
         
-        if self.defaults:
-            print(f"   🔧 Defaults: {list(self.defaults.keys())}") 
+        if self.models:
+            print(f"   🔧 Models: {list(self.models.keys())}") 

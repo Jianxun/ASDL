@@ -4,11 +4,9 @@
       "model": "capacitor_unit"
     },
     "NMOS": {
-      "B": "VSS",
       "model": "nmos_unit"
     },
     "PMOS": {
-      "B": "VDD",
       "model": "pmos_unit"
     }
   },
@@ -18,13 +16,14 @@
         {
           "model": "nmos_unit",
           "name": "MN_bias",
-          "nets": {},
-          "parameters": {
+          "nets": {
             "B": "VSS",
             "D": "iref",
             "G": "vbn",
-            "M": "${M}",
             "S": "vss"
+          },
+          "parameters": {
+            "M": "${M}"
           }
         },
         {
@@ -33,8 +32,10 @@
           "nets": {},
           "parameters": {
             "name": "J1",
-            "p1": "iref",
-            "p2": "vbn"
+            "nets": {
+              "p1": "iref",
+              "p2": "vbn"
+            }
           }
         }
       ],
@@ -45,7 +46,7 @@
         "vss": "io"
       },
       "notes": {
-        "layout": "match all current sources driven by vbn"
+        "layout": "match all current source devices driven by vbn"
       },
       "parameters": {
         "M": 1
@@ -56,25 +57,27 @@
         {
           "model": "pmos_unit",
           "name": "MP_DRV",
-          "nets": {},
-          "parameters": {
+          "nets": {
             "B": "VDD",
             "D": "out",
             "G": "in",
-            "M": "${M}",
             "S": "vdd"
+          },
+          "parameters": {
+            "M": "${M}"
           }
         },
         {
           "model": "nmos_unit",
           "name": "MN_LOAD",
-          "nets": {},
-          "parameters": {
+          "nets": {
             "B": "VSS",
             "D": "out",
             "G": "vbn",
-            "M": "${M}",
             "S": "vss"
+          },
+          "parameters": {
+            "M": "${M}"
           }
         }
       ],
@@ -96,13 +99,14 @@
         {
           "model": "pmos_unit",
           "name": "MP_{ref,out}",
-          "nets": {},
-          "parameters": {
+          "nets": {
             "B": "VDD",
             "D": "{ref, out}",
             "G": "ref",
-            "M": "${M}",
             "S": "vdd"
+          },
+          "parameters": {
+            "M": "${M}"
           }
         }
       ],
@@ -122,13 +126,14 @@
         {
           "model": "nmos_unit",
           "name": "MN_{P,N}",
-          "nets": {},
-          "parameters": {
+          "nets": {
             "B": "VSS",
             "D": "out_{p,n}",
             "G": "in_{p,n}",
-            "M": "${M}",
             "S": "tail"
+          },
+          "parameters": {
+            "M": "${M}"
           }
         }
       ],
@@ -194,11 +199,12 @@
         {
           "model": "capacitor_unit",
           "name": "Cc",
-          "nets": {},
-          "parameters": {
-            "M": "${M.Cc}",
+          "nets": {
             "p1": "stg1_out",
             "p2": "out"
+          },
+          "parameters": {
+            "M": "${Cc}"
           }
         },
         {
@@ -268,13 +274,14 @@
         {
           "model": "nmos_unit",
           "name": "MN_TAIL",
-          "nets": {},
-          "parameters": {
+          "nets": {
             "B": "VSS",
             "D": "n_tail",
             "G": "vbn",
-            "M": "${M.tail}",
             "S": "vss"
+          },
+          "parameters": {
+            "M": "${M.tail}"
           }
         },
         {

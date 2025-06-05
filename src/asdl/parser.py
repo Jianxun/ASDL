@@ -101,7 +101,7 @@ class ASDLParser:
         # Extract file-level metadata
         version = data.get('.version', '')
         top_module = data.get('.top_module', '')
-        defaults = data.get('.defaults', {})
+        models = data.get('models', {})
         
         # Parse modules
         modules_data = data.get('modules', {})
@@ -118,7 +118,7 @@ class ASDLParser:
         return ASDLFile(
             version=version,
             top_module=top_module,
-            defaults=defaults,
+            models=models,
             modules=modules
         )
     

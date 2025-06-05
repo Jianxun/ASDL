@@ -23,15 +23,18 @@ class TestASDLParser:
 .version: "ASDL v1.0"
 .top_module: simple
 
-.defaults: &DEF
-  NMOS: &NMOS {model: nmos_unit, B: VSS}
+models:
+  nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u, NF: 2}
 
 modules:
   simple:
     nets: {in: in, out: out, vdd: io, vss: io}
     parameters: {M: 1}
     circuits:
-      - {<<: *NMOS, name: MN1, S: vss, D: out, G: in, M: "${M}"}
+      - name: MN1
+        model: nmos_unit
+        nets: {S: vss, D: out, G: in, B: VSS}
+        M: "${M}"
 """
         
         asdl_file = self.parser.parse_string(yaml_content)
@@ -39,7 +42,8 @@ modules:
         # Check file-level properties
         assert asdl_file.version == "ASDL v1.0"
         assert asdl_file.top_module == "simple"
-        assert "NMOS" in asdl_file.defaults
+        assert "nmos_unit" in asdl_file.models
+        assert asdl_file.models["nmos_unit"]["model"] == "nfet_3v3"
         
         # Check module
         assert "simple" in asdl_file.modules
@@ -54,9 +58,10 @@ modules:
         circuit = simple_module.circuits[0]
         assert circuit.name == "MN1"
         assert circuit.model == "nmos_unit"
-        assert circuit.parameters["S"] == "vss"
-        assert circuit.parameters["D"] == "out"
-        assert circuit.parameters["G"] == "in"
+        assert circuit.nets["S"] == "vss"
+        assert circuit.nets["D"] == "out"
+        assert circuit.nets["G"] == "in"
+        assert circuit.nets["B"] == "VSS"
         assert circuit.parameters["M"] == "${M}"  # Not resolved yet
     
     def test_parse_ota_file(self):
@@ -109,14 +114,77 @@ modules:
         assert stage1_circuit.parameters["M"]["diff"] == "${M.diff}"
         assert stage1_circuit.parameters["M"]["tail"] == "${M.tail}"
     
+    def test_parse_ota_fixed_file(self):
+        """Test parsing the fixed OTA example file with models section."""
+        ota_file = Path("examples/ota_two_stg_fixed.yaml")
+        
+        if not ota_file.exists():
+            pytest.skip(f"Fixed OTA example file not found: {ota_file}")
+        
+        asdl_file = self.parser.parse_file(ota_file)
+        
+        # Check file structure
+        assert asdl_file.version == "ASDL v1.0"
+        assert asdl_file.top_module == "ota"
+        
+        # Check models section instead of defaults
+        assert "nmos_unit" in asdl_file.models
+        assert "pmos_unit" in asdl_file.models
+        assert "cap_unit" in asdl_file.models
+        
+        # Verify model definitions
+        nmos_model = asdl_file.models["nmos_unit"]
+        assert nmos_model["model"] == "nfet_3v3"
+        assert nmos_model["L"] == "0.18u"
+        assert nmos_model["W"] == "2u"
+        
+        # Check that all expected modules are present
+        expected_modules = [
+            "diff_pair_nmos",
+            "current_mirror_pmos_1_1", 
+            "common_source_amp",
+            "bias_vbn_diode",
+            "ota_one_stage",
+            "ota"
+        ]
+        
+        for module_name in expected_modules:
+            assert module_name in asdl_file.modules, f"Missing module: {module_name}"
+        
+        # Check top module
+        ota_module = asdl_file.get_top_module()
+        assert ota_module is not None
+        assert ota_module.name == "ota"
+        
+        # Check that circuits use explicit nets syntax
+        diff_pair_module = asdl_file.modules["diff_pair_nmos"]
+        assert len(diff_pair_module.circuits) > 0
+        
+        # Verify the circuit uses the new format
+        circuit = diff_pair_module.circuits[0]
+        assert circuit.model == "nmos_unit"
+        assert "nets" in circuit.__dict__ and circuit.nets
+        assert "S" in circuit.nets
+        assert "D" in circuit.nets
+        assert "G" in circuit.nets
+        assert "B" in circuit.nets  # Explicit bulk connection
+    
     def test_parse_circuits_list_format(self):
         """Test parsing circuits in list format."""
         yaml_content = """
+models:
+  nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u}
+  pmos_unit: {model: pfet_3v3, L: 0.18u, W: 4u}
+
 modules:
   test:
     circuits:
-      - {name: MN1, model: nmos_unit, S: vss, D: out, G: in}
-      - {name: MP1, model: pmos_unit, S: vdd, D: out, G: in}
+      - name: MN1
+        model: nmos_unit
+        nets: {S: vss, D: out, G: in, B: VSS}
+      - name: MP1
+        model: pmos_unit
+        nets: {S: vdd, D: out, G: in, B: VDD}
 """
         
         asdl_file = self.parser.parse_string(yaml_content)
@@ -131,11 +199,17 @@ modules:
     def test_parse_circuits_dict_format(self):
         """Test parsing circuits in dictionary format."""
         yaml_content = """
+models:
+  nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u}
+
 modules:
   test:
     circuits:
       diff: {model: diff_pair_nmos, M: 2}
-      tail: {model: nmos_unit, name: MN_TAIL, S: vss, G: vbn}
+      tail: 
+        model: nmos_unit
+        name: MN_TAIL
+        nets: {S: vss, G: vbn, D: out, B: VSS}
 """
         
         asdl_file = self.parser.parse_string(yaml_content)
@@ -151,7 +225,7 @@ modules:
         # Second circuit has explicit name
         tail_circuit = next(c for c in test_module.circuits if c.name == "MN_TAIL")
         assert tail_circuit.model == "nmos_unit"
-        assert tail_circuit.parameters["S"] == "vss"
+        assert tail_circuit.nets["S"] == "vss"
     
     def test_parse_invalid_yaml(self):
         """Test error handling for invalid YAML."""
@@ -187,15 +261,23 @@ modules: "not a dict"
     def test_module_dependencies(self):
         """Test module dependency detection."""
         yaml_content = """
+models:
+  nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u}
+  pmos_unit: {model: pfet_3v3, L: 0.18u, W: 4u}
+
 modules:
   leaf:
     circuits:
-      - {name: MN1, model: nmos_unit}
+      - name: MN1
+        model: nmos_unit
+        nets: {S: vss, D: out, G: in, B: VSS}
   
   parent:
     circuits:
       - {name: sub1, model: leaf}
-      - {name: MN2, model: pmos_unit}
+      - name: MN2
+        model: pmos_unit
+        nets: {S: vdd, D: out, G: in, B: VDD}
 """
         
         asdl_file = self.parser.parse_string(yaml_content)
@@ -212,12 +294,18 @@ modules:
 .version: "ASDL v1.0"
 .top_module: test
 
+models:
+  nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u}
+
 modules:
   test:
     nets: {in: in, out: out}
     parameters: {M: 2, W: "10u"}
     circuits:
-      - {name: MN1, model: nmos_unit, S: vss, D: out, G: in, M: "${M}"}
+      - name: MN1
+        model: nmos_unit
+        nets: {S: vss, D: out, G: in, B: VSS}
+        M: "${M}"
     notes:
       layout: "test layout note"
 """
@@ -231,6 +319,8 @@ modules:
         assert data['top_module'] == "test"
         assert 'modules' in data
         assert 'test' in data['modules']
+        assert 'models' in data
+        assert 'nmos_unit' in data['models']
         
         # Test to_json method
         json_str = asdl_file.to_json()

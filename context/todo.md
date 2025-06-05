@@ -13,6 +13,12 @@
 - [x] Write tests for core parsing functionality
 - [x] Add JSON export functionality for debugging
 - [x] Discover and fix ASDL syntax ambiguity (nets vs parameters)
+- [x] **ASDL Syntax Migration: Replace .defaults with models section**
+  - [x] Update ASDLFile data model to use models field instead of defaults
+  - [x] Update parser to handle models section
+  - [x] Update all test cases to use new syntax
+  - [x] Verify both old and new format parsing works
+  - [x] All tests passing (10/10)
 - [ ] Implement pattern expansion system
 - [ ] Implement parameter resolution engine
 - [ ] Create basic SPICE netlist generator
@@ -26,14 +32,30 @@
 - [ ] Implement dependency ordering for module generation
 
 ## Critical Issues to Address
-- [ ] **ASDL Syntax Standardization**: Decide on migration strategy for explicit `nets:` syntax
+- [x] **ASDL Syntax Standardization**: ✅ COMPLETED - Migrated to models section
+  - ✅ Replaced confusing `.defaults` anchor syntax with intuitive `models` section
+  - ✅ Eliminated YAML anchor references (`&`, `*`, `<<:`) for better usability
+  - ✅ Physical device models now clearly defined in dedicated section
+  - ✅ Device instantiation uses direct model names
+  - ✅ Better separation of concerns: models vs instances
+- [ ] **Legacy Format Support**: Decide on backward compatibility strategy
   - Option 1: Support both old and new syntax with deprecation warnings
-  - Option 2: Require immediate migration to new syntax
+  - Option 2: Require immediate migration to new syntax  
   - Option 3: Add automatic syntax conversion utility
 - [ ] **Schema Validation**: Add strict validation to catch syntax errors early
-- [ ] **Documentation Updates**: Update all examples to use proper nets/parameters separation
+- [ ] **Documentation Updates**: Update all examples and guides to use new models syntax
+
+## Migration Deliverables (COMPLETED)
+- [x] **Parser Updates**: Modified to handle models section instead of .defaults
+- [x] **Data Model Updates**: ASDLFile.models field replaces ASDLFile.defaults  
+- [x] **Test Suite Updates**: All 10 tests updated and passing with new syntax
+- [x] **Syntax Validation**: Verified parser handles both legacy and new formats
+- [x] **Example Files**: Have both old format (ota_two_stg.yaml) and new format (ota_two_stg_fixed.yaml)
 
 ## Backlog
+- [ ] Create migration utility to convert .defaults syntax to models syntax
+- [ ] Add deprecation warnings for .defaults usage
+- [ ] Update documentation with models section examples
 - [ ] Implement hierarchical module flattening
 - [ ] Add support for technology file integration
 - [ ] Create validation system for ASDL syntax
@@ -68,4 +90,10 @@
 - [x] **Schema Documentation**: Updated ASDL schema with proper syntax examples and best practices
 - [x] **Validation Testing**: Demonstrated parsing differences between old and new syntax formats
 - [x] **Anchor Standardization**: Established clean anchors (model only) with explicit bulk connections
-- [x] **Final Syntax Decision**: Adopted explicit bulk connection declarations for transparency 
+- [x] **Final Syntax Decision**: Adopted explicit bulk connection declarations for transparency
+- [x] **ASDL Syntax Migration**: Successfully replaced .defaults anchor syntax with models section
+  - [x] **Parser Migration**: Updated parser to handle models section instead of .defaults
+  - [x] **Data Model Migration**: Changed ASDLFile to use models field
+  - [x] **Test Migration**: Updated all 10 test cases to new syntax (100% passing)
+  - [x] **Syntax Improvement**: Eliminated confusing YAML anchors for better usability
+  - [x] **Example Validation**: Verified parsing of both legacy and new format files 

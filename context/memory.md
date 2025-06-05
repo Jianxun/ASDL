@@ -14,6 +14,8 @@ The objective is to develop a plain text intermediate representation that:
 
 **Phase 1.5 Critical Discovery:** Found and resolved major syntax ambiguity in ASDL format regarding device pin connections vs parameters.
 
+**ASDL Syntax Migration Complete:** Successfully migrated from confusing `.defaults` anchor syntax to intuitive `models` section for defining physical devices.
+
 **JSON Export Feature:** Added debugging capability to dump parsed structures to JSON for manual inspection and troubleshooting.
 
 **Ready for Phase 2:** Pattern expansion system implementation.
@@ -26,35 +28,55 @@ The objective is to develop a plain text intermediate representation that:
 - **YAML Processing:** Using `yaml.FullLoader` to handle anchors/aliases and complex expressions
 - **Testing Strategy:** Comprehensive test suite with both unit tests and integration testing
 
-### ASDL Syntax Standards (Phase 1.5 - Critical)
-**MAJOR ISSUE DISCOVERED:** Original ASDL syntax mixed device pin connections with parameters:
+### ASDL Syntax Migration (Phase 1.6 - Complete)
+**MAJOR SYNTAX CHANGE:** Replaced confusing `.defaults` anchor syntax with clear `models` section:
+
+**OLD SYNTAX (Confusing):**
 ```yaml
-# PROBLEMATIC (original):
-- {<<: *NMOS, name: MN1, S: vss, D: out, G: in, M: 4}  # S,D,G treated as parameters
+.defaults: &DEF
+  NMOS: &NMOS {model: nmos_unit, B: VSS}
+  PMOS: &PMOS {model: pmos_unit, B: VDD}
+
+circuits:
+  - {<<: *NMOS, name: MN1, nets: {S: vss, D: out, G: in}, M: 4}
 ```
 
-**SOLUTION IMPLEMENTED:** Explicit separation using `nets:` field:
+**NEW SYNTAX (Intuitive):**
+```yaml
+models:
+  nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u, NF: 2}
+  pmos_unit: {model: pfet_3v3, L: 0.18u, W: 4u, NF: 2}
+
+circuits:
+  - name: MN1
+    model: nmos_unit
+    nets: {S: vss, D: out, G: in, B: VSS}
+    M: 4
+```
+
+**Benefits:**
+- Eliminated confusing YAML anchor syntax (`&`, `*`, `<<:`)
+- Physical device models defined clearly in dedicated `models` section
+- Device instantiation uses direct model names instead of anchor references
+- Better separation of concerns: models vs instances
+- More intuitive for users unfamiliar with YAML anchors
+
+### ASDL Syntax Standards (Phase 1.5 - Critical)
+**EXPLICIT SYNTAX:** Separation of device pin connections from parameters:
 ```yaml
 # CORRECT (final standard):
-- {<<: *NMOS, name: MN1, 
-   nets: {S: vss, D: out, G: in, B: VSS},  # Pin connections (explicit bulk)
-   M: 4, W: "10u", L: "180n"}              # Device parameters
-```
-
-**ANCHOR STANDARD:** Clean anchors contain only device model information:
-```yaml
-# RECOMMENDED anchors:
-NMOS: &NMOS {model: nmos_unit}     # Model only, no pins
-PMOS: &PMOS {model: pmos_unit}     # Model only, no pins
+- name: MN1
+  model: nmos_unit
+  nets: {S: vss, D: out, G: in, B: VSS}  # Pin connections (explicit bulk)
+  M: 4, W: "10u", L: "180n"              # Device parameters
 ```
 
 **Impact:**
 - Device pin connections (S, D, G, B) explicitly declared in `nets` field
 - Device parameters (M, W, L, VALUE) remain as top-level parameters  
 - Hierarchical module connections already used correct `nets:` syntax
-- Updated ASDL schema documentation with explicit pin declaration examples
 - **Explicit bulk connections:** All bulk terminals explicitly declared for transparency
-- **Simple anchors:** Anchors contain only model information for clarity
+- **Simple model definitions:** Models contain only device information for clarity
 
 ### JSON Export Feature (Phase 1.5)
 - **Methods Added:** `to_dict()`, `to_json()`, `save_json()`, `print_summary()`
@@ -71,28 +93,28 @@ YAML Input → Parser → Data Models → [Pattern Expander] → [Parameter Reso
 ### File Structure
 ```
 src/asdl/
-  ├── models.py      # Data structures (ASDLFile, ASDLModule, Circuit)
-  ├── parser.py      # YAML parsing with error handling
+  ├── models.py      # Data structures (ASDLFile with models field, ASDLModule, Circuit)
+  ├── parser.py      # YAML parsing with models section support
   └── __init__.py    # Package exports
 tests/
-  └── test_parser.py # Comprehensive parser tests (9/9 passing)
+  └── test_parser.py # Comprehensive parser tests (10/10 passing)
 examples/
-  ├── ota_two_stg.yaml              # Original (problematic syntax)  
-  ├── ota_two_stg_fixed.yaml        # Fixed (proper nets/parameters)
+  ├── ota_two_stg.yaml              # Original (legacy .defaults syntax)  
+  ├── ota_two_stg_fixed.yaml        # New (models section + explicit nets)
   ├── ota_two_stg_parsed.json       # Debug output (original)
   └── ota_two_stg_fixed_parsed.json # Debug output (fixed)
 ```
 
 ### Dependencies
-- **Core:** PyYAML (YAML parsing with anchors), pytest (testing)
+- **Core:** PyYAML (YAML parsing), pytest (testing)
 - **Development:** black, flake8 (code quality)
 - **Optional:** numpy, matplotlib (future analysis features)
 
 ## Open Questions
 
 ### ASDL Format Standardization
-1. **Syntax Migration:** Should we update all existing ASDL files to use explicit `nets:` syntax?
-2. **Backward Compatibility:** Should the parser support both old and new syntax temporarily?
+1. **Legacy Support:** Should we maintain backward compatibility with `.defaults` syntax temporarily?
+2. **Migration Tools:** Should we create automated conversion tools for existing ASDL files?
 3. **Validation:** Should we add strict schema validation to catch syntax issues early?
 
 ### Pattern Expansion (Phase 2)
@@ -111,12 +133,13 @@ examples/
 - Pattern keys must be quoted: `"in_{p,n}": in`
 - Parameter substitutions must be quoted: `M: "${M.diff}"`
 - Complex patterns must be quoted: `"out_{p,n}": "{n_d, out}"`
-- YAML anchors work correctly with `FullLoader`
+- Model names are simple identifiers (no quotes needed)
 
 ### Testing Strategy
 - **Unit Tests:** Individual parser components with edge cases
 - **Integration Tests:** Complete OTA file parsing with 6 modules  
 - **Error Tests:** Invalid YAML, missing files, malformed structure
+- **Migration Tests:** Both old (.defaults) and new (models) syntax support
 - **Debug Tests:** JSON export functionality validation
 
 ### Performance Considerations
@@ -132,9 +155,9 @@ ASDL/
 ├── requirements.txt       # Python dependencies
 ├── .gitignore            # Git ignore patterns
 ├── context/              # Project context tracking
-├── src/asdl/             # Main source code (ready for implementation)
-├── tests/                # Test suite directory
-├── examples/             # Example ASDL circuits
+├── src/asdl/             # Main source code (models section support)
+├── tests/                # Test suite directory (10/10 passing)
+├── examples/             # Example ASDL circuits (old and new syntax)
 ├── doc/                  # Documentation and syntax guides
 └── dataset/              # Circuit dataset for AI training
 ``` 
