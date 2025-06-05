@@ -55,8 +55,8 @@ modules:
         assert len(simple_module.circuits) == 1
         
         # Check circuit
-        circuit = simple_module.circuits[0]
-        assert circuit.name == "MN1"
+        circuit = simple_module.circuits["MN1"]
+        assert circuit.name is None  # Name is redundant when it matches the key
         assert circuit.model == "nmos_unit"
         assert circuit.nets["S"] == "vss"
         assert circuit.nets["D"] == "out"
@@ -108,13 +108,13 @@ modules:
         assert len(ota_module.circuits) > 0
         
         # Check specific circuit details
-        circuit_names = [c.name for c in ota_module.circuits if c.name]
+        circuit_names = list(ota_module.circuits.keys())
         assert "vbn_gen" in circuit_names
         assert "stage1" in circuit_names
         assert "stage2" in circuit_names
         
         # Verify parameter substitution was preserved as strings
-        stage1_circuit = next(c for c in ota_module.circuits if c.name == "stage1")
+        stage1_circuit = ota_module.circuits["stage1"]
         assert stage1_circuit.parameters["M"]["diff"] == "${M.diff}"
         assert stage1_circuit.parameters["M"]["tail"] == "${M.tail}"
     
@@ -152,7 +152,7 @@ modules:
         assert len(diff_pair_module.circuits) > 0
         
         # Verify the circuit uses the new format
-        circuit = diff_pair_module.circuits[0]
+        circuit = list(diff_pair_module.circuits.values())[0]
         assert circuit.model == "nmos_unit"
         assert "nets" in circuit.__dict__ and circuit.nets
         assert "S" in circuit.nets
@@ -162,7 +162,7 @@ modules:
         
         # Verify jumper is now defined as a model instead of special handling
         bias_module = asdl_file.modules["bias_vbn_diode"]
-        jumper_circuit = next(c for c in bias_module.circuits if c.name == "J1")
+        jumper_circuit = bias_module.circuits["J1"]
         assert jumper_circuit.model == "jumper"
         assert jumper_circuit.nets["p1"] == "iref"
         assert jumper_circuit.nets["p2"] == "vbn"
@@ -191,11 +191,13 @@ modules:
         assert len(test_module.circuits) == 2
         
         # Check circuits by name
-        mn1_circuit = next(c for c in test_module.circuits if c.name == "MN1")
+        mn1_circuit = test_module.circuits["MN1"]
+        assert mn1_circuit.name is None  # Name matches key, so it's None
         assert mn1_circuit.model == "nmos_unit"
         assert mn1_circuit.nets["S"] == "vss"
         
-        mp1_circuit = next(c for c in test_module.circuits if c.name == "MP1")
+        mp1_circuit = test_module.circuits["MP1"]
+        assert mp1_circuit.name is None  # Name matches key, so it's None
         assert mp1_circuit.model == "pmos_unit"
         assert mp1_circuit.nets["S"] == "vdd"
     
@@ -221,12 +223,14 @@ modules:
         assert len(test_module.circuits) == 2
         
         # First circuit should get name from dict key
-        diff_circuit = next(c for c in test_module.circuits if c.name == "diff")
+        diff_circuit = test_module.circuits["diff"]
+        assert diff_circuit.name is None  # No explicit name, key is used
         assert diff_circuit.model == "diff_pair_nmos"
         assert diff_circuit.parameters["M"] == 2
         
-        # Second circuit has explicit name
-        tail_circuit = next(c for c in test_module.circuits if c.name == "MN_TAIL")
+        # Second circuit has explicit name different from key
+        tail_circuit = test_module.circuits["tail"]
+        assert tail_circuit.name == "MN_TAIL"  # Explicit name differs from key
         assert tail_circuit.model == "nmos_unit"
         assert tail_circuit.nets["S"] == "vss"
     
@@ -371,5 +375,5 @@ modules:
         assert parsed_json['modules']['test']['parameters']['M'] == 2
         
         # Test that patterns and parameter substitutions are preserved
-        circuit = parsed_json['modules']['test']['circuits'][0]
+        circuit = parsed_json['modules']['test']['circuits']['MN1']
         assert circuit['parameters']['M'] == "${M}"  # Preserved as string 

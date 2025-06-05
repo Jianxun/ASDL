@@ -28,6 +28,18 @@ class Circuit:
                 self.name = self.parameters.pop('name')
             if 'model' in self.parameters:
                 self.model = self.parameters.pop('model')
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary, excluding None name field."""
+        result = {
+            'model': self.model,
+            'nets': self.nets,
+            'parameters': self.parameters
+        }
+        # Only include name if it's not None
+        if self.name is not None:
+            result['name'] = self.name
+        return result
 
 
 @dataclass
@@ -36,7 +48,7 @@ class ASDLModule:
     name: str
     nets: Dict[str, str] = field(default_factory=dict)        # net_name -> role
     parameters: Dict[str, Any] = field(default_factory=dict)  # param hierarchies
-    circuits: List[Circuit] = field(default_factory=list)     # devices + submodule instances
+    circuits: Dict[str, Circuit] = field(default_factory=dict)  # devices + submodule instances by name
     notes: Dict[str, Any] = field(default_factory=dict)       # design intent
 
 
@@ -59,7 +71,7 @@ class ASDLFile:
             return []
         
         dependencies = []
-        for circuit in module.circuits:
+        for circuit in module.circuits.values():
             if circuit.model and circuit.model in self.modules:
                 dependencies.append(circuit.model)
         
@@ -67,7 +79,29 @@ class ASDLFile:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert the ASDLFile to a dictionary for JSON serialization."""
-        return asdict(self)
+        result = {
+            'version': self.version,
+            'top_module': self.top_module,
+            'models': self.models,
+            'modules': {}
+        }
+        
+        for module_name, module in self.modules.items():
+            module_dict = {
+                'name': module.name,
+                'nets': module.nets,
+                'parameters': module.parameters,
+                'circuits': {},
+                'notes': module.notes
+            }
+            
+            # Convert circuits using their custom to_dict method
+            for circuit_name, circuit in module.circuits.items():
+                module_dict['circuits'][circuit_name] = circuit.to_dict()
+            
+            result['modules'][module_name] = module_dict
+        
+        return result
     
     def to_json(self, indent: int = 2, sort_keys: bool = True) -> str:
         """

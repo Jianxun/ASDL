@@ -116,31 +116,36 @@ class ASDLParser:
         
         return nets
     
-    def _parse_circuits(self, circuits_data: Any) -> List[Circuit]:
+    def _parse_circuits(self, circuits_data: Any) -> Dict[str, Circuit]:
         """Parse the circuits section of a module."""
         if not circuits_data:
-            return []
+            return {}
         
         if not isinstance(circuits_data, dict):
             raise ASDLParseError("'circuits' must be a dictionary")
         
-        circuits = []
+        circuits = {}
         circuit_names = set()
         
         for circuit_name, circuit_data in circuits_data.items():
             try:
                 circuit = self._parse_circuit_item(circuit_data)
                 
-                # Use the dictionary key as the circuit name if not explicitly set
-                if not circuit.name:
-                    circuit.name = circuit_name
+                # Handle explicit name field
+                if circuit.name and circuit.name != circuit_name:
+                    # Keep explicit name if it's different from the key
+                    if circuit.name in circuit_names:
+                        raise ASDLParseError(f"Duplicate circuit name: '{circuit.name}'")
+                    circuit_names.add(circuit.name)
+                else:
+                    # Remove redundant name field when it matches the key
+                    circuit.name = None
                 
-                # Check for unique names
-                if circuit.name in circuit_names:
-                    raise ASDLParseError(f"Duplicate circuit name: '{circuit.name}'")
-                circuit_names.add(circuit.name)
+                # Also track the dictionary key to prevent duplicates
+                circuit_names.add(circuit_name)
                 
-                circuits.append(circuit)
+                # Store circuit with the dictionary key
+                circuits[circuit_name] = circuit
             except Exception as e:
                 raise ASDLParseError(f"Error parsing circuit '{circuit_name}': {e}")
         

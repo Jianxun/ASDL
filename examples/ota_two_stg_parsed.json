@@ -1,21 +1,40 @@
 {
-  "defaults": {
-    "CAP": {
-      "model": "capacitor_unit"
+  "models": {
+    "cap_unit": {
+      "C": "1e-12",
+      "model": "mimcap"
     },
-    "NMOS": {
-      "model": "nmos_unit"
+    "jumper": {
+      "model": "jumper"
     },
-    "PMOS": {
-      "model": "pmos_unit"
+    "nmos_unit": {
+      "L": "0.18u",
+      "M": "${M}",
+      "NF:2": null,
+      "W": "2u",
+      "model": "nfet_3v3"
+    },
+    "pmos_unit": {
+      "L": "0.18u",
+      "M": "${M}",
+      "NF:2": null,
+      "W": "2u",
+      "model": "pfet_3v3"
     }
   },
   "modules": {
     "bias_vbn_diode": {
-      "circuits": [
-        {
+      "circuits": {
+        "J1": {
+          "model": "jumper",
+          "nets": {
+            "p1": "iref",
+            "p2": "vbn"
+          },
+          "parameters": {}
+        },
+        "MN_bias": {
           "model": "nmos_unit",
-          "name": "MN_bias",
           "nets": {
             "B": "VSS",
             "D": "iref",
@@ -25,20 +44,8 @@
           "parameters": {
             "M": "${M}"
           }
-        },
-        {
-          "model": "jumper",
-          "name": "J1",
-          "nets": {},
-          "parameters": {
-            "name": "J1",
-            "nets": {
-              "p1": "iref",
-              "p2": "vbn"
-            }
-          }
         }
-      ],
+      },
       "name": "bias_vbn_diode",
       "nets": {
         "iref": "in",
@@ -53,23 +60,9 @@
       }
     },
     "common_source_amp": {
-      "circuits": [
-        {
-          "model": "pmos_unit",
-          "name": "MP_DRV",
-          "nets": {
-            "B": "VDD",
-            "D": "out",
-            "G": "in",
-            "S": "vdd"
-          },
-          "parameters": {
-            "M": "${M}"
-          }
-        },
-        {
+      "circuits": {
+        "MN_LOAD": {
           "model": "nmos_unit",
-          "name": "MN_LOAD",
           "nets": {
             "B": "VSS",
             "D": "out",
@@ -79,8 +72,20 @@
           "parameters": {
             "M": "${M}"
           }
+        },
+        "MP_DRV": {
+          "model": "pmos_unit",
+          "nets": {
+            "B": "VDD",
+            "D": "out",
+            "G": "in",
+            "S": "vdd"
+          },
+          "parameters": {
+            "M": "${M}"
+          }
         }
-      ],
+      },
       "name": "common_source_amp",
       "nets": {
         "in": "in",
@@ -95,10 +100,9 @@
       }
     },
     "current_mirror_pmos_1_1": {
-      "circuits": [
-        {
+      "circuits": {
+        "MP_{ref,out}": {
           "model": "pmos_unit",
-          "name": "MP_{ref,out}",
           "nets": {
             "B": "VDD",
             "D": "{ref, out}",
@@ -109,7 +113,7 @@
             "M": "${M}"
           }
         }
-      ],
+      },
       "name": "current_mirror_pmos_1_1",
       "nets": {
         "out": "out",
@@ -122,10 +126,9 @@
       }
     },
     "diff_pair_nmos": {
-      "circuits": [
-        {
+      "circuits": {
+        "MN_{P,N}": {
           "model": "nmos_unit",
-          "name": "MN_{P,N}",
           "nets": {
             "B": "VSS",
             "D": "out_{p,n}",
@@ -136,7 +139,7 @@
             "M": "${M}"
           }
         }
-      ],
+      },
       "name": "diff_pair_nmos",
       "nets": {
         "in_{p,n}": "in",
@@ -151,22 +154,24 @@
       }
     },
     "ota": {
-      "circuits": [
-        {
-          "model": "bias_vbn_diode",
-          "name": "vbn_gen",
+      "circuits": {
+        "Cc": {
+          "model": "cap_unit",
           "nets": {
-            "iref": "iref",
-            "vbn": "vbn",
-            "vss": "vss"
+            "p1": "stg1_out",
+            "p2": "out"
           },
           "parameters": {
-            "M": "${M.bias_diode}"
+            "M": "${M.Cc}"
           }
         },
-        {
+        "dummy_devices": {
+          "model": null,
+          "nets": {},
+          "parameters": {}
+        },
+        "stage1": {
           "model": "ota_one_stage",
-          "name": "stage1",
           "nets": {
             "in_{p,n}": "in_{p,n}",
             "out": "stg1_out",
@@ -182,9 +187,8 @@
             }
           }
         },
-        {
+        "stage2": {
           "model": "common_source_amp",
-          "name": "stage2",
           "nets": {
             "in": "stg1_out",
             "out": "out",
@@ -196,24 +200,18 @@
             "M": "${M.stage2}"
           }
         },
-        {
-          "model": "capacitor_unit",
-          "name": "Cc",
+        "vbn_gen": {
+          "model": "bias_vbn_diode",
           "nets": {
-            "p1": "stg1_out",
-            "p2": "out"
+            "iref": "iref",
+            "vbn": "vbn",
+            "vss": "vss"
           },
           "parameters": {
-            "M": "${Cc}"
+            "M": "${M.bias_diode}"
           }
-        },
-        {
-          "model": null,
-          "name": "dummy_devices",
-          "nets": {},
-          "parameters": {}
         }
-      ],
+      },
       "name": "ota",
       "nets": {
         "in_{p,n}": "in",
@@ -243,12 +241,15 @@
           "Offset: 2mV",
           "HD3: -80dBc at 1V p-p output swing",
           "Phase margin: 65 degrees",
+          "Noise: 10nV/sqrt(Hz) at 1MHz",
+          "Flicker noise corner: 100kHz",
           "Power: minimize"
         ]
       },
       "parameters": {
         "Cc": "1pF",
         "M": {
+          "Cc": 1,
           "bias_diode": 1,
           "diff": 4,
           "load": 4,
@@ -258,22 +259,9 @@
       }
     },
     "ota_one_stage": {
-      "circuits": [
-        {
-          "model": "diff_pair_nmos",
-          "name": "diff",
-          "nets": {
-            "in_{p,n}": "in_{p,n}",
-            "out_{p,n}": "{n_d, out}",
-            "tail": "n_tail"
-          },
-          "parameters": {
-            "M": "${M.diff}"
-          }
-        },
-        {
+      "circuits": {
+        "MN_TAIL": {
           "model": "nmos_unit",
-          "name": "MN_TAIL",
           "nets": {
             "B": "VSS",
             "D": "n_tail",
@@ -284,9 +272,19 @@
             "M": "${M.tail}"
           }
         },
-        {
+        "diff": {
+          "model": "diff_pair_nmos",
+          "nets": {
+            "in_{p,n}": "in_{p,n}",
+            "out_{p,n}": "{n_d, out}",
+            "tail": "n_tail"
+          },
+          "parameters": {
+            "M": "${M.diff}"
+          }
+        },
+        "load": {
           "model": "current_mirror_pmos_1_1",
-          "name": "load",
           "nets": {
             "out": "out",
             "ref": "n_d",
@@ -296,7 +294,7 @@
             "M": "${M.load}"
           }
         }
-      ],
+      },
       "name": "ota_one_stage",
       "nets": {
         "in_{p,n}": "in",
