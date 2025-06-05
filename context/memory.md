@@ -1,7 +1,7 @@
 # Project Memory
 
 ## Project Overview
-ASDL (Analog Structured Description Language) is an intermediate representation for analog circuits that bridges the gap between human-friendly schematics and machine-friendly netlists. The goal is to create a YAML-based format that captures not only topological information but also structural and design intent information.
+ASDL (Analog Structured Description Language) is a YAML-based representation for analog circuits that serves as an intermediate format between human-readable schematics and machine-friendly netlists. The goal is to create a hierarchical YAML-to-SPICE converter that preserves design intent and supports pattern expansion for AI/ML training datasets.
 
 The objective is to develop a plain text intermediate representation that:
 - Is more human-friendly than raw netlists but more machine-processable than schematics
@@ -10,36 +10,120 @@ The objective is to develop a plain text intermediate representation that:
 - Serves as a bridge between design tools and AI systems
 
 ## Current State
-- **Development environment**: Fully set up with Python virtual environment
-- **Project structure**: Standard Python project layout implemented
-- **Dependencies**: All required packages installed (PyYAML, pytest, black, flake8, etc.)
-- **Documentation**: README.md created with comprehensive project overview
-- **Context tracking**: memory.md and todo.md files established
-- **Example circuits**: Available in examples/ directory (ota_two_stg.yaml, ota_concise.yaml)
-- **Documentation**: Existing syntax guide and schema in doc/ directory
+**Phase 1 Complete:** Basic YAML parser with comprehensive data models and testing.
+
+**Phase 1.5 Critical Discovery:** Found and resolved major syntax ambiguity in ASDL format regarding device pin connections vs parameters.
+
+**JSON Export Feature:** Added debugging capability to dump parsed structures to JSON for manual inspection and troubleshooting.
+
+**Ready for Phase 2:** Pattern expansion system implementation.
 
 ## Key Decisions
-- Using YAML as the base format for ASDL due to its human readability and structured nature
-- Supporting hierarchical circuit descriptions with modular building blocks
-- Including parameter substitution (`${param}`) and pattern expansion (`MN_{P,N}`)
-- Maintaining design intent through `notes` sections and structured parameters
-- Supporting both flattened and hierarchical circuit representations
-- Following Python best practices with virtual environment and test-driven development
-- Using standard project structure: src/asdl/, tests/, examples/, doc/, context/
 
-## Open Questions
-- What SPICE simulators should be primarily targeted for netlist generation?
-- Should the converter support multiple output formats (SPICE, Spectre, Verilog-AMS)?
-- What level of optimization should be included in the conversion process?
-- How should we handle technology-specific device models in the YAML format?
-- What should be the primary AI/ML use cases for the dataset?
+### Parser Architecture (Phase 1)
+- **Data Models:** Simple dataclasses (`ASDLFile`, `ASDLModule`, `Circuit`) for prototype agility
+- **Error Handling:** Custom `ASDLParseError` with context for debugging
+- **YAML Processing:** Using `yaml.FullLoader` to handle anchors/aliases and complex expressions
+- **Testing Strategy:** Comprehensive test suite with both unit tests and integration testing
+
+### ASDL Syntax Standards (Phase 1.5 - Critical)
+**MAJOR ISSUE DISCOVERED:** Original ASDL syntax mixed device pin connections with parameters:
+```yaml
+# PROBLEMATIC (original):
+- {<<: *NMOS, name: MN1, S: vss, D: out, G: in, M: 4}  # S,D,G treated as parameters
+```
+
+**SOLUTION IMPLEMENTED:** Explicit separation using `nets:` field:
+```yaml
+# CORRECT (final standard):
+- {<<: *NMOS, name: MN1, 
+   nets: {S: vss, D: out, G: in, B: VSS},  # Pin connections (explicit bulk)
+   M: 4, W: "10u", L: "180n"}              # Device parameters
+```
+
+**ANCHOR STANDARD:** Clean anchors contain only device model information:
+```yaml
+# RECOMMENDED anchors:
+NMOS: &NMOS {model: nmos_unit}     # Model only, no pins
+PMOS: &PMOS {model: pmos_unit}     # Model only, no pins
+```
+
+**Impact:**
+- Device pin connections (S, D, G, B) explicitly declared in `nets` field
+- Device parameters (M, W, L, VALUE) remain as top-level parameters  
+- Hierarchical module connections already used correct `nets:` syntax
+- Updated ASDL schema documentation with explicit pin declaration examples
+- **Explicit bulk connections:** All bulk terminals explicitly declared for transparency
+- **Simple anchors:** Anchors contain only model information for clarity
+
+### JSON Export Feature (Phase 1.5)
+- **Methods Added:** `to_dict()`, `to_json()`, `save_json()`, `print_summary()`
+- **Parser Enhancement:** `parse_and_dump()` method for immediate debugging
+- **Use Cases:** Manual inspection, debugging pattern expansion, validating parameter resolution, comparing transformations
 
 ## Technical Architecture
-- YAML anchors and aliases for device template reuse
-- Parameter resolution system for `${param}` expressions
-- Pattern expansion engine for `{p,n}` style instantiation
-- Hierarchical module system with net role declarations (in/out/io/internal)
-- Support for primitive devices (NMOS, PMOS, R, C, L) and custom modules
+
+### Data Flow
+```
+YAML Input → Parser → Data Models → [Pattern Expander] → [Parameter Resolver] → SPICE Generator
+```
+
+### File Structure
+```
+src/asdl/
+  ├── models.py      # Data structures (ASDLFile, ASDLModule, Circuit)
+  ├── parser.py      # YAML parsing with error handling
+  └── __init__.py    # Package exports
+tests/
+  └── test_parser.py # Comprehensive parser tests (9/9 passing)
+examples/
+  ├── ota_two_stg.yaml              # Original (problematic syntax)  
+  ├── ota_two_stg_fixed.yaml        # Fixed (proper nets/parameters)
+  ├── ota_two_stg_parsed.json       # Debug output (original)
+  └── ota_two_stg_fixed_parsed.json # Debug output (fixed)
+```
+
+### Dependencies
+- **Core:** PyYAML (YAML parsing with anchors), pytest (testing)
+- **Development:** black, flake8 (code quality)
+- **Optional:** numpy, matplotlib (future analysis features)
+
+## Open Questions
+
+### ASDL Format Standardization
+1. **Syntax Migration:** Should we update all existing ASDL files to use explicit `nets:` syntax?
+2. **Backward Compatibility:** Should the parser support both old and new syntax temporarily?
+3. **Validation:** Should we add strict schema validation to catch syntax issues early?
+
+### Pattern Expansion (Phase 2)
+1. **Expansion Strategy:** How to handle nested patterns like `"MN_{P,N}_{1,2}"` → `MN_P_1, MN_P_2, MN_N_1, MN_N_2`?
+2. **Net Mapping:** How to align pattern expansions in names with pattern expansions in nets?
+3. **Error Handling:** How to detect and report pattern mismatches?
+
+### Parameter Resolution (Phase 3)  
+1. **Expression Evaluation:** Support for mathematical expressions in `${...}` substitutions?
+2. **Scope Rules:** How to handle parameter shadowing in nested modules?
+3. **Type System:** Should parameters be typed (voltage, current, length, etc.)?
+
+## Implementation Notes
+
+### YAML Syntax Constraints
+- Pattern keys must be quoted: `"in_{p,n}": in`
+- Parameter substitutions must be quoted: `M: "${M.diff}"`
+- Complex patterns must be quoted: `"out_{p,n}": "{n_d, out}"`
+- YAML anchors work correctly with `FullLoader`
+
+### Testing Strategy
+- **Unit Tests:** Individual parser components with edge cases
+- **Integration Tests:** Complete OTA file parsing with 6 modules  
+- **Error Tests:** Invalid YAML, missing files, malformed structure
+- **Debug Tests:** JSON export functionality validation
+
+### Performance Considerations
+- Current focus: correctness and agility over performance
+- Dataclasses provide simplicity for prototype development
+- YAML parsing is the likely bottleneck for large files
+- Pattern expansion will be the next performance consideration
 
 ## Project Structure Established
 ```
