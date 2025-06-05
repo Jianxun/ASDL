@@ -28,6 +28,13 @@
   - [x] Update all test cases for new requirements
   - [x] Fix examples/ota_two_stg.yaml to use dictionary format
   - [x] All tests passing (12/12)
+- [x] **Test Suite Reorganization: Modularize for better maintainability**
+  - [x] Analyze existing test cases and identify obsolete ones
+  - [x] Create modular test structure /tests/unit_tests/test_parser/
+  - [x] Separate tests into focused categories (basic, integration, error, json)
+  - [x] Remove obsolete test_parse_missing_file (tested removed parse_file method)
+  - [x] Verify all 11 essential tests pass in new structure
+  - [x] Update project documentation and context
 - [ ] Implement pattern expansion system
 - [ ] Implement parameter resolution engine
 - [ ] Create basic SPICE netlist generator
@@ -112,4 +119,11 @@
   - [x] **Legacy Cleanup**: Removed YAML merge key support and special jumper handling
   - [x] **Test Updates**: Updated all 12 test cases for new requirements (100% passing)
   - [x] **Example Fixes**: Corrected examples/ota_two_stg.yaml to use proper dictionary format
-  - [x] **Documentation**: Added comprehensive error handling for duplicate circuit names 
+  - [x] **Documentation**: Added comprehensive error handling for duplicate circuit names
+- [x] **Test Suite Reorganization**: Modularized test structure for better maintainability
+  - [x] **Structure Analysis**: Analyzed 12 test cases and identified 1 obsolete test
+  - [x] **Modular Design**: Created focused test modules by category (basic, integration, error, json)
+  - [x] **File Organization**: Reorganized into /tests/unit_tests/test_parser/ structure
+  - [x] **Obsolete Removal**: Eliminated test for removed parse_file method
+  - [x] **Coverage Maintained**: All 11 essential tests preserved and passing (100%)
+  - [x] **Documentation Updated**: Updated context files and project structure documentation 
