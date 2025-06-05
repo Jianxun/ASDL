@@ -16,6 +16,8 @@ The objective is to develop a plain text intermediate representation that:
 
 **ASDL Syntax Migration Complete:** Successfully migrated from confusing `.defaults` anchor syntax to intuitive `models` section for defining physical devices.
 
+**Parser Refactoring Complete:** Refactored parser class with simplified, cleaner API enforcing strict dictionary format for circuits.
+
 **JSON Export Feature:** Added debugging capability to dump parsed structures to JSON for manual inspection and troubleshooting.
 
 **Ready for Phase 2:** Pattern expansion system implementation.
@@ -82,6 +84,40 @@ circuits:
 - **Methods Added:** `to_dict()`, `to_json()`, `save_json()`, `print_summary()`
 - **Parser Enhancement:** `parse_and_dump()` method for immediate debugging
 - **Use Cases:** Manual inspection, debugging pattern expansion, validating parameter resolution, comparing transformations
+
+### Parser Refactoring (Phase 1.7 - Complete)
+**MAJOR API SIMPLIFICATION:** Refactored parser class for cleaner, more consistent operation:
+
+**Key Changes:**
+1. **Removed `parse_file` method** - Users are now responsible for reading files into strings
+2. **Removed `parse_and_dump` method** - Parsing and dumping are now independent operations
+3. **Enforced dictionary format for circuits** - All circuit instantiations must have unique names
+4. **Removed YAML merge key support** - No more `<<:` anchor merging in circuit definitions
+5. **Removed special jumper handling** - Jumpers are now defined in the `models` section like other components
+
+**Benefits:**
+- Cleaner separation of concerns (file I/O vs parsing)
+- Enforced unique circuit names prevent naming conflicts
+- Simplified parser logic by removing special cases
+- More consistent syntax without YAML anchor complexity
+- Better error handling for duplicate names
+
+**Example of new strict syntax:**
+```yaml
+models:
+  jumper: {model: jumper}
+  nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u}
+
+modules:
+  bias_gen:
+    circuits:
+      MN1:  # Dictionary key becomes circuit name
+        model: nmos_unit
+        nets: {S: vss, D: out, G: in, B: VSS}
+      J1:   # Jumper defined like any other component
+        model: jumper
+        nets: {p1: in, p2: out}
+```
 
 ## Technical Architecture
 

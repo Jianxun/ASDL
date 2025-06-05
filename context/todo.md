@@ -19,6 +19,15 @@
   - [x] Update all test cases to use new syntax
   - [x] Verify both old and new format parsing works
   - [x] All tests passing (10/10)
+- [x] **Parser Refactoring: Simplify API and enforce strict syntax**
+  - [x] Remove parse_file method (users read files themselves)
+  - [x] Remove parse_and_dump method (separate concerns)
+  - [x] Enforce dictionary format for circuits with unique names
+  - [x] Remove YAML merge key (<<:) support
+  - [x] Remove special jumper handling (use models section)
+  - [x] Update all test cases for new requirements
+  - [x] Fix examples/ota_two_stg.yaml to use dictionary format
+  - [x] All tests passing (12/12)
 - [ ] Implement pattern expansion system
 - [ ] Implement parameter resolution engine
 - [ ] Create basic SPICE netlist generator
@@ -96,4 +105,11 @@
   - [x] **Data Model Migration**: Changed ASDLFile to use models field
   - [x] **Test Migration**: Updated all 10 test cases to new syntax (100% passing)
   - [x] **Syntax Improvement**: Eliminated confusing YAML anchors for better usability
-  - [x] **Example Validation**: Verified parsing of both legacy and new format files 
+  - [x] **Example Validation**: Verified parsing of both legacy and new format files
+- [x] **Parser Refactoring**: Simplified parser API and enforced strict syntax requirements
+  - [x] **API Simplification**: Removed parse_file and parse_and_dump methods for cleaner separation of concerns
+  - [x] **Syntax Enforcement**: Required dictionary format for circuits with unique names
+  - [x] **Legacy Cleanup**: Removed YAML merge key support and special jumper handling
+  - [x] **Test Updates**: Updated all 12 test cases for new requirements (100% passing)
+  - [x] **Example Fixes**: Corrected examples/ota_two_stg.yaml to use proper dictionary format
+  - [x] **Documentation**: Added comprehensive error handling for duplicate circuit names 

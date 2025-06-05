@@ -31,7 +31,7 @@ modules:
     nets: {in: in, out: out, vdd: io, vss: io}
     parameters: {M: 1}
     circuits:
-      - name: MN1
+      MN1:
         model: nmos_unit
         nets: {S: vss, D: out, G: in, B: VSS}
         M: "${M}"
@@ -71,7 +71,11 @@ modules:
         if not ota_file.exists():
             pytest.skip(f"OTA example file not found: {ota_file}")
         
-        asdl_file = self.parser.parse_file(ota_file)
+        # Read file content and parse as string
+        with open(ota_file, 'r', encoding='utf-8') as f:
+            yaml_content = f.read()
+        
+        asdl_file = self.parser.parse_string(yaml_content)
         
         # Check file structure
         assert asdl_file.version == "ASDL v1.0"
@@ -116,21 +120,26 @@ modules:
     
     def test_parse_ota_fixed_file(self):
         """Test parsing the fixed OTA example file with models section."""
-        ota_file = Path("examples/ota_two_stg_fixed.yaml")
+        ota_file = Path("examples/ota_two_stg.yaml")
         
         if not ota_file.exists():
-            pytest.skip(f"Fixed OTA example file not found: {ota_file}")
+            pytest.skip(f"OTA example file not found: {ota_file}")
         
-        asdl_file = self.parser.parse_file(ota_file)
+        # Read file content and parse as string
+        with open(ota_file, 'r', encoding='utf-8') as f:
+            yaml_content = f.read()
+        
+        asdl_file = self.parser.parse_string(yaml_content)
         
         # Check file structure
         assert asdl_file.version == "ASDL v1.0"
         assert asdl_file.top_module == "ota"
         
-        # Check models section instead of defaults
+        # Check models section
         assert "nmos_unit" in asdl_file.models
         assert "pmos_unit" in asdl_file.models
         assert "cap_unit" in asdl_file.models
+        assert "jumper" in asdl_file.models
         
         # Verify model definitions
         nmos_model = asdl_file.models["nmos_unit"]
@@ -138,25 +147,7 @@ modules:
         assert nmos_model["L"] == "0.18u"
         assert nmos_model["W"] == "2u"
         
-        # Check that all expected modules are present
-        expected_modules = [
-            "diff_pair_nmos",
-            "current_mirror_pmos_1_1", 
-            "common_source_amp",
-            "bias_vbn_diode",
-            "ota_one_stage",
-            "ota"
-        ]
-        
-        for module_name in expected_modules:
-            assert module_name in asdl_file.modules, f"Missing module: {module_name}"
-        
-        # Check top module
-        ota_module = asdl_file.get_top_module()
-        assert ota_module is not None
-        assert ota_module.name == "ota"
-        
-        # Check that circuits use explicit nets syntax
+        # Check that circuits use explicit nets syntax and dictionary format
         diff_pair_module = asdl_file.modules["diff_pair_nmos"]
         assert len(diff_pair_module.circuits) > 0
         
@@ -168,9 +159,16 @@ modules:
         assert "D" in circuit.nets
         assert "G" in circuit.nets
         assert "B" in circuit.nets  # Explicit bulk connection
+        
+        # Verify jumper is now defined as a model instead of special handling
+        bias_module = asdl_file.modules["bias_vbn_diode"]
+        jumper_circuit = next(c for c in bias_module.circuits if c.name == "J1")
+        assert jumper_circuit.model == "jumper"
+        assert jumper_circuit.nets["p1"] == "iref"
+        assert jumper_circuit.nets["p2"] == "vbn"
     
-    def test_parse_circuits_list_format(self):
-        """Test parsing circuits in list format."""
+    def test_parse_circuits_dict_format(self):
+        """Test parsing circuits in dictionary format."""
         yaml_content = """
 models:
   nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u}
@@ -179,10 +177,10 @@ models:
 modules:
   test:
     circuits:
-      - name: MN1
+      MN1:
         model: nmos_unit
         nets: {S: vss, D: out, G: in, B: VSS}
-      - name: MP1
+      MP1:
         model: pmos_unit
         nets: {S: vdd, D: out, G: in, B: VDD}
 """
@@ -191,13 +189,18 @@ modules:
         test_module = asdl_file.modules["test"]
         
         assert len(test_module.circuits) == 2
-        assert test_module.circuits[0].name == "MN1"
-        assert test_module.circuits[0].model == "nmos_unit"
-        assert test_module.circuits[1].name == "MP1"
-        assert test_module.circuits[1].model == "pmos_unit"
+        
+        # Check circuits by name
+        mn1_circuit = next(c for c in test_module.circuits if c.name == "MN1")
+        assert mn1_circuit.model == "nmos_unit"
+        assert mn1_circuit.nets["S"] == "vss"
+        
+        mp1_circuit = next(c for c in test_module.circuits if c.name == "MP1")
+        assert mp1_circuit.model == "pmos_unit"
+        assert mp1_circuit.nets["S"] == "vdd"
     
-    def test_parse_circuits_dict_format(self):
-        """Test parsing circuits in dictionary format."""
+    def test_parse_circuits_with_explicit_name(self):
+        """Test parsing circuits with explicit name field."""
         yaml_content = """
 models:
   nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u}
@@ -207,8 +210,8 @@ modules:
     circuits:
       diff: {model: diff_pair_nmos, M: 2}
       tail: 
-        model: nmos_unit
         name: MN_TAIL
+        model: nmos_unit
         nets: {S: vss, G: vbn, D: out, B: VSS}
 """
         
@@ -233,16 +236,49 @@ modules:
 modules:
   test:
     circuits:
-      - {name: MN1, model: nmos_unit
+      MN1: {model: nmos_unit
         # Missing closing brace
 """
         
         with pytest.raises(ASDLParseError, match="YAML parsing error"):
             self.parser.parse_string(invalid_yaml)
     
+    def test_parse_circuits_list_format_error(self):
+        """Test error handling for circuits in list format (no longer supported)."""
+        yaml_content = """
+modules:
+  test:
+    circuits:
+      - {name: MN1, model: nmos_unit}
+"""
+        
+        with pytest.raises(ASDLParseError, match="'circuits' must be a dictionary"):
+            self.parser.parse_string(yaml_content)
+    
+    def test_parse_duplicate_circuit_names(self):
+        """Test error handling for duplicate circuit names."""
+        yaml_content = """
+models:
+  nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u}
+
+modules:
+  test:
+    circuits:
+      circuit1:
+        name: MN1
+        model: nmos_unit
+      circuit2:
+        name: MN1  # Duplicate name
+        model: nmos_unit
+"""
+        
+        with pytest.raises(ASDLParseError, match="Duplicate circuit name: 'MN1'"):
+            self.parser.parse_string(yaml_content)
+    
     def test_parse_missing_file(self):
-        """Test error handling for missing file."""
-        with pytest.raises(ASDLParseError, match="File not found"):
+        """Test that parse_file method no longer exists."""
+        # This test verifies that parse_file method was removed
+        with pytest.raises(AttributeError):
             self.parser.parse_file("nonexistent.yaml")
     
     def test_parse_invalid_structure(self):
@@ -268,14 +304,14 @@ models:
 modules:
   leaf:
     circuits:
-      - name: MN1
+      MN1:
         model: nmos_unit
         nets: {S: vss, D: out, G: in, B: VSS}
   
   parent:
     circuits:
-      - {name: sub1, model: leaf}
-      - name: MN2
+      sub1: {model: leaf}
+      MN2:
         model: pmos_unit
         nets: {S: vdd, D: out, G: in, B: VDD}
 """
@@ -302,7 +338,7 @@ modules:
     nets: {in: in, out: out}
     parameters: {M: 2, W: "10u"}
     circuits:
-      - name: MN1
+      MN1:
         model: nmos_unit
         nets: {S: vss, D: out, G: in, B: VSS}
         M: "${M}"

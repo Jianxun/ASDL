@@ -3,6 +3,7 @@
 #      – Uses explicit nets: syntax for device pin connections
 #      – Separates pin connections from device parameters
 #      – Maintains pattern syntax for future expansion
+#      – Uses dictionary format for circuits (required by refactored parser)
 #───────────────────────────────────────────────────────────────────────────────
 
 .version: "ASDL v1.0"
@@ -12,6 +13,7 @@ models:
   nmos_unit: {model: nfet_3v3, L: 0.18u, W: 2u, NF:2, M: "${M}"}
   pmos_unit: {model: pfet_3v3, L: 0.18u, W: 2u, NF:2, M: "${M}"}
   cap_unit: {model: mimcap, C: 1e-12}
+  jumper: {model: jumper}
 
 modules:
   #────────────────────────  primitive building blocks  ──────────────────────#
@@ -19,7 +21,7 @@ modules:
     nets: {"in_{p,n}": in, "out_{p,n}": out, tail: io}
     parameters: {M: 2}
     circuits:
-      - "MN_{P,N}":
+      "MN_{P,N}":
         model: nmos_unit
         nets: {S: tail, D: "out_{p,n}", G: "in_{p,n}", B: VSS}
         M: "${M}"
@@ -30,7 +32,7 @@ modules:
     nets: {ref: in, out: out, vdd: io}
     parameters: {M: 1}
     circuits:
-      - "MP_{ref,out}":
+      "MP_{ref,out}":
         model: pmos_unit
         nets: {S: vdd, D: "{ref, out}", G: ref, B: VDD}
         M: "${M}"
@@ -39,11 +41,11 @@ modules:
     nets: {in: in, out: out, vbn: in, vdd: io, vss: io}
     parameters: {M: 1}
     circuits:
-      - "MP_DRV":
+      "MP_DRV":
         model: pmos_unit
         nets: {S: vdd, D: out, G: in, B: VDD}
         M: "${M}"
-      - "MN_LOAD":
+      "MN_LOAD":
         model: nmos_unit
         nets: {S: vss, D: out, G: vbn, B: VSS}
         M: "${M}"
@@ -53,12 +55,13 @@ modules:
     nets: {iref: in, vbn: out, vss: io}
     parameters: {M: 1}
     circuits:
-      - "MN_bias":
+      "MN_bias":
         model: nmos_unit
         nets: {D: iref, S: vss, G: vbn, B: VSS}
         M: "${M}"
-      - jumper: {name: J1, 
-                 nets: {p1: iref, p2: vbn}}
+      J1:
+        model: jumper
+        nets: {p1: iref, p2: vbn}
     notes:
       layout: "match all current source devices driven by vbn"
 
@@ -72,22 +75,24 @@ modules:
     parameters:
       M: {diff: 2, tail: 4, load: 2}
     circuits:
-
-      diff: {model: diff_pair_nmos, M: "${M.diff}",
-             nets: {
-               "in_{p,n}": "in_{p,n}",
-               "out_{p,n}": "{n_d, out}",   # out_n → out
-               tail: n_tail
-             }}
+      diff: 
+        model: diff_pair_nmos
+        M: "${M.diff}"
+        nets: {
+          "in_{p,n}": "in_{p,n}",
+          "out_{p,n}": "{n_d, out}",   # out_n → out
+          tail: n_tail
+        }
 
       MN_TAIL:
         model: nmos_unit
         nets: {D: n_tail, S: vss, G: vbn, B: VSS}
         M: "${M.tail}"
 
-      load: {model: current_mirror_pmos_1_1,
-             M: "${M.load}",
-             nets: {ref: n_d, out: out, vdd: vdd}}
+      load: 
+        model: current_mirror_pmos_1_1
+        M: "${M.load}"
+        nets: {ref: n_d, out: out, vdd: vdd}
 
   #───────────────────────── 3. Top-level OTA  ───────────────────────────────#
   ota:
@@ -109,30 +114,32 @@ modules:
       Cc: 1pF
 
     circuits:
-
       #-- (A) bias generator
-      vbn_gen: {model: bias_vbn_diode,
-                M: "${M.bias_diode}",
-                nets: {iref: iref, vbn: vbn, vss: vss}}
+      vbn_gen: 
+        model: bias_vbn_diode
+        M: "${M.bias_diode}"
+        nets: {iref: iref, vbn: vbn, vss: vss}
 
       #-- (B) first gain stage
-      stage1: {model: ota_one_stage,
-               M: {diff: "${M.diff}", tail: "${M.tail}", load: "${M.load}"},
-               nets: {
-                 "in_{p,n}": "in_{p,n}",
-                 vbn: vbn,
-                 out: stg1_out,
-                 vdd: vdd, vss: vss
-               }}
+      stage1: 
+        model: ota_one_stage
+        M: {diff: "${M.diff}", tail: "${M.tail}", load: "${M.load}"}
+        nets: {
+          "in_{p,n}": "in_{p,n}",
+          vbn: vbn,
+          out: stg1_out,
+          vdd: vdd, vss: vss
+        }
 
       #-- (C) second gain / output stage
-      stage2: {model: common_source_amp,
-               M: "${M.stage2}",
-               nets: {
-                 in: stg1_out, out: out,
-                 vbn: vbn,
-                 vdd: vdd, vss: vss
-               }}
+      stage2: 
+        model: common_source_amp
+        M: "${M.stage2}"
+        nets: {
+          in: stg1_out, out: out,
+          vbn: vbn,
+          vdd: vdd, vss: vss
+        }
 
       #-- (D) Miller compensation
       Cc:
