@@ -158,6 +158,8 @@ modules:
         - "Offset: 2mV"
         - "HD3: -80dBc at 1V p-p output swing"
         - "Phase margin: 65 degrees"
+        - "Noise: 10nV/sqrt(Hz) at 1MHz"
+        - "Flicker noise corner: 100kHz"
         - "Power: minimize"
       layout: 
         - "symmetric horizontal layout"

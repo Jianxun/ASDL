@@ -10,7 +10,6 @@ from typing import Dict, List, Any
 
 from .models import ASDLFile, ASDLModule, Circuit
 
-
 class ASDLParseError(Exception):
     """Custom exception for ASDL parsing errors."""
     pass
