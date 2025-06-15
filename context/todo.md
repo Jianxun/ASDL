@@ -1,54 +1,70 @@
 # Project Todo List
 
 ## Current Sprint
-- [x] Setup standard development environment
-- [x] Create context files (memory.md, todo.md)
-- [x] Create README.md
-- [x] Create requirements.txt with core dependencies
-- [x] Create .gitignore for Python project
-- [x] Install project dependencies
-- [x] Organize project structure (move files to examples/, doc/)
-- [x] Implement ASDL YAML parser
-- [x] Fix YAML syntax issues in example files
-- [x] Write tests for core parsing functionality
-- [ ] Implement pattern expansion system
-- [ ] Implement parameter resolution engine
-- [ ] Create basic SPICE netlist generator
 
-## Next Priority Tasks
-- [ ] Create pattern expander for `{p,n}` syntax
-- [ ] Design parameter resolver for `${param}` expressions
-- [ ] Create hierarchical module instantiation
-- [ ] Design SPICE output generator architecture
-- [ ] Add support for device primitive recognition
-- [ ] Implement dependency ordering for module generation
+### Setup & Planning
+- [X] Setup context management files
+- [X] Analyze ASDL schema v0.4 structure
+- [X] Review architecture decisions with user
+- [X] Update schema field name from `design_info` to `file_info`
+- [X] Implement basic Python class definitions and data structures
+- [X] Define interfaces between parser, resolver, and generator
+- [X] Create detailed implementation plan
+
+### Core Implementation (In Progress)
+- [X] Implement ASDL data structure classes (with future-proofing)
+- [X] Implement YAML parser for ASDL format (with extensibility features)
+- [ ] Implement pattern expansion system (`<p,n>`, `[3:0]`)
+- [ ] Implement parameter resolution system
+- [ ] Implement SPICE netlist generator
+- [ ] Create comprehensive test suite
+
+### ASDLFile Round-trip & Debug Features (New Requirements)
+- [ ] Add `save_to_file(filepath: str)` method to `ASDLFile` class
+- [ ] Add `to_yaml()` method to convert `ASDLFile` back to YAML string
+- [ ] Add `to_json()` method to `ASDLFile` class for debugging
+- [ ] Add `dump_json(filepath: str)` method to save JSON representation
+- [ ] Ensure round-trip preservation of YAML structure and data integrity (original `ASDLFile` only)
+- [ ] Write tests for round-trip functionality (YAML → ASDLFile → YAML) - original data only
+- [ ] Write tests for JSON serialization and debugging output
+- [ ] Document round-trip limitation: only guaranteed before pattern expansion/parameter resolution
+
+### Development Environment
+- [ ] Verify virtual environment setup
+- [ ] Install/verify all dependencies
+- [ ] Setup development tools (black, flake8, pytest)
+- [ ] Create initial source code structure
 
 ## Backlog
-- [ ] Implement hierarchical module flattening
-- [ ] Add support for technology file integration
-- [ ] Create validation system for ASDL syntax
-- [ ] Implement circuit optimization features
-- [ ] Add support for multiple output formats (Spectre, Verilog-AMS)
-- [ ] Create comprehensive test suite with sample circuits
-- [ ] Develop circuit library with common analog blocks
-- [ ] Create documentation and tutorials
-- [ ] Performance optimization for large circuits
-- [ ] Integration with existing EDA tools
-- [ ] Dataset curation for AI/ML training
-- [ ] Circuit visualization tools
-- [ ] Parameter sweeping and design space exploration
+
+### Enhanced Features
+- [ ] Support for multiple SPICE dialects (ngspice, spectre, etc.)
+- [ ] Validation and error checking for ASDL inputs
+- [ ] Layout intent handling and export
+- [ ] Parameter optimization hints
+- [ ] Hierarchical netlist support
+- [ ] Integration with circuit simulators
+- [ ] GUI or CLI interface for conversion
+- [ ] Port constraints implementation and processing
+- [ ] Advanced constraint validation and checking
+
+### Documentation & Examples
+- [ ] Create comprehensive API documentation
+- [ ] Add more example ASDL circuits
+- [ ] Create tutorial/getting started guide
+- [ ] Document design patterns and best practices
+
+### Testing & Quality
+- [ ] Unit tests for all core components
+- [ ] Integration tests with real circuits
+- [ ] Performance benchmarking
+- [ ] Code coverage analysis
+- [ ] Static type checking setup
 
 ## Completed Tasks
-- [x] Initial project structure analysis
-- [x] Virtual environment setup and activation
-- [x] Directory structure creation (src/, tests/, examples/, doc/, context/)
-- [x] Context files initialization (memory.md, todo.md)
-- [x] README.md creation with comprehensive project overview
-- [x] Requirements.txt with core dependencies (PyYAML, pytest, etc.)
-- [x] .gitignore file for Python project
-- [x] Dependencies installation
-- [x] File organization (moved examples and documentation to proper directories)
-- [x] ASDL YAML parser implementation with data models
-- [x] YAML syntax fixes for proper parsing of pattern and parameter syntax
-- [x] Comprehensive parser test suite (8/8 tests passing)
-- [x] Successfully parsing complete OTA two-stage example 
+- [X] Initial project structure review
+- [X] Context directory and files setup
+- [X] Project requirements analysis
+- [X] Schema field name update: `design_info` → `file_info`
+- [X] Basic data structure implementation with placeholders
+- [X] Processing pipeline class structure setup 

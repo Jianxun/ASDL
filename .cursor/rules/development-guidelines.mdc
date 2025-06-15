@@ -1,7 +1,7 @@
 ---
-description: Guidelines for Python development workflow with test-driven development and multi-session continuity - reference when planning tasks, writing tests, or implementing features
+description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 # Python Project Development Guidelines
 
@@ -25,9 +25,11 @@ This project follows a task-based and test-driven development approach across mu
 
 ### 2. Test-Driven Development Cycle
 - Write tests first that define the expected behavior
+- **Run tests immediately after creation to verify they fail appropriately**
 - Implement the minimum code needed to pass tests
-- Run tests to verify functionality
+- **Run tests again to verify they pass before moving to next test**
 - Refactor while maintaining test coverage
+- **Never proceed to next test file until current tests are green**
 
 ### 3. Python-Specific Practices
 - Follow PEP 8 style guidelines
@@ -40,7 +42,108 @@ This project follows a task-based and test-driven development approach across mu
 - Organize test files as `test_*.py` in the `/tests/` directory
 - Use pytest for test execution and assertions
 - For complex components, create subdirectories: `/tests/{component}/`
+- Break large test suites into focused modules for maintainability:
+  - Unit tests: `/tests/unit_tests/{component}/`
+  - Integration tests: `/tests/integration_tests/`
+  - Each test file should focus on a single aspect or feature
+  - Use descriptive names: `test_feature_name.py`
+- **Strict TDD Process**: Write one test file → Run it → Fix failures → Make it pass → Only then create next test file
 - Save test fixtures in separate files or a fixtures directory
+- Example structure for parser testing:
+  ```
+  tests/
+  ├── unit_tests/
+  │   └── parser/
+  │       ├── test_basic_parsing.py
+  │       ├── test_file_info.py
+  │       ├── test_models.py
+  │       └── test_modules.py
+  └── fixtures/
+      └── parser/
+          ├── valid_asdl_files/
+          └── invalid_asdl_files/
+  ```
+
+
+## Version Control Guidelines
+
+### Basic Commit Practices
+- Make frequent, atomic commits with descriptive messages
+- Use conventional commit format: `type(scope): description`
+- For multi-line commit messages, **completely rewrite** `.git_commit_message` file (don't append) and use `git commit -F .git_commit_message`
+- **CRITICAL**: Always delete `.git_commit_message` file after committing to prevent accidental appending
+- Ensure `.git_commit_message` is in .gitignore to avoid tracking temporary commit files
+- Ensure all tests pass before committing
+- Tag releases with semantic versioning (major.minor.patch)
+
+### Branching Strategy
+**CRITICAL RULE**: Separate different types of work into different branches:
+
+#### Branch Types and Naming
+- **Feature branches**: `feature_name` or `api_improvements` - New functionality or enhancements
+- **Test infrastructure**: `test_suite_development` - Testing framework, test organization, TDD setup
+- **Bug fixes**: `fix_issue_description` - Bug fixes and corrections
+- **Documentation**: `docs_update_description` - Documentation-only changes
+- **Repository maintenance**: `repo_cleanup` or `dependency_updates` - Housekeeping tasks
+
+#### Branch Management Rules
+1. **Single Purpose**: Each branch should have ONE clear purpose (testing OR features OR docs, not mixed)
+2. **Descriptive Names**: Branch names should clearly indicate their scope and purpose
+3. **Foundation First**: Merge infrastructure/testing branches before feature branches that depend on them
+4. **Clean History**: Keep branch history focused - avoid mixing unrelated commits
+5. **Prompt Cleanup**: Delete merged branches immediately after successful merge
+
+### Pull Request Strategy
+**Systematic Approach to PRs**:
+
+#### PR Sequencing
+1. **Infrastructure First**: Test frameworks, development guidelines, repository organization
+2. **Core Features Second**: Main functionality that other features depend on
+3. **Enhancement Features Third**: Additional features that build on core functionality
+4. **Documentation Last**: Comprehensive documentation after features are stable
+
+#### PR Best Practices
+- **Single Responsibility**: Each PR should address one logical area of work
+- **Complete Testing**: Include all necessary tests in the same PR as the feature
+- **Clear Description**: Explain what the PR does, why it's needed, and what testing was done
+- **Breaking Changes**: Clearly document any breaking changes in PR description
+- **Review Ready**: Ensure all tests pass and code is ready for production
+
+### Repository Hygiene
+**Maintaining Clean Repository State**:
+
+#### Branch Cleanup Process
+1. **After Merge**: Immediately delete the merged branch locally: `git branch -d branch_name`
+2. **Remote Cleanup**: Use `git remote prune origin` to clean stale remote tracking branches
+3. **Verification**: Regularly check `git branch -a` to ensure clean state
+4. **Archive Only**: Keep branches only if they contain unmerged work
+
+#### Repository Maintenance
+- **Regular Audits**: Periodically review and clean up old branches
+- **Stale Branch Detection**: Identify branches with old commit dates that may be obsolete
+- **Dependency Updates**: Separate PRs for dependency updates to avoid mixing with feature work
+- **Documentation Sync**: Ensure documentation branches are kept in sync with feature development
+
+### Branch Recovery and Reorganization
+**When Things Go Wrong**:
+
+#### Common Scenarios
+- **Mixed Work Types**: If infrastructure and feature work are mixed in one branch
+- **Wrong Base Branch**: If feature branch was created from wrong starting point
+- **Commit Organization**: If commits need to be reordered or separated
+
+#### Recovery Strategies
+1. **Branch Extraction**: Create new branch from specific commit: `git checkout -b new_branch commit_hash`
+2. **Reset and Rebuild**: Reset branch to earlier state: `git reset --hard commit_hash`
+3. **Cherry-pick**: Move specific commits: `git cherry-pick commit_hash`
+4. **Interactive Rebase**: Reorder/squash commits: `git rebase -i HEAD~n`
+
+#### Prevention Best Practices
+- **Plan Before Coding**: Decide branch purpose before starting work
+- **Single Focus Sessions**: Work on one type of task per development session
+- **Regular Commits**: Commit frequently with clear messages to enable easier reorganization
+- **Context Documentation**: Keep clear notes in context files about what each branch contains
+
 
 ## Cross-Session Continuity
 - Update context files at the end of each session:

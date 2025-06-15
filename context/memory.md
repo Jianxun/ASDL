@@ -1,56 +1,81 @@
 # Project Memory
 
 ## Project Overview
-ASDL (Analog Structured Description Language) is an intermediate representation for analog circuits that bridges the gap between human-friendly schematics and machine-friendly netlists. The goal is to create a YAML-based format that captures not only topological information but also structural and design intent information.
+ASDL (Analog Structured Description Language) is a Python project to build classes that represent structured circuit topologies. The main goal is to parse ASDL YAML files (defined by ASDL_schema_v0p4) into proper data structures and convert them to SPICE netlists that are simulatable with ngspice.
 
-The objective is to develop a plain text intermediate representation that:
-- Is more human-friendly than raw netlists but more machine-processable than schematics
-- Carries topological information AND structural/design intent
-- Can be used to curate datasets for training AI models for analog circuit design
-- Serves as a bridge between design tools and AI systems
+Key components:
+- YAML-based intermediate representation for analog circuits
+- Python classes to represent circuit hierarchy and structure  
+- YAML to SPICE netlist converter
+- Support for pattern expansion (differential pairs, arrays)
+- Parameter substitution system
+- Design intent capture
+
+Schema structure:
+- `file_info`: File metadata (top_module, doc, revision, author, date)
+- `models`: Device/component templates with PDK mappings
+- `modules`: Circuit hierarchy with ports, instances, and connectivity
 
 ## Current State
-- **Development environment**: Fully set up with Python virtual environment
-- **Project structure**: Standard Python project layout implemented
-- **Dependencies**: All required packages installed (PyYAML, pytest, black, flake8, etc.)
-- **Documentation**: README.md created with comprehensive project overview
-- **Context tracking**: memory.md and todo.md files established
-- **Example circuits**: Available in examples/ directory (ota_two_stg.yaml, ota_concise.yaml)
-- **Documentation**: Existing syntax guide and schema in doc/ directory
+- Project structure is established with virtual environment and basic dependencies
+- ASDL schema v0.4 is defined in `doc/ASDL_schema_v0p4`
+- README.md describes the project vision and basic usage
+- Dependencies include PyYAML, Click, pytest, and development tools
+- Context management system is being initialized
+- Planning phase: architecture analysis needed before implementation
 
 ## Key Decisions
-- Using YAML as the base format for ASDL due to its human readability and structured nature
-- Supporting hierarchical circuit descriptions with modular building blocks
-- Including parameter substitution (`${param}`) and pattern expansion (`MN_{P,N}`)
-- Maintaining design intent through `notes` sections and structured parameters
-- Supporting both flattened and hierarchical circuit representations
-- Following Python best practices with virtual environment and test-driven development
-- Using standard project structure: src/asdl/, tests/, examples/, doc/, context/
+- Using YAML as the human-readable intermediate representation format
+- Target output: SPICE netlists compatible with ngspice
+- Python-based implementation for flexibility and ecosystem integration
+- Modular design with separate parser, resolver, and generator components
+- Test-driven development approach specified in development guidelines
+
+### Architecture Decisions (Confirmed)
+1. **Pattern Expansion**: Keep patterns (`<p,n>`, `[3:0]`) in data structures, expand only during SPICE generation as explicit step (similar to Verilog elaboration)
+2. **Parameter Resolution**: Keep original expressions (`$param`), make parameter evaluation an explicit step
+3. **Model Mapping**: Use `model` field value as-is for PDK model card names
+4. **Port Constraints**: Placeholder implementation, defer until basics are working
+5. **Instance Intent**: Save as free-form dictionary metadata for later use
+6. **Module Hierarchy**: Each `module` translates to a `.subckt` definition
+7. **Implementation Approach**: Minimum viable product to get ASDL->SPICE flow working ASAP
+
+## Recent Changes
+- **Schema Update**: Changed `design_info` to `file_info` in ASDL schema v0.4 for semantic consistency
+- **Code Update**: Updated all Python classes and references to use `FileInfo` instead of `DesignInfo`
+- **Interface Analysis**: Defined clear interfaces between Parser → Expander → Resolver → Generator pipeline
+- **Future-Proofing Implementation**: Enhanced parser with comprehensive future-proofing capabilities including:
+  - Unknown field detection and handling (strict/lenient modes)
+  - Intent metadata preservation for extensible design annotations
+  - Backward compatibility with legacy schema versions  
+  - Flexible enum handling for future device types
+  - Comprehensive validation and error reporting
+- **Scope Refinement**: Simplified port constraints to placeholder implementation, moved advanced constraint features to backlog for later implementation
+
+## New Requirements
+### ASDLFile Round-trip Capability
+- **Requirement**: `ASDLFile` class must support round-trip YAML conversion (YAML → `ASDLFile` → YAML)
+- **Use Case**: Future modifications to `ASDLFile` instances need to be saved back to YAML format
+- **Implementation**: Add `save_to_file(filepath: str)` method to `ASDLFile` class
+- **Data Preservation**: Must preserve all original YAML structure, comments, and formatting where possible
+- **Limitation**: Round-trip is only guaranteed for **original/raw** `ASDLFile` instances (before pattern expansion and parameter resolution)
+- **Rationale**: After processing pipeline (expansion/resolution), the compact original representation is lost and cannot be recovered
+
+### ASDLFile Debug Functionality  
+- **Requirement**: `ASDLFile` class should provide debug/inspection capabilities
+- **Use Case**: Development and debugging of ASDL processing pipeline
+- **Implementation**: Add `to_json()` or `dump_json()` method to convert `ASDLFile` to JSON format
+- **Purpose**: Human-readable representation of internal data structures for debugging
 
 ## Open Questions
-- What SPICE simulators should be primarily targeted for netlist generation?
-- Should the converter support multiple output formats (SPICE, Spectre, Verilog-AMS)?
-- What level of optimization should be included in the conversion process?
-- How should we handle technology-specific device models in the YAML format?
-- What should be the primary AI/ML use cases for the dataset?
+1. **Class Structure Details**: Finalize the exact Python class definitions and their relationships
 
-## Technical Architecture
-- YAML anchors and aliases for device template reuse
-- Parameter resolution system for `${param}` expressions
-- Pattern expansion engine for `{p,n}` style instantiation
-- Hierarchical module system with net role declarations (in/out/io/internal)
-- Support for primitive devices (NMOS, PMOS, R, C, L) and custom modules
+2. **Pattern Syntax**: Confirm the exact syntax for pattern expansion (`<p,n>` vs `<P,N>`, `[3:0]` indexing)
 
-## Project Structure Established
-```
-ASDL/
-├── README.md              # Project overview and documentation
-├── requirements.txt       # Python dependencies
-├── .gitignore            # Git ignore patterns
-├── context/              # Project context tracking
-├── src/asdl/             # Main source code (ready for implementation)
-├── tests/                # Test suite directory
-├── examples/             # Example ASDL circuits
-├── doc/                  # Documentation and syntax guides
-└── dataset/              # Circuit dataset for AI training
-``` 
+3. **Parameter Expression**: What parameter expressions should we support (`$M`, `$M*4`, `$M+1`, etc.)?
+
+4. **Net Declaration**: How should we handle the `nets.internal` list and port-to-net relationships?
+
+5. **Error Handling**: What level of validation should we perform on the ASDL input?
+
+6. **SPICE Format**: Any specific SPICE formatting preferences or compatibility requirements? 
