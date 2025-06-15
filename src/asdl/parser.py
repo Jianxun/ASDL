@@ -73,7 +73,7 @@ class ASDLParser:
             raise ValueError("ASDL file must contain a YAML dictionary")
             
         # Parse each section
-        file_info = self._parse_file_info(data.get('file_info', {}))
+        file_info = self._parse_file_info(data)  # Pass full data to handle both file_info and design_info
         models = self._parse_models(data.get('models', {}))
         modules = self._parse_modules(data.get('modules', {}))
         
@@ -84,15 +84,26 @@ class ASDLParser:
         )
     
     def _parse_file_info(self, data: Dict[str, Any]) -> FileInfo:
-        """Parse file_info section."""
-        # TODO: Implement file_info parsing
-        # For now, provide defaults if missing
+        """
+        Parse file_info section.
+        
+        Handles both 'file_info' (v0.4) and 'design_info' (legacy) for backwards compatibility.
+        """
+        # Handle both legacy 'design_info' and new 'file_info' keys
+        file_info_data = data.get('file_info')
+        if file_info_data is None:
+            file_info_data = data.get('design_info', {})
+        
+        # Validate required fields
+        if not isinstance(file_info_data, dict):
+            raise ValueError("file_info/design_info must be a dictionary")
+        
         return FileInfo(
-            top_module=data.get('top_module', ''),
-            doc=data.get('doc', ''),
-            revision=data.get('revision', ''),
-            author=data.get('author', ''),
-            date=data.get('date', '')
+            top_module=file_info_data.get('top_module', ''),
+            doc=file_info_data.get('doc', ''),
+            revision=file_info_data.get('revision', ''),
+            author=file_info_data.get('author', ''),
+            date=file_info_data.get('date', '')
         )
     
     def _parse_models(self, data: Dict[str, Any]) -> Dict[str, DeviceModel]:
