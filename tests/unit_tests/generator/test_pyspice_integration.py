@@ -23,12 +23,43 @@ def inverter_asdl():
 
 def test_pyspice_parses_inverter_netlist(inverter_asdl):
     """Test that PySpice can parse the generated inverter SPICE netlist."""
+    import json
+    from pathlib import Path
+    from dataclasses import asdict
+    
     # Generate SPICE from the real inverter ASDL
     generator = SPICEGenerator()
     spice_output = generator.generate(inverter_asdl)
     
     print("Generated SPICE:")
     print(spice_output)
+    
+    # Save results for manual inspection
+    results_dir = Path(__file__).parent / "results"
+    results_dir.mkdir(exist_ok=True)
+    
+    # Save ASDL data as JSON with custom encoder for enums
+    from src.asdl.data_structures import DeviceType, PortDirection, SignalType
+    from enum import Enum
+    
+    class ASDLJSONEncoder(json.JSONEncoder):
+        def default(self, obj):
+            # Handle all enum types by converting to their string value
+            if isinstance(obj, Enum):
+                return obj.value
+            return super().default(obj)
+    
+    asdl_dict = asdict(inverter_asdl)
+    with open(results_dir / "inverter_asdl.json", "w") as f:
+        json.dump(asdl_dict, f, indent=2, cls=ASDLJSONEncoder)
+    
+    # Save generated SPICE netlist
+    with open(results_dir / "inverter_netlist.spice", "w") as f:
+        f.write(spice_output)
+    
+    print(f"Saved inspection files to: {results_dir}")
+    print(f"- ASDL JSON: {results_dir / 'inverter_asdl.json'}")
+    print(f"- SPICE Netlist: {results_dir / 'inverter_netlist.spice'}")
     
     # Parse with PySpice - should not raise an exception
     circuit = parse_spice_netlist(spice_output)
