@@ -40,11 +40,11 @@ class SPICEGenerator:
             "param_format": "bare"
         },
         DeviceType.NMOS: {
-            "template": "{name} {d} {g} {s} {b} {model} {params}",
+            "template": "{name} {D} {G} {S} {B} {model} {params}",
             "param_format": "named"
         },
         DeviceType.PMOS: {
-            "template": "{name} {d} {g} {s} {b} {model} {params}",
+            "template": "{name} {D} {G} {S} {B} {model} {params}",
             "param_format": "named"
         },
         DeviceType.DIODE: {
@@ -93,8 +93,9 @@ class SPICEGenerator:
         if asdl_file.file_info.top_module:
             top_module_name = asdl_file.file_info.top_module
             if top_module_name in asdl_file.modules:
+                top_module = asdl_file.modules[top_module_name]
                 lines.append(f"* Main circuit instantiation")
-                lines.append(f"XMAIN {self._get_top_level_nets()} {top_module_name}")
+                lines.append(f"XMAIN {self._get_top_level_nets(top_module)} {top_module_name}")
                 lines.append("")
         
         lines.append(".end")
@@ -256,15 +257,19 @@ class SPICEGenerator:
         # TODO: Preserve declaration order or use explicit ordering
         return sorted(module.ports.keys())
     
-    def _get_top_level_nets(self) -> str:
+    def _get_top_level_nets(self, module: Module = None) -> str:
         """
         Get net list for top-level instantiation.
         
-        TODO: Implement proper top-level net generation
-        This is a placeholder that needs to be refined based on
-        how we want to handle top-level connections.
+        For now, return the port list of the module being instantiated.
+        TODO: Implement proper top-level net generation with actual connections.
         """
-        return "vdd vss"  # Placeholder
+        if module and module.ports:
+            # Use the module's port names as top-level nets
+            port_list = self._get_port_list(module)
+            return " ".join(port_list)
+        else:
+            return "vdd vss"  # Fallback
     
     def _format_parameter_value(self, value: Any) -> str:
         """

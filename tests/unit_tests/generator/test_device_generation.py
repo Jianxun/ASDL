@@ -158,19 +158,19 @@ class TestDeviceGeneration:
 
     def test_generate_device_with_parameters(self):
         """Test device generation with multiple parameters (like MOSFET)."""
-        # Create an NMOS model with correct SPICE node order: Drain, Gate, Source, Bulk
+                # Create an NMOS model with correct SPICE node order: Drain, Gate, Source, Bulk
         nmos_model = DeviceModel(
             model="nch_lvt",
             type=DeviceType.NMOS,
-            ports=["d", "g", "s", "b"],  # SPICE order: Drain, Gate, Source, Bulk
+            ports=["D", "G", "S", "B"],  # SPICE order: Drain, Gate, Source, Bulk
             params={"L": "0.1u"},  # Default parameter
             description="NMOS transistor model"
         )
-        
+
         # Create an instance of the NMOS with specific parameters
         nmos_instance = Instance(
             model="nmos_device",
-            mappings={"d": "drain", "g": "gate", "s": "source", "b": "bulk"},
+            mappings={"D": "drain", "G": "gate", "S": "source", "B": "bulk"},
             parameters={"W": "1u", "M": "4"}  # Instance-specific parameters
         )
         
@@ -316,18 +316,18 @@ class TestDeviceGeneration:
     def test_spice_node_ordering_verification(self):
         """Test that all device types generate nodes in correct SPICE order."""
         
-        # Test PMOS: Should follow same order as NMOS (Drain, Gate, Source, Bulk)
+                # Test PMOS: Should follow same order as NMOS (Drain, Gate, Source, Bulk)
         pmos_model = DeviceModel(
             model="pch_lvt",
             type=DeviceType.PMOS,
-            ports=["d", "g", "s", "b"],  # SPICE order: Drain, Gate, Source, Bulk
+            ports=["D", "G", "S", "B"],  # SPICE order: Drain, Gate, Source, Bulk
             params={"L": "0.18u"},
             description="PMOS transistor model"
         )
-        
+
         pmos_instance = Instance(
             model="pmos_device",
-            mappings={"d": "vdd", "g": "gate_n", "s": "out", "b": "vdd"},
+            mappings={"D": "vdd", "G": "gate_n", "S": "out", "B": "vdd"},
         )
         
         # Test Resistor: Two terminals (plus/minus standard naming)
