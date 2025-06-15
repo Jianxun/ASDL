@@ -14,10 +14,15 @@
 ### Core Implementation (In Progress)
 - [X] Implement ASDL data structure classes (with future-proofing)
 - [X] Implement YAML parser for ASDL format (with extensibility features)
-- [ ] Implement pattern expansion system (`<p,n>`, `[3:0]`)
+- [ ] **Implement SPICE netlist generator (CURRENT PRIORITY)**
+  - [ ] Create SPICE generator test structure (`tests/unit_tests/generator/`)
+  - [ ] Implement basic SPICE generation (device lines, subcircuits)
+  - [ ] Handle module hierarchy and port ordering
+  - [ ] Add metadata comments and error handling
+  - [ ] Test with simple ASDL files (no patterns/parameters)
 - [ ] Implement parameter resolution system
-- [ ] Implement SPICE netlist generator
-- [ ] Create comprehensive test suite
+- [ ] Implement pattern expansion system (`<p,n>`, `[3:0]`)
+- [ ] Create comprehensive test suite for end-to-end pipeline
 
 ### ASDLFile Round-trip & Debug Features (New Requirements)
 - [ ] Add `save_to_file(filepath: str)` method to `ASDLFile` class

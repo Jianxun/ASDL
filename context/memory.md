@@ -51,6 +51,8 @@ Schema structure:
   - Flexible enum handling for future device types
   - Comprehensive validation and error reporting
 - **Scope Refinement**: Simplified port constraints to placeholder implementation, moved advanced constraint features to backlog for later implementation
+- **Parser Completion**: Successfully implemented complete ASDL parser with 44 passing tests using systematic TDD approach
+- **Priority Adjustment**: Decided to skip pattern expansion and implement SPICE generator next to achieve end-to-end functionality faster
 
 ## New Requirements
 ### ASDLFile Round-trip Capability
@@ -67,15 +69,20 @@ Schema structure:
 - **Implementation**: Add `to_json()` or `dump_json()` method to convert `ASDLFile` to JSON format
 - **Purpose**: Human-readable representation of internal data structures for debugging
 
-## Open Questions
-1. **Class Structure Details**: Finalize the exact Python class definitions and their relationships
+## Open Questions  
+1. **SPICE Format**: What specific SPICE formatting preferences or compatibility requirements for ngspice?
 
-2. **Pattern Syntax**: Confirm the exact syntax for pattern expansion (`<p,n>` vs `<P,N>`, `[3:0]` indexing)
+2. **Port Ordering**: How should we order ports in .subckt definitions? (alphabetical, declaration order, explicit ordering)
 
-3. **Parameter Expression**: What parameter expressions should we support (`$M`, `$M*4`, `$M+1`, etc.)?
+3. **Parameter Handling**: How should we handle unresolved parameter expressions during SPICE generation?
 
-4. **Net Declaration**: How should we handle the `nets.internal` list and port-to-net relationships?
+4. **Net Naming**: What conventions should we use for internal net names and port connections?
 
-5. **Error Handling**: What level of validation should we perform on the ASDL input?
+5. **Error Handling**: How should we handle unconnected ports and missing model references in SPICE output?
 
-6. **SPICE Format**: Any specific SPICE formatting preferences or compatibility requirements? 
+6. **SPICE Comments**: How much metadata (doc, intent) should be included as comments in generated SPICE?
+
+## Completed Questions
+- **Class Structure**: ✅ Implemented with comprehensive data structures
+- **Parser Implementation**: ✅ Complete with future-proofing and TDD
+- **Validation Level**: ✅ Implemented configurable strict/lenient validation 
