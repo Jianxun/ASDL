@@ -43,6 +43,22 @@ Schema structure:
 ## Recent Changes
 - **Schema Update**: Changed `design_info` to `file_info` in ASDL schema v0.4 for semantic consistency
 - **Code Update**: Updated all Python classes and references to use `FileInfo` instead of `DesignInfo`
+- **Interface Analysis**: Defined clear interfaces between Parser → Expander → Resolver → Generator pipeline
+
+## New Requirements
+### ASDLFile Round-trip Capability
+- **Requirement**: `ASDLFile` class must support round-trip YAML conversion (YAML → `ASDLFile` → YAML)
+- **Use Case**: Future modifications to `ASDLFile` instances need to be saved back to YAML format
+- **Implementation**: Add `save_to_file(filepath: str)` method to `ASDLFile` class
+- **Data Preservation**: Must preserve all original YAML structure, comments, and formatting where possible
+- **Limitation**: Round-trip is only guaranteed for **original/raw** `ASDLFile` instances (before pattern expansion and parameter resolution)
+- **Rationale**: After processing pipeline (expansion/resolution), the compact original representation is lost and cannot be recovered
+
+### ASDLFile Debug Functionality  
+- **Requirement**: `ASDLFile` class should provide debug/inspection capabilities
+- **Use Case**: Development and debugging of ASDL processing pipeline
+- **Implementation**: Add `to_json()` or `dump_json()` method to convert `ASDLFile` to JSON format
+- **Purpose**: Human-readable representation of internal data structures for debugging
 
 ## Open Questions
 1. **Class Structure Details**: Finalize the exact Python class definitions and their relationships

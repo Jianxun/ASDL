@@ -8,7 +8,7 @@
 - [X] Review architecture decisions with user
 - [X] Update schema field name from `design_info` to `file_info`
 - [X] Implement basic Python class definitions and data structures
-- [ ] Define interfaces between parser, resolver, and generator
+- [X] Define interfaces between parser, resolver, and generator
 - [ ] Create detailed implementation plan
 
 ### Core Implementation (Pending Architecture Decisions)
@@ -18,6 +18,16 @@
 - [ ] Implement parameter resolution system
 - [ ] Implement SPICE netlist generator
 - [ ] Create comprehensive test suite
+
+### ASDLFile Round-trip & Debug Features (New Requirements)
+- [ ] Add `save_to_file(filepath: str)` method to `ASDLFile` class
+- [ ] Add `to_yaml()` method to convert `ASDLFile` back to YAML string
+- [ ] Add `to_json()` method to `ASDLFile` class for debugging
+- [ ] Add `dump_json(filepath: str)` method to save JSON representation
+- [ ] Ensure round-trip preservation of YAML structure and data integrity (original `ASDLFile` only)
+- [ ] Write tests for round-trip functionality (YAML → ASDLFile → YAML) - original data only
+- [ ] Write tests for JSON serialization and debugging output
+- [ ] Document round-trip limitation: only guaranteed before pattern expansion/parameter resolution
 
 ### Development Environment
 - [ ] Verify virtual environment setup
