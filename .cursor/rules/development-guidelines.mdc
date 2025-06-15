@@ -25,9 +25,11 @@ This project follows a task-based and test-driven development approach across mu
 
 ### 2. Test-Driven Development Cycle
 - Write tests first that define the expected behavior
+- **Run tests immediately after creation to verify they fail appropriately**
 - Implement the minimum code needed to pass tests
-- Run tests to verify functionality
+- **Run tests again to verify they pass before moving to next test**
 - Refactor while maintaining test coverage
+- **Never proceed to next test file until current tests are green**
 
 ### 3. Python-Specific Practices
 - Follow PEP 8 style guidelines
@@ -40,7 +42,27 @@ This project follows a task-based and test-driven development approach across mu
 - Organize test files as `test_*.py` in the `/tests/` directory
 - Use pytest for test execution and assertions
 - For complex components, create subdirectories: `/tests/{component}/`
+- Break large test suites into focused modules for maintainability:
+  - Unit tests: `/tests/unit_tests/{component}/`
+  - Integration tests: `/tests/integration_tests/`
+  - Each test file should focus on a single aspect or feature
+  - Use descriptive names: `test_feature_name.py`
+- **Strict TDD Process**: Write one test file → Run it → Fix failures → Make it pass → Only then create next test file
 - Save test fixtures in separate files or a fixtures directory
+- Example structure for parser testing:
+  ```
+  tests/
+  ├── unit_tests/
+  │   └── parser/
+  │       ├── test_basic_parsing.py
+  │       ├── test_file_info.py
+  │       ├── test_models.py
+  │       └── test_modules.py
+  └── fixtures/
+      └── parser/
+          ├── valid_asdl_files/
+          └── invalid_asdl_files/
+  ```
 
 ## Cross-Session Continuity
 - Update context files at the end of each session:

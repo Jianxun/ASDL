@@ -14,7 +14,7 @@ from .data_structures import (
     PortDirection,
     SignalType,
     PortConstraints,
-    NetDeclaration,
+    Nets,
     Instance
 )
 
@@ -35,7 +35,7 @@ __all__ = [
     "PortDirection", 
     "SignalType",
     "PortConstraints",
-    "NetDeclaration",
+    "Nets",
     "Instance",
     # Processing pipeline
     "ASDLParser",
