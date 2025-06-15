@@ -1,0 +1,222 @@
+design_info:
+  top_module: two_stage_ota
+  doc: "Two-stage Miller-compensated operational transconductance amplifier"
+  revision: "v0.4"
+  author: "ASDL"
+  date: "2025-06-14"
+
+models:
+  nmos_unit:
+    model: nch_lvt
+    type: nmos
+    ports: [G, D, S, B]
+    params:
+      W: 1u
+      L: 0.1u
+    description: "NMOS transistor unit cell"
+
+  pmos_unit:
+    model: pch_lvt
+    type: pmos
+    ports: [G, D, S, B]
+    params:
+      W: 1u
+      L: 0.1u
+    description: "PMOS transistor unit cell"
+
+  cap_unit:
+    model: mimcap
+    type: capacitor
+    ports: [plus, minus]
+    params:
+      C: 1p
+    description: "Capacitor unit cell"
+
+  res_unit:
+    model: rpoly
+    type: resistor
+    ports: [plus, minus]
+    params:
+      R: 1k
+    description: "Resistor unit cell"
+
+modules:
+  diff_pair_stage:
+    doc: "First stage: Differential pair with current mirror load"
+    ports:
+      in_<p,n>:  {dir: in,  type: voltage, constraints: {common_mode: 0.6}}
+      out:       {dir: out, type: voltage}
+      vbn:       {dir: in,  type: voltage}
+      vss:       {dir: in_out, type: voltage}
+      vdd:       {dir: in_out, type: voltage, constraints: {Vdd: 1.8}}
+    nets:
+      internal: [tail, bias, out_p, out_n]
+    parameters:
+      M: 2
+    instances:
+      MN_<P,N>:
+        model: nmos_unit
+        mappings:
+          G_<p,n>: in_<p,n>
+          D_<p,n>: out_<p,n>
+          S_<p,n>: tail
+          B_<p,n>: vss
+        parameters:
+          M: $M
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 10
+            nominal_current: 100u
+          layout:
+            type: quad_common_centroid
+            match_group: diff_core
+            symmetry: quad
+
+      MN_TAIL:
+        model: nmos_unit
+        mappings: {G: vbn, D: tail, S: vss, B: vss}
+        parameters:
+          M: $M*4
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 10
+            nominal_current: 100u
+          layout:
+            type: match_with_bias_diode
+            symmetry: none
+
+      MP_REF:
+        model: pmos_unit
+        mappings: {G: bias, D: bias, S: vdd, B: vdd}
+        parameters:
+          M: $M*2
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 10
+            nominal_current: 100u
+          layout:
+            type: match_with_output
+            symmetry: none
+
+      MP_<P,N>:
+        model: pmos_unit
+        mappings:
+          G_<p,n>: bias
+          D_<p,n>: out_<p,n>
+          S_<p,n>: vdd
+          B_<p,n>: vdd
+        parameters:
+          M: $M*2
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 10
+            nominal_current: 100u
+          layout:
+            type: match_with_reference
+            symmetry: quad
+
+  common_source_stage:
+    doc: "Second stage: PMOS Common source amplifier with NMOS current source load"
+    ports:
+      in:      {dir: in,  type: voltage}
+      out:     {dir: out, type: voltage}
+      vbn:     {dir: in,  type: voltage}
+      vss:     {dir: in_out, type: voltage}
+      vdd:     {dir: in_out, type: voltage, constraints: {Vdd: 1.8}}
+    parameters:
+      M: 4
+    instances:
+      MP_CS:
+        model: pmos_unit
+        mappings: {G: in, D: out, S: vdd, B: vdd}
+        parameters:
+          M: $M
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 8
+            nominal_current: 200u
+          layout:
+            type: single
+            symmetry: none
+
+      MN_LOAD:
+        model: nmos_unit
+        mappings: {G: vbn, D: out, S: vss, B: vss}
+        parameters:
+          M: $M*2
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 8
+            nominal_current: 200u
+          layout:
+            type: single
+            symmetry: none
+
+  miller_comp:
+    doc: "Miller compensation network"
+    ports:
+      in:      {dir: in,  type: voltage}
+      out:     {dir: out, type: voltage}
+      vss:     {dir: in_out, type: voltage}
+    parameters:
+      Cc: 2p
+      Rc: 1k
+    instances:
+      CC:
+        model: cap_unit
+        mappings: {plus: in, minus: out}
+        parameters:
+          C: $Cc
+        intent:
+          type: miller_comp
+
+      RC:
+        model: res_unit
+        mappings: {plus: out, minus: vss}
+        parameters:
+          R: $Rc
+        intent:
+          type: miller_zero
+
+  two_stage_ota:
+    doc: "Two-stage Miller-compensated operational transconductance amplifier"
+    ports:
+      in_<p,n>:  {dir: in,  type: voltage, constraints: {common_mode: 0.6}}
+      out:       {dir: out, type: voltage}
+      vbn:       {dir: in,  type: voltage}
+      vss:       {dir: in_out, type: voltage}
+      vdd:       {dir: in_out, type: voltage, constraints: {Vdd: 1.8}}
+    nets:
+      internal: [first_stage_out]
+    parameters:
+      M: 2
+    instances:
+      FIRST_STAGE:
+        model: diff_pair_stage
+        mappings:
+          in_<p,n>: in_<p,n>
+          out: first_stage_out
+          vbn: vbn
+          vss: vss
+          vdd: vdd
+        parameters:
+          M: $M
+
+      SECOND_STAGE:
+        model: common_source_stage
+        mappings: {in: first_stage_out, out: out, vbn: vbn, vss: vss, vdd: vdd}
+        parameters:
+          M: $M*2
+
+      COMP:
+        model: miller_comp
+        mappings: {in: first_stage_out, out: out, vss: vss}
+        parameters:
+          Cc: 2p
+          Rc: 1k 

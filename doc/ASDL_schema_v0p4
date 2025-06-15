@@ -1,0 +1,166 @@
+# ────────────────────────────────────────────────────────────────────────────────
+#  ASDL-YAML Schema (v0.4)  —  Analog Structural Description Language
+#  Description for LLM reasoning — with expansion rules for differential and bus patterns
+# ────────────────────────────────────────────────────────────────────────────────
+
+design_info:
+  top_module: <module_id>              # Entry point module name for the circuit design
+  doc: <string>                        # Human-readable description of the design file
+  revision: <string>                   # Version tag (e.g. "v0.4")
+  author: <string>                     # Author's name
+  date: <YYYY-MM-DD>                   # Date in ISO 8601 format
+
+models:
+  <model_alias>:                       # Logical name used in the design (e.g. "nmos_unit")
+    model: <string>                    # PDK-specific primitive model (e.g. "nch_lvt")
+    type: nmos|pmos|resistor|capacitor|diode|...
+    ports: [<port1>, <port2>, ...]     # Ordered terminal list (for positional mapping)
+    params:
+      <param>: <value>                 # Default parameters (e.g., W, L, C)
+    description: <string>              # Optional explanation of the device
+
+modules:
+  <module_id>:
+    doc: <string>                      # Description of module functionality
+
+    ports:
+      # One-line format (preferred for simple ports)
+      <port_name>: {dir: in|out|in_out, type: voltage|current|digital, constraints: {common_mode: <value>, swing: {min: <ΔV>, max: <ΔV>}}}
+      
+      # Multi-line format (preferred for complex ports with many constraints)
+      <port_name>:
+        dir: in|out|in_out
+        type: voltage|current|digital
+        constraints:
+          common_mode: <value>
+          swing:
+            min: <ΔV>
+            max: <ΔV>
+          # Additional constraints as needed
+
+    nets:
+      internal: [<net_name>, …]
+
+    parameters:
+      <param>: <value or expression>
+
+    instances:
+      <instance_id or pattern>:
+        model: <model_alias or module_id>
+        mappings: {<port>: <net>, ...}  # One-line format for simple mappings
+        # OR
+        mappings:                       # Multi-line format for expanded mappings
+          <port_pattern>: <net_pattern>
+        parameters:
+          <param>: <value>
+        intent:
+          op:
+            region: saturation|subthreshold|triode
+            gm_over_Id: <value>        # Units: 1/V
+            nominal_current: <value>   # Units: A
+          layout:
+            type: <string>             # Layout style (e.g., "quad_common_centroid")
+            match_group: <string>      # Symmetry or matching tag
+            symmetry: diff|quad|mirror|none
+
+# ───────────────────────────────────────────
+# FORMAT PREFERENCES & EXAMPLES
+# ───────────────────────────────────────────
+
+# 1. Port Definitions
+#    a. One-line format (preferred for simple ports):
+#       ports:
+#         in_<p,n>:  {dir: in,  type: voltage, constraints: {common_mode: 0.6}}
+#         out:       {dir: out, type: voltage}
+#         vdd:       {dir: in_out, type: voltage, constraints: {Vdd: 1.8}}
+#
+#    b. Multi-line format (preferred for complex ports):
+#       ports:
+#         in_<p,n>:
+#           dir: in
+#           type: voltage
+#           constraints:
+#             common_mode: 0.6
+#             swing:
+#               min: 0.3
+#               max: 0.9
+
+# 2. Simple Mappings (One-line format)
+#    mappings: {G: vbn, D: tail, S: vss, B: vss}
+#    mappings: {plus: in, minus: out}
+
+# 3. Expanded Mappings (Multi-line format)
+#    mappings:
+#      G_<p,n>:  in_<p,n>
+#      D_<p,n>:  out_<p,n>
+#      S_<p,n>:  tail
+
+# 4. Terminal Naming
+#    - Use plus/minus for capacitor/resistor terminals
+#    - Use G/D/S/B for transistor terminals
+
+# ───────────────────────────────────────────
+# NAMING & EXPANSION RULES — MUST BE FOLLOWED
+# ───────────────────────────────────────────
+
+# 1. Angle Brackets <...>: Differential or symbolic pattern expansion
+#    Syntax: name_<a,b> expands into two identifiers: name_a, name_b
+#    Use cases: ports, nets, instance names, or keys/values in mappings
+#
+#    Example:
+#      in_<p,n> → in_p, in_n
+#      MN_<P,N> → MN_P, MN_N
+#
+#    Used to declare symmetric structures (e.g., differential pairs)
+
+# 2. Square Brackets [...]: Bus or array expansion
+#    Syntax: name[3:0] expands into: name[3], name[2], name[1], name[0]
+#    Use cases: ports, nets, or instances representing vector signals or arrays
+
+# 3. Expansion in `mappings` is **order matched, not value matched**
+#    That is, positional index i in the expanded key maps to the i-th element in the expanded value,
+#    even if suffixes differ.
+#
+#    Example (polarity inversion):
+#      mappings:
+#        D_<p,n>: out_<n,p>
+#
+#    Expands to:
+#        D_p: out_n
+#        D_n: out_p
+#
+#    Likewise:
+#      mappings:
+#        G_<p,n>:  in_<p,n>         # G_p → in_p, G_n → in_n
+#        S_<p,n>:  tail             # S_p → tail, S_n → tail (broadcasted)
+#
+#    Values can be scalars or single-entry patterns, in which case they are broadcast to all expanded keys.
+
+# 4. Symbol substitution:
+#    Any `$param_name` expression is replaced by the value of the corresponding module parameter.
+
+# 5. Expansion symmetry is **semantic** and optional:
+#    You may declare:
+#      expansion_type: diff
+#    or
+#      layout.symmetry: quad
+#    as optional metadata to assist LLMs or rendering/layout tools in understanding structure.
+
+# ─────────────────────────────
+# EXAMPLE (Differential NMOS)
+# ─────────────────────────────
+
+# diff_pair_nmos:
+#   ports:
+#     in_<p,n>:  {dir: in,  type: voltage}
+#     out_<p,n>: {dir: out, type: voltage}
+#     tail:      {dir: in_out, type: voltage}
+#     vss:       {dir: in_out, type: voltage}
+#   instances:
+#     MN_<P,N>:
+#       model: nmos_unit
+#       mappings:
+#         G_<p,n>:  in_<p,n>
+#         D_<p,n>:  out_<n,p>      # Order-matched → polarity swap
+#         S_<p,n>:  tail
+#         B_<p,n>:  vss
