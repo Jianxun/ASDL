@@ -3,7 +3,7 @@
 #  Description for LLM reasoning — with expansion rules for differential and bus patterns
 # ────────────────────────────────────────────────────────────────────────────────
 
-design_info:
+file_info:
   top_module: <module_id>              # Entry point module name for the circuit design
   doc: <string>                        # Human-readable description of the design file
   revision: <string>                   # Version tag (e.g. "v0.4")

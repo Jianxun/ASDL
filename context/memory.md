@@ -11,6 +11,11 @@ Key components:
 - Parameter substitution system
 - Design intent capture
 
+Schema structure:
+- `file_info`: File metadata (top_module, doc, revision, author, date)
+- `models`: Device/component templates with PDK mappings
+- `modules`: Circuit hierarchy with ports, instances, and connectivity
+
 ## Current State
 - Project structure is established with virtual environment and basic dependencies
 - ASDL schema v0.4 is defined in `doc/ASDL_schema_v0p4`
@@ -34,6 +39,10 @@ Key components:
 5. **Instance Intent**: Save as free-form dictionary metadata for later use
 6. **Module Hierarchy**: Each `module` translates to a `.subckt` definition
 7. **Implementation Approach**: Minimum viable product to get ASDL->SPICE flow working ASAP
+
+## Recent Changes
+- **Schema Update**: Changed `design_info` to `file_info` in ASDL schema v0.4 for semantic consistency
+- **Code Update**: Updated all Python classes and references to use `FileInfo` instead of `DesignInfo`
 
 ## Open Questions
 1. **Class Structure Details**: Finalize the exact Python class definitions and their relationships

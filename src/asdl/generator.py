@@ -1,0 +1,214 @@
+"""
+SPICE netlist generation implementation for ASDL.
+
+Generates SPICE netlists from elaborated ASDL designs where patterns
+have been expanded and parameters have been resolved.
+"""
+
+from typing import Dict, List, Any, Optional
+from .data_structures import ASDLFile, Module, Instance, DeviceModel
+
+
+class SPICEGenerator:
+    """
+    SPICE netlist generator for ASDL designs.
+    
+    Generates SPICE netlists from fully elaborated designs:
+    - Each Module becomes a .subckt definition
+    - Device instances become device lines
+    - Module instances become subcircuit calls (X-lines)
+    - Hierarchical netlists with proper subcircuit structure
+    """
+    
+    def __init__(self):
+        """Initialize SPICE generator with default settings."""
+        self.comment_style = "*"  # SPICE comment character
+        self.indent = "  "        # Indentation for readability
+    
+    def generate(self, asdl_file: ASDLFile) -> str:
+        """
+        Generate complete SPICE netlist from ASDL design.
+        
+        Args:
+            asdl_file: Fully elaborated ASDL design
+            
+        Returns:
+            Complete SPICE netlist as string
+        """
+        lines = []
+        
+        # Add header comment
+        lines.append(f"* SPICE netlist generated from ASDL")
+        lines.append(f"* Design: {asdl_file.file_info.doc}")
+        lines.append(f"* Author: {asdl_file.file_info.author}")
+        lines.append(f"* Date: {asdl_file.file_info.date}")
+        lines.append(f"* Revision: {asdl_file.file_info.revision}")
+        lines.append("")
+        
+        # Generate subcircuit definitions for all modules
+        for module_name, module in asdl_file.modules.items():
+            subckt_def = self.generate_subckt(module, module_name, asdl_file)
+            lines.append(subckt_def)
+            lines.append("")
+        
+        # Add main circuit instantiation if top_module is specified
+        if asdl_file.file_info.top_module:
+            top_module_name = asdl_file.file_info.top_module
+            if top_module_name in asdl_file.modules:
+                lines.append(f"* Main circuit instantiation")
+                lines.append(f"XMAIN {self._get_top_level_nets()} {top_module_name}")
+                lines.append("")
+        
+        lines.append(".end")
+        
+        return "\n".join(lines)
+    
+    def generate_subckt(self, module: Module, module_name: str, 
+                       asdl_file: ASDLFile) -> str:
+        """
+        Generate .subckt definition for a module.
+        
+        Args:
+            module: Module to generate subcircuit for
+            module_name: Name of the module
+            asdl_file: Full ASDL design for context
+            
+        Returns:
+            SPICE subcircuit definition as string
+        """
+        lines = []
+        
+        # Add module documentation
+        if module.doc:
+            lines.append(f"* {module.doc}")
+        
+        # Generate .subckt header
+        port_list = self._get_port_list(module)
+        lines.append(f".subckt {module_name} {' '.join(port_list)}")
+        
+        # Generate instances
+        if module.instances:
+            for instance_id, instance in module.instances.items():
+                instance_line = self.generate_instance(
+                    instance_id, instance, asdl_file
+                )
+                lines.append(f"{self.indent}{instance_line}")
+        
+        # Close subcircuit
+        lines.append(".ends")
+        
+        return "\n".join(lines)
+    
+    def generate_instance(self, instance_id: str, instance: Instance, 
+                         asdl_file: ASDLFile) -> str:
+        """
+        Generate SPICE line for an instance.
+        
+        Args:
+            instance_id: Instance identifier
+            instance: Instance definition
+            asdl_file: Full ASDL design for context
+            
+        Returns:
+            SPICE instance line as string
+        """
+        if instance.is_device_instance(asdl_file):
+            return self._generate_device_line(instance_id, instance, asdl_file)
+        elif instance.is_module_instance(asdl_file):
+            return self._generate_subckt_call(instance_id, instance, asdl_file)
+        else:
+            raise ValueError(f"Unknown model reference: {instance.model}")
+    
+    def _generate_device_line(self, instance_id: str, instance: Instance, 
+                             asdl_file: ASDLFile) -> str:
+        """
+        Generate device line for a primitive device instance.
+        
+        Format: <name> <nodes> <model> <parameters>
+        Example: MN1 drain gate source bulk nch_lvt W=1u L=0.1u M=1
+        """
+        device_model = asdl_file.models[instance.model]
+        
+        # Get node connections in port order
+        node_list = []
+        for port in device_model.ports:
+            if port in instance.mappings:
+                node_list.append(instance.mappings[port])
+            else:
+                # TODO: Better error handling
+                node_list.append("UNCONNECTED")
+        
+        # Build parameter string
+        param_parts = []
+        
+        # Add device model parameters (with defaults)
+        for param_name, param_value in device_model.params.items():
+            param_parts.append(f"{param_name}={param_value}")
+        
+        # Override with instance parameters
+        if instance.parameters:
+            for param_name, param_value in instance.parameters.items():
+                param_parts.append(f"{param_name}={param_value}")
+        
+        # Format: name nodes model parameters
+        return f"{instance_id} {' '.join(node_list)} {device_model.model} {' '.join(param_parts)}"
+    
+    def _generate_subckt_call(self, instance_id: str, instance: Instance, 
+                             asdl_file: ASDLFile) -> str:
+        """
+        Generate subcircuit call for a module instance.
+        
+        Format: X<name> <nodes> <subckt_name>
+        Example: XINV1 in out vdd vss inverter
+        """
+        module = asdl_file.modules[instance.model]
+        
+        # Get node connections in port order
+        node_list = []
+        port_list = self._get_port_list(module)
+        
+        for port_name in port_list:
+            if port_name in instance.mappings:
+                node_list.append(instance.mappings[port_name])
+            else:
+                # TODO: Better error handling
+                node_list.append("UNCONNECTED")
+        
+        # Format: Xname nodes subckt_name
+        return f"X{instance_id} {' '.join(node_list)} {instance.model}"
+    
+    def _get_port_list(self, module: Module) -> List[str]:
+        """
+        Get ordered list of port names for a module.
+        
+        TODO: Define port ordering convention (alphabetical? declaration order?)
+        """
+        if not module.ports:
+            return []
+        
+        # For now, use alphabetical order
+        # TODO: Preserve declaration order or use explicit ordering
+        return sorted(module.ports.keys())
+    
+    def _get_top_level_nets(self) -> str:
+        """
+        Get net list for top-level instantiation.
+        
+        TODO: Implement proper top-level net generation
+        This is a placeholder that needs to be refined based on
+        how we want to handle top-level connections.
+        """
+        return "vdd vss"  # Placeholder
+    
+    def _format_parameter_value(self, value: Any) -> str:
+        """
+        Format parameter value for SPICE output.
+        
+        Handles different value types and units.
+        """
+        if isinstance(value, str):
+            return value
+        elif isinstance(value, (int, float)):
+            return str(value)
+        else:
+            return str(value) 
