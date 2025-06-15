@@ -44,6 +44,13 @@ Schema structure:
 - **Schema Update**: Changed `design_info` to `file_info` in ASDL schema v0.4 for semantic consistency
 - **Code Update**: Updated all Python classes and references to use `FileInfo` instead of `DesignInfo`
 - **Interface Analysis**: Defined clear interfaces between Parser → Expander → Resolver → Generator pipeline
+- **Future-Proofing Implementation**: Enhanced parser with comprehensive future-proofing capabilities including:
+  - Unknown field detection and handling (strict/lenient modes)
+  - Intent metadata preservation for extensible design annotations
+  - Backward compatibility with legacy schema versions  
+  - Flexible enum handling for future device types
+  - Comprehensive validation and error reporting
+- **Scope Refinement**: Simplified port constraints to placeholder implementation, moved advanced constraint features to backlog for later implementation
 
 ## New Requirements
 ### ASDLFile Round-trip Capability

@@ -135,7 +135,23 @@ class DeviceType(Enum):
     RESISTOR = "resistor"
     CAPACITOR = "capacitor"
     DIODE = "diode"
+    # Future device types for extensibility
+    AMPLIFIER = "amplifier"
+    INDUCTOR = "inductor"
+    TRANSMISSION_LINE = "transmission_line"
+    CURRENT_SOURCE = "current_source"
+    VOLTAGE_SOURCE = "voltage_source"
     # Add more device types as needed
+    
+    @classmethod
+    def _missing_(cls, value):
+        """Handle unknown device types gracefully."""
+        # Create a pseudo-enum member for unknown types
+        # This allows parsing to continue while preserving the original value
+        pseudo_member = object.__new__(cls)
+        pseudo_member._name_ = f"UNKNOWN_{value.upper()}"
+        pseudo_member._value_ = value
+        return pseudo_member
 
 
 @dataclass
@@ -176,10 +192,10 @@ class PortConstraints:
     """
     Port constraint specification (placeholder implementation).
     
-    Constraints are stored as a flexible dictionary for future implementation.
+    Constraints are stored as raw data for future implementation.
     This allows us to defer constraint handling while preserving the data.
     """
-    constraints: Dict[str, Any]
+    constraints: Any  # Store raw constraint data as-is
 
 
 @dataclass
@@ -196,7 +212,7 @@ class Port:
 
 
 @dataclass
-class NetDeclaration:
+class Nets:
     """
     Net declaration for module (optional).
     
@@ -232,6 +248,13 @@ class Instance:
     
     Mappings and parameters may contain patterns and expressions that will
     be resolved during the expansion and resolution phases.
+    
+    The intent field provides extensible metadata storage for:
+    - Design intent annotations: {"purpose": "current mirror", "matching": "critical"}
+    - Layout hints: {"placement": "symmetric", "routing": "minimize_parasitic"}
+    - Optimization directives: {"optimize": ["power", "area"], "constraint": "speed"}
+    - Tool-specific metadata: {"simulator": "spectre", "model_opts": {...}}
+    - Future extensions: Any additional fields can be preserved here
     """
     model: str                                # References DeviceModel alias or Module name
     mappings: Dict[str, str]                  # Port-to-net mapping (may contain patterns)
@@ -261,6 +284,6 @@ class Module:
     """
     doc: Optional[str] = None
     ports: Optional[Dict[str, Port]] = None               # port_name -> Port (may contain patterns)
-    nets: Optional[NetDeclaration] = None                 # Net declarations
+    nets: Optional[Nets] = None                 # Net declarations
     parameters: Optional[Dict[str, Any]] = None           # Module parameters  
     instances: Optional[Dict[str, Instance]] = None       # instance_id -> Instance 

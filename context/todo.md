@@ -9,11 +9,11 @@
 - [X] Update schema field name from `design_info` to `file_info`
 - [X] Implement basic Python class definitions and data structures
 - [X] Define interfaces between parser, resolver, and generator
-- [ ] Create detailed implementation plan
+- [X] Create detailed implementation plan
 
-### Core Implementation (Pending Architecture Decisions)
-- [ ] Implement ASDL data structure classes
-- [ ] Implement YAML parser for ASDL format
+### Core Implementation (In Progress)
+- [X] Implement ASDL data structure classes (with future-proofing)
+- [X] Implement YAML parser for ASDL format (with extensibility features)
 - [ ] Implement pattern expansion system (`<p,n>`, `[3:0]`)
 - [ ] Implement parameter resolution system
 - [ ] Implement SPICE netlist generator
@@ -45,6 +45,8 @@
 - [ ] Hierarchical netlist support
 - [ ] Integration with circuit simulators
 - [ ] GUI or CLI interface for conversion
+- [ ] Port constraints implementation and processing
+- [ ] Advanced constraint validation and checking
 
 ### Documentation & Examples
 - [ ] Create comprehensive API documentation
