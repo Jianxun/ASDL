@@ -201,15 +201,18 @@ class ASDLParser:
             
             modules[module_id] = Module(
                 doc=module_data.get('doc'),
-                ports=self._parse_ports(module_data.get('ports', {}), module_id),
+                ports=self._parse_ports(module_data.get('ports'), module_id) if 'ports' in module_data else None,
                 nets=self._parse_nets(module_data.get('nets'), module_id),
                 parameters=module_data.get('parameters'),
-                instances=self._parse_instances(module_data.get('instances', {}), module_id)
+                instances=self._parse_instances(module_data.get('instances'), module_id) if 'instances' in module_data else None
             )
         return modules
     
-    def _parse_ports(self, data: Dict[str, Any], context: str) -> Dict[str, Port]:
+    def _parse_ports(self, data: Optional[Dict[str, Any]], context: str) -> Optional[Dict[str, Port]]:
         """Parse ports section with validation."""
+        if data is None:
+            return None
+            
         ports = {}
         for port_name, port_data in data.items():
             if isinstance(port_data, dict):
@@ -277,8 +280,11 @@ class ASDLParser:
             else:
                 return Nets(internal=[str(data)])
     
-    def _parse_instances(self, data: Dict[str, Any], context: str) -> Dict[str, Instance]:
+    def _parse_instances(self, data: Optional[Dict[str, Any]], context: str) -> Optional[Dict[str, Instance]]:
         """Parse instances section with intent preservation."""
+        if data is None:
+            return None
+            
         instances = {}
         for instance_id, instance_data in data.items():
             if not isinstance(instance_data, dict):
