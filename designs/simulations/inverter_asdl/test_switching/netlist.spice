@@ -1,4 +1,23 @@
-* SPICE netlist generated from ASDL
+
+    * ---------------- Model Files ----------------
+    .include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+    .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+    
+    * ---------------- Power Supplies ----------------
+    V_vss vss 0 0
+    V_vdd vdd 0 3.3
+    
+    * ---------------- Pulse Stimulus ----------------
+    V_in in 0 PULSE(0 3.3 1e-09 1e-10 1e-10 5e-09 1e-08)
+    
+    * ---------------- Transient Analysis ----------------
+    .control
+    save all
+    TRAN 1e-10 5e-08 0
+    write /foss/designs/simulations/inverter_asdl/test_switching/switching.raw
+    .endc
+
+    * SPICE netlist generated from ASDL
 * Design: Basic CMOS inverter
 * Author: ASDL
 * Date: 2024-03-19

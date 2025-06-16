@@ -17,13 +17,22 @@ Schema structure:
 - `modules`: Circuit hierarchy with ports, instances, and connectivity
 
 ## Current State
-**🎉 Phase 3 COMPLETE**: Parameter Handling Enhancement for Passive Devices
+**🎉 Phase 4 COMPLETE**: ngspice Simulation Testing & User Workflow Validation
 - ✅ **Phase 1**: ASDL Parser + SPICE Generator + PySpice Integration (44+7+6=57 tests)
 - ✅ **Phase 2**: Hierarchical Subcircuit Implementation (15/21 functional tests passing)
 - ✅ **Phase 3**: Parameter Handling Enhancement (NEW DEVICE_LINE APPROACH)
-- 🔄 **Next Phase**: ngspice Simulation Testing
+- ✅ **Phase 4**: ngspice Simulation Testing (PERFECT USER WORKFLOW VALIDATED)
+- 🔄 **Next Phase**: Pattern Expansion & Advanced Features
 
-### Phase 3 Achievements
+### Phase 4 Achievements: End-to-End Simulation Validation ✅
+- ✅ **Perfect User Workflow**: xschem → netlist → copy device_line → ASDL → SPICE → ngspice (ZERO manual intervention)
+- ✅ **ngspice Expression Handling**: Expressions preserved exactly as-is from xschem netlists work perfectly
+- ✅ **Devcontainer Enhancement**: Full repository mounted at `/foss/asdl` with EDA tools properly configured
+- ✅ **Complete Testbench Suite**: 6 simulation types validated (OP, DC transfer, switching, AC, propagation delay, load capacitance)
+- ✅ **PDK Integration**: GF180MCU PDK models (`nfet_03v3`, `pfet_03v3`) working correctly
+- ✅ **Smart Expression Resolution**: ngspice automatically resolves `ad='int((nf+1)/2) * W/nf * 0.18u'` using hard-coded values from same line
+
+### Phase 3 Achievements: Enhanced Parameter Handling
 - ✅ **Enhanced Schema**: New `device_line` + `parameters` approach for robust PDK integration
 - ✅ **Consistent Field Names**: Standardized `doc` field across models and modules  
 - ✅ **Automatic Parameter Generation**: Parameters auto-appended to device lines
@@ -143,13 +152,15 @@ X_MP in out vdd vdd pmos_unit M=2      # Parameter override at instance level
 ```
 
 ## Open Questions  
-1. **ngspice Simulation**: How well do our generated netlists simulate in ngspice? What simulation setup is needed?
+1. **Pattern Expansion**: How should we implement `<p,n>` and `[3:0]` pattern expansion while maintaining user workflow simplicity?
 
-2. **Net Naming**: What conventions should we use for internal net names and port connections?
+2. **Parameter Resolution**: What's the best approach for `$param` variable substitution in complex expressions?
 
-3. **Error Handling**: How should we handle unconnected ports and missing model references in SPICE output?
+3. **Net Naming**: What conventions should we use for internal net names and port connections?
 
-4. **SPICE Comments**: How much metadata (doc, intent) should be included as comments in generated SPICE?
+4. **Error Handling**: How should we handle unconnected ports and missing model references in SPICE output?
+
+5. **SPICE Comments**: How much metadata (doc, intent) should be included as comments in generated SPICE?
 
 ## Backlog Items
 - **Pattern Expansion**: Implement `<p,n>` and `[3:0]` pattern expansion
