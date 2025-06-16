@@ -159,14 +159,37 @@ class DeviceModel:
     """
     Device template that maps to PDK primitives.
     
-    The 'model' field contains the exact PDK model name to use in SPICE,
-    and will be used as-is without any transformation.
+    Two approaches supported:
+    1. New robust approach: Use 'device_line' with PDK-exact device definition + 'parameters'
+    2. Legacy approach: Use 'model' + 'params' (for backward compatibility)
+    
+    If 'device_line' is present, it takes precedence over legacy fields.
     """
-    model: str                        # PDK model name (used as-is in SPICE)
-    type: DeviceType                  # Device type classification
-    ports: List[str]                  # Terminal order [G, D, S, B]
-    params: Dict[str, Any]            # Default parameters
-    description: Optional[str] = None # Optional description
+    type: DeviceType                         # Device type classification
+    ports: List[str]                         # Terminal order [G, D, S, B]
+    description: Optional[str] = None        # Optional description
+    
+    # NEW: Robust PDK approach (preferred)
+    device_line: Optional[str] = None        # Raw PDK device line with {placeholders}
+    parameters: Optional[Dict[str, str]] = None  # Parameterizable values with defaults
+    
+    # LEGACY: Simple approach (backward compatibility)
+    model: Optional[str] = None              # PDK model name (used as-is in SPICE)
+    params: Optional[Dict[str, Any]] = None  # Default parameters
+    
+    def has_device_line(self) -> bool:
+        """Check if this model uses the new device_line approach."""
+        return self.device_line is not None
+    
+    def get_parameter_defaults(self) -> Dict[str, str]:
+        """Get parameter defaults, preferring new 'parameters' over legacy 'params'."""
+        if self.parameters:
+            return self.parameters
+        elif self.params:
+            # Convert legacy params to string format for consistency
+            return {k: str(v) for k, v in self.params.items()}
+        else:
+            return {}
 
 
 # ─────────────────────────────────────────

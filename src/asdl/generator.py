@@ -330,6 +330,12 @@ class SPICEGenerator:
         port_list = model.ports
         lines.append(f".subckt {model_name} {' '.join(port_list)}")
         
+        # Add parameter declarations with default values
+        param_defaults = model.get_parameter_defaults()
+        if param_defaults:
+            for param_name, param_value in param_defaults.items():
+                lines.append(f"{self.indent}.param {param_name}={param_value}")
+        
         # Generate the internal device instance
         device_instance = self._generate_model_device_instance(model)
         lines.append(f"{self.indent}{device_instance}")
@@ -344,13 +350,50 @@ class SPICEGenerator:
         Generate the internal device instance for a model subcircuit.
         
         This creates the primitive device line that goes inside the model subcircuit.
-        Uses the model's port order for both connections and parameters.
+        Uses either the new device_line approach or legacy template approach.
         
         Args:
             model: DeviceModel definition
             
         Returns:
             SPICE device line as string
+        """
+        if model.has_device_line():
+            # NEW APPROACH: Use raw device_line with parameter substitution
+            return self._generate_from_device_line(model)
+        else:
+            # LEGACY APPROACH: Use templates (backward compatibility)
+            return self._generate_from_legacy_template(model)
+    
+    def _generate_from_device_line(self, model: DeviceModel) -> str:
+        """
+        Generate device line using the new device_line approach.
+        
+        Substitutes port names and parameter references in the raw device line.
+        """
+        device_line = model.device_line
+        
+        # Build substitution data
+        template_data = {}
+        
+        # Add port mappings (identity mapping within subcircuit)
+        for port in model.ports:
+            template_data[port] = port
+        
+        # Add parameter references (will be substituted with {param} syntax)
+        param_defaults = model.get_parameter_defaults()
+        for param_name in param_defaults.keys():
+            template_data[param_name] = f"{{{param_name}}}"
+        
+        # Apply substitutions
+        try:
+            return device_line.format(**template_data)
+        except KeyError as e:
+            raise ValueError(f"Missing template parameter in device_line: {e}")
+    
+    def _generate_from_legacy_template(self, model: DeviceModel) -> str:
+        """
+        Generate device line using legacy template approach (backward compatibility).
         """
         # Get device format specification
         device_format = self.DEVICE_FORMATS.get(model.type, self.DEVICE_FORMATS["default"])
