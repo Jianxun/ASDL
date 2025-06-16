@@ -59,11 +59,12 @@
     - [X] Write tests for pattern extraction (`_extract_literal_pattern`) ✅
     - [X] Write tests for pattern validation (item counts, emptiness) ✅
     - [X] Implement pattern parsing methods ✅
-  - [ ] **Step 2: Basic Literal Expansion Tests + Implementation**
-    - [ ] Write tests for simple expansion (`in_<p,n>` → `[in_p, in_n]`)
-    - [ ] Write tests for empty suffix (`clk<,b>` → `[clk, clkb]`)
-    - [ ] Write tests for no prefix (`<ab,cd>` → `[ab, cd]`)
-    - [ ] Implement `_expand_literal_pattern` method
+  - [X] **Step 2: Basic Literal Expansion Tests + Implementation** ✅
+    - [X] Write tests for port pattern expansion integration ✅
+    - [X] Write tests for mapping pattern expansion (order-sensitive) ✅
+    - [X] Write tests for one-sided pattern expansion ✅
+    - [X] Implement `expand_port_patterns` method with literal pattern support ✅
+    - [X] Implement `_expand_mapping_patterns` method with full pattern support ✅
   - [ ] **Step 3: Port/Net Expansion Tests + Implementation**
     - [ ] Write tests for port pattern expansion
     - [ ] Write tests for one-sided mapping expansion

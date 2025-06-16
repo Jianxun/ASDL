@@ -74,17 +74,16 @@ class PatternExpander:
         Returns:
             Dictionary with expanded port names
         """
-        # TODO: Implement port pattern expansion
         expanded_ports = {}
         
         for port_name, port in ports.items():
-            if self._has_diff_pattern(port_name):
-                # Handle differential patterns <p,n>
-                expanded_names = self._expand_diff_pattern(port_name)
+            if self._has_literal_pattern(port_name):
+                # Handle literal patterns <p,n>
+                expanded_names = self._expand_literal_pattern(port_name)
                 for expanded_name in expanded_names:
                     expanded_ports[expanded_name] = port
             elif self._has_bus_pattern(port_name):
-                # Handle bus patterns [3:0]
+                # Handle bus patterns [3:0] (future implementation)
                 expanded_names = self._expand_bus_pattern(port_name)
                 for expanded_name in expanded_names:
                     expanded_ports[expanded_name] = port
@@ -289,5 +288,41 @@ class PatternExpander:
         Handles order-matched expansion where the i-th expanded port
         maps to the i-th expanded net.
         """
-        # TODO: Implement mapping pattern expansion
-        return mappings  # Placeholder 
+        expanded_mappings = {}
+        
+        for port_name, net_name in mappings.items():
+            # Check for patterns in port and net names
+            port_has_pattern = self._has_literal_pattern(port_name)
+            net_has_pattern = self._has_literal_pattern(net_name)
+            
+            if port_has_pattern and net_has_pattern:
+                # Both sides have patterns - order-sensitive expansion
+                port_items = self._extract_literal_pattern(port_name)
+                net_items = self._extract_literal_pattern(net_name)
+                
+                # Validate pattern counts match
+                self._validate_pattern_counts(port_items, net_items)
+                
+                # Expand both sides in synchronized order
+                expanded_ports = self._expand_literal_pattern(port_name)
+                expanded_nets = self._expand_literal_pattern(net_name)
+                
+                for exp_port, exp_net in zip(expanded_ports, expanded_nets):
+                    expanded_mappings[exp_port] = exp_net
+                    
+            elif port_has_pattern and not net_has_pattern:
+                # One-sided pattern (port side only)
+                expanded_ports = self._expand_literal_pattern(port_name)
+                for exp_port in expanded_ports:
+                    expanded_mappings[exp_port] = net_name
+                    
+            elif not port_has_pattern and net_has_pattern:
+                # One-sided pattern (net side only) - map to first expanded net
+                expanded_nets = self._expand_literal_pattern(net_name)
+                expanded_mappings[port_name] = expanded_nets[0]
+                
+            else:
+                # No patterns - keep as is
+                expanded_mappings[port_name] = net_name
+                
+        return expanded_mappings 
