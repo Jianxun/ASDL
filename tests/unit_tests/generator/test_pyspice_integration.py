@@ -77,8 +77,16 @@ def test_pyspice_parses_inverter_netlist(inverter_asdl):
     # Verify we generated proper subcircuit syntax (even if PySpice parsing is limited)
     # Check the raw SPICE content contains expected elements
     assert '.subckt inverter' in spice_output
-    assert 'MP out in vdd vdd pch_lvt' in spice_output
-    assert 'MN out in vss vss nch_lvt' in spice_output
+    # OLD FORMAT: assert 'MP out in vdd vdd pch_lvt' in spice_output
+    # OLD FORMAT: assert 'MN out in vss vss nch_lvt' in spice_output
+    # NEW FORMAT: Check for hierarchical subcircuit calls
+    assert 'X_MP in out vdd vdd pmos_unit M=2' in spice_output
+    assert 'X_MN in out vss vss nmos_unit M=2' in spice_output
+    # Also verify model subcircuits exist
+    assert '.subckt nmos_unit G D S B' in spice_output
+    assert '.subckt pmos_unit G D S B' in spice_output
+    assert 'MN D G S B nch_lvt' in spice_output  # Primitive inside model
+    assert 'MP D G S B pch_lvt' in spice_output  # Primitive inside model
     assert '.ends' in spice_output
     assert 'XMAIN in out vdd vss inverter' in spice_output
 
@@ -89,11 +97,12 @@ def test_pyspice_validates_nmos_instance(inverter_asdl):
     generator = SPICEGenerator()
     spice_output = generator.generate(inverter_asdl)
     
-    # Extract the NMOS line from the generated SPICE
+    # Extract the NMOS line from the generated SPICE (now inside nmos_unit subcircuit)
     lines = spice_output.split('\n')
     nmos_line = None
     for line in lines:
-        if line.strip().startswith('MN'):
+        # Look for MN inside the model subcircuit (with identity port mapping)
+        if line.strip().startswith('MN') and 'D G S B' in line:
             nmos_line = line.strip()
             break
     
@@ -116,12 +125,13 @@ def test_pyspice_validates_nmos_instance(inverter_asdl):
         connected_nodes = [node for node in nmos.nodes if node is not None]
         assert len(connected_nodes) == 4
         
-        # Check node names match the expected mappings from inverter.yml
-        # MN mappings: {G: in, D: out, S: vss, B: vss}
+        # Check node names match the identity mapping in model subcircuit
+        # MN inside model: D G S B (identity mapping)
         node_names = [str(node).lower() for node in connected_nodes]
-        assert 'in' in node_names   # Gate
-        assert 'out' in node_names  # Drain  
-        assert 'vss' in node_names  # Source and Bulk
+        assert 'd' in node_names   # Drain
+        assert 'g' in node_names   # Gate
+        assert 's' in node_names   # Source 
+        assert 'b' in node_names   # Bulk
 
 
 def test_pyspice_validates_pmos_instance(inverter_asdl):
@@ -130,11 +140,12 @@ def test_pyspice_validates_pmos_instance(inverter_asdl):
     generator = SPICEGenerator()
     spice_output = generator.generate(inverter_asdl)
     
-    # Extract the PMOS line from the generated SPICE
+    # Extract the PMOS line from the generated SPICE (now inside pmos_unit subcircuit)
     lines = spice_output.split('\n')
     pmos_line = None
     for line in lines:
-        if line.strip().startswith('MP'):
+        # Look for MP inside the model subcircuit (with identity port mapping)
+        if line.strip().startswith('MP') and 'D G S B' in line:
             pmos_line = line.strip()
             break
     
@@ -157,12 +168,13 @@ def test_pyspice_validates_pmos_instance(inverter_asdl):
         connected_nodes = [node for node in pmos.nodes if node is not None]
         assert len(connected_nodes) == 4
         
-        # Check node names match the expected mappings from inverter.yml
-        # MP mappings: {G: in, D: out, S: vdd, B: vdd}
+        # Check node names match the identity mapping in model subcircuit
+        # MP inside model: D G S B (identity mapping)
         node_names = [str(node).lower() for node in connected_nodes]
-        assert 'in' in node_names   # Gate
-        assert 'out' in node_names  # Drain
-        assert 'vdd' in node_names  # Source and Bulk
+        assert 'd' in node_names   # Drain
+        assert 'g' in node_names   # Gate
+        assert 's' in node_names   # Source
+        assert 'b' in node_names   # Bulk
 
 
 def test_pyspice_validates_subcircuit_ports(inverter_asdl):

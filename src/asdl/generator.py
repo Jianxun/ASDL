@@ -169,43 +169,37 @@ class SPICEGenerator:
     def _generate_device_line(self, instance_id: str, instance: Instance, 
                              asdl_file: ASDLFile) -> str:
         """
-        Generate device line for a primitive device instance using templates.
+        Generate subcircuit call for a device instance.
         
-        Format: <name> <nodes> <model> <parameters>
-        Example: MN1 drain gate source bulk nch_lvt W=1u L=0.1u M=1
+        Format: X_<name> <nodes> <model_name> <parameters>
+        Example: X_MN1 in out vss vss nmos_unit M=2
         """
         device_model = asdl_file.models[instance.model]
         
-        # Get device format specification
-        device_format = self.DEVICE_FORMATS.get(device_model.type, self.DEVICE_FORMATS["default"])
+        # Build subcircuit call with X_ prefix
+        subckt_name = f"X_{instance_id}"
         
-        # Build template data with direct port mapping
-        template_data = {
-            "name": instance_id,
-            "model": device_model.model,
-        }
-        
-        # Map each port directly to its connected net
-        for port in device_model.ports:
-            if port in instance.mappings:
-                template_data[port] = instance.mappings[port]
+        # Get node connections in model-defined port order
+        node_list = []
+        for port_name in device_model.ports:
+            if port_name in instance.mappings:
+                node_list.append(instance.mappings[port_name])
             else:
                 # Handle unconnected ports
-                template_data[port] = "UNCONNECTED"
+                node_list.append("UNCONNECTED")
         
-        # Add parameter data based on format type
-        all_params = self._merge_parameters(device_model, instance)
+        # Get instance parameters (only instance-specific parameters)
+        instance_params = instance.parameters if instance.parameters else {}
         
-        if device_format["param_format"] == "bare":
-            # Use bare value for simple devices (R, L, C)
-            value_param = device_format["value_param"]
-            template_data["value"] = str(all_params.get(value_param, ""))
-        else:
-            # Use named parameters for complex devices (transistors, etc.)
-            template_data["params"] = self._format_named_parameters(all_params, device_model)
+        # Format subcircuit call: X_name nodes model_name params
+        parts = [subckt_name, " ".join(node_list), instance.model]
         
-        # Apply template
-        return device_format["template"].format(**template_data)
+        # Add parameters if any
+        if instance_params:
+            param_str = self._format_named_parameters(instance_params)
+            parts.append(param_str)
+        
+        return " ".join(parts)
     
     def _merge_parameters(self, device_model: DeviceModel, instance: Instance) -> Dict[str, Any]:
         """Merge model default parameters with instance parameters."""

@@ -17,8 +17,8 @@
 
 * Basic CMOS inverter with PMOS pull-up and NMOS pull-down
 .subckt inverter in out vdd vss
-  MP out in vdd vdd pch_lvt W=1u L=0.1u M=2
-  MN out in vss vss nch_lvt W=1u L=0.1u M=2
+  X_MP in out vdd vdd pmos_unit M=2
+  X_MN in out vss vss nmos_unit M=2
 .ends
 
 * Main circuit instantiation
