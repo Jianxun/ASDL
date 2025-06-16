@@ -7,22 +7,23 @@ design_info:
 
 models:
   nmos_unit:
+    doc: "NMOS transistor unit cell"
     type: nmos
     ports: [G, D, S, B]
     device_line: |
-      MN {D} {G} {S} {B} nch_lvt W=1u L=0.1u m={M}
+      MN {D} {G} {S} {B} nch_lvt W=1u L=0.1u
     parameters:
       M: 1
-    description: "NMOS transistor unit cell"
 
   pmos_unit:
+    doc: "PMOS transistor unit cell"
     type: pmos
     ports: [G, D, S, B]
     device_line: |
-      MP {D} {G} {S} {B} pch_lvt W=1u L=0.1u m={M}
+      MP {D} {G} {S} {B} pch_lvt W=1u L=0.1u
     parameters:
       M: 1
-    description: "PMOS transistor unit cell"
+    
 
 modules:
   inverter:

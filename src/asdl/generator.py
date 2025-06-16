@@ -323,8 +323,9 @@ class SPICEGenerator:
         lines = []
         
         # Add model documentation
-        if model.description:
-            lines.append(f"* {model.description}")
+        doc = model.get_doc()
+        if doc:
+            lines.append(f"* {doc}")
         
         # Generate .subckt header with model-defined port order
         port_list = model.ports
@@ -369,27 +370,34 @@ class SPICEGenerator:
         """
         Generate device line using the new device_line approach.
         
-        Substitutes port names and parameter references in the raw device line.
+        Substitutes port names in the device line and automatically appends parameter assignments.
         """
-        device_line = model.device_line
+        device_line = model.device_line.strip()
         
-        # Build substitution data
+        # Build substitution data for ports only
         template_data = {}
         
         # Add port mappings (identity mapping within subcircuit)
         for port in model.ports:
             template_data[port] = port
         
-        # Add parameter references (will be substituted with {param} syntax)
-        param_defaults = model.get_parameter_defaults()
-        for param_name in param_defaults.keys():
-            template_data[param_name] = f"{{{param_name}}}"
-        
-        # Apply substitutions
+        # Apply port substitutions to the base device line
         try:
-            return device_line.format(**template_data)
+            base_line = device_line.format(**template_data)
         except KeyError as e:
-            raise ValueError(f"Missing template parameter in device_line: {e}")
+            raise ValueError(f"Missing port placeholder in device_line: {e}")
+        
+        # Automatically append parameter assignments
+        param_defaults = model.get_parameter_defaults()
+        if param_defaults:
+            param_assignments = []
+            for param_name in param_defaults.keys():
+                param_assignments.append(f"{param_name}={{{param_name}}}")
+            
+            # Combine base line with parameter assignments
+            return f"{base_line} {' '.join(param_assignments)}"
+        else:
+            return base_line
     
     def _generate_from_legacy_template(self, model: DeviceModel) -> str:
         """

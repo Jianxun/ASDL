@@ -1,101 +1,88 @@
 # Project Todo List
 
-## Current Sprint - Parameter Handling for Passive Devices (NEXT PHASE)
+## Current Sprint - ngspice Simulation Testing (PHASE 4)
 
-### 🎉 PHASE 2 COMPLETED ✅ (Hierarchical Subcircuit Refactor)
+### 🎉 **PHASE 3 COMPLETED ✅** (Parameter Handling Enhancement)
 **ALL CORE STEPS COMPLETE**:
-- [X] **Refactor 1: Model Subcircuit Generation** ✅
-  - [X] Create `generate_model_subcircuit()` method ✅
-  - [X] Convert each model to `.subckt` definition with proper port order ✅
-  - [X] Handle primitive devices (NMOS/PMOS) as single-device subcircuits ✅
-  - [X] Ensure SPICE device order within subcircuits (D G S B for MOSFETs) ✅
+- [X] **Enhanced Schema Implementation** ✅
+  - [X] Add `device_line` field for raw PDK device lines with `{placeholders}` ✅
+  - [X] Add `parameters` field for parameterizable values with defaults ✅
+  - [X] Standardize on `doc` field for consistency with modules ✅
+  - [X] Maintain backward compatibility with legacy `model` + `params` ✅
 
-- [X] **Refactor 2: Instance Generation with X_ Prefix** ✅
-  - [X] Update `generate_instance()` to create subcircuit calls ✅
-  - [X] Add automatic `X_` prefix to instance names ✅
-  - [X] Implement named port resolution (order-independent mappings) ✅
-  - [X] Use model-defined port order for subcircuit interface ✅
+- [X] **Automatic Parameter Generation** ✅
+  - [X] Implement automatic parameter appending to device lines ✅
+  - [X] Clean separation: core device definition vs parameterization ✅
+  - [X] Error-resistant design: no manual parameter formatting required ✅
+  - [X] Support for any number of parameters ✅
 
-- [X] **Refactor 3: Two-Level Port Resolution** ✅
-  - [X] **Level 1**: ASDL model ports → SPICE device order (strict) ✅
-  - [X] **Level 2**: Instance mappings → Model ports (named, order-independent) ✅
-  - [X] Resolve `{D: out, G: in, S: vdd}` to model port sequence ✅
+- [X] **Parser & Generator Updates** ✅
+  - [X] Update parser to recognize new `device_line` and `parameters` fields ✅
+  - [X] Update generator to use automatic parameter generation ✅
+  - [X] Implement backward compatibility fallback logic ✅
+  - [X] Update test fixtures to use new schema format ✅
 
-- [X] **Refactor 4: Generator Pipeline Update** ✅
-  - [X] Update main `generate()` method to output models first, then modules ✅
-  - [X] Ensure proper SPICE file structure: models → modules → main instantiation ✅
-  - [X] Maintain PySpice compatibility ✅
+### **Enhanced Schema Format Now Supported** ✅
+```yaml
+models:
+  nmos_unit:
+    doc: "NMOS transistor unit cell"           # ✅ Consistent field naming
+    type: nmos
+    ports: [G, D, S, B]
+    device_line: |                             # ✅ Clean PDK device line
+      MN {D} {G} {S} {B} nch_lvt W=1u L=0.1u
+    parameters:                                # ✅ Auto-appended as M={M}
+      M: 1
+```
 
-### **Test Status: 15/21 Functional Tests Passing ✅**
-- [X] **PySpice Integration**: 6/6 passing ✅ (CRITICAL - SPICE syntax validation)
-- [X] **Port Resolution**: 3/3 passing ✅ (CRITICAL - hierarchical mapping)  
-- [X] **Pipeline Structure**: 5/5 passing ✅ (CRITICAL - ngspice compatibility)
-- [X] **Device Generation**: 1/7 passing ⚠️ (EXPECTED - 6 tests check old primitive format)
-
-### **Current Output Format** ✅
+### **Generated SPICE Output** ✅
 ```spice
 * Model subcircuit definitions
+* NMOS transistor unit cell
 .subckt nmos_unit G D S B
-  MN D G S B nch_lvt W=1u L=0.1u
+  .param M=1                           # ✅ Parameter declaration
+  MN D G S B nch_lvt W=1u L=0.1u M={M} # ✅ Auto-generated parameter reference
 .ends
 
-.subckt pmos_unit G D S B  
-  MP D G S B pch_lvt W=1u L=0.1u
-.ends
-
-* Main circuit using subcircuit calls
-.subckt inverter in out vdd vss
-  X_MP in out vdd vdd pmos_unit M=2
-  X_MN in out vss vss nmos_unit M=2
-.ends
-
-XMAIN in out vdd vss inverter
-.end
+X_MP in out vdd vdd pmos_unit M=2      # ✅ Parameter override at instance
 ```
 
-## PHASE 3: Parameter Handling Enhancement (CURRENT PRIORITY)
+## PHASE 4: ngspice Simulation Testing (CURRENT PRIORITY)
 
-### **Core Issue: Passive Device Parameter Mismatch**
-**Problem**: Passive devices (R, L, C) have parameter handling mismatch in hierarchical structure
+### **Core Objective: Validate Generated Netlists with ngspice**
+**Goal**: Verify that our generated SPICE netlists are simulatable and produce correct results
 
-**Current Incorrect Behavior**:
-```spice
-.subckt res_1k plus minus
-  R plus minus RES_1K    # Missing value parameter!
-.ends
-X_R1 net1 net2 res_1k value=1k  # Value at wrong level
-```
+### **Phase 4 Tasks** (To be tackled in new chat)
+- [ ] **ngspice Environment Setup**
+  - [ ] Verify ngspice installation and basic functionality
+  - [ ] Understand ngspice control file syntax and simulation commands
+  - [ ] Set up basic DC/AC/transient simulation templates
 
-**Expected Correct Behavior** (Need to investigate):
-```spice
-.subckt res_1k plus minus value=1k
-  R plus minus RES_1K {value}    # Parameter propagation
-.ends
-X_R1 net1 net2 res_1k value=1k  # Or alternative approach
-```
+- [ ] **Test Circuit Preparation**
+  - [ ] Create simple test circuits (inverter, basic amplifier)
+  - [ ] Add proper voltage sources and test conditions
+  - [ ] Include PDK model files and process corner specifications
+  - [ ] Set up simulation controls (.control blocks)
 
-### **Phase 3 Tasks**
-- [ ] **Investigate Parameter Propagation Methods**
-  - [ ] Research SPICE subcircuit parameter passing (`{param}` syntax)
-  - [ ] Determine best approach for passive device `value` parameters
-  - [ ] Consider alternative: inline value vs parameterized subcircuits
+- [ ] **Simulation Validation**
+  - [ ] Test basic DC operating point analysis
+  - [ ] Verify device parameters and operating regions
+  - [ ] Run transient simulations for dynamic behavior
+  - [ ] Compare results with expected circuit behavior
 
-- [ ] **Implement Parameter Propagation**
-  - [ ] Update model subcircuit generation for passive devices  
-  - [ ] Handle `value` parameter correctly in model subcircuits
-  - [ ] Ensure instance parameters propagate to model appropriately
+- [ ] **Integration & Automation**
+  - [ ] Create automated simulation test framework
+  - [ ] Add simulation result validation and comparison
+  - [ ] Document simulation setup and usage patterns
+  - [ ] Integrate with existing test suite
 
-- [ ] **Update Tests**
-  - [ ] Fix failing device generation tests for new format
-  - [ ] Add tests for parameter propagation
-  - [ ] Verify passive device functionality
+### **Success Criteria**
+- [ ] Generated SPICE netlists simulate successfully in ngspice
+- [ ] Simulation results match expected circuit behavior
+- [ ] Parameter variations work correctly (M=1 vs M=2)
+- [ ] Both simple and complex PDK device lines simulate properly
 
-- [ ] **Validation**
-  - [ ] Ensure PySpice compatibility with parameter changes
-  - [ ] Test with ngspice for parameter propagation
-  - [ ] Verify all device types work correctly
-
-## Future Phase 4: Advanced Features
+## Future Phase 5: Advanced Features
 
 ### **Pattern Expansion System**
 - [ ] Complex model support (multiple internal devices)
@@ -143,6 +130,26 @@ X_R1 net1 net2 res_1k value=1k  # Or alternative approach
 - [ ] Static type checking setup
 
 ## Completed Tasks
+
+### **Phase 3: Parameter Handling Enhancement ✅ COMPLETE**
+- [X] **Enhanced Schema Design** ✅
+  - [X] Added `device_line` field for raw PDK device lines with `{port}` placeholders
+  - [X] Added `parameters` field for parameterizable values with defaults
+  - [X] Standardized on `doc` field (replaced `description` for consistency)
+  - [X] Maintained backward compatibility with legacy fields
+
+- [X] **Automatic Parameter Generation** ✅
+  - [X] Implemented automatic parameter appending: `M={M}` auto-generated from `parameters: {M: 1}`
+  - [X] Clean separation: device definition vs parameterization
+  - [X] Error-resistant: no manual parameter formatting required
+  - [X] Scalable: supports any number of parameters
+
+- [X] **Implementation & Integration** ✅
+  - [X] Updated DeviceModel data structure with new fields and helper methods
+  - [X] Enhanced parser to recognize new fields while maintaining backward compatibility
+  - [X] Modified generator to use automatic parameter generation approach
+  - [X] Updated test fixtures to use new schema format
+  - [X] Verified end-to-end functionality with complete SPICE generation
 
 ### **Phase 2: Hierarchical Subcircuit Refactor ✅ COMPLETE**
 - [X] **Step 1: Model Subcircuit Generation** ✅

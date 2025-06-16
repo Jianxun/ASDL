@@ -167,7 +167,7 @@ class DeviceModel:
     """
     type: DeviceType                         # Device type classification
     ports: List[str]                         # Terminal order [G, D, S, B]
-    description: Optional[str] = None        # Optional description
+    doc: Optional[str] = None                # Optional documentation
     
     # NEW: Robust PDK approach (preferred)
     device_line: Optional[str] = None        # Raw PDK device line with {placeholders}
@@ -176,6 +176,7 @@ class DeviceModel:
     # LEGACY: Simple approach (backward compatibility)
     model: Optional[str] = None              # PDK model name (used as-is in SPICE)
     params: Optional[Dict[str, Any]] = None  # Default parameters
+    description: Optional[str] = None        # Legacy description field (for backward compatibility)
     
     def has_device_line(self) -> bool:
         """Check if this model uses the new device_line approach."""
@@ -190,6 +191,10 @@ class DeviceModel:
             return {k: str(v) for k, v in self.params.items()}
         else:
             return {}
+    
+    def get_doc(self) -> Optional[str]:
+        """Get documentation, preferring new 'doc' over legacy 'description'."""
+        return self.doc or self.description
 
 
 # ─────────────────────────────────────────
