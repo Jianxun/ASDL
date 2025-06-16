@@ -83,6 +83,14 @@ class SPICEGenerator:
         lines.append(f"* Revision: {asdl_file.file_info.revision}")
         lines.append("")
         
+        # Generate model subcircuit definitions first
+        if asdl_file.models:
+            lines.append("* Model subcircuit definitions")
+            for model_name, model in asdl_file.models.items():
+                model_subckt = self.generate_model_subcircuit(model_name, model)
+                lines.append(model_subckt)
+                lines.append("")
+        
         # Generate subcircuit definitions for all modules
         for module_name, module in asdl_file.modules.items():
             subckt_def = self.generate_subckt(module, module_name, asdl_file)
@@ -199,8 +207,6 @@ class SPICEGenerator:
         # Apply template
         return device_format["template"].format(**template_data)
     
-
-    
     def _merge_parameters(self, device_model: DeviceModel, instance: Instance) -> Dict[str, Any]:
         """Merge model default parameters with instance parameters."""
         all_params = {}
@@ -298,4 +304,83 @@ class SPICEGenerator:
         elif isinstance(value, (int, float)):
             return str(value)
         else:
-            return str(value) 
+            return str(value)
+
+    def generate_model_subcircuit(self, model_name: str, model: DeviceModel) -> str:
+        """
+        Generate .subckt definition for a device model.
+        
+        Args:
+            model_name: Name of the model
+            model: DeviceModel definition
+            
+        Returns:
+            SPICE subcircuit definition as string
+        """
+        lines = []
+        
+        # Add model documentation
+        if model.description:
+            lines.append(f"* {model.description}")
+        
+        # Generate .subckt header with model-defined port order
+        port_list = model.ports
+        lines.append(f".subckt {model_name} {' '.join(port_list)}")
+        
+        # Generate the internal device instance
+        device_instance = self._generate_model_device_instance(model)
+        lines.append(f"{self.indent}{device_instance}")
+        
+        # Close subcircuit
+        lines.append(".ends")
+        
+        return "\n".join(lines)
+
+    def _generate_model_device_instance(self, model: DeviceModel) -> str:
+        """
+        Generate the internal device instance for a model subcircuit.
+        
+        This creates the primitive device line that goes inside the model subcircuit.
+        Uses the model's port order for both connections and parameters.
+        
+        Args:
+            model: DeviceModel definition
+            
+        Returns:
+            SPICE device line as string
+        """
+        # Get device format specification
+        device_format = self.DEVICE_FORMATS.get(model.type, self.DEVICE_FORMATS["default"])
+        
+        # Determine device name prefix based on device type
+        device_prefixes = {
+            DeviceType.RESISTOR: "R",
+            DeviceType.CAPACITOR: "C", 
+            DeviceType.INDUCTOR: "L",
+            DeviceType.NMOS: "MN",
+            DeviceType.PMOS: "MP",
+            DeviceType.DIODE: "D"
+        }
+        device_name = device_prefixes.get(model.type, "X")
+        
+        # Build template data
+        template_data = {
+            "name": device_name,
+            "model": model.model,
+        }
+        
+        # Map each port to itself (identity mapping within subcircuit)
+        for port in model.ports:
+            template_data[port] = port
+        
+        # Add parameter data based on format type
+        if device_format["param_format"] == "bare":
+            # Use bare value for simple devices (R, L, C)
+            value_param = device_format["value_param"]
+            template_data["value"] = str(model.params.get(value_param, ""))
+        else:
+            # Use named parameters for complex devices (transistors, etc.)
+            template_data["params"] = self._format_named_parameters(model.params, model)
+        
+        # Apply template
+        return device_format["template"].format(**template_data) 

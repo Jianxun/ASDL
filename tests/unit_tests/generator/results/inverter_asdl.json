@@ -75,10 +75,10 @@
         "MP": {
           "model": "pmos_unit",
           "mappings": {
-            "B": "vdd",
             "G": "in",
             "D": "out",
-            "S": "vdd"
+            "S": "vdd",
+            "B": "vdd"
           },
           "parameters": {
             "M": 2
