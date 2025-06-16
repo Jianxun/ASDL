@@ -30,13 +30,13 @@
 * NMOS transistor unit cell
 .subckt nmos_unit G D S B
   .param M=1
-  MN D G S B nfet_03v3 L=0.5u W=4u nf=2 ad=0.72u as=0.72u pd=4.36u ps=4.36u nrd=0.045 nrs=0.045 sa=0 sb=0 sd=0 M={M}
+  MN D G S B nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 M={M}
 .ends
 
 * PMOS transistor unit cell
 .subckt pmos_unit G D S B
   .param M=1
-  MP D G S B pfet_03v3 L=0.5u W=5u nf=2 ad=0.9u as=0.9u pd=5.36u ps=5.36u nrd=0.036 nrs=0.036 sa=0 sb=0 sd=0 M={M}
+  MP D G S B pfet_03v3 L=0.5u W=5u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 M={M}
 .ends
 
 * Basic CMOS inverter with PMOS pull-up and NMOS pull-down
