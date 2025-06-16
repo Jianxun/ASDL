@@ -6,7 +6,7 @@ ASDL (Analog Structured Description Language) is a Python project to build class
 Key components:
 - YAML-based intermediate representation for analog circuits
 - Python classes to represent circuit hierarchy and structure  
-- YAML to SPICE netlist converter
+- YAML to SPICE netlist converter with PySpice validation
 - Support for pattern expansion (differential pairs, arrays)
 - Parameter substitution system
 - Design intent capture
@@ -17,19 +17,15 @@ Schema structure:
 - `modules`: Circuit hierarchy with ports, instances, and connectivity
 
 ## Current State
-- Project structure is established with virtual environment and basic dependencies
-- ASDL schema v0.4 is defined in `doc/ASDL_schema_v0p4`
-- README.md describes the project vision and basic usage
-- Dependencies include PyYAML, Click, pytest, and development tools
-- Context management system is being initialized
-- Planning phase: architecture analysis needed before implementation
+**Phase 1 Complete**: ASDL Parser + SPICE Generator + PySpice Integration
+- ✅ **Parser**: 44 passing tests, complete ASDL YAML parsing
+- ✅ **Generator**: 7 passing device generation tests, template-based SPICE output
+- ✅ **PySpice Integration**: 6 passing tests, validation of generated SPICE netlists
+- ✅ **Test Infrastructure**: 57 total passing tests across all components
+- ✅ **Manual Inspection**: Generated JSON and SPICE files for debugging
+- 🔄 **Next Phase**: Hierarchical subcircuit refactor (models as subcircuits)
 
 ## Key Decisions
-- Using YAML as the human-readable intermediate representation format
-- Target output: SPICE netlists compatible with ngspice
-- Python-based implementation for flexibility and ecosystem integration
-- Modular design with separate parser, resolver, and generator components
-- Test-driven development approach specified in development guidelines
 
 ### Architecture Decisions (Confirmed)
 1. **Pattern Expansion**: Keep patterns (`<p,n>`, `[3:0]`) in data structures, expand only during SPICE generation as explicit step (similar to Verilog elaboration)
@@ -40,19 +36,59 @@ Schema structure:
 6. **Module Hierarchy**: Each `module` translates to a `.subckt` definition
 7. **Implementation Approach**: Minimum viable product to get ASDL->SPICE flow working ASAP
 
+### PySpice Integration Decisions
+8. **Validation Strategy**: Use PySpice for SPICE syntax validation and connectivity verification
+9. **Enum Serialization**: Custom JSON encoder handles all enum types for debugging output
+10. **Case Handling**: SPICE comparisons use lowercase normalization for case-insensitive validation
+11. **Port Name Standards**: Use uppercase port names (G, D, S, B) to match ASDL conventions
+
+### Critical Architectural Insight: Hierarchical Subcircuit Design
+**Current Issue**: Models generate as primitive devices, limiting extensibility
+**New Direction**: Models should become subcircuit definitions for modularity
+
+**Rationale**:
+- `nmos_unit` could be complex (cascode, parasitics, composite devices)
+- Industry standard approach matches foundry PDK structure
+- Enables reusable, hierarchical design methodology
+- Clear separation between model interface and implementation
+
 ## Recent Changes
-- **Schema Update**: Changed `design_info` to `file_info` in ASDL schema v0.4 for semantic consistency
-- **Code Update**: Updated all Python classes and references to use `FileInfo` instead of `DesignInfo`
-- **Interface Analysis**: Defined clear interfaces between Parser → Expander → Resolver → Generator pipeline
-- **Future-Proofing Implementation**: Enhanced parser with comprehensive future-proofing capabilities including:
-  - Unknown field detection and handling (strict/lenient modes)
-  - Intent metadata preservation for extensible design annotations
-  - Backward compatibility with legacy schema versions  
-  - Flexible enum handling for future device types
-  - Comprehensive validation and error reporting
-- **Scope Refinement**: Simplified port constraints to placeholder implementation, moved advanced constraint features to backlog for later implementation
-- **Parser Completion**: Successfully implemented complete ASDL parser with 44 passing tests using systematic TDD approach
-- **Priority Adjustment**: Decided to skip pattern expansion and implement SPICE generator next to achieve end-to-end functionality faster
+
+### PySpice Integration Implementation
+- **PySpice Dependency**: Added PySpice>=1.5.0 for SPICE validation
+- **Validation Layer**: `spice_validator.py` with `parse_spice_netlist()` function
+- **Real ASDL Testing**: Used `tests/fixtures/inverter.yml` with proper ports and parameters  
+- **Case Sensitivity Fix**: Resolved port name mismatch (lowercase → uppercase)
+- **Parameter Fix**: Changed from variable `$M` to literal `M: 2` for cleaner SPICE
+- **Test Coverage**: 6 comprehensive PySpice integration tests
+- **Debug Output**: Manual inspection files saved to `/tests/unit_tests/generator/results/`
+
+### Port Mapping Analysis
+**Critical Discovery**: Current implementation has port mapping order dependency
+- **Problem**: Changing instance mapping order affects SPICE output
+- **Root Cause**: Dictionary iteration order affects parameter sequence
+- **Priority**: Port order is STRICT requirement, parameter order is backlog item
+- **Solution**: Requires hierarchical refactor with named port resolution
+
+## Port Mapping Requirements (CRITICAL)
+### Two-Level Port Mapping Strategy
+1. **ASDL → SPICE Primitives**: Strict positional order (SPICE device requirements)
+2. **ASDL Subcircuits**: Named port mapping (designer freedom)
+
+### Implementation Rules
+- **Model Definition**: Controls port order and parameter order (interface contract)
+- **Instance Mappings**: Order-independent, resolved by name
+- **SPICE Output**: Always uses model-defined order for consistency
+
+### Example
+```yaml
+models:
+  nmos_unit:
+    ports: [G, D, S, B]    # Model defines interface order
+instances:
+  MP:
+    mappings: {D: out, G: in, S: vdd, B: vdd}  # Any order → resolved by name
+```
 
 ## New Requirements
 ### ASDLFile Round-trip Capability
@@ -72,17 +108,21 @@ Schema structure:
 ## Open Questions  
 1. **SPICE Format**: What specific SPICE formatting preferences or compatibility requirements for ngspice?
 
-2. **Port Ordering**: How should we order ports in .subckt definitions? (alphabetical, declaration order, explicit ordering)
+2. **Net Naming**: What conventions should we use for internal net names and port connections?
 
-3. **Parameter Handling**: How should we handle unresolved parameter expressions during SPICE generation?
+3. **Error Handling**: How should we handle unconnected ports and missing model references in SPICE output?
 
-4. **Net Naming**: What conventions should we use for internal net names and port connections?
+4. **SPICE Comments**: How much metadata (doc, intent) should be included as comments in generated SPICE?
 
-5. **Error Handling**: How should we handle unconnected ports and missing model references in SPICE output?
-
-6. **SPICE Comments**: How much metadata (doc, intent) should be included as comments in generated SPICE?
+## Backlog Items
+- **Parameter Order Consistency**: Make parameter ordering deterministic (use model-defined order)
+- **Pattern Expansion**: Implement `<p,n>` and `[3:0]` pattern expansion
+- **Parameter Resolution**: Implement `$param` variable substitution
+- **Advanced Validation**: Enhance SPICE validation beyond syntax checking
 
 ## Completed Questions
 - **Class Structure**: ✅ Implemented with comprehensive data structures
 - **Parser Implementation**: ✅ Complete with future-proofing and TDD
-- **Validation Level**: ✅ Implemented configurable strict/lenient validation 
+- **Validation Level**: ✅ Implemented configurable strict/lenient validation
+- **Port Ordering**: ✅ **CRITICAL**: Models define port order, instances use named mapping
+- **PySpice Integration**: ✅ Complete validation layer for SPICE syntax and connectivity 

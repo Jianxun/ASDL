@@ -194,7 +194,7 @@ class SPICEGenerator:
             template_data["value"] = str(all_params.get(value_param, ""))
         else:
             # Use named parameters for complex devices (transistors, etc.)
-            template_data["params"] = self._format_named_parameters(all_params)
+            template_data["params"] = self._format_named_parameters(all_params, device_model)
         
         # Apply template
         return device_format["template"].format(**template_data)
@@ -215,9 +215,25 @@ class SPICEGenerator:
             
         return all_params
     
-    def _format_named_parameters(self, params: Dict[str, Any]) -> str:
-        """Format parameters as param=value pairs."""
-        param_parts = [f"{name}={value}" for name, value in params.items()]
+    def _format_named_parameters(self, params: Dict[str, Any], model: DeviceModel = None) -> str:
+        """Format parameters as param=value pairs using model-defined order."""
+        param_parts = []
+        
+        if model and model.params:
+            # First, add parameters in model-defined order
+            for param_name in model.params.keys():
+                if param_name in params:
+                    param_parts.append(f"{param_name}={params[param_name]}")
+            
+            # Then add any instance-only parameters (alphabetically for consistency)
+            instance_only = set(params.keys()) - set(model.params.keys())
+            for param_name in sorted(instance_only):
+                param_parts.append(f"{param_name}={params[param_name]}")
+        else:
+            # Fallback to alphabetical order if no model parameter order available
+            for param_name in sorted(params.keys()):
+                param_parts.append(f"{param_name}={params[param_name]}")
+        
         return " ".join(param_parts)
     
     def _generate_subckt_call(self, instance_id: str, instance: Instance, 
