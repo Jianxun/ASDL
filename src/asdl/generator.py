@@ -11,13 +11,21 @@ from .data_structures import ASDLFile, Module, Instance, DeviceModel, DeviceType
 
 class SPICEGenerator:
     """
-    SPICE netlist generator for ASDL designs.
+    Hierarchical SPICE netlist generator for ASDL designs.
     
-    Generates SPICE netlists from fully elaborated designs:
-    - Each Module becomes a .subckt definition
-    - Device instances become device lines
-    - Module instances become subcircuit calls (X-lines)
-    - Hierarchical netlists with proper subcircuit structure
+    Generates hierarchical SPICE netlists with proper subcircuit structure:
+    - Device models become .subckt definitions (primitives inside)
+    - Module definitions become .subckt definitions  
+    - Device instances become subcircuit calls (X_ prefix)
+    - Module instances become subcircuit calls (X prefix)
+    - Two-level port resolution: named mappings + model-defined order
+    - ngspice compatible output format
+    
+    Pipeline order:
+    1. Model subcircuit definitions (.subckt for each device model)
+    2. Module subcircuit definitions (.subckt for each circuit module)
+    3. Main circuit instantiation (XMAIN top-level call)
+    4. End statement (.end)
     """
     
     # Device formatting templates with explicit port mapping
@@ -104,8 +112,9 @@ class SPICEGenerator:
                 top_module = asdl_file.modules[top_module_name]
                 lines.append(f"* Main circuit instantiation")
                 lines.append(f"XMAIN {self._get_top_level_nets(top_module)} {top_module_name}")
-                lines.append("")
         
+        # End SPICE netlist (ngspice compatibility)
+        lines.append("")
         lines.append(".end")
         
         return "\n".join(lines)

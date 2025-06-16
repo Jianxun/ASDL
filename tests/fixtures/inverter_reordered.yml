@@ -1,0 +1,64 @@
+design_info:
+  top_module: inverter
+  doc: "Basic CMOS inverter with reordered port mappings"
+  revision: "v0.4"
+  author: "ASDL"
+  date: "2024-03-19"
+
+models:
+  nmos_unit:
+    model: nch_lvt
+    type: nmos
+    ports: [G, D, S, B]
+    params:
+      W: 1u
+      L: 0.1u
+    description: "NMOS transistor unit cell"
+
+  pmos_unit:
+    model: pch_lvt
+    type: pmos
+    ports: [G, D, S, B]
+    params:
+      W: 1u
+      L: 0.1u
+    description: "PMOS transistor unit cell"
+
+modules:
+  inverter:
+    doc: "Basic CMOS inverter with PMOS pull-up and NMOS pull-down"
+    ports:
+      in:  {dir: in,  type: voltage}
+      out: {dir: out, type: voltage}
+      vss: {dir: in_out, type: voltage}
+      vdd: {dir: in_out, type: voltage, constraints: {Vdd: 1.8}}
+    parameters:
+      M: 1
+    instances:
+      MP:
+        model: pmos_unit
+        # REORDERED: Original was {G: in, D: out, S: vdd, B: vdd}
+        mappings: {B: vdd, S: vdd, G: in, D: out}
+        parameters:
+          M: 2
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 10
+          layout:
+            type: single
+            symmetry: none
+
+      MN:
+        model: nmos_unit
+        # REORDERED: Original was {G: in, D: out, S: vss, B: vss}  
+        mappings: {S: vss, B: vss, D: out, G: in}
+        parameters:
+          M: 2
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 10
+          layout:
+            type: single
+            symmetry: none 
