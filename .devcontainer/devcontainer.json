@@ -31,11 +31,11 @@
 		}
 	},
 
-	// Mount your workspace-local designs directory into the container
-	// IMPORTANT: Users of this template should create a 'designs' directory
-	// in the root of their cloned project for this to work seamlessly,
-	// or modify the source path below if their designs are located elsewhere.
+	// Mount the full workspace into the container for ASDL development
+	// This gives us access to the complete ASDL codebase (src, tests, etc.)
+	// while keeping the designs in the expected /foss/designs location
 	"mounts": [
+		"source=${localWorkspaceFolder},target=/foss/asdl,type=bind,consistency=cached",
 		"source=${localWorkspaceFolder}/designs,target=/foss/designs,type=bind,consistency=cached"
 	],
 

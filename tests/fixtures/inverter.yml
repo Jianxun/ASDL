@@ -11,7 +11,7 @@ models:
     type: nmos
     ports: [G, D, S, B]
     device_line: |
-      MN {D} {G} {S} {B} nch_lvt W=1u L=0.1u
+      MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad=0.72u as=0.72u pd=4.36u ps=4.36u nrd=0.045 nrs=0.045 sa=0 sb=0 sd=0
     parameters:
       M: 1
 
@@ -20,7 +20,7 @@ models:
     type: pmos
     ports: [G, D, S, B]
     device_line: |
-      MP {D} {G} {S} {B} pch_lvt W=1u L=0.1u
+      MP {D} {G} {S} {B} pfet_03v3 L=0.5u W=5u nf=2 ad=0.9u as=0.9u pd=5.36u ps=5.36u nrd=0.036 nrs=0.036 sa=0 sb=0 sd=0
     parameters:
       M: 1
     

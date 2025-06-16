@@ -1,4 +1,23 @@
-* SPICE netlist generated from ASDL
+
+    * ---------------- Model Files ----------------
+    .include /foss/pdks/gf180mcuD/libs.tech/ngspice/design.ngspice
+    .lib /foss/pdks/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+    
+    * ---------------- Power Supplies ----------------
+    V_vss vss 0 0
+    V_vdd vdd 0 3.3
+    
+    * ---------------- AC Stimulus ----------------
+    V_in in 0 1.65 AC 0.001
+    
+    * ---------------- AC Analysis ----------------
+    .control
+    save all
+    AC DEC 10 1000.0 1000000000.0
+    write /foss/designs/simulations/inverter_asdl/test_ac/ac_response.raw
+    .endc
+
+    * SPICE netlist generated from ASDL
 * Design: Basic CMOS inverter
 * Author: ASDL
 * Date: 2024-03-19
