@@ -2,6 +2,15 @@
 
 ## Current Sprint - Pattern Expansion & Advanced Features (PHASE 5)
 
+### 🎉 **SCHEMA DOCUMENTATION UPDATE COMPLETED ✅**
+- [X] **Schema Refinement** ✅
+  - [X] Updated ASDL_schema_v0p4 with latest Phase 3 & 4 enhancements ✅
+  - [X] Corrected field naming: `file_info` → `design_info` ✅
+  - [X] Enhanced model format documentation with `device_line` + `parameters` approach ✅
+  - [X] Added comprehensive real PDK examples from inverter.yml ✅
+  - [X] Documented perfect user workflow (xschem → ASDL → ngspice) ✅
+  - [X] Added automatic parameter generation explanation ✅
+
 ### 🎉 **PHASE 4 COMPLETED ✅** (ngspice Simulation Testing & User Workflow Validation)
 **PERFECT USER WORKFLOW ACHIEVED**:
 
@@ -40,9 +49,15 @@
 **Goal**: Add pattern expansion, parameter resolution, and complex circuit support while maintaining the perfect user workflow
 
 ### **Phase 5 Tasks**
-- [ ] **Pattern Expansion System**
-  - [ ] Implement `<p,n>` differential pair pattern expansion
-  - [ ] Implement `[3:0]` array pattern expansion
+- [X] **Pattern Expansion Rules Documentation** ✅
+  - [X] Documented comprehensive literal expansion rules in `doc/pattern_expansion_rules.md` ✅
+  - [X] Defined error conditions and validation rules ✅
+  - [X] Clarified instance expansion behavior (separate instantiations) ✅
+- [ ] **Pattern Expansion System Implementation**
+  - [ ] Implement `<>` literal pattern expansion (MVP)
+  - [ ] Add pattern parsing and validation
+  - [ ] Implement order-sensitive mapping expansion
+  - [ ] Add instance expansion with synchronized mappings
   - [ ] Maintain pattern syntax in data structures until explicit expansion
   - [ ] Add expansion step to SPICE generation pipeline
 
@@ -89,6 +104,11 @@
 - [ ] Document round-trip limitation: only guaranteed before pattern expansion/parameter resolution
 
 ## Backlog Items
+
+### **Future Pattern Expansion Features**
+- [ ] **Array Expansion with `[]`**: Implement `data[3:0]` → `data[3], data[2], data[1], data[0]`
+- [ ] **Combined Patterns**: Support `data_<p,n>[3:0]` (literal + array patterns)
+- [ ] **Parameter-Based Sizing**: Support `data[N-1:0]` with parameter N
 
 ### **Parameter Handling & Port Mapping**
 - [ ] **Parameter Order Consistency**: Make parameter ordering deterministic (use model-defined order) - **LOW PRIORITY**

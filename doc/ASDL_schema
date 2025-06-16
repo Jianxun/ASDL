@@ -1,9 +1,16 @@
 # ────────────────────────────────────────────────────────────────────────────────
 #  ASDL-YAML Schema (v0.4)  —  Analog Structural Description Language
 #  Description for LLM reasoning — with expansion rules for differential and bus patterns
+#  
+#  🎉 LATEST REFINEMENTS (Phase 3 & 4 Enhancements):
+#  • Enhanced Parameter Handling: New device_line + parameters approach
+#  • Real PDK Integration: Support for complex device lines with expressions
+#  • Field Consistency: Standardized 'doc' field naming
+#  • Automatic Parameter Generation: Parameters auto-appended to device lines
+#  • ngspice Validated: Perfect user workflow from xschem → ASDL → ngspice
 # ────────────────────────────────────────────────────────────────────────────────
 
-file_info:
+design_info:
   top_module: <module_id>              # Entry point module name for the circuit design
   doc: <string>                        # Human-readable description of the design file
   revision: <string>                   # Version tag (e.g. "v0.4")
@@ -12,12 +19,21 @@ file_info:
 
 models:
   <model_alias>:                       # Logical name used in the design (e.g. "nmos_unit")
-    model: <string>                    # PDK-specific primitive model (e.g. "nch_lvt")
+    doc: <string>                      # Optional documentation for the device
     type: nmos|pmos|resistor|capacitor|diode|...
     ports: [<port1>, <port2>, ...]     # Ordered terminal list (for positional mapping)
+    
+    # NEW ROBUST APPROACH (Preferred):
+    device_line: |                     # Raw PDK device line with {port} placeholders
+      <PDK_device_line_template>       # Example: MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad='...'
+    parameters:
+      <param>: <default_value>         # Parameterizable values with defaults (e.g., M: 1)
+    
+    # LEGACY APPROACH (Backward compatibility):
+    model: <string>                    # PDK-specific primitive model (e.g. "nch_lvt")
     params:
       <param>: <value>                 # Default parameters (e.g., W, L, C)
-    description: <string>              # Optional explanation of the device
+    description: <string>              # Legacy description field (for backward compatibility)
 
 modules:
   <module_id>:
@@ -63,6 +79,34 @@ modules:
             match_group: <string>      # Symmetry or matching tag
             symmetry: diff|quad|mirror|none
 
+# ═══════════════════════════════════════════════════════════════
+# ✨ ENHANCED PARAMETER HANDLING (NEW in v0.4) ✨
+# ═══════════════════════════════════════════════════════════════
+
+# The new robust approach enables seamless integration with real PDK device lines:
+#
+# 1. 🎯 PERFECT USER WORKFLOW:
+#    • User creates device in xschem schematic
+#    • User netlists the schematic
+#    • User copies device line EXACTLY to ASDL YAML device_line field
+#    • ASDL preserves expressions exactly as-is
+#    • ngspice simulates perfectly with ZERO manual intervention
+#
+# 2. 🔧 AUTOMATIC PARAMETER GENERATION:
+#    • Parameters declared in 'parameters' section are automatically appended
+#    • Format: device_line + " M={M} nf={nf}" (auto-generated)
+#    • No manual parameter formatting required = No errors
+#
+# 3. 🧠 EXPRESSION PRESERVATION:
+#    • Complex expressions like "ad='int((nf+1)/2) * W/nf * 0.18u'" preserved exactly
+#    • ngspice automatically resolves expressions using hard-coded parameter values
+#    • No parameter extraction or expression flattening needed
+#
+# 4. 🏗️ CLEAN SEPARATION:
+#    • device_line: Core PDK device definition
+#    • parameters: Parameterizable values with defaults
+#    • Auto-combined during SPICE generation
+
 # ───────────────────────────────────────────
 # FORMAT PREFERENCES & EXAMPLES
 # ───────────────────────────────────────────
@@ -95,7 +139,14 @@ modules:
 #      D_<p,n>:  out_<p,n>
 #      S_<p,n>:  tail
 
-# 4. Terminal Naming
+# 4. Enhanced Model Definition (NEW APPROACH)
+#    device_line: |
+#      MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u'
+#    parameters:
+#      M: 1
+#    # Automatically generates: MN D G S B nfet_03v3 L=0.5u W=4u nf=2 ad='...' M={M}
+#
+# 5. Terminal Naming
 #    - Use plus/minus for capacitor/resistor terminals
 #    - Use G/D/S/B for transistor terminals
 
@@ -146,9 +197,80 @@ modules:
 #      layout.symmetry: quad
 #    as optional metadata to assist LLMs or rendering/layout tools in understanding structure.
 
-# ─────────────────────────────
-# EXAMPLE (Differential NMOS)
-# ─────────────────────────────
+# ──────────────────────────────────────────────────────────────
+# COMPLETE EXAMPLES - Latest Refinements (Enhanced Parameter Handling)
+# ──────────────────────────────────────────────────────────────
+
+# ═══════════════════════════════════════════════════════════════
+# EXAMPLE 1: Basic CMOS Inverter (Real PDK Integration)
+# ═══════════════════════════════════════════════════════════════
+
+design_info:
+  top_module: inverter
+  doc: "Basic CMOS inverter with enhanced parameter handling"
+  revision: "v0.4"
+  author: "ASDL"
+  date: "2024-03-19"
+
+models:
+  # ─── NEW ROBUST APPROACH: Real PDK Device Lines ───
+  nmos_unit:
+    doc: "NMOS transistor unit cell"
+    type: nmos
+    ports: [G, D, S, B]
+    device_line: |
+      MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+    parameters:
+      M: 1
+
+  pmos_unit:
+    doc: "PMOS transistor unit cell"
+    type: pmos
+    ports: [G, D, S, B]
+    device_line: |
+      MP {D} {G} {S} {B} pfet_03v3 L=0.5u W=5u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+    parameters:
+      M: 1
+
+modules:
+  inverter:
+    doc: "Basic CMOS inverter with PMOS pull-up and NMOS pull-down"
+    ports:
+      in:  {dir: in,  type: voltage}
+      out: {dir: out, type: voltage}
+      vss: {dir: in_out, type: voltage}
+      vdd: {dir: in_out, type: voltage, constraints: {Vdd: 1.8}}
+    parameters:
+      M: 1
+    instances:
+      MP:
+        model: pmos_unit
+        mappings: {G: in, D: out, S: vdd, B: vdd}
+        parameters:
+          M: 2
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 10
+          layout:
+            type: single
+            symmetry: none
+      MN:
+        model: nmos_unit
+        mappings: {G: in, D: out, S: vss, B: vss}
+        parameters:
+          M: 2
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 10
+          layout:
+            type: single
+            symmetry: none
+
+# ═══════════════════════════════════════════════════════════════
+# EXAMPLE 2: Differential Pair with Pattern Expansion
+# ═══════════════════════════════════════════════════════════════
 
 # diff_pair_nmos:
 #   ports:

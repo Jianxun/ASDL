@@ -115,6 +115,14 @@ models:
 
 ## Recent Changes
 
+### ✅ Phase 4: Schema Documentation Update (COMPLETE)
+- **Schema Refinement**: Updated ASDL_schema_v0p4 documentation with latest enhancements
+- **Field Updates**: Corrected `file_info` → `design_info` naming
+- **Enhanced Model Format**: Documented new `device_line` + `parameters` approach with comprehensive examples
+- **Real PDK Integration**: Added examples showing complex device lines with expressions from GF180MCU PDK
+- **User Workflow Documentation**: Documented perfect xschem → ASDL → ngspice workflow
+- **Automatic Parameter Generation**: Documented how parameters are auto-appended to device lines
+
 ### ✅ Phase 3: Parameter Handling Enhancement (COMPLETE)
 
 #### **Enhanced Schema Implementation ✅**
@@ -152,7 +160,7 @@ X_MP in out vdd vdd pmos_unit M=2      # Parameter override at instance level
 ```
 
 ## Open Questions  
-1. **Pattern Expansion**: How should we implement `<p,n>` and `[3:0]` pattern expansion while maintaining user workflow simplicity?
+1. ✅ **Pattern Expansion Rules Defined**: Comprehensive literal expansion rules documented in `doc/pattern_expansion_rules.md`
 
 2. **Parameter Resolution**: What's the best approach for `$param` variable substitution in complex expressions?
 
