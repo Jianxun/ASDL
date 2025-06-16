@@ -53,13 +53,31 @@
   - [X] Documented comprehensive literal expansion rules in `doc/pattern_expansion_rules.md` ✅
   - [X] Defined error conditions and validation rules ✅
   - [X] Clarified instance expansion behavior (separate instantiations) ✅
-- [ ] **Pattern Expansion System Implementation**
-  - [ ] Implement `<>` literal pattern expansion (MVP)
-  - [ ] Add pattern parsing and validation
-  - [ ] Implement order-sensitive mapping expansion
-  - [ ] Add instance expansion with synchronized mappings
-  - [ ] Maintain pattern syntax in data structures until explicit expansion
-  - [ ] Add expansion step to SPICE generation pipeline
+- [ ] **Pattern Expansion System Implementation** (CURRENT PRIORITY - TDD)
+  - [X] **Step 1: Pattern Parsing & Validation Tests + Implementation** ✅
+    - [X] Write tests for pattern detection (`_has_literal_pattern`) ✅
+    - [X] Write tests for pattern extraction (`_extract_literal_pattern`) ✅
+    - [X] Write tests for pattern validation (item counts, emptiness) ✅
+    - [X] Implement pattern parsing methods ✅
+  - [ ] **Step 2: Basic Literal Expansion Tests + Implementation**
+    - [ ] Write tests for simple expansion (`in_<p,n>` → `[in_p, in_n]`)
+    - [ ] Write tests for empty suffix (`clk<,b>` → `[clk, clkb]`)
+    - [ ] Write tests for no prefix (`<ab,cd>` → `[ab, cd]`)
+    - [ ] Implement `_expand_literal_pattern` method
+  - [ ] **Step 3: Port/Net Expansion Tests + Implementation**
+    - [ ] Write tests for port pattern expansion
+    - [ ] Write tests for one-sided mapping expansion
+    - [ ] Write tests for order-sensitive mapping expansion
+    - [ ] Implement `expand_port_patterns` method
+  - [ ] **Step 4: Instance Expansion Tests + Implementation**
+    - [ ] Write tests for instance name expansion
+    - [ ] Write tests for synchronized instance+mapping expansion
+    - [ ] Write tests for separate instantiation behavior
+    - [ ] Implement `expand_instance_patterns` method
+  - [ ] **Step 5: Integration & Pipeline Tests**
+    - [ ] Write end-to-end expansion tests
+    - [ ] Add expansion step to SPICE generation pipeline
+    - [ ] Integration tests with existing generator
 
 - [ ] **Parameter Resolution Enhancement**
   - [ ] Implement `$param` variable substitution system

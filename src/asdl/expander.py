@@ -5,7 +5,7 @@ Handles expansion of differential patterns (<p,n>) and bus patterns ([3:0])
 as an explicit elaboration step, similar to Verilog elaboration.
 """
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from .data_structures import ASDLFile, Module, Port, Instance
 
 
@@ -149,6 +149,113 @@ class PatternExpander:
     def _has_bus_pattern(self, name: str) -> bool:
         """Check if name contains bus pattern [...].""" 
         return '[' in name and ']' in name and ':' in name
+    
+    def _has_literal_pattern(self, name: str) -> bool:
+        """Check if name contains literal pattern <...>."""
+        # Must have both < and > 
+        if not ('<' in name and '>' in name):
+            return False
+        
+        # Check that there's a complete pattern
+        start = name.find('<')
+        end = name.find('>')
+        if start == -1 or end == -1 or start >= end:
+            return False
+            
+        # Check for multiple bracket pairs (not supported)
+        remaining = name[end+1:]
+        if '<' in remaining and '>' in remaining:
+            return False
+            
+        # Check for mixed bracket types inside pattern (array syntax inside literal)
+        pattern_content = name[start+1:end]
+        if '[' in pattern_content and ']' in pattern_content:
+            return False
+            
+        # Any content inside brackets (even empty or single item) is a pattern attempt
+        # Validation will enforce comma requirement
+        return True
+    
+    def _extract_literal_pattern(self, name: str) -> Optional[List[str]]:
+        """
+        Extract literal pattern items from name.
+        
+        Example: "in_<p,n>" -> ["p", "n"]
+        Returns None if no pattern found.
+        """
+        if not self._has_literal_pattern(name):
+            return None
+        
+        start = name.find('<')
+        end = name.find('>')
+        pattern_content = name[start+1:end]
+        
+        # Handle empty pattern
+        if not pattern_content:
+            return []
+        
+        # Split by comma and strip whitespace - this handles single items too
+        items = [item.strip() for item in pattern_content.split(',')]
+        return items
+    
+    def _validate_literal_pattern(self, items: List[str]) -> None:
+        """
+        Validate literal pattern items according to expansion rules.
+        
+        Raises ValueError for invalid patterns.
+        """
+        if not items:
+            raise ValueError("Pattern cannot be empty")
+        
+        if len(items) < 2:
+            raise ValueError("Pattern must have at least 2 items")
+        
+        # Check that at least one item is non-empty
+        if all(item == "" for item in items):
+            raise ValueError("At least one item must be non-empty")
+    
+    def _validate_pattern_counts(self, left_items: Optional[List[str]], 
+                               right_items: Optional[List[str]]) -> None:
+        """
+        Validate that pattern counts match for mappings.
+        
+        Raises ValueError if both sides have patterns but different counts.
+        """
+        # If one side is None (no pattern), that's OK
+        if left_items is None or right_items is None:
+            return
+        
+        # Both sides have patterns - counts must match
+        if len(left_items) != len(right_items):
+            raise ValueError(f"Pattern item counts must match: {len(left_items)} vs {len(right_items)}")
+    
+    def _expand_literal_pattern(self, name: str) -> List[str]:
+        """
+        Expand literal pattern in name.
+        
+        Example: "in_<p,n>" -> ["in_p", "in_n"]
+        Returns [name] if no pattern.
+        """
+        items = self._extract_literal_pattern(name)
+        if items is None:
+            return [name]
+        
+        # Validate pattern
+        self._validate_literal_pattern(items)
+        
+        # Find pattern location
+        start = name.find('<')
+        end = name.find('>')
+        prefix = name[:start]
+        suffix = name[end+1:]
+        
+        # Generate expanded names
+        expanded = []
+        for item in items:
+            expanded_name = prefix + item + suffix
+            expanded.append(expanded_name)
+        
+        return expanded
     
     def _expand_diff_pattern(self, name: str) -> List[str]:
         """
