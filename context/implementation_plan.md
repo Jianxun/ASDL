@@ -3,10 +3,24 @@
 ## Overview
 This document outlines the detailed implementation plan for the ASDL (Analog Structured Description Language) project. The goal is to build a complete pipeline: YAML → Parser → Expander → Resolver → Generator → SPICE.
 
-## Phase 1: Data Structure Enhancements
+## Current Sprint: SPICE Generator Implementation (Phase 5)
+
+**Status:** Parser implementation complete (44 passing tests). Now implementing SPICE netlist generator using TDD approach.
+
+**Current Priority:** Implement SPICE generator with comprehensive test coverage following the test structure:
+1. Device Generation Tests (`test_device_generation.py`)
+2. Net and Port Tests (`test_nets_and_ports.py`) 
+3. Module/Subcircuit Tests (`test_module_generation.py`)
+4. Complete SPICE Output Tests (`test_spice_output.py`)
+5. Parameter Handling Tests (`test_parameters.py`)
+6. Error Handling Tests (`test_error_handling.py`)
+7. Metadata and Comments Tests (`test_metadata.py`)
+8. Integration Tests (`test_integration.py`)
+
+## Phase 1: Data Structure Enhancements ✅ COMPLETED
 
 ### 1.1 ASDLFile Round-trip & Debug Methods
-**Priority: High**
+**Status: PENDING - Next Sprint**
 
 Add the following methods to `ASDLFile` class:
 
@@ -30,59 +44,29 @@ def dump_json(self, filepath: str) -> None:
 - Handle all dataclass types and nested structures
 - Preserve YAML schema structure
 
-### 1.2 Data Structure Corrections
-**Priority: High**
+### 1.2 Data Structure Corrections ✅ COMPLETED
+**Issue Resolved:** Updated schema from `design_info` to `file_info` with backward compatibility.
 
-**Issue Found:** The example YAML uses `design_info` but the code expects `file_info`. Need to handle both for backwards compatibility during parsing.
+## Phase 2: Parser Implementation ✅ COMPLETED
 
-## Phase 2: Parser Implementation
+**Status:** Complete with 44 passing tests using systematic TDD approach.
 
-### 2.1 Complete YAML Parser
-**Priority: High**
-
-Replace all placeholder `# TODO` implementations in `parser.py`:
-
-#### 2.1.1 FileInfo Parsing
-- Handle both `design_info` (legacy) and `file_info` (v0.4)
-- Validate required fields
-- Provide meaningful defaults
-
-#### 2.1.2 Models Parsing  
-- Parse device model definitions
-- Validate `DeviceType` enum values
-- Handle optional description field
-- Convert port lists properly
-
-#### 2.1.3 Modules Parsing
-- Parse module definitions with all components
-- Handle optional fields (doc, nets, parameters)
-- Recursive parsing of ports, instances, etc.
-
-#### 2.1.4 Ports Parsing
-- Parse port definitions with direction and type
-- Handle constraints (placeholder implementation)
-- Validate enum values for `PortDirection` and `SignalType`
-
-#### 2.1.5 Instance Parsing
-- Parse instance definitions
-- Preserve mappings and parameters as-is (no expansion yet)
-- Handle optional intent metadata
-
-### 2.2 Error Handling
-**Priority: Medium**
-
-Comprehensive error handling for:
-- File not found
-- YAML syntax errors  
-- Invalid ASDL structure
-- Missing required fields
-- Invalid enum values
-- Type mismatches
+✅ **Achievements:**
+- Complete YAML parser with future-proofing capabilities
+- FileInfo parsing with backward compatibility (`design_info` → `file_info`)
+- Models parsing with device model definitions and validation
+- Modules parsing with all components and recursive structures
+- Ports parsing with direction, type, and constraint handling
+- Instance parsing with mapping and parameter preservation
+- Comprehensive error handling for all error cases
+- Configurable strict/lenient validation modes
+- Unknown field detection and handling
+- Intent metadata preservation for extensibility
 
 ## Phase 3: Pattern Expander Implementation
 
 ### 3.1 Differential Pattern Expansion
-**Priority: High**
+**Priority: High - Future Sprint**
 
 Implement expansion of `<p,n>` patterns:
 
@@ -106,7 +90,7 @@ Implement expansion of `<p,n>` patterns:
 - Handle complex patterns in both port and net names
 
 ### 3.2 Bus Pattern Expansion  
-**Priority: High**
+**Priority: High - Future Sprint**
 
 Implement expansion of `[high:low]` patterns:
 
@@ -116,14 +100,14 @@ Implement expansion of `[high:low]` patterns:
 ```
 
 ### 3.3 Net Pattern Expansion
-**Priority: Medium**
+**Priority: Medium - Future Sprint**
 
 Extend pattern expansion to `nets.internal` declarations.
 
 ## Phase 4: Parameter Resolver Implementation
 
 ### 4.1 Expression Evaluation
-**Priority: High**
+**Priority: High - Future Sprint**
 
 #### 4.1.1 Simple Parameter References
 ```python
@@ -144,23 +128,23 @@ Extend pattern expansion to `nets.internal` declarations.
 - Forbid: Function calls, imports, dangerous operations
 
 ### 4.2 Hierarchical Parameter Resolution
-**Priority: High**
+**Priority: High - Future Sprint**
 
 - Module parameters provide context for instance parameters
 - Parameter inheritance and override semantics
 - Error handling for undefined parameters
 
 ### 4.3 Context Management
-**Priority: Medium**
+**Priority: Medium - Future Sprint**
 
 - Track parameter scopes
 - Handle parameter shadowing
 - Provide clear error messages for resolution failures
 
-## Phase 5: SPICE Generator Implementation
+## Phase 5: SPICE Generator Implementation 🚧 CURRENT SPRINT
 
 ### 5.1 Subcircuit Generation
-**Priority: High**
+**Priority: High - IN PROGRESS**
 
 #### 5.1.1 Module → .subckt
 - Generate `.subckt` headers with proper port ordering
@@ -174,7 +158,7 @@ Extend pattern expansion to `nets.internal` declarations.
 - Option C: Explicit ordering field
 
 ### 5.2 Instance Generation
-**Priority: High**
+**Priority: High - IN PROGRESS**
 
 #### 5.2.1 Device Instance → Device Line
 ```spice
@@ -189,7 +173,7 @@ XINV1 in out vdd vss inverter
 ```
 
 ### 5.3 Netlist Structure
-**Priority: High**
+**Priority: High - IN PROGRESS**
 
 - Header comments with file metadata
 - Proper subcircuit ordering (dependencies first)
@@ -197,7 +181,7 @@ XINV1 in out vdd vss inverter
 - `.end` statement
 
 ### 5.4 Error Handling
-**Priority: Medium**
+**Priority: Medium - IN PROGRESS**
 
 - Unconnected ports → "UNCONNECTED" nets
 - Missing model references
@@ -206,7 +190,7 @@ XINV1 in out vdd vss inverter
 ## Phase 6: Integration & Testing
 
 ### 6.1 Pipeline Integration
-**Priority: High**
+**Priority: High - Future Sprint**
 
 Create end-to-end pipeline:
 ```python
@@ -224,34 +208,35 @@ def asdl_to_spice(yaml_file: str) -> str:
 ```
 
 ### 6.2 Test Suite Development
-**Priority: High**
+**Priority: High - ONGOING**
 
-#### 6.2.1 Unit Tests
-- Each component tested independently
-- Mock data for isolated testing
-- Edge cases and error conditions
+#### 6.2.1 Unit Tests ✅ PARSER COMPLETE
+- Parser: 44 passing tests with comprehensive coverage
+- Generator: TDD in progress with 8 test modules planned
 
 #### 6.2.2 Integration Tests  
+**Priority: Medium - Future Sprint**
 - End-to-end pipeline testing
 - Real ASDL examples (inverter, OTA)
 - Round-trip testing (YAML → ASDLFile → YAML)
 
 #### 6.2.3 JSON Debug Testing
+**Priority: Medium - Future Sprint**
 - Verify JSON serialization works
 - Test with complex nested structures
 - Ensure human-readable output
 
 ### 6.3 Example Validation
-**Priority: Medium**
+**Priority: Medium - Future Sprint**
 
-- Verify existing examples parse correctly
+- Verify existing examples parse correctly ✅ DONE
 - Generate SPICE for all examples
 - Validate SPICE syntax
 
 ## Phase 7: Code Quality & Documentation
 
 ### 7.1 Code Cleanup
-**Priority: Medium**
+**Priority: Medium - Future Sprint**
 
 - Remove all `# TODO` placeholders
 - Add comprehensive docstrings
@@ -259,43 +244,44 @@ def asdl_to_spice(yaml_file: str) -> str:
 - Error message improvements
 
 ### 7.2 API Documentation
-**Priority: Low**
+**Priority: Low - Future Sprint**
 
 - Generate API docs from docstrings
 - Usage examples
 - Error handling guide
 
-## Implementation Order
+## Implementation Order - UPDATED
 
-1. **Data Structure Enhancements** (ASDLFile methods)
-2. **Parser Implementation** (handle existing examples)  
-3. **Pattern Expander** (differential first, then bus)
-4. **Parameter Resolver** (simple first, then arithmetic)
-5. **SPICE Generator** (basic structure, then refinements)
+1. ✅ **Data Structure Enhancements** (Basic classes complete, round-trip methods pending)
+2. ✅ **Parser Implementation** (Complete with 44 passing tests)  
+3. 🚧 **SPICE Generator** (Current sprint - TDD in progress)
+4. **Pattern Expander** (differential first, then bus)
+5. **Parameter Resolver** (simple first, then arithmetic)
 6. **Integration & Testing** (continuous throughout)
 7. **Code Quality** (final cleanup)
 
-## Success Criteria
+## Success Criteria - UPDATED
 
-- [ ] Parse `examples/inverter.yml` successfully
-- [ ] Parse `examples/two_stage_ota.yml` successfully  
-- [ ] Generate valid SPICE netlist for both examples
+- ✅ Parse `examples/inverter.yml` successfully
+- ✅ Parse `examples/two_stage_ota.yml` successfully  
+- [ ] **Generate valid SPICE netlist for both examples** (CURRENT GOAL)
 - [ ] Round-trip: YAML → ASDLFile → YAML (original files)
 - [ ] JSON debug output for all data structures
-- [ ] All tests pass
+- ✅ Parser tests pass (44/44)
+- [ ] **SPICE generator tests pass** (IN PROGRESS)
 - [ ] No `# TODO` comments remain in core functionality
 
 ## Risk Mitigation
 
-1. **Complex Pattern Expansion**: Start with simple differential patterns
-2. **Unsafe Expression Evaluation**: Implement safe evaluator early
-3. **YAML Compatibility**: Handle both legacy and v0.4 formats
-4. **SPICE Syntax**: Validate against ngspice documentation
+1. **Complex Pattern Expansion**: Start with simple differential patterns (DEFERRED)
+2. **Unsafe Expression Evaluation**: Implement safe evaluator early (FUTURE)
+3. ✅ **YAML Compatibility**: Handle both legacy and v0.4 formats (COMPLETED)
+4. **SPICE Syntax**: Validate against ngspice documentation (CURRENT FOCUS)
 
 ## Dependencies
 
-- PyYAML: YAML parsing and generation
+- PyYAML: YAML parsing and generation ✅
 - JSON: Built-in Python module for debug output
-- Dataclasses: For clean data structure definitions
-- Enum: Type-safe enumeration values
-- Typing: Type hints for better code quality 
+- Dataclasses: For clean data structure definitions ✅
+- Enum: Type-safe enumeration values ✅
+- Typing: Type hints for better code quality ✅ 

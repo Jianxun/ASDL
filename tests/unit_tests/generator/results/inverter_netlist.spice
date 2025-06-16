@@ -1,0 +1,27 @@
+* SPICE netlist generated from ASDL
+* Design: Basic CMOS inverter
+* Author: ASDL
+* Date: 2024-03-19
+* Revision: v0.4
+
+* Model subcircuit definitions
+* NMOS transistor unit cell
+.subckt nmos_unit G D S B
+  MN D G S B nch_lvt W=1u L=0.1u
+.ends
+
+* PMOS transistor unit cell
+.subckt pmos_unit G D S B
+  MP D G S B pch_lvt W=1u L=0.1u
+.ends
+
+* Basic CMOS inverter with PMOS pull-up and NMOS pull-down
+.subckt inverter in out vdd vss
+  X_MP in out vdd vdd pmos_unit M=2
+  X_MN in out vss vss nmos_unit M=2
+.ends
+
+* Main circuit instantiation
+XMAIN in out vdd vss inverter
+
+.end

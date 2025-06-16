@@ -6,19 +6,65 @@ have been expanded and parameters have been resolved.
 """
 
 from typing import Dict, List, Any, Optional
-from .data_structures import ASDLFile, Module, Instance, DeviceModel
+from .data_structures import ASDLFile, Module, Instance, DeviceModel, DeviceType
 
 
 class SPICEGenerator:
     """
-    SPICE netlist generator for ASDL designs.
+    Hierarchical SPICE netlist generator for ASDL designs.
     
-    Generates SPICE netlists from fully elaborated designs:
-    - Each Module becomes a .subckt definition
-    - Device instances become device lines
-    - Module instances become subcircuit calls (X-lines)
-    - Hierarchical netlists with proper subcircuit structure
+    Generates hierarchical SPICE netlists with proper subcircuit structure:
+    - Device models become .subckt definitions (primitives inside)
+    - Module definitions become .subckt definitions  
+    - Device instances become subcircuit calls (X_ prefix)
+    - Module instances become subcircuit calls (X prefix)
+    - Two-level port resolution: named mappings + model-defined order
+    - ngspice compatible output format
+    
+    Pipeline order:
+    1. Model subcircuit definitions (.subckt for each device model)
+    2. Module subcircuit definitions (.subckt for each circuit module)
+    3. Main circuit instantiation (XMAIN top-level call)
+    4. End statement (.end)
     """
+    
+    # Device formatting templates with explicit port mapping
+    # Templates directly show SPICE format with named port placeholders
+    # Two-terminal devices use consistent "plus"/"minus" naming
+    DEVICE_FORMATS = {
+        DeviceType.RESISTOR: {
+            "template": "{name} {plus} {minus} {model} {value}",
+            "value_param": "value",
+            "param_format": "bare"
+        },
+        DeviceType.CAPACITOR: {
+            "template": "{name} {plus} {minus} {model} {value}",
+            "value_param": "value",
+            "param_format": "bare"
+        },
+        DeviceType.INDUCTOR: {
+            "template": "{name} {plus} {minus} {model} {value}",
+            "value_param": "value", 
+            "param_format": "bare"
+        },
+        DeviceType.NMOS: {
+            "template": "{name} {D} {G} {S} {B} {model} {params}",
+            "param_format": "named"
+        },
+        DeviceType.PMOS: {
+            "template": "{name} {D} {G} {S} {B} {model} {params}",
+            "param_format": "named"
+        },
+        DeviceType.DIODE: {
+            "template": "{name} {a} {c} {model} {params}",
+            "param_format": "named"
+        },
+        # Default format for unknown device types
+        "default": {
+            "template": "{name} {model} {params}",
+            "param_format": "named"
+        }
+    }
     
     def __init__(self):
         """Initialize SPICE generator with default settings."""
@@ -45,6 +91,14 @@ class SPICEGenerator:
         lines.append(f"* Revision: {asdl_file.file_info.revision}")
         lines.append("")
         
+        # Generate model subcircuit definitions first
+        if asdl_file.models:
+            lines.append("* Model subcircuit definitions")
+            for model_name, model in asdl_file.models.items():
+                model_subckt = self.generate_model_subcircuit(model_name, model)
+                lines.append(model_subckt)
+                lines.append("")
+        
         # Generate subcircuit definitions for all modules
         for module_name, module in asdl_file.modules.items():
             subckt_def = self.generate_subckt(module, module_name, asdl_file)
@@ -55,10 +109,12 @@ class SPICEGenerator:
         if asdl_file.file_info.top_module:
             top_module_name = asdl_file.file_info.top_module
             if top_module_name in asdl_file.modules:
+                top_module = asdl_file.modules[top_module_name]
                 lines.append(f"* Main circuit instantiation")
-                lines.append(f"XMAIN {self._get_top_level_nets()} {top_module_name}")
-                lines.append("")
+                lines.append(f"XMAIN {self._get_top_level_nets(top_module)} {top_module_name}")
         
+        # End SPICE netlist (ngspice compatibility)
+        lines.append("")
         lines.append(".end")
         
         return "\n".join(lines)
@@ -122,36 +178,72 @@ class SPICEGenerator:
     def _generate_device_line(self, instance_id: str, instance: Instance, 
                              asdl_file: ASDLFile) -> str:
         """
-        Generate device line for a primitive device instance.
+        Generate subcircuit call for a device instance.
         
-        Format: <name> <nodes> <model> <parameters>
-        Example: MN1 drain gate source bulk nch_lvt W=1u L=0.1u M=1
+        Format: X_<name> <nodes> <model_name> <parameters>
+        Example: X_MN1 in out vss vss nmos_unit M=2
         """
         device_model = asdl_file.models[instance.model]
         
-        # Get node connections in port order
+        # Build subcircuit call with X_ prefix
+        subckt_name = f"X_{instance_id}"
+        
+        # Get node connections in model-defined port order
         node_list = []
-        for port in device_model.ports:
-            if port in instance.mappings:
-                node_list.append(instance.mappings[port])
+        for port_name in device_model.ports:
+            if port_name in instance.mappings:
+                node_list.append(instance.mappings[port_name])
             else:
-                # TODO: Better error handling
+                # Handle unconnected ports
                 node_list.append("UNCONNECTED")
         
-        # Build parameter string
-        param_parts = []
+        # Get instance parameters (only instance-specific parameters)
+        instance_params = instance.parameters if instance.parameters else {}
+        
+        # Format subcircuit call: X_name nodes model_name params
+        parts = [subckt_name, " ".join(node_list), instance.model]
+        
+        # Add parameters if any
+        if instance_params:
+            param_str = self._format_named_parameters(instance_params)
+            parts.append(param_str)
+        
+        return " ".join(parts)
+    
+    def _merge_parameters(self, device_model: DeviceModel, instance: Instance) -> Dict[str, Any]:
+        """Merge model default parameters with instance parameters."""
+        all_params = {}
         
         # Add device model parameters (with defaults)
-        for param_name, param_value in device_model.params.items():
-            param_parts.append(f"{param_name}={param_value}")
+        if device_model.params:
+            all_params.update(device_model.params)
         
         # Override with instance parameters
         if instance.parameters:
-            for param_name, param_value in instance.parameters.items():
-                param_parts.append(f"{param_name}={param_value}")
+            all_params.update(instance.parameters)
+            
+        return all_params
+    
+    def _format_named_parameters(self, params: Dict[str, Any], model: DeviceModel = None) -> str:
+        """Format parameters as param=value pairs using model-defined order."""
+        param_parts = []
         
-        # Format: name nodes model parameters
-        return f"{instance_id} {' '.join(node_list)} {device_model.model} {' '.join(param_parts)}"
+        if model and model.params:
+            # First, add parameters in model-defined order
+            for param_name in model.params.keys():
+                if param_name in params:
+                    param_parts.append(f"{param_name}={params[param_name]}")
+            
+            # Then add any instance-only parameters (alphabetically for consistency)
+            instance_only = set(params.keys()) - set(model.params.keys())
+            for param_name in sorted(instance_only):
+                param_parts.append(f"{param_name}={params[param_name]}")
+        else:
+            # Fallback to alphabetical order if no model parameter order available
+            for param_name in sorted(params.keys()):
+                param_parts.append(f"{param_name}={params[param_name]}")
+        
+        return " ".join(param_parts)
     
     def _generate_subckt_call(self, instance_id: str, instance: Instance, 
                              asdl_file: ASDLFile) -> str:
@@ -190,15 +282,19 @@ class SPICEGenerator:
         # TODO: Preserve declaration order or use explicit ordering
         return sorted(module.ports.keys())
     
-    def _get_top_level_nets(self) -> str:
+    def _get_top_level_nets(self, module: Module = None) -> str:
         """
         Get net list for top-level instantiation.
         
-        TODO: Implement proper top-level net generation
-        This is a placeholder that needs to be refined based on
-        how we want to handle top-level connections.
+        For now, return the port list of the module being instantiated.
+        TODO: Implement proper top-level net generation with actual connections.
         """
-        return "vdd vss"  # Placeholder
+        if module and module.ports:
+            # Use the module's port names as top-level nets
+            port_list = self._get_port_list(module)
+            return " ".join(port_list)
+        else:
+            return "vdd vss"  # Fallback
     
     def _format_parameter_value(self, value: Any) -> str:
         """
@@ -211,4 +307,134 @@ class SPICEGenerator:
         elif isinstance(value, (int, float)):
             return str(value)
         else:
-            return str(value) 
+            return str(value)
+
+    def generate_model_subcircuit(self, model_name: str, model: DeviceModel) -> str:
+        """
+        Generate .subckt definition for a device model.
+        
+        Args:
+            model_name: Name of the model
+            model: DeviceModel definition
+            
+        Returns:
+            SPICE subcircuit definition as string
+        """
+        lines = []
+        
+        # Add model documentation
+        doc = model.get_doc()
+        if doc:
+            lines.append(f"* {doc}")
+        
+        # Generate .subckt header with model-defined port order
+        port_list = model.ports
+        lines.append(f".subckt {model_name} {' '.join(port_list)}")
+        
+        # Add parameter declarations with default values
+        param_defaults = model.get_parameter_defaults()
+        if param_defaults:
+            for param_name, param_value in param_defaults.items():
+                lines.append(f"{self.indent}.param {param_name}={param_value}")
+        
+        # Generate the internal device instance
+        device_instance = self._generate_model_device_instance(model)
+        lines.append(f"{self.indent}{device_instance}")
+        
+        # Close subcircuit
+        lines.append(".ends")
+        
+        return "\n".join(lines)
+
+    def _generate_model_device_instance(self, model: DeviceModel) -> str:
+        """
+        Generate the internal device instance for a model subcircuit.
+        
+        This creates the primitive device line that goes inside the model subcircuit.
+        Uses either the new device_line approach or legacy template approach.
+        
+        Args:
+            model: DeviceModel definition
+            
+        Returns:
+            SPICE device line as string
+        """
+        if model.has_device_line():
+            # NEW APPROACH: Use raw device_line with parameter substitution
+            return self._generate_from_device_line(model)
+        else:
+            # LEGACY APPROACH: Use templates (backward compatibility)
+            return self._generate_from_legacy_template(model)
+    
+    def _generate_from_device_line(self, model: DeviceModel) -> str:
+        """
+        Generate device line using the new device_line approach.
+        
+        Substitutes port names in the device line and automatically appends parameter assignments.
+        """
+        device_line = model.device_line.strip()
+        
+        # Build substitution data for ports only
+        template_data = {}
+        
+        # Add port mappings (identity mapping within subcircuit)
+        for port in model.ports:
+            template_data[port] = port
+        
+        # Apply port substitutions to the base device line
+        try:
+            base_line = device_line.format(**template_data)
+        except KeyError as e:
+            raise ValueError(f"Missing port placeholder in device_line: {e}")
+        
+        # Automatically append parameter assignments
+        param_defaults = model.get_parameter_defaults()
+        if param_defaults:
+            param_assignments = []
+            for param_name in param_defaults.keys():
+                param_assignments.append(f"{param_name}={{{param_name}}}")
+            
+            # Combine base line with parameter assignments
+            return f"{base_line} {' '.join(param_assignments)}"
+        else:
+            return base_line
+    
+    def _generate_from_legacy_template(self, model: DeviceModel) -> str:
+        """
+        Generate device line using legacy template approach (backward compatibility).
+        """
+        # Get device format specification
+        device_format = self.DEVICE_FORMATS.get(model.type, self.DEVICE_FORMATS["default"])
+        
+        # Determine device name prefix based on device type
+        device_prefixes = {
+            DeviceType.RESISTOR: "R",
+            DeviceType.CAPACITOR: "C", 
+            DeviceType.INDUCTOR: "L",
+            DeviceType.NMOS: "MN",
+            DeviceType.PMOS: "MP",
+            DeviceType.DIODE: "D"
+        }
+        device_name = device_prefixes.get(model.type, "X")
+        
+        # Build template data
+        template_data = {
+            "name": device_name,
+            "model": model.model,
+        }
+        
+        # Map each port to itself (identity mapping within subcircuit)
+        for port in model.ports:
+            template_data[port] = port
+        
+        # Add parameter data based on format type
+        if device_format["param_format"] == "bare":
+            # Use bare value for simple devices (R, L, C)
+            value_param = device_format["value_param"]
+            template_data["value"] = str(model.params.get(value_param, ""))
+        else:
+            # Use named parameters for complex devices (transistors, etc.)
+            template_data["params"] = self._format_named_parameters(model.params, model)
+        
+        # Apply template
+        return device_format["template"].format(**template_data) 

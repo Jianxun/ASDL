@@ -167,8 +167,8 @@ class ASDLParser:
             if not isinstance(model_data, dict):
                 raise ValueError(f"Model '{model_alias}' must be a dictionary")
             
-            # Known fields for DeviceModel
-            known_fields = {'model', 'type', 'ports', 'params', 'description'}
+            # Known fields for DeviceModel (including new fields)
+            known_fields = {'model', 'type', 'ports', 'params', 'description', 'doc', 'device_line', 'parameters'}
             self._check_unknown_fields(model_data, known_fields, f"model '{model_alias}'")
             
             # Parse device type with validation
@@ -180,11 +180,16 @@ class ASDLParser:
                                f"Valid types: {[dt.value for dt in DeviceType]}")
             
             models[model_alias] = DeviceModel(
-                model=model_data.get('model', ''),
                 type=device_type,
                 ports=model_data.get('ports', []),
-                params=model_data.get('params', {}),
-                description=model_data.get('description')
+                doc=model_data.get('doc'),
+                # NEW fields
+                device_line=model_data.get('device_line'),
+                parameters=model_data.get('parameters'),
+                # LEGACY fields (for backward compatibility)
+                model=model_data.get('model'),
+                params=model_data.get('params'),
+                description=model_data.get('description')  # Legacy field
             )
         return models
     
