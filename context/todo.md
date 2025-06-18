@@ -65,16 +65,11 @@
     - [X] Write tests for one-sided pattern expansion ✅
     - [X] Implement `expand_port_patterns` method with literal pattern support ✅
     - [X] Implement `_expand_mapping_patterns` method with full pattern support ✅
-  - [ ] **Step 3: Port/Net Expansion Tests + Implementation**
-    - [ ] Write tests for port pattern expansion
-    - [ ] Write tests for one-sided mapping expansion
-    - [ ] Write tests for order-sensitive mapping expansion
-    - [ ] Implement `expand_port_patterns` method
-  - [ ] **Step 4: Instance Expansion Tests + Implementation**
-    - [ ] Write tests for instance name expansion
-    - [ ] Write tests for synchronized instance+mapping expansion
-    - [ ] Write tests for separate instantiation behavior
-    - [ ] Implement `expand_instance_patterns` method
+  - [X] **Step 3: Instance Expansion Tests + Implementation** ✅ 
+    - [X] Write tests for instance name expansion ✅
+    - [X] Write tests for synchronized instance+mapping expansion ✅
+    - [X] Write tests for separate instantiation behavior ✅
+    - [X] Implement `expand_instance_patterns` method ✅
   - [ ] **Step 5: Integration & Pipeline Tests**
     - [ ] Write end-to-end expansion tests
     - [ ] Add expansion step to SPICE generation pipeline
