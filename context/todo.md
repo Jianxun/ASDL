@@ -53,6 +53,11 @@
   - [X] Documented comprehensive literal expansion rules in `doc/pattern_expansion_rules.md` ✅
   - [X] Defined error conditions and validation rules ✅
   - [X] Clarified instance expansion behavior (separate instantiations) ✅
+- [X] **CRITICAL MAPPING FORMAT CORRECTION** ✅
+  - [X] Identified incorrect mapping format: `G_<p,n>: in_<p,n>` → `G: in_<p,n>` ✅
+  - [X] Updated ASDL_schema documentation to show correct format ✅
+  - [X] Fixed all examples in schema and example files ✅
+  - [X] Recorded lesson learned in memory.md ✅
 - [ ] **Pattern Expansion System Implementation** (CURRENT PRIORITY - TDD)
   - [X] **Step 1: Pattern Parsing & Validation Tests + Implementation** ✅
     - [X] Write tests for pattern detection (`_has_literal_pattern`) ✅

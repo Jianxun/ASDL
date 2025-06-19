@@ -57,10 +57,10 @@ modules:
       MN_<P,N>:
         model: nmos_unit
         mappings:
-          G<P,N>: in_<p,n>
-          D<P,N>: out_<p,n>
-          S<P,N>: tail
-          B<P,N>: vss
+          G: in_<p,n>
+          D: out_<p,n>
+          S: tail
+          B: vss
         parameters:
           M: $M
         intent:
@@ -104,10 +104,10 @@ modules:
       MP_<P,N>:
         model: pmos_unit
         mappings:
-          G_<p,n>: bias
-          D_<p,n>: out_<p,n>
-          S_<p,n>: vdd
-          B_<p,n>: vdd
+          G: bias
+          D: out_<p,n>
+          S: vdd
+          B: vdd
         parameters:
           M: $M*2
         intent:

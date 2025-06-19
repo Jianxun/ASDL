@@ -18,14 +18,16 @@
 .ends
 
 * NMOS differential pair with resistor loads demonstrating pattern expansion
-.subckt diff_pair_nmos in_<p,n> iref out_<p,n> tail vdd vss
-  X_MN_<P,N> UNCONNECTED UNCONNECTED tail vss nmos_unit M=$M_diff
-  X_RL_<P,N> vdd UNCONNECTED resistor_unit R=$R_load
+.subckt diff_pair_nmos in_n in_p iref out_n out_p tail vdd vss
+  X_MN_P in_p out_p tail vss nmos_unit M=$M_diff
+  X_MN_N in_p out_p tail vss nmos_unit M=$M_diff
+  X_RL_P vdd out_p resistor_unit R=$R_load
+  X_RL_N vdd out_p resistor_unit R=$R_load
   X_M_DIODE bias_gate bias_gate vss vss nmos_unit M=$M_diode
   X_M_MIRROR bias_gate tail vss vss nmos_unit M=$M_mirror
 .ends
 
 * Main circuit instantiation
-XMAIN in_<p,n> iref out_<p,n> tail vdd vss diff_pair_nmos
+XMAIN in_n in_p iref out_n out_p tail vdd vss diff_pair_nmos
 
 .end

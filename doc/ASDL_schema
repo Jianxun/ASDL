@@ -135,9 +135,9 @@ modules:
 
 # 3. Expanded Mappings (Multi-line format)
 #    mappings:
-#      G_<p,n>:  in_<p,n>
-#      D_<p,n>:  out_<p,n>
-#      S_<p,n>:  tail
+#      G:  in_<p,n>             # CORRECT: model port maps to expanded nets
+#      D:  out_<p,n>            # CORRECT: model port maps to expanded nets
+#      S:  tail                 # Broadcast to all instances
 
 # 4. Enhanced Model Definition (NEW APPROACH)
 #    device_line: |
@@ -182,8 +182,8 @@ modules:
 #
 #    Likewise:
 #      mappings:
-#        G_<p,n>:  in_<p,n>         # G_p → in_p, G_n → in_n
-#        S_<p,n>:  tail             # S_p → tail, S_n → tail (broadcasted)
+#        G:  in_<p,n>               # CORRECT: G connects to in_p, in_n for each instance
+#        S:  tail                   # Broadcast: both instances connect S to tail
 #
 #    Values can be scalars or single-entry patterns, in which case they are broadcast to all expanded keys.
 
@@ -282,7 +282,7 @@ modules:
 #     MN_<P,N>:
 #       model: nmos_unit
 #       mappings:
-#         G_<p,n>:  in_<p,n>
-#         D_<p,n>:  out_<n,p>      # Order-matched → polarity swap
-#         S_<p,n>:  tail
-#         B_<p,n>:  vss
+#         G:  in_<p,n>             # Correct: model port name (no pattern) maps to expanded nets
+#         D:  out_<n,p>            # Order-matched → polarity swap
+#         S:  tail                 # Broadcast to all instances
+#         B:  vss                  # Broadcast to all instances

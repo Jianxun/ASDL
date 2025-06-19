@@ -59,8 +59,8 @@ modules:
       MN_<P,N>:
         model: nmos_unit
         mappings:
-          G<P,N>: in_<p,n>        # Synchronized patterns: GP->in_p, GN->in_n
-          D<P,N>: out_<p,n>       # Synchronized patterns: DP->out_p, DN->out_n  
+          G: in_<p,n>        # Synchronized patterns: GP->in_p, GN->in_n
+          D: out_<p,n>       # Synchronized patterns: DP->out_p, DN->out_n  
           S: tail                 # No pattern - both connect to tail
           B: vss                  # No pattern - both connect to substrate
         parameters:
@@ -79,7 +79,7 @@ modules:
         model: resistor_unit
         mappings:
           plus: vdd               # No pattern - both connect to VDD
-          minus<P,N>: out_<p,n>   # One-sided pattern: minusP->out_p, minusN->out_n
+          minus: out_<p,n>   # One-sided pattern: minusP->out_p, minusN->out_n
         parameters:
           R: $R_load
         intent:

@@ -34,9 +34,18 @@ class PatternExpander:
         Returns:
             New ASDL design with all patterns expanded
         """
-        # TODO: Implement pattern expansion
-        # For now, return the original file unchanged
-        return asdl_file
+        # Expand patterns in all modules
+        expanded_modules = {}
+        for module_name, module in asdl_file.modules.items():
+            expanded_modules[module_name] = self.expand_module_patterns(module)
+        
+        # Create new ASDLFile with expanded modules
+        # Models don't contain patterns, so they're passed through unchanged
+        return ASDLFile(
+            file_info=asdl_file.file_info,
+            models=asdl_file.models,  # Models unchanged
+            modules=expanded_modules  # Modules with expanded patterns
+        )
     
     def expand_module_patterns(self, module: Module) -> Module:
         """
@@ -48,14 +57,13 @@ class PatternExpander:
         Returns:
             Module with patterns expanded
         """
-        # TODO: Implement module pattern expansion
         expanded_ports = self.expand_port_patterns(module.ports or {})
         expanded_instances = self.expand_instance_patterns(module.instances or {})
         
         return Module(
             doc=module.doc,
             ports=expanded_ports,
-            nets=module.nets,  # TODO: Expand patterns in nets
+            nets=module.nets,  # Nets typically don't contain patterns
             parameters=module.parameters,
             instances=expanded_instances
         )

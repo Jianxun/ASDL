@@ -58,6 +58,22 @@ X_MP in out vdd vdd pmos_unit M=2      # ✅ Parameter override
 
 ## Key Decisions
 
+### Pattern Expansion Rules (CRITICAL LESSON LEARNED)
+**✅ LESSON LEARNED**: Mapping format correction for pattern expansion
+- **WRONG**: `G_<p,n>: in_<p,n>` (pattern on both sides)
+- **CORRECT**: `G: in_<p,n>` (model port name maps to expanded net pattern)
+- **Core Principle**: Model ports are fixed device terminals (G, D, S, B), only the connected nets have patterns
+- **Rationale**: 
+  - Model defines fixed interface (G, D, S, B ports)
+  - Instance expansion creates multiple copies of the same device
+  - Each copy connects to different nets via pattern expansion on right-hand side
+  - Left-hand side stays literal because device ports don't change
+- **Applied Corrections**:
+  - Updated `doc/ASDL_schema` examples and documentation
+  - Fixed `examples/two_stage_ota.yml` mappings
+  - Corrected expansion rule explanations
+- **Impact**: This affects all pattern expansion implementation and validation
+
 ### Architecture Decisions (Confirmed)
 1. **Pattern Expansion**: Keep patterns (`<p,n>`, `[3:0]`) in data structures, expand only during SPICE generation as explicit step (similar to Verilog elaboration)
 2. **Parameter Resolution**: Keep original expressions (`$param`), make parameter evaluation an explicit step
