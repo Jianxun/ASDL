@@ -1,0 +1,121 @@
+design_info:
+  top_module: diff_pair_nmos
+  doc: "NMOS differential pair with resistor loads - Pattern expansion test circuit"
+  revision: "v0.4" 
+  author: "ASDL Test Suite"
+  date: "2024-03-19"
+
+models:
+  # NMOS transistor unit cell with enhanced parameter handling
+  nmos_unit:
+    doc: "NMOS transistor unit cell"
+    type: nmos
+    ports: [G, D, S, B]
+    device_line: |
+      MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+    parameters:
+      M: 1
+
+  # Resistor load unit
+  resistor_unit:
+    doc: "Resistor unit cell"
+    type: resistor
+    ports: [plus, minus]
+    device_line: |
+      R1 {plus} {minus} ppolyf_u L=2u W=1u m=1
+    parameters:
+      R: 10k
+
+
+
+modules:
+  diff_pair_nmos:
+    doc: "NMOS differential pair with resistor loads demonstrating pattern expansion"
+    
+    # Pattern expansion in port definitions
+    ports:
+      in_<p,n>:  {dir: in, type: voltage, constraints: {common_mode: 0.9, swing: {min: 0.1, max: 0.1}}}
+      out_<p,n>: {dir: out, type: voltage}
+      vdd:       {dir: in_out, type: voltage, constraints: {Vdd: 1.8}}
+      vss:       {dir: in_out, type: voltage}
+      iref:      {dir: in, type: current, constraints: {nominal_current: 100u}}
+      tail:      {dir: in_out, type: voltage}
+    
+    nets:
+      internal: [tail, bias_gate]
+    
+    parameters:
+      # Differential pair sizing
+      M_diff: 4
+      # Load resistor value
+      R_load: 10k
+      # Current mirror sizing
+      M_diode: 1                    # Diode-connected reference transistor
+      M_mirror: 8                   # Mirror transistor (match total diff pair)
+    
+    instances:
+      # Pattern expansion in instance names and mappings
+      # Differential pair transistors
+      MN_<P,N>:
+        model: nmos_unit
+        mappings:
+          G<P,N>: in_<p,n>        # Synchronized patterns: GP->in_p, GN->in_n
+          D<P,N>: out_<p,n>       # Synchronized patterns: DP->out_p, DN->out_n  
+          S: tail                 # No pattern - both connect to tail
+          B: vss                  # No pattern - both connect to substrate
+        parameters:
+          M: $M_diff
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 15
+          layout:
+            type: differential_pair
+            match_group: diff_pair
+            symmetry: diff
+      
+      # Resistor loads with pattern expansion
+      RL_<P,N>:
+        model: resistor_unit
+        mappings:
+          plus: vdd               # No pattern - both connect to VDD
+          minus<P,N>: out_<p,n>   # One-sided pattern: minusP->out_p, minusN->out_n
+        parameters:
+          R: $R_load
+        intent:
+          layout:
+            type: high_resistance
+            match_group: load_resistors
+            symmetry: diff
+      
+      # Current mirror: diode-connected reference transistor
+      M_DIODE:
+        model: nmos_unit
+        mappings: {G: bias_gate, D: bias_gate, S: vss, B: vss}  # Diode connection: G=D
+        parameters:
+          M: $M_diode
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 5
+            nominal_current: 100u
+          layout:
+            type: current_mirror_diode
+            match_group: current_mirror
+            symmetry: none
+      
+      # Current mirror: mirror transistor
+      M_MIRROR:
+        model: nmos_unit
+        mappings: {G: bias_gate, D: tail, S: vss, B: vss}
+        parameters:
+          M: $M_mirror
+        intent:
+          op:
+            region: saturation
+            gm_over_Id: 5
+            nominal_current: 100u
+          layout:
+            type: current_mirror_output
+            match_group: current_mirror
+            symmetry: none 
