@@ -58,6 +58,12 @@
   - [X] Updated ASDL_schema documentation to show correct format ✅
   - [X] Fixed all examples in schema and example files ✅
   - [X] Recorded lesson learned in memory.md ✅
+- [X] **SCHEMA v0.5 REFINEMENT & LANGUAGE DOCUMENTATION** ✅
+  - [X] Created clean, concise ASDL_schema_v0p5 structure ✅
+  - [X] Developed comprehensive language.md with semantic rules ✅
+  - [X] Codified "Expansion only on RHS" mapping rule ✅
+  - [X] Defined best practices and future extensions ✅
+  - [X] Validated mapping lesson learned in official documentation ✅
 - [ ] **Pattern Expansion System Implementation** (CURRENT PRIORITY - TDD)
   - [X] **Step 1: Pattern Parsing & Validation Tests + Implementation** ✅
     - [X] Write tests for pattern detection (`_has_literal_pattern`) ✅
@@ -75,10 +81,36 @@
     - [X] Write tests for synchronized instance+mapping expansion ✅
     - [X] Write tests for separate instantiation behavior ✅
     - [X] Implement `expand_instance_patterns` method ✅
-  - [ ] **Step 5: Integration & Pipeline Tests**
-    - [ ] Write end-to-end expansion tests
-    - [ ] Add expansion step to SPICE generation pipeline
-    - [ ] Integration tests with existing generator
+  - [ ] **Step 4: Integration & Pipeline Tests** (CURRENT PRIORITY)
+    - [ ] **End-to-End Pattern Expansion Tests** (15 comprehensive test cases)
+      - [ ] **Category 1: Single Pattern Type Tests** (3 tests)
+        - [ ] Basic Port Pattern Expansion (port `data_<p,n>` → `data_p, data_n`)
+        - [ ] Basic Mapping Pattern Expansion (mapping `G: in_<p,n>` → expanded nets)
+        - [ ] Basic Instance Pattern Expansion (instance `diff_<p,n>` → separate instances)
+      - [ ] **Category 2: Combined Pattern Tests** (3 tests)
+        - [ ] Port + Mapping Patterns (synchronized expansion)
+        - [ ] Instance + Mapping Patterns (instance duplication with expanded connections)
+        - [ ] Full Pattern Integration (all pattern types working together)
+      - [ ] **Category 3: Real-World Circuit Tests** (3 tests)
+        - [ ] Differential Pair Circuit (complete `<p,n>` expansion)
+        - [ ] Current Mirror Array (instance patterns for multiple branches)
+        - [ ] Hierarchical Circuit with Patterns (multi-level expansion)
+      - [ ] **Category 4: Integration & Pipeline Tests** (3 tests)
+        - [ ] Pattern Expansion + Parameter Handling (integration with Phase 3)
+        - [ ] Pattern Expansion + Subcircuit Generation (integration with Phase 2)
+        - [ ] End-to-End YAML → SPICE Pipeline (complete pipeline validation)
+      - [ ] **Category 5: Edge Cases & Error Handling** (3 tests)
+        - [ ] Mixed Pattern/Non-Pattern Components (selective expansion)
+        - [ ] Invalid Pattern Combinations (error handling validation)
+        - [ ] Large Pattern Expansion (scalability testing)
+    - [ ] **Pipeline Integration Implementation**
+      - [ ] Add expansion step to SPICE generation pipeline
+      - [ ] Update generator to call pattern expansion before SPICE generation
+      - [ ] Ensure expansion preserves existing functionality
+    - [ ] **Integration Validation**
+      - [ ] Verify pattern expansion works with hierarchical subcircuits
+      - [ ] Validate parameter propagation through expanded instances
+      - [ ] Confirm ngspice simulation compatibility
 
 - [ ] **Parameter Resolution Enhancement**
   - [ ] Implement `$param` variable substitution system
@@ -113,7 +145,26 @@
 - [ ] Parameter resolution system
 - [ ] Pattern expansion system (`<p,n>`, `[3:0]`)
 
-## ASDLFile Round-trip & Debug Features (Next Sprint)
+## Next Sprint: Advanced Parameter Handling & Features
+
+### **Hierarchical Parameter System** (NEW - PRIORITY)
+- [ ] **Parameter Inheritance & Scoping**
+  - [ ] Design parameter inheritance model (module → instance → device)
+  - [ ] Implement parameter scoping rules (local overrides global)
+  - [ ] Support multi-level parameter propagation
+  - [ ] Handle parameter conflicts and resolution order
+- [ ] **Advanced Parameter Features**
+  - [ ] Parameter expressions with dependencies (`W = $L * aspect_ratio`)
+  - [ ] Conditional parameters based on technology/process
+  - [ ] Parameter validation and constraint checking
+  - [ ] Default parameter inheritance from model definitions
+- [ ] **Integration with Pattern Expansion**
+  - [ ] Parameter propagation through expanded instances
+  - [ ] Pattern-specific parameter overrides
+  - [ ] Scoped parameters within expanded subcircuits
+  - [ ] Performance optimization for large parameter sets
+
+### **ASDLFile Round-trip & Debug Features**
 - [X] **JSON Export**: Custom enum serialization for debugging ✅
 - [X] **Manual Inspection**: Generated files saved to `/tests/unit_tests/generator/results/` ✅
 - [ ] Add `save_to_file(filepath: str)` method to `ASDLFile` class

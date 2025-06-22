@@ -135,6 +135,21 @@ models:
 
 ## Recent Changes
 
+### ✅ Phase 5: Schema Refinement & Language Documentation (NEW - COMPLETE)
+- **Schema v0.5**: Cleaned up and simplified ASDL schema structure
+- **Language Documentation**: Created comprehensive `doc/language.md` with semantic rules
+- **Mapping Rules Codified**: Explicitly documented "Expansion only on the RHS" rule
+- **Best Practices**: Defined clear guidelines for ASDL usage
+- **Future Extensions**: Documented planned enhancements
+- **Validation**: New documentation validates the mapping format lesson learned
+
+**Key Improvements**:
+- Removed verbose examples and complexity from schema
+- Separated semantic rules into dedicated language documentation
+- Cleaner parameter definition with explicit types and units
+- Simplified metadata structure with `design_intent` and `layout` sections
+- Clear distinction between literal `<p,n>` and bus `[N:M]` expansion patterns
+
 ### ✅ Phase 4: Schema Documentation Update (COMPLETE)
 - **Schema Refinement**: Updated ASDL_schema_v0p4 documentation with latest enhancements
 - **Field Updates**: Corrected `file_info` → `design_info` naming

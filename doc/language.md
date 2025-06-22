@@ -3,6 +3,12 @@
 This document defines the syntactic and semantic rules that govern the ASDL YAML format.
 These rules ensure structural consistency and enable LLMs and tools to parse and reason about analog designs.
 
+
+---
+## Introduction
+
+Analog Structural Description Language (ASDL) is a declarative, YAML-based format designed to capture analog circuit topologies with explicit design intent, modular hierarchy, and symmetry-aware structures. Unlike traditional netlists, ASDL emphasizes human- and machine-readable semantics, making it ideal for AI-assisted workflows, version-controlled design iteration, and reusable IP representation. It supports pattern expansions for differential and bus structures, integrates directly with PDK device lines, and enables metadata annotations for layout, matching, and operating point specifications—bridging the gap between schematic abstraction and simulation-ready output.
+
 ---
 
 ## 📌 Pattern Expansion Syntax
