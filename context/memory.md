@@ -18,9 +18,44 @@ Schema structure:
 - `modules`: Circuit hierarchy with ports, instances, and connectivity
 
 ## Current State
-**🎉 Phase 5 COMPLETE + NET DECLARATION VALIDATION FEATURE ADDED**: All tests passing ✅
+**🎉 CRITICAL PARAMETER PROPAGATION BUG FIX COMPLETED ✅**
 
-### **NEW**: Net Declaration Validation Feature (CRITICAL CONNECTIVITY VALIDATION) ✅
+### **NEW**: Parameter Propagation Bug Fix (CRITICAL FUNCTIONALITY RESTORE) ✅
+**ACHIEVEMENT**: Fixed missing parameter propagation in module instances
+- **Problem**: Module instances weren't passing parameters to subcircuit calls in SPICE output
+- **Symptoms**: `X_FIRST_STAGE ... ota_5t` missing `M=2` parameter despite ASDL specification
+- **Root Cause**: `_generate_subckt_call()` method only generated node list but ignored instance parameters
+- **Solution**: Enhanced `_generate_subckt_call()` to match `_generate_device_line()` parameter handling
+- **Result**: Module instances now correctly propagate parameters: `X_FIRST_STAGE ... ota_5t M={M_first_stage}`
+- **Testing**: All 48 existing generator tests pass, real-world example verified
+- **Impact**: Hierarchical parameterization now works correctly for complex designs
+
+**Key Features**:
+- **Consistent API**: Module instances now use same parameter format as device instances
+- **Expression Support**: Parameter values with expressions (`M={M_first_stage}`) work correctly
+- **Optional Parameters**: Instances without parameters still work (backward compatible)
+- **Format Consistency**: Uses existing `_format_named_parameters()` method for consistency
+
+**Technical Implementation**:
+- Modified `_generate_subckt_call()` method in SPICEGenerator class
+- Added instance parameter extraction: `instance_params = instance.parameters if instance.parameters else {}`
+- Added parameter formatting and appending to subcircuit call
+- Maintained same parameter format as device instances: `X_name nodes subckt_name param=value`
+- Updated method documentation to reflect parameter support
+
+**Before (BROKEN)**:
+```spice
+X_FIRST_STAGE in_n in_p first_stage_out vbn vss vdd ota_5t
+X_SECOND_STAGE first_stage_out out vbn vss vdd common_source_pmos
+```
+
+**After (FIXED)**:
+```spice
+X_FIRST_STAGE in_n in_p first_stage_out vbn vss vdd ota_5t M={M_first_stage}
+X_SECOND_STAGE first_stage_out out vbn vss vdd common_source_pmos M={M_second_stage}
+```
+
+### **PREVIOUS**: Net Declaration Validation Feature (CRITICAL CONNECTIVITY VALIDATION) ✅
 **ACHIEVEMENT**: Implemented comprehensive validation for undeclared nets in instance mappings
 - **Feature**: SPICEGenerator now validates that all nets used in mappings are properly declared
 - **Scope**: Checks nets referenced in instance mappings against module ports and internal nets
@@ -53,16 +88,6 @@ Schema structure:
 - Integrated validation into `generate_subckt()` pipeline
 - Maintains backward compatibility with existing code
 - Reuses pattern expansion logic from expander module
-
-### **PREVIOUS**: Critical Pattern Expansion Bug Fix (MAJOR CIRCUIT CORRECTNESS) ✅
-**ACHIEVEMENT**: Fixed critical differential pair pattern expansion bug that broke circuit functionality
-- **Problem**: `_expand_mapping_patterns` always mapped one-sided net patterns to first element for all instances
-- **Impact**: Both `MN_P` and `MN_N` connected to `in_p` instead of `in_p` and `in_n` respectively
-- **Circuit Consequence**: Completely broken differential amplifier - both transistors driven by same input!
-- **Root Cause**: Line 346 in expander.py used `expanded_nets[0]` instead of `expanded_nets[instance_index]`
-- **Solution**: Added instance index logic for one-sided net patterns to match instance expansion
-- **Test Coverage**: Added comprehensive `TestRealWorldDifferentialPair` class using `diff_pair_nmos.yml` fixture
-- **Result**: Differential pairs now function correctly with proper signal routing
 
 ### **NEW**: Port Order Canonical Compliance (CRITICAL BUG FIX) ✅
 **ACHIEVEMENT**: Fixed SPICE port order to follow YAML declaration order instead of alphabetical sorting

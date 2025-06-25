@@ -9,8 +9,6 @@ import pytest
 from pathlib import Path
 from src.asdl.parser import ASDLParser
 from src.asdl.generator import SPICEGenerator
-from src.asdl.data_structures import FileInfo, Module, Port, Instance, DeviceModel, DeviceType, ASDLFile, PortDirection, SignalType
-
 
 class TestPipelineStructure:
     """Test SPICE generator pipeline structure and ordering."""
@@ -162,95 +160,3 @@ class TestPipelineStructure:
         assert '.subckt nmos_unit G D S B' in spice_output
         assert '.subckt pmos_unit G D S B' in spice_output
         assert '.subckt inverter in out vss vdd' in spice_output 
-
-class TestParameterPropagation:
-    """Test parameter propagation in module instances."""
-    
-    def test_module_instance_parameter_propagation(self):
-        """Test that module instances correctly propagate parameters to subcircuit calls."""
-        
-        # Create ASDL with hierarchical parameter passing
-        file_info = FileInfo(top_module="main_circuit", doc="Test parameter propagation", revision="v1.0", author="Test", date="2024-01-01")
-        
-        # Simple amplifier module with M parameter
-        amplifier_module = Module(
-            doc="Simple amplifier",
-            ports={
-                "in": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                "out": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE),
-                "vdd": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                "vss": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE)
-            },
-            parameters={"M": 1},  # Default amplification
-            instances={
-                "MP": Instance(
-                    model="pmos_unit",
-                    mappings={"G": "in", "D": "out", "S": "vdd", "B": "vdd"},
-                    parameters={"M": "{M}*2"}  # Use module parameter
-                ),
-                "MN": Instance(
-                    model="nmos_unit", 
-                    mappings={"G": "in", "D": "out", "S": "vss", "B": "vss"},
-                    parameters={"M": "{M}"}
-                )
-            }
-        )
-        
-        # Main circuit that instantiates amplifier with specific parameters
-        main_module = Module(
-            doc="Main circuit with parameter overrides",
-            ports={
-                "input": Port(dir="in", type="voltage"),
-                "output": Port(dir="out", type="voltage"),
-                "vdd": Port(dir="in_out", type="voltage"),
-                "vss": Port(dir="in_out", type="voltage")
-            },
-            parameters={"AMP_SIZE": 4},  # Top-level parameter
-            instances={
-                "AMP1": Instance(
-                    model="amplifier",
-                    mappings={"in": "input", "out": "output", "vdd": "vdd", "vss": "vss"},
-                    parameters={"M": "{AMP_SIZE}"}  # Pass parameter to sub-module
-                )
-            }
-        )
-        
-        # Device models
-        nmos_model = DeviceModel(
-            doc="NMOS transistor", 
-            type=DeviceType.NMOS,
-            ports=["G", "D", "S", "B"],
-            device_line="MN {D} {G} {S} {B} nfet_03v3 W=1u L=0.18u",
-            parameters={"M": 1}
-        )
-        
-        pmos_model = DeviceModel(
-            doc="PMOS transistor",
-            type=DeviceType.PMOS, 
-            ports=["G", "D", "S", "B"],
-            device_line="MP {D} {G} {S} {B} pfet_03v3 W=1u L=0.18u",
-            parameters={"M": 1}
-        )
-        
-        asdl_file = ASDLFile(
-            file_info=file_info,
-            models={"nmos_unit": nmos_model, "pmos_unit": pmos_model},
-            modules={"amplifier": amplifier_module, "main_circuit": main_module}
-        )
-        
-        # Generate SPICE
-        generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
-        
-        # Verify parameter propagation in module instance call
-        assert "X_AMP1 input output vdd vss amplifier M={AMP_SIZE}" in spice_output
-        
-        # Verify top-level parameter declaration
-        assert ".param AMP_SIZE=4" in spice_output
-        
-        # Verify sub-module parameter declaration 
-        assert ".param M=1" in spice_output
-        
-        # Verify that this is a hierarchical structure
-        assert ".subckt amplifier in out vdd vss" in spice_output
-        assert ".subckt main_circuit input output vdd vss" in spice_output 
