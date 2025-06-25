@@ -49,9 +49,9 @@
   * NMOS tail current source
   X_MN_TAIL vbn tail vss vss nmos_unit M={M}*2
   * PMOS current mirror load
-  X_MP_P out_n out_p vdd vdd pmos_unit M={M}*3
+  X_MP_P vd vd vdd vdd pmos_unit M={M}*3
   * PMOS current mirror load
-  X_MP_N out_n out_n vdd vdd pmos_unit M={M}*3
+  X_MP_N vd out vdd vdd pmos_unit M={M}*3
 .ends
 
 * Second stage: PMOS Common source amplifier with NMOS current source load
@@ -69,11 +69,11 @@
 
 * Two-stage Miller-compensated operational transconductance amplifier
 .subckt two_stage_ota in_p in_n out ibias vss vdd
-  .param M.first_stage=2
-  .param M.second_stage=4
+  .param M_first_stage=2
+  .param M_second_stage=4
   X_BIAS_GEN ibias vbn vss vdd bias_gen
-  X_FIRST_STAGE in_n in_p first_stage_out vbn vss vdd ota_5t
-  X_SECOND_STAGE first_stage_out out vbn vss vdd common_source_pmos
+  X_FIRST_STAGE in_n in_p first_stage_out vbn vss vdd ota_5t M={M_first_stage}
+  X_SECOND_STAGE first_stage_out out vbn vss vdd common_source_pmos M={M_second_stage}
   X_COMP first_stage_out out miller_comp
 .ends
 

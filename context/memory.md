@@ -18,9 +18,43 @@ Schema structure:
 - `modules`: Circuit hierarchy with ports, instances, and connectivity
 
 ## Current State
-**🎉 Phase 5 COMPLETE + UNUSED VALIDATION FEATURE ADDED + PORT ORDER FIX**: All tests passing ✅
+**🎉 Phase 5 COMPLETE + NET DECLARATION VALIDATION FEATURE ADDED**: All tests passing ✅
 
-### **NEW**: Critical Pattern Expansion Bug Fix (MAJOR CIRCUIT CORRECTNESS) ✅
+### **NEW**: Net Declaration Validation Feature (CRITICAL CONNECTIVITY VALIDATION) ✅
+**ACHIEVEMENT**: Implemented comprehensive validation for undeclared nets in instance mappings
+- **Feature**: SPICEGenerator now validates that all nets used in mappings are properly declared
+- **Scope**: Checks nets referenced in instance mappings against module ports and internal nets
+- **Pattern Support**: Correctly handles pattern expansion (`out_<p,n>` → `out_p`, `out_n`)
+- **Non-Breaking**: Generates helpful warnings but continues netlisting successfully
+- **Real-World Impact**: Catches the specific issue identified in `two_stage_ota.yml` ota_5t module
+- **Test Coverage**: 6 comprehensive test cases covering all validation scenarios
+- **Integration**: Seamlessly integrated into existing validation pipeline
+- **User Experience**: Clear warning messages that identify specific undeclared nets and affected modules
+- **Result**: 48/48 generator tests passing (was 42, now 48 with new validation tests)
+
+**Key Features**:
+- **Connectivity Validation**: Validates that all net names in mappings are declared as ports or internal nets
+- **Pattern Expansion Support**: Correctly expands and validates pattern-based net names
+- **Module-Level Reporting**: Clearly identifies which module contains undeclared nets
+- **Non-Disruptive**: Netlisting continues successfully despite validation warnings
+- **Integration**: Uses existing Python warnings system for consistency with other validations
+
+**Test Coverage**:
+- Valid net declarations (no warnings generated)
+- Basic undeclared net detection and warning generation
+- Pattern expansion validation (`in_<p,n>`, `out_<p,n>`)
+- Real-world scenario testing (ota_5t module issue)
+- Edge cases (empty modules, mixed valid/invalid nets)
+- Warning message content and format validation
+
+**Technical Implementation**:
+- Added `_validate_net_declarations()` method to SPICEGenerator class
+- Added `_has_literal_pattern()` and `_expand_literal_pattern()` helper methods
+- Integrated validation into `generate_subckt()` pipeline
+- Maintains backward compatibility with existing code
+- Reuses pattern expansion logic from expander module
+
+### **PREVIOUS**: Critical Pattern Expansion Bug Fix (MAJOR CIRCUIT CORRECTNESS) ✅
 **ACHIEVEMENT**: Fixed critical differential pair pattern expansion bug that broke circuit functionality
 - **Problem**: `_expand_mapping_patterns` always mapped one-sided net patterns to first element for all instances
 - **Impact**: Both `MN_P` and `MN_N` connected to `in_p` instead of `in_p` and `in_n` respectively
@@ -128,7 +162,24 @@ X_MP in out vdd vdd pmos_unit M=2      # ✅ Parameter override
 
 ## Key Decisions
 
-### Unused Component Validation Design (NEW - CRITICAL DECISIONS)
+### Net Declaration Validation Design (NEW - CRITICAL DECISIONS)  
+**✅ LESSON LEARNED**: Connectivity validation catches critical design errors early
+- **Comprehensive Checking**: Validate all net names in mappings against declared ports and internal nets
+- **Pattern Expansion Support**: Correctly handle pattern expansion (`out_<p,n>` → `out_p`, `out_n`)
+- **Non-Breaking Philosophy**: Generate helpful warnings but continue netlisting successfully
+- **Module-Level Reporting**: Clear identification of which module has undeclared nets
+- **Real-World Impact**: Catches actual connectivity issues like the ota_5t module problem
+- **Integration Strategy**: Leverage existing pattern expansion logic for consistency
+- **Warning Quality**: Specific, actionable messages that help developers fix connectivity issues
+
+**✅ CRITICAL VALIDATION**: Fixed silent connectivity errors
+- **Problem**: Undeclared nets in mappings could cause silent circuit failures
+- **Example**: `out_n` and `out_<p,n>` used in ota_5t but not declared as ports or internal nets
+- **Solution**: Comprehensive net declaration validation with pattern expansion support
+- **Impact**: Developers immediately see connectivity issues during netlisting
+- **Test Coverage**: Real-world scenario testing ensures robustness
+
+### Unused Component Validation Design (PREVIOUS - CRITICAL DECISIONS)
 **✅ LESSON LEARNED**: Validation should be helpful, not disruptive
 - **Non-Breaking Philosophy**: Warnings guide developers but don't block netlisting
 - **Global Instantiation Tracking**: Usage determined by scanning ALL modules for instantiations, not just reachable ones

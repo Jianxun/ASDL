@@ -109,8 +109,8 @@ modules:
         doc: "PMOS current mirror load"
         model: pmos_unit
         mappings:
-          G: out_n # mirror diode on n side
-          D: out_<p,n>
+          G: vd # mirror diode on n side
+          D: <vd,out>
           S: vdd
           B: vdd
         parameters:
@@ -174,10 +174,10 @@ modules:
       vss:       {dir: in_out, type: voltage}
       vdd:       {dir: in_out, type: voltage, constraints: {Vdd: 1.8}}
     nets:
-      internal: [first_stage_out]
+      internal: [first_stage_out, vbn]
     parameters:
-      M.first_stage: 2
-      M.second_stage: 4
+      M_first_stage: 2
+      M_second_stage: 4
     instances:
       BIAS_GEN:
         model: bias_gen
@@ -192,7 +192,7 @@ modules:
           vss: vss
           vdd: vdd
         parameters:
-          M: "{M.first_stage}"
+          M: "{M_first_stage}"
 
       SECOND_STAGE:
         model: common_source_pmos
@@ -203,7 +203,7 @@ modules:
           vss: vss
           vdd: vdd
         parameters:
-          M: "{M.second_stage}"
+          M: "{M_second_stage}"
 
       COMP:
         model: miller_comp

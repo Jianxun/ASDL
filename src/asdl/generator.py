@@ -163,6 +163,9 @@ class SPICEGenerator:
             for param_name, param_value in module.parameters.items():
                 lines.append(f"{self.indent}.param {param_name}={param_value}")
         
+        # Validate net declarations for all instances in this module
+        self._validate_net_declarations(module, module_name)
+        
         # Generate instances
         if module.instances:
             for instance_id, instance in module.instances.items():
@@ -248,7 +251,7 @@ class SPICEGenerator:
             
         return all_params
     
-    def _format_named_parameters(self, params: Dict[str, Any], model: DeviceModel = None) -> str:
+    def _format_named_parameters(self, params: Dict[str, Any], model: Optional[DeviceModel] = None) -> str:
         """Format parameters as param=value pairs using model-defined order."""
         param_parts = []
         
@@ -274,8 +277,8 @@ class SPICEGenerator:
         """
         Generate subcircuit call for a module instance.
         
-        Format: X_<name> <nodes> <subckt_name>
-        Example: X_INV1 in out vdd vss inverter
+        Format: X_<name> <nodes> <subckt_name> <parameters>
+        Example: X_INV1 in out vdd vss inverter M=2
         """
         module = asdl_file.modules[instance.model]
         
@@ -293,8 +296,18 @@ class SPICEGenerator:
                 # Handle unconnected ports (after validation, this should be intentional)
                 node_list.append("UNCONNECTED")
         
-        # Format: X_name nodes subckt_name (consistent with device instances)
-        return f"X_{instance_id} {' '.join(node_list)} {instance.model}"
+        # Get instance parameters (only instance-specific parameters)
+        instance_params = instance.parameters if instance.parameters else {}
+        
+        # Format subcircuit call: X_name nodes subckt_name params
+        parts = [f"X_{instance_id}", " ".join(node_list), instance.model]
+        
+        # Add parameters if any
+        if instance_params:
+            param_str = self._format_named_parameters(instance_params)
+            parts.append(param_str)
+        
+        return " ".join(parts)
     
     def _validate_port_mappings(self, instance_id: str, instance: Instance, module: Module) -> None:
         """
@@ -355,7 +368,7 @@ class SPICEGenerator:
         # Preserve declaration order (Python 3.7+ dict insertion order)
         return list(module.ports.keys())
     
-    def _get_top_level_nets(self, module: Module = None) -> str:
+    def _get_top_level_nets(self, module: Optional[Module] = None) -> str:
         """
         Get net list for top-level instantiation.
         
@@ -445,6 +458,8 @@ class SPICEGenerator:
         
         Substitutes port names in the device line and automatically appends parameter assignments.
         """
+        if model.device_line is None:
+            raise ValueError(f"Model {model} has device_line set to None")
         device_line = model.device_line.strip()
         
         # Build substitution data for ports only
@@ -577,24 +592,153 @@ class SPICEGenerator:
     
     def _validate_unused_components(self, asdl_file: ASDLFile) -> None:
         """
-        Validate component usage and emit warnings for unused components.
+        Validate and warn about unused models and modules.
+        
+        This validation helps identify dead code while maintaining non-breaking netlisting.
+        Components are considered "used" if they are instantiated anywhere in the design,
+        not just reachable from the top module.
+        """
+        # Identify unused models
+        defined_models = set(asdl_file.models.keys())
+        unused_models = defined_models - self._used_models
+        
+        # Identify unused modules (exclude top module from unused warnings)
+        defined_modules = set(asdl_file.modules.keys())
+        unused_modules = defined_modules - self._used_modules
+        
+        # Remove top module from unused warnings since it's the entry point
+        if asdl_file.file_info.top_module:
+            unused_modules.discard(asdl_file.file_info.top_module)
+        
+        # Generate warnings for unused components
+        if unused_models:
+            models_list = ", ".join(f"'{model}'" for model in sorted(unused_models))
+            warnings.warn(
+                f"Unused models detected: {models_list}. "
+                f"These models are defined but never instantiated.",
+                UserWarning
+            )
+        
+        if unused_modules:
+            modules_list = ", ".join(f"'{module}'" for module in sorted(unused_modules))
+            warnings.warn(
+                f"Unused modules detected: {modules_list}. "
+                f"These modules are defined but never instantiated.",
+                UserWarning
+            )
+
+    def _validate_net_declarations(self, module: Module, module_name: str) -> None:
+        """
+        Validate that all nets used in instance mappings are properly declared.
+        
+        Checks that all net names used in instance mappings are either:
+        1. Declared as module ports
+        2. Declared in the module's internal nets
+        
+        This validation handles pattern expansion to check expanded net names.
+        Generates warnings for undeclared nets but does not block netlisting.
         
         Args:
-            asdl_file: The complete ASDL design
+            module: Module to validate
+            module_name: Name of the module for error reporting
         """
-        # Check for unused models
-        for model_name in asdl_file.models.keys():
-            if model_name not in self._used_models:
-                warnings.warn(
-                    f"Model '{model_name}' is declared but never instantiated",
-                    UserWarning
-                )
+        if not module.instances:
+            return
         
-        # Check for unused modules (excluding top module)
-        top_module = asdl_file.file_info.top_module
-        for module_name in asdl_file.modules.keys():
-            if module_name != top_module and module_name not in self._used_modules:
-                warnings.warn(
-                    f"Module '{module_name}' is declared but never instantiated",
-                    UserWarning
-                ) 
+        # Get all declared nets (ports + internal nets)
+        declared_nets = set()
+        
+        # Add all declared ports (handling patterns)
+        if module.ports:
+            for port_name in module.ports.keys():
+                if self._has_literal_pattern(port_name):
+                    # Expand port patterns to get actual net names
+                    expanded_ports = self._expand_literal_pattern(port_name)
+                    declared_nets.update(expanded_ports)
+                else:
+                    declared_nets.add(port_name)
+        
+        # Add internal nets if declared
+        if module.nets and module.nets.internal:
+            declared_nets.update(module.nets.internal)
+        
+        # Check all nets used in instance mappings
+        undeclared_nets = set()
+        for instance_id, instance in module.instances.items():
+            if not instance.mappings:
+                continue
+                
+            for port_name, net_name in instance.mappings.items():
+                # Handle pattern expansion in net names
+                if self._has_literal_pattern(net_name):
+                    # Expand net patterns to get actual net names
+                    expanded_nets = self._expand_literal_pattern(net_name)
+                    for expanded_net in expanded_nets:
+                        if expanded_net not in declared_nets:
+                            undeclared_nets.add(expanded_net)
+                else:
+                    # Single net name
+                    if net_name not in declared_nets:
+                        undeclared_nets.add(net_name)
+        
+        # Generate warning for undeclared nets
+        if undeclared_nets:
+            nets_list = ", ".join(f"'{net}'" for net in sorted(undeclared_nets))
+            warnings.warn(
+                f"In module '{module_name}', undeclared nets used in instance mappings: {nets_list}. "
+                f"These nets are not declared as ports or internal nets.",
+                UserWarning
+            )
+
+    def _has_literal_pattern(self, name: str) -> bool:
+        """Check if name contains literal pattern <...>."""
+        # Must have both < and > 
+        if not ('<' in name and '>' in name):
+            return False
+        
+        # Check that there's a complete pattern
+        start = name.find('<')
+        end = name.find('>')
+        if start == -1 or end == -1 or start >= end:
+            return False
+            
+        # Check for multiple bracket pairs (not supported)
+        remaining = name[end+1:]
+        if '<' in remaining and '>' in remaining:
+            return False
+            
+        # Check for mixed bracket types inside pattern (array syntax inside literal)
+        pattern_content = name[start+1:end]
+        if '[' in pattern_content and ']' in pattern_content:
+            return False
+            
+        # Any content inside brackets (even empty or single item) is a pattern attempt
+        # Validation will enforce comma requirement
+        return True
+
+    def _expand_literal_pattern(self, name: str) -> List[str]:
+        """
+        Expand literal pattern in name.
+        
+        Example: "in_<p,n>" -> ["in_p", "in_n"]
+        Returns [name] if no pattern.
+        """
+        if not self._has_literal_pattern(name):
+            return [name]
+        
+        start = name.find('<')
+        end = name.find('>')
+        pattern_content = name[start+1:end]
+        
+        # Handle empty pattern
+        if not pattern_content:
+            return []
+        
+        # Split by comma and strip whitespace
+        items = [item.strip() for item in pattern_content.split(',')]
+        
+        # Replace pattern with each item
+        prefix = name[:start]
+        suffix = name[end+1:]
+        
+        return [f"{prefix}{item}{suffix}" for item in items] 

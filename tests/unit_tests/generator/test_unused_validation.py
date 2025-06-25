@@ -64,7 +64,7 @@ modules:
         generator = SPICEGenerator()
         
         # Should generate warnings for unused model
-        with pytest.warns(UserWarning, match="Model 'unused_model' is declared but never instantiated"):
+        with pytest.warns(UserWarning, match="Unused models detected: 'unused_model'"):
             spice_output = generator.generate(asdl_file)
         
         # Should still generate valid SPICE
@@ -133,7 +133,7 @@ modules:
         generator = SPICEGenerator()
         
         # Should generate warnings for unused module
-        with pytest.warns(UserWarning, match="Module 'unused_module' is declared but never instantiated"):
+        with pytest.warns(UserWarning, match="Unused modules detected: 'unused_module'"):
             spice_output = generator.generate(asdl_file)
         
         # Should still generate valid SPICE
