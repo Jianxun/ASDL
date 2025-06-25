@@ -41,10 +41,15 @@
 * 5-transistor OTA: differential pair with current mirror load
 .subckt ota_5t in_n in_p out vbn vdd vss
   .param M=2
+  * NMOS input transistors
   X_MN_P in_p vd tail vss nmos_unit M={M}
+  * NMOS input transistors
   X_MN_N in_p vd tail vss nmos_unit M={M}
+  * NMOS tail current source
   X_MN_TAIL vbn tail vss vss nmos_unit M={M}*2
+  * PMOS current mirror load
   X_MP_P out_n out_p vdd vdd pmos_unit M={M}*3
+  * PMOS current mirror load
   X_MP_N out_n out_p vdd vdd pmos_unit M={M}*3
 .ends
 

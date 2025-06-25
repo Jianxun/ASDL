@@ -150,6 +150,9 @@ class SPICEGenerator:
         # Generate instances
         if module.instances:
             for instance_id, instance in module.instances.items():
+                # Add instance documentation as comment if present
+                if instance.doc:
+                    lines.append(f"{self.indent}* {instance.doc}")
                 instance_line = self.generate_instance(
                     instance_id, instance, asdl_file
                 )

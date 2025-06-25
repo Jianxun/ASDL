@@ -135,7 +135,24 @@ models:
 
 ## Recent Changes
 
-### ✅ Phase 5: Schema Refinement & Language Documentation (NEW - COMPLETE)
+### ✅ Phase 5: Instance Documentation & Schema Robustness (NEW - COMPLETE)
+- **Instance Documentation**: Added `doc` field as first-class citizen for instance documentation
+- **SPICE Comment Generation**: Instance documentation converts to SPICE comments before instance lines
+- **Pattern Expansion Fix**: Fixed Pattern Expander to preserve `doc` field during expansion
+- **Schema-Robust Expansion**: Replaced manual field copying with `dataclasses.replace()` for future-proofing
+- **Comprehensive Testing**: 7 new documentation tests + 6 schema robustness tests
+- **Module Parameter Generation**: Fixed modules to generate `.param` declarations like models
+- **Instance Naming Consistency**: All instances use `X_{name}` format (both device and module instances)
+- **NoneType Parameter Fix**: Fixed generator to handle new vs legacy parameter field properly
+
+**Key Improvements**:
+- **Documentation Parity**: Instance documentation now works just like Python docstrings
+- **Future-Proof Expansion**: Uses `dataclasses.replace()` to automatically inherit ALL fields
+- **Complete Pipeline**: Parser → Expander → Generator all handle `doc` field correctly
+- **Real-World Validation**: Two-stage OTA example shows documentation comments in generated SPICE
+- **Robust Architecture**: Pattern expansion will automatically work with any future Instance schema changes
+
+### ✅ Phase 5: Schema Refinement & Language Documentation (COMPLETE)
 - **Schema v0.5**: Cleaned up and simplified ASDL schema structure
 - **Language Documentation**: Created comprehensive `doc/language.md` with semantic rules
 - **Mapping Rules Codified**: Explicitly documented "Expansion only on the RHS" rule

@@ -286,6 +286,7 @@ class Instance:
     """
     model: str                                # References DeviceModel alias or Module name
     mappings: Dict[str, str]                  # Port-to-net mapping (may contain patterns)
+    doc: Optional[str] = None                 # Instance documentation (first-class citizen)
     parameters: Optional[Dict[str, Any]] = None  # Instance parameters (may contain expressions)
     intent: Optional[Dict[str, Any]] = None      # Free-form intent metadata
     

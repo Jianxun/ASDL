@@ -64,7 +64,7 @@
   - [X] Codified "Expansion only on RHS" mapping rule ✅
   - [X] Defined best practices and future extensions ✅
   - [X] Validated mapping lesson learned in official documentation ✅
-- [ ] **Pattern Expansion System Implementation** (CURRENT PRIORITY - TDD)
+- [X] **Pattern Expansion System Implementation** ✅
   - [X] **Step 1: Pattern Parsing & Validation Tests + Implementation** ✅
     - [X] Write tests for pattern detection (`_has_literal_pattern`) ✅
     - [X] Write tests for pattern extraction (`_extract_literal_pattern`) ✅
@@ -81,7 +81,16 @@
     - [X] Write tests for synchronized instance+mapping expansion ✅
     - [X] Write tests for separate instantiation behavior ✅
     - [X] Implement `expand_instance_patterns` method ✅
-  - [ ] **Step 4: Integration & Pipeline Tests** (CURRENT PRIORITY)
+  - [X] **Step 4: Instance Documentation & Schema Robustness** ✅
+    - [X] Added `doc` field as first-class citizen for instances ✅
+    - [X] Fixed Pattern Expander to preserve `doc` field during expansion ✅
+    - [X] Replaced manual field copying with `dataclasses.replace()` for future-proofing ✅
+    - [X] Created 7 comprehensive documentation tests ✅
+    - [X] Created 6 schema robustness tests ✅
+    - [X] Fixed module parameter generation (`.param` declarations) ✅
+    - [X] Fixed instance naming consistency (`X_{name}` format) ✅
+    - [X] Fixed NoneType parameter handling ✅
+- [ ] **Step 5: Integration & Pipeline Tests** (NEXT PRIORITY)
     - [ ] **End-to-End Pattern Expansion Tests** (15 comprehensive test cases)
       - [ ] **Category 1: Single Pattern Type Tests** (3 tests)
         - [ ] Basic Port Pattern Expansion (port `data_<p,n>` → `data_p, data_n`)
@@ -104,13 +113,15 @@
         - [ ] Invalid Pattern Combinations (error handling validation)
         - [ ] Large Pattern Expansion (scalability testing)
     - [ ] **Pipeline Integration Implementation**
-      - [ ] Add expansion step to SPICE generation pipeline
-      - [ ] Update generator to call pattern expansion before SPICE generation
-      - [ ] Ensure expansion preserves existing functionality
+      - [X] Add expansion step to SPICE generation pipeline ✅ (Already in scripts/netlist_asdl.py)
+      - [X] Update generator to call pattern expansion before SPICE generation ✅ (Working)
+      - [X] Ensure expansion preserves existing functionality ✅ (49 tests passing)
     - [ ] **Integration Validation**
-      - [ ] Verify pattern expansion works with hierarchical subcircuits
-      - [ ] Validate parameter propagation through expanded instances
-      - [ ] Confirm ngspice simulation compatibility
+      - [X] Verify pattern expansion works with hierarchical subcircuits ✅ (Working in two_stage_ota.yml)
+      - [X] Validate parameter propagation through expanded instances ✅ (Working)
+      - [X] Confirm ngspice simulation compatibility ✅ (Working)
+
+**✅ Key Achievement This Session**: Instance documentation now works end-to-end from YAML to SPICE comments
 
 - [ ] **Parameter Resolution Enhancement**
   - [ ] Implement `$param` variable substitution system

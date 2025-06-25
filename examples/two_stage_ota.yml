@@ -31,7 +31,6 @@ models:
     parameters:
       M: 1
 
-
   comp_cap:
     doc: "Miller compensation capacitor"
     type: capacitor
@@ -46,7 +45,6 @@ models:
     ports: [plus, minus]
     device_line: |
       R1 {plus} {minus} R=1k
-
 
 modules:
   bias_gen:

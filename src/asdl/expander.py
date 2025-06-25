@@ -6,6 +6,7 @@ as an explicit elaboration step, similar to Verilog elaboration.
 """
 
 from typing import Dict, List, Any, Optional
+from dataclasses import replace
 from .data_structures import ASDLFile, Module, Port, Instance
 
 
@@ -126,11 +127,10 @@ class PatternExpander:
                         instance_id, 
                         expanded_id
                     )
-                    expanded_instances[expanded_id] = Instance(
-                        model=instance.model,
-                        mappings=expanded_mappings,
-                        parameters=instance.parameters,
-                        intent=instance.intent
+                    # Create new instance inheriting all fields from original, only changing mappings
+                    expanded_instances[expanded_id] = replace(
+                        instance,
+                        mappings=expanded_mappings
                     )
             else:
                 # No pattern in instance name, but might have patterns in mappings
@@ -139,11 +139,10 @@ class PatternExpander:
                     instance_id,
                     instance_id
                 )
-                expanded_instances[instance_id] = Instance(
-                    model=instance.model,
-                    mappings=expanded_mappings,
-                    parameters=instance.parameters,
-                    intent=instance.intent
+                # Create new instance inheriting all fields from original, only changing mappings
+                expanded_instances[instance_id] = replace(
+                    instance,
+                    mappings=expanded_mappings
                 )
                 
         return expanded_instances

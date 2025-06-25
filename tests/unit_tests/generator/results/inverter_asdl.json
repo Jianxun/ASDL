@@ -8,7 +8,6 @@
   },
   "models": {
     "nmos_unit": {
-      "model": "nch_lvt",
       "type": "nmos",
       "ports": [
         "G",
@@ -16,14 +15,16 @@
         "S",
         "B"
       ],
-      "params": {
-        "W": "1u",
-        "L": "0.1u"
+      "doc": "NMOS transistor unit cell",
+      "device_line": "MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0\n",
+      "parameters": {
+        "M": 1
       },
-      "description": "NMOS transistor unit cell"
+      "model": null,
+      "params": null,
+      "description": null
     },
     "pmos_unit": {
-      "model": "pch_lvt",
       "type": "pmos",
       "ports": [
         "G",
@@ -31,11 +32,14 @@
         "S",
         "B"
       ],
-      "params": {
-        "W": "1u",
-        "L": "0.1u"
+      "doc": "PMOS transistor unit cell",
+      "device_line": "MP {D} {G} {S} {B} pfet_03v3 L=0.5u W=5u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0\n",
+      "parameters": {
+        "M": 1
       },
-      "description": "PMOS transistor unit cell"
+      "model": null,
+      "params": null,
+      "description": null
     }
   },
   "modules": {
@@ -80,6 +84,7 @@
             "S": "vdd",
             "B": "vdd"
           },
+          "doc": null,
           "parameters": {
             "M": 2
           },
@@ -102,6 +107,7 @@
             "S": "vss",
             "B": "vss"
           },
+          "doc": null,
           "parameters": {
             "M": 2
           },
