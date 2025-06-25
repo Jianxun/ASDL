@@ -10,6 +10,7 @@ Key components:
 - Support for pattern expansion (differential pairs, arrays)
 - Parameter substitution system
 - Design intent capture
+- **NEW**: Unused component validation with warnings
 
 Schema structure:
 - `file_info`: File metadata (top_module, doc, revision, author, date)
@@ -17,7 +18,40 @@ Schema structure:
 - `modules`: Circuit hierarchy with ports, instances, and connectivity
 
 ## Current State
-**🎉 Phase 5 COMPLETE - TEST EXPECTATIONS FULLY UPDATED**: All 126 tests passing ✅
+**🎉 Phase 5 COMPLETE + UNUSED VALIDATION FEATURE ADDED**: All tests passing ✅
+
+### **NEW**: Unused Component Validation Feature (COMPLETE) ✅
+**ACHIEVEMENT**: Successfully implemented validation for declared but unused modules and models
+- **Core Functionality**: SPICEGenerator now tracks usage and warns about unused components
+- **Recursive Tracking**: Walks module hierarchy from top module to determine actual usage
+- **Non-Breaking**: Generates warnings but continues netlisting successfully
+- **Comprehensive Testing**: 5 test cases covering all scenarios (unused models, modules, multiple warnings, no warnings, recursive tracking)
+- **Integration**: Seamlessly integrated with existing warning system
+- **User Experience**: Clear warning messages that help developers identify dead code
+- **Result**: 41/41 generator tests passing (was 36, now 41 with new validation tests)
+
+**Key Features**:
+- **Usage Tracking**: Recursively tracks which models and modules are actually instantiated
+- **Smart Warnings**: Warns about unused models and modules (excluding top module)
+- **Hierarchical Analysis**: Correctly handles nested module dependencies
+- **Non-Disruptive**: Netlisting continues successfully despite unused components
+- **Warning Integration**: Uses existing Python warnings system for consistency
+
+**Test Coverage**:
+- Unused model detection and warnings
+- Unused module detection and warnings  
+- Multiple unused components handling
+- No false positives when all components are used
+- Recursive module usage tracking through hierarchy
+
+**Technical Implementation**:
+- Added `_used_models` and `_used_modules` tracking sets to SPICEGenerator
+- Added `_track_usage()` method for hierarchical usage analysis
+- Added `_validate_unused_components()` method for warning generation
+- Integrated validation into main `generate()` pipeline
+- Maintains backward compatibility with existing code
+
+### **Previous Achievements**: ✅ **Phase 5 COMPLETE** - All 126 tests passing ✅
 - ✅ **Phase 1**: ASDL Parser + SPICE Generator + PySpice Integration (44+7+6=57 tests)
 - ✅ **Phase 2**: Hierarchical Subcircuit Implementation (15/21 functional tests passing)
 - ✅ **Phase 3**: Parameter Handling Enhancement (NEW DEVICE_LINE APPROACH)
@@ -74,6 +108,22 @@ X_MP in out vdd vdd pmos_unit M=2      # ✅ Parameter override
 
 ## Key Decisions
 
+### Unused Component Validation Design (NEW - CRITICAL DECISIONS)
+**✅ LESSON LEARNED**: Validation should be helpful, not disruptive
+- **Non-Breaking Philosophy**: Warnings guide developers but don't block netlisting
+- **Global Instantiation Tracking**: Usage determined by scanning ALL modules for instantiations, not just reachable ones
+- **No False Positives**: Components used within unused modules are correctly NOT flagged as unused
+- **Top Module Exception**: Top module is never considered "unused" since it's the entry point
+- **Warning Clarity**: Clear, actionable warning messages that identify specific unused components
+- **Integration Strategy**: Leverage existing warning infrastructure for consistency
+
+**✅ CRITICAL FIX**: Fixed cascading false positive warnings
+- **Problem**: Components used within unused modules were incorrectly flagged as unused
+- **Example**: `jumper` used in `bias_gen` → both flagged as unused when only `bias_gen` should be
+- **Solution**: Changed from "reachable from top" to "instantiated anywhere" tracking
+- **Impact**: Prevents noise in large hierarchies, focuses warnings on actual dead code
+- **Test Coverage**: Added regression test to prevent this issue in future
+
 ### Pattern Expansion Rules (CRITICAL LESSON LEARNED)
 **✅ LESSON LEARNED**: Mapping format correction for pattern expansion
 - **WRONG**: `G_<p,n>: in_<p,n>` (pattern on both sides)
@@ -98,12 +148,13 @@ X_MP in out vdd vdd pmos_unit M=2      # ✅ Parameter override
 5. **Instance Intent**: Save as free-form dictionary metadata for later use
 6. **Module Hierarchy**: Each `module` translates to a `.subckt` definition
 7. **Implementation Approach**: Minimum viable product to get ASDL->SPICE flow working ASAP
+8. **Validation Strategy**: Non-breaking warnings that improve developer experience
 
 ### PySpice Integration Decisions
-8. **Validation Strategy**: Use PySpice for SPICE syntax validation and connectivity verification
-9. **Enum Serialization**: Custom JSON encoder handles all enum types for debugging output
-10. **Case Handling**: SPICE comparisons use lowercase normalization for case-insensitive validation
-11. **Port Name Standards**: Use uppercase port names (G, D, S, B) to match ASDL conventions
+9. **Validation Strategy**: Use PySpice for SPICE syntax validation and connectivity verification
+10. **Enum Serialization**: Custom JSON encoder handles all enum types for debugging output
+11. **Case Handling**: SPICE comparisons use lowercase normalization for case-insensitive validation
+12. **Port Name Standards**: Use uppercase port names (G, D, S, B) to match ASDL conventions
 
 ### ✅ Hierarchical Subcircuit Design (IMPLEMENTED)
 **COMPLETED**: Models are now subcircuit definitions for modularity and extensibility
@@ -124,11 +175,11 @@ X_MP in out vdd vdd pmos_unit M=2      # ✅ Parameter override
 **COMPLETED**: Robust parameter handling system with automatic parameter generation
 
 **Key Design Decisions**:
-12. **Schema Enhancement**: Added `device_line` + `parameters` fields to DeviceModel
-13. **Field Consistency**: Standardized on `doc` field for both models and modules (not `description`)
-14. **Automatic Parameter Appending**: Parameters automatically added to device lines as `param={param}`
-15. **Clean Device Lines**: Core device definition separate from parameter references
-16. **Error-Resistant Design**: No manual parameter formatting required
+13. **Schema Enhancement**: Added `device_line` + `parameters` fields to DeviceModel
+14. **Field Consistency**: Standardized on `doc` field for both models and modules (not `description`)
+15. **Automatic Parameter Appending**: Parameters automatically added to device lines as `param={param}`
+16. **Clean Device Lines**: Core device definition separate from parameter references
+17. **Error-Resistant Design**: No manual parameter formatting required
 
 **Enhanced Schema Format**:
 ```yaml

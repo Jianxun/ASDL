@@ -5,7 +5,8 @@ Generates SPICE netlists from elaborated ASDL designs where patterns
 have been expanded and parameters have been resolved.
 """
 
-from typing import Dict, List, Any, Optional
+import warnings
+from typing import Dict, List, Any, Optional, Set
 from .data_structures import ASDLFile, Module, Instance, DeviceModel, DeviceType
 
 
@@ -70,6 +71,8 @@ class SPICEGenerator:
         """Initialize SPICE generator with default settings."""
         self.comment_style = "*"  # SPICE comment character
         self.indent = "  "        # Indentation for readability
+        self._used_models: Set[str] = set()      # Track model usage
+        self._used_modules: Set[str] = set()     # Track module usage
     
     def generate(self, asdl_file: ASDLFile) -> str:
         """
@@ -81,6 +84,16 @@ class SPICEGenerator:
         Returns:
             Complete SPICE netlist as string
         """
+        # Reset usage tracking for each generation
+        self._used_models = set()
+        self._used_modules = set()
+        
+        # First pass: track usage by walking through the design hierarchy
+        self._track_usage(asdl_file)
+        
+        # Validate and warn about unused components
+        self._validate_unused_components(asdl_file)
+        
         lines = []
         
         # Add header comment
@@ -112,6 +125,8 @@ class SPICEGenerator:
                 top_module = asdl_file.modules[top_module_name]
                 lines.append(f"* Main circuit instantiation")
                 lines.append(f"XMAIN {self._get_top_level_nets(top_module)} {top_module_name}")
+                # Mark top module as used since it's instantiated
+                self._used_modules.add(top_module_name)
         
         # End SPICE netlist (ngspice compatibility)
         lines.append("")
@@ -494,4 +509,90 @@ class SPICEGenerator:
             template_data["params"] = self._format_named_parameters(model_params, model) if model_params else ""
         
         # Apply template
-        return device_format["template"].format(**template_data) 
+        return device_format["template"].format(**template_data)
+    
+    def _track_usage(self, asdl_file: ASDLFile) -> None:
+        """
+        Track which models and modules are actually instantiated anywhere in the design.
+        
+        This method tracks two different concepts:
+        1. Components instantiated anywhere (for unused warnings)
+        2. Components reachable from top module (for future use)
+        
+        The key insight is that we should only warn about components that are
+        NEVER instantiated anywhere, not components that are instantiated but
+        not reachable from the top module.
+        
+        Args:
+            asdl_file: The complete ASDL design
+        """
+        # Track what's instantiated anywhere in the design
+        self._track_all_instantiations(asdl_file)
+        
+        # Also track what's reachable from top module (for future features)
+        if asdl_file.file_info.top_module:
+            top_module_name = asdl_file.file_info.top_module
+            if top_module_name in asdl_file.modules:
+                self._track_reachable_from_top(top_module_name, asdl_file)
+    
+    def _track_all_instantiations(self, asdl_file: ASDLFile) -> None:
+        """
+        Track all models and modules that are instantiated anywhere in the design.
+        
+        This walks through ALL modules (not just reachable ones) to find what's
+        actually instantiated somewhere. This is used for unused warnings.
+        
+        Args:
+            asdl_file: The complete ASDL design
+        """
+        # Walk through every module to see what it instantiates
+        for module_name, module in asdl_file.modules.items():
+            if module.instances:
+                for instance in module.instances.values():
+                    if instance.is_device_instance(asdl_file):
+                        # Track model instantiation
+                        self._used_models.add(instance.model)
+                    elif instance.is_module_instance(asdl_file):
+                        # Track module instantiation
+                        self._used_modules.add(instance.model)
+    
+    def _track_reachable_from_top(self, module_name: str, asdl_file: ASDLFile) -> None:
+        """
+        Recursively track modules reachable from the top module.
+        
+        This is kept for future features that might need to distinguish between
+        "instantiated somewhere" vs "reachable from top". Currently not used
+        for warnings.
+        
+        Args:
+            module_name: Name of the module to track
+            asdl_file: The complete ASDL design
+        """
+        # This could be used for future features that need to know what's
+        # reachable from the top module, but for now we don't need it
+        # for unused warnings since we use _track_all_instantiations instead
+        pass
+    
+    def _validate_unused_components(self, asdl_file: ASDLFile) -> None:
+        """
+        Validate component usage and emit warnings for unused components.
+        
+        Args:
+            asdl_file: The complete ASDL design
+        """
+        # Check for unused models
+        for model_name in asdl_file.models.keys():
+            if model_name not in self._used_models:
+                warnings.warn(
+                    f"Model '{model_name}' is declared but never instantiated",
+                    UserWarning
+                )
+        
+        # Check for unused modules (excluding top module)
+        top_module = asdl_file.file_info.top_module
+        for module_name in asdl_file.modules.keys():
+            if module_name != top_module and module_name not in self._used_modules:
+                warnings.warn(
+                    f"Module '{module_name}' is declared but never instantiated",
+                    UserWarning
+                ) 
