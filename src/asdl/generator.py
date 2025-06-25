@@ -17,7 +17,7 @@ class SPICEGenerator:
     - Device models become .subckt definitions (primitives inside)
     - Module definitions become .subckt definitions  
     - Device instances become subcircuit calls (X_ prefix)
-    - Module instances become subcircuit calls (X prefix)
+    - Module instances become subcircuit calls (X_ prefix)
     - Two-level port resolution: named mappings + model-defined order
     - ngspice compatible output format
     
@@ -142,6 +142,11 @@ class SPICEGenerator:
         port_list = self._get_port_list(module)
         lines.append(f".subckt {module_name} {' '.join(port_list)}")
         
+        # Add parameter declarations with default values
+        if module.parameters:
+            for param_name, param_value in module.parameters.items():
+                lines.append(f"{self.indent}.param {param_name}={param_value}")
+        
         # Generate instances
         if module.instances:
             for instance_id, instance in module.instances.items():
@@ -250,8 +255,8 @@ class SPICEGenerator:
         """
         Generate subcircuit call for a module instance.
         
-        Format: X<name> <nodes> <subckt_name>
-        Example: XINV1 in out vdd vss inverter
+        Format: X_<name> <nodes> <subckt_name>
+        Example: X_INV1 in out vdd vss inverter
         """
         module = asdl_file.modules[instance.model]
         
@@ -266,8 +271,8 @@ class SPICEGenerator:
                 # TODO: Better error handling
                 node_list.append("UNCONNECTED")
         
-        # Format: Xname nodes subckt_name
-        return f"X{instance_id} {' '.join(node_list)} {instance.model}"
+        # Format: X_name nodes subckt_name (consistent with device instances)
+        return f"X_{instance_id} {' '.join(node_list)} {instance.model}"
     
     def _get_port_list(self, module: Module) -> List[str]:
         """
@@ -428,13 +433,14 @@ class SPICEGenerator:
             template_data[port] = port
         
         # Add parameter data based on format type
+        model_params = model.get_parameter_defaults()  # Use unified parameter access
         if device_format["param_format"] == "bare":
             # Use bare value for simple devices (R, L, C)
             value_param = device_format["value_param"]
-            template_data["value"] = str(model.params.get(value_param, ""))
+            template_data["value"] = str(model_params.get(value_param, "")) if model_params else ""
         else:
             # Use named parameters for complex devices (transistors, etc.)
-            template_data["params"] = self._format_named_parameters(model.params, model)
+            template_data["params"] = self._format_named_parameters(model_params, model) if model_params else ""
         
         # Apply template
         return device_format["template"].format(**template_data) 
