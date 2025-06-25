@@ -203,4 +203,4 @@ modules:
 
       COMP:
         model: miller_comp
-        mappings: {in: first_stage_out, out: out, vss: vss}
+        mappings: {plus: first_stage_out, minus: out}

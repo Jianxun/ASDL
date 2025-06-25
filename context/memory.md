@@ -151,6 +151,19 @@ models:
 
 ## Recent Changes
 
+### ✅ Port Mapping Validation Bug Fix (NEW - CRITICAL FIX) 
+- **Issue Discovered**: Silent failure in port mapping validation - system was inserting `UNCONNECTED` instead of reporting errors
+- **Root Cause**: Instance mappings were not validated against module port definitions
+- **Example Bug**: `miller_comp` defines ports `[plus, minus]` but instance mapped to `[in, out, vss]` - silently failed
+- **Solution Implemented**: Added `_validate_port_mappings()` method in SPICEGenerator
+- **Validation Logic**: 
+  - Checks all mapped ports exist in module definition
+  - Reports clear error messages with invalid port names
+  - Maintains UNCONNECTED behavior for intentionally unmapped ports
+- **Test Coverage**: Added 2 comprehensive validation tests
+- **Impact**: Prevents silent circuit errors and improves debugging experience
+- **Fixed Example**: Corrected `two_stage_ota.yml` Miller compensation mapping to use proper port names
+
 ### ✅ Phase 5: Instance Documentation & Schema Robustness (NEW - COMPLETE)
 - **Instance Documentation**: Added `doc` field as first-class citizen for instance documentation
 - **SPICE Comment Generation**: Instance documentation converts to SPICE comments before instance lines

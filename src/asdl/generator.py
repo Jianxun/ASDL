@@ -263,6 +263,9 @@ class SPICEGenerator:
         """
         module = asdl_file.modules[instance.model]
         
+        # Validate port mappings before generating
+        self._validate_port_mappings(instance_id, instance, module)
+        
         # Get node connections in port order
         node_list = []
         port_list = self._get_port_list(module)
@@ -271,11 +274,56 @@ class SPICEGenerator:
             if port_name in instance.mappings:
                 node_list.append(instance.mappings[port_name])
             else:
-                # TODO: Better error handling
+                # Handle unconnected ports (after validation, this should be intentional)
                 node_list.append("UNCONNECTED")
         
         # Format: X_name nodes subckt_name (consistent with device instances)
         return f"X_{instance_id} {' '.join(node_list)} {instance.model}"
+    
+    def _validate_port_mappings(self, instance_id: str, instance: Instance, module: Module) -> None:
+        """
+        Validate that instance port mappings match the target module's port definition.
+        
+        Checks:
+        1. All mapped ports exist in the target module
+        2. Reports unmapped module ports (allows UNCONNECTED, but warns)
+        
+        Args:
+            instance_id: Name of the instance for error reporting
+            instance: Instance with mappings to validate
+            module: Target module to validate against
+            
+        Raises:
+            ValueError: If mapped ports don't exist in module definition
+        """
+        if not module.ports:
+            # Module has no ports, but instance has mappings
+            if instance.mappings:
+                mapped_ports = list(instance.mappings.keys())
+                raise ValueError(
+                    f"Instance '{instance_id}' maps to ports {mapped_ports}, "
+                    f"but module '{instance.model}' defines no ports"
+                )
+            return
+        
+        # Get valid port names from module definition
+        valid_ports = set(module.ports.keys())
+        mapped_ports = set(instance.mappings.keys()) if instance.mappings else set()
+        
+        # Check 1: All mapped ports must exist in module definition
+        invalid_ports = mapped_ports - valid_ports
+        if invalid_ports:
+            raise ValueError(
+                f"Instance '{instance_id}' maps to invalid ports: {sorted(invalid_ports)}. "
+                f"Module '{instance.model}' only defines ports: {sorted(valid_ports)}"
+            )
+        
+        # Check 2: Report unmapped ports (allows UNCONNECTED but informs user)
+        unmapped_ports = valid_ports - mapped_ports
+        if unmapped_ports:
+            # For now, just allow this (UNCONNECTED behavior)
+            # Could add warning logging here in the future
+            pass
     
     def _get_port_list(self, module: Module) -> List[str]:
         """

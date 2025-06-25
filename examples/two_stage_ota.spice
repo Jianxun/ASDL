@@ -72,7 +72,7 @@
   .param M.second_stage=4
   X_FIRST_STAGE in_p in_n first_stage_out vbn vdd vss ota_5t
   X_SECOND_STAGE first_stage_out out vbn vdd vss common_source_pmos
-  X_COMP UNCONNECTED UNCONNECTED miller_comp
+  X_COMP out first_stage_out miller_comp
 .ends
 
 * Main circuit instantiation
