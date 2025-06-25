@@ -41,6 +41,7 @@
 
 * Basic CMOS inverter with PMOS pull-up and NMOS pull-down
 .subckt inverter in out vdd vss
+  .param M=1
   X_MP in out vdd vdd pmos_unit M=2
   X_MN in out vss vss nmos_unit M=2
 .ends

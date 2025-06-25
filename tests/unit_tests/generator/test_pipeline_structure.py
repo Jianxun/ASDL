@@ -146,10 +146,18 @@ class TestPipelineStructure:
         generator = SPICEGenerator()
         spice_output = generator.generate(asdl_file)
         
-        # Model parameters should be in model subcircuits
-        assert 'MN D G S B nch_lvt W=1u L=0.1u' in spice_output
-        assert 'MP D G S B pch_lvt W=1u L=0.1u' in spice_output
+        # Model parameters should be in model subcircuits with actual PDK device names
+        assert 'MN D G S B nfet_03v3 L=0.5u W=4u nf=2' in spice_output
+        assert 'MP D G S B pfet_03v3 L=0.5u W=5u nf=2' in spice_output
+        
+        # Verify parameter declarations in subcircuits
+        assert '.param M=1' in spice_output
         
         # Instance parameters should be in subcircuit calls
         assert 'X_MP in out vdd vdd pmos_unit M=2' in spice_output
-        assert 'X_MN in out vss vss nmos_unit M=2' in spice_output 
+        assert 'X_MN in out vss vss nmos_unit M=2' in spice_output
+        
+        # Verify hierarchical structure
+        assert '.subckt nmos_unit G D S B' in spice_output
+        assert '.subckt pmos_unit G D S B' in spice_output
+        assert '.subckt inverter in out vdd vss' in spice_output 

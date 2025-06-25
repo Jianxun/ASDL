@@ -51,10 +51,10 @@ class TestPortResolution:
         assert '.subckt pmos_unit G D S B' in reordered_spice
         
         # Verify the primitive devices inside models are identical
-        assert 'MN D G S B nch_lvt W=1u L=0.1u' in original_spice
-        assert 'MN D G S B nch_lvt W=1u L=0.1u' in reordered_spice
-        assert 'MP D G S B pch_lvt W=1u L=0.1u' in original_spice
-        assert 'MP D G S B pch_lvt W=1u L=0.1u' in reordered_spice
+        assert 'MN D G S B nfet_03v3 L=0.5u W=4u nf=2' in original_spice
+        assert 'MN D G S B nfet_03v3 L=0.5u W=4u nf=2' in reordered_spice
+        assert 'MP D G S B pfet_03v3 L=0.5u W=5u nf=2' in original_spice
+        assert 'MP D G S B pfet_03v3 L=0.5u W=5u nf=2' in reordered_spice
 
     def test_port_resolution_with_missing_mapping(self):
         """Test error handling when instance mapping is missing a required port."""
