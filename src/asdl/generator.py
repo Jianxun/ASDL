@@ -99,6 +99,7 @@ class SPICEGenerator:
         # Add header comment
         lines.append(f"* SPICE netlist generated from ASDL")
         lines.append(f"* Design: {asdl_file.file_info.doc}")
+        lines.append(f"* Top module: {asdl_file.file_info.top_module}")
         lines.append(f"* Author: {asdl_file.file_info.author}")
         lines.append(f"* Date: {asdl_file.file_info.date}")
         lines.append(f"* Revision: {asdl_file.file_info.revision}")

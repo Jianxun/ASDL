@@ -1,5 +1,6 @@
 * SPICE netlist generated from ASDL
 * Design: Basic CMOS inverter
+* Top module: inverter
 * Author: ASDL
 * Date: 2024-03-19
 * Revision: v0.4

@@ -179,6 +179,10 @@ modules:
       M.first_stage: 2
       M.second_stage: 4
     instances:
+      BIAS_GEN:
+        model: bias_gen
+        mappings: {ibias: ibias, vbn: vbn, vss: vss, vdd: vdd}
+
       FIRST_STAGE:
         model: ota_5t
         mappings:

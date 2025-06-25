@@ -1,5 +1,6 @@
 * SPICE netlist generated from ASDL
 * Design: Two-stage Miller-compensated operational transconductance amplifier
+* Top module: two_stage_ota
 * Author: ASDL
 * Date: 2025-06-14
 * Revision: v0.4
@@ -70,6 +71,7 @@
 .subckt two_stage_ota ibias in_n in_p out vdd vss
   .param M.first_stage=2
   .param M.second_stage=4
+  X_BIAS_GEN ibias vbn vdd vss bias_gen
   X_FIRST_STAGE in_p in_n first_stage_out vbn vdd vss ota_5t
   X_SECOND_STAGE first_stage_out out vbn vdd vss common_source_pmos
   X_COMP out first_stage_out miller_comp
