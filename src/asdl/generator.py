@@ -345,14 +345,15 @@ class SPICEGenerator:
         """
         Get ordered list of port names for a module.
         
-        TODO: Define port ordering convention (alphabetical? declaration order?)
+        Preserves declaration order from YAML instead of alphabetical sorting.
+        This ensures SPICE .subckt port order matches the canonical order 
+        defined in the ASDL YAML file.
         """
         if not module.ports:
             return []
         
-        # For now, use alphabetical order
-        # TODO: Preserve declaration order or use explicit ordering
-        return sorted(module.ports.keys())
+        # Preserve declaration order (Python 3.7+ dict insertion order)
+        return list(module.ports.keys())
     
     def _get_top_level_nets(self, module: Module = None) -> str:
         """

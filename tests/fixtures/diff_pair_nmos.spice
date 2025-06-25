@@ -1,5 +1,6 @@
 * SPICE netlist generated from ASDL
 * Design: NMOS differential pair with resistor loads - Pattern expansion test circuit
+* Top module: diff_pair_nmos
 * Author: ASDL Test Suite
 * Date: 2024-03-19
 * Revision: v0.4
@@ -18,16 +19,20 @@
 .ends
 
 * NMOS differential pair with resistor loads demonstrating pattern expansion
-.subckt diff_pair_nmos in_n in_p iref out_n out_p tail vdd vss
+.subckt diff_pair_nmos in_p in_n out_p out_n vdd vss iref tail
+  .param M_diff=4
+  .param R_load=10k
+  .param M_diode=1
+  .param M_mirror=8
   X_MN_P in_p out_p tail vss nmos_unit M=$M_diff
-  X_MN_N in_p out_p tail vss nmos_unit M=$M_diff
+  X_MN_N in_n out_n tail vss nmos_unit M=$M_diff
   X_RL_P vdd out_p resistor_unit R=$R_load
-  X_RL_N vdd out_p resistor_unit R=$R_load
+  X_RL_N vdd out_n resistor_unit R=$R_load
   X_M_DIODE bias_gate bias_gate vss vss nmos_unit M=$M_diode
   X_M_MIRROR bias_gate tail vss vss nmos_unit M=$M_mirror
 .ends
 
 * Main circuit instantiation
-XMAIN in_n in_p iref out_n out_p tail vdd vss diff_pair_nmos
+XMAIN in_p in_n out_p out_n vdd vss iref tail diff_pair_nmos
 
 .end

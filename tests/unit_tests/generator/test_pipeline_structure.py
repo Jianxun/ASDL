@@ -99,12 +99,12 @@ class TestPipelineStructure:
         # Verify hierarchical calls reference the correct subcircuits
         assert 'X_MP in out vdd vdd pmos_unit M=2' in spice_output
         assert 'X_MN in out vss vss nmos_unit M=2' in spice_output
-        assert 'XMAIN in out vdd vss inverter' in spice_output
+        assert 'XMAIN in out vss vdd inverter' in spice_output
         
         # Verify that the subcircuits being referenced actually exist
         assert '.subckt pmos_unit G D S B' in spice_output
         assert '.subckt nmos_unit G D S B' in spice_output
-        assert '.subckt inverter in out vdd vss' in spice_output
+        assert '.subckt inverter in out vss vdd' in spice_output
 
     def test_ngspice_compatibility_features(self):
         """Test specific ngspice compatibility features."""
@@ -160,4 +160,4 @@ class TestPipelineStructure:
         # Verify hierarchical structure
         assert '.subckt nmos_unit G D S B' in spice_output
         assert '.subckt pmos_unit G D S B' in spice_output
-        assert '.subckt inverter in out vdd vss' in spice_output 
+        assert '.subckt inverter in out vss vdd' in spice_output 

@@ -166,12 +166,12 @@ def test_pyspice_validates_subcircuit_ports(inverter_asdl):
     assert 'XMAIN' in circuit._elements
 
     # Verify the subcircuit definition syntax in raw SPICE
-    # Expected ports from inverter.yml: in, out, vdd, vss
-    assert '.subckt inverter in out vdd vss' in spice_output
+    # Expected ports from inverter.yml: in, out, vss, vdd (YAML declaration order)
+    assert '.subckt inverter in out vss vdd' in spice_output
     
     # Verify the main instantiation uses correct port count
-    # Should match the 4 ports defined in the subcircuit
-    assert 'XMAIN in out vdd vss inverter' in spice_output
+    # Should match the 4 ports defined in the subcircuit (YAML declaration order)
+    assert 'XMAIN in out vss vdd inverter' in spice_output
     
     # This validates that:
     # 1. Subcircuit has correct port definition (.subckt line)

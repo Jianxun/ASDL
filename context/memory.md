@@ -18,7 +18,27 @@ Schema structure:
 - `modules`: Circuit hierarchy with ports, instances, and connectivity
 
 ## Current State
-**🎉 Phase 5 COMPLETE + UNUSED VALIDATION FEATURE ADDED**: All tests passing ✅
+**🎉 Phase 5 COMPLETE + UNUSED VALIDATION FEATURE ADDED + PORT ORDER FIX**: All tests passing ✅
+
+### **NEW**: Critical Pattern Expansion Bug Fix (MAJOR CIRCUIT CORRECTNESS) ✅
+**ACHIEVEMENT**: Fixed critical differential pair pattern expansion bug that broke circuit functionality
+- **Problem**: `_expand_mapping_patterns` always mapped one-sided net patterns to first element for all instances
+- **Impact**: Both `MN_P` and `MN_N` connected to `in_p` instead of `in_p` and `in_n` respectively
+- **Circuit Consequence**: Completely broken differential amplifier - both transistors driven by same input!
+- **Root Cause**: Line 346 in expander.py used `expanded_nets[0]` instead of `expanded_nets[instance_index]`
+- **Solution**: Added instance index logic for one-sided net patterns to match instance expansion
+- **Test Coverage**: Added comprehensive `TestRealWorldDifferentialPair` class using `diff_pair_nmos.yml` fixture
+- **Result**: Differential pairs now function correctly with proper signal routing
+
+### **NEW**: Port Order Canonical Compliance (CRITICAL BUG FIX) ✅
+**ACHIEVEMENT**: Fixed SPICE port order to follow YAML declaration order instead of alphabetical sorting
+- **Problem**: Generator was sorting module ports alphabetically, breaking canonical order from YAML
+- **Impact**: `.subckt ota_5t in_n in_p out vbn vdd vss` → `.subckt ota_5t in_p in_n out vbn vss vdd`
+- **Root Cause**: `_get_port_list()` method used `sorted(module.ports.keys())` instead of preserving YAML order
+- **Solution**: Changed to `list(module.ports.keys())` to preserve Python 3.7+ dict insertion order
+- **Validation**: Pattern expansion correctly preserves order: `in_<p,n>` → `["in_p", "in_n"]` 
+- **Test Updates**: Updated 3 test expectations to match correct YAML declaration order
+- **Result**: SPICE .subckt declarations now follow canonical order defined in ASDL YAML ports section
 
 ### **NEW**: Unused Component Validation Feature (COMPLETE) ✅
 **ACHIEVEMENT**: Successfully implemented validation for declared but unused modules and models

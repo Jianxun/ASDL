@@ -19,6 +19,7 @@
 
     * SPICE netlist generated from ASDL
 * Design: Basic CMOS inverter
+* Top module: inverter
 * Author: ASDL
 * Date: 2024-03-19
 * Revision: v0.4
@@ -37,13 +38,13 @@
 .ends
 
 * Basic CMOS inverter with PMOS pull-up and NMOS pull-down
-.subckt inverter in out vdd vss
+.subckt inverter in out vss vdd
   .param M=1
   X_MP in out vdd vdd pmos_unit M=2
   X_MN in out vss vss nmos_unit M=2
 .ends
 
 * Main circuit instantiation
-XMAIN in out vdd vss inverter
+XMAIN in out vss vdd inverter
 
 .end

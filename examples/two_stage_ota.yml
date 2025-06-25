@@ -186,7 +186,7 @@ modules:
       FIRST_STAGE:
         model: ota_5t
         mappings:
-          in_<p,n>: in_<n,p>
+          in_<p,n>: in_<n,p> # swap port mapping to match full ota polarity
           out: first_stage_out
           vbn: vbn
           vss: vss

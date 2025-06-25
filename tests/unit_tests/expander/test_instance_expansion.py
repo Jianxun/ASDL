@@ -331,12 +331,134 @@ class TestComplexInstanceExpansion:
         }
         assert expanded["complex_p"].mappings == expected_p_mappings
         
-        # Check complex mapping expansion for _n instance
+                # Check complex mapping expansion for _n instance
         expected_n_mappings = {
             "same_n": "net_n",
             "cross_n": "signal_p",
-            "one_sided_n": "common_net", 
-            "other_side": "bus_a",  # Should map to same first net
+            "one_sided_n": "common_net",
+            "other_side": "bus_b",  # Second instance should map to second element
             "no_pattern": "static_net"
         }
         assert expanded["complex_n"].mappings == expected_n_mappings 
+
+
+class TestRealWorldDifferentialPair:
+    """Test real-world differential pair patterns using the diff_pair_nmos fixture."""
+    
+    def setup_method(self):
+        """Set up test environment."""
+        self.expander = PatternExpander()
+        
+    def test_differential_pair_fixture_pattern_expansion(self):
+        """Test pattern expansion using the real diff_pair_nmos.yml fixture."""
+        from pathlib import Path
+        from src.asdl.parser import ASDLParser
+        
+        # Load the real differential pair fixture
+        fixtures_dir = Path(__file__).parent.parent.parent / "fixtures"
+        diff_pair_path = fixtures_dir / "diff_pair_nmos.yml"
+        
+        parser = ASDLParser()
+        asdl_file = parser.parse_file(str(diff_pair_path))
+        
+        # Expand patterns
+        expanded_file = self.expander.expand_patterns(asdl_file)
+        
+        # Get the expanded differential pair module
+        diff_pair_module = expanded_file.modules['diff_pair_nmos']
+        
+        # Verify port expansion: in_<p,n> → in_p, in_n
+        expected_ports = ['in_p', 'in_n', 'out_p', 'out_n', 'vdd', 'vss', 'iref', 'tail']
+        assert diff_pair_module.ports is not None
+        actual_ports = list(diff_pair_module.ports.keys())
+        assert set(actual_ports) == set(expected_ports)
+        
+        # Critical test: Verify MN_<P,N> instance expansion
+        # This is the exact pattern that was broken!
+        assert diff_pair_module.instances is not None
+        assert 'MN_P' in diff_pair_module.instances
+        assert 'MN_N' in diff_pair_module.instances
+        
+        # Verify correct differential pair mappings
+        mn_p_mappings = diff_pair_module.instances['MN_P'].mappings
+        mn_n_mappings = diff_pair_module.instances['MN_N'].mappings
+        
+        # The bug: both instances were getting same gate connection
+        # Correct behavior: MN_P → in_p, MN_N → in_n
+        assert mn_p_mappings['G'] == 'in_p', f"MN_P gate should connect to in_p, got {mn_p_mappings['G']}"
+        assert mn_n_mappings['G'] == 'in_n', f"MN_N gate should connect to in_n, got {mn_n_mappings['G']}"
+        
+        # Verify drain connections: MN_P → out_p, MN_N → out_n  
+        assert mn_p_mappings['D'] == 'out_p', f"MN_P drain should connect to out_p, got {mn_p_mappings['D']}"
+        assert mn_n_mappings['D'] == 'out_n', f"MN_N drain should connect to out_n, got {mn_n_mappings['D']}"
+        
+        # Verify shared connections (no patterns)
+        assert mn_p_mappings['S'] == 'tail'
+        assert mn_n_mappings['S'] == 'tail'
+        assert mn_p_mappings['B'] == 'vss'
+        assert mn_n_mappings['B'] == 'vss'
+        
+    def test_differential_pair_resistor_loads(self):
+        """Test resistor load pattern expansion in differential pair."""
+        from pathlib import Path
+        from src.asdl.parser import ASDLParser
+        
+        # Load the real differential pair fixture
+        fixtures_dir = Path(__file__).parent.parent.parent / "fixtures"
+        diff_pair_path = fixtures_dir / "diff_pair_nmos.yml"
+        
+        parser = ASDLParser()
+        asdl_file = parser.parse_file(str(diff_pair_path))
+        
+        # Expand patterns
+        expanded_file = self.expander.expand_patterns(asdl_file)
+        diff_pair_module = expanded_file.modules['diff_pair_nmos']
+        
+        # Verify resistor load instances: RL_<P,N> → RL_P, RL_N
+        assert diff_pair_module.instances is not None
+        assert 'RL_P' in diff_pair_module.instances
+        assert 'RL_N' in diff_pair_module.instances
+        
+        # Verify resistor load mappings
+        rl_p_mappings = diff_pair_module.instances['RL_P'].mappings
+        rl_n_mappings = diff_pair_module.instances['RL_N'].mappings
+        
+        # Test one-sided net pattern: minus: out_<p,n>
+        assert rl_p_mappings['minus'] == 'out_p'
+        assert rl_n_mappings['minus'] == 'out_n'
+        
+        # Shared connection (no pattern)
+        assert rl_p_mappings['plus'] == 'vdd'
+        assert rl_n_mappings['plus'] == 'vdd'
+        
+    def test_differential_pair_full_netlist_generation(self):
+        """End-to-end test: Parse → Expand → Generate SPICE for differential pair."""
+        from pathlib import Path
+        from src.asdl.parser import ASDLParser
+        from src.asdl.generator import SPICEGenerator
+        
+        # Load the real differential pair fixture
+        fixtures_dir = Path(__file__).parent.parent.parent / "fixtures"
+        diff_pair_path = fixtures_dir / "diff_pair_nmos.yml"
+        
+        parser = ASDLParser()
+        asdl_file = parser.parse_file(str(diff_pair_path))
+        
+        # Expand patterns
+        expanded_file = self.expander.expand_patterns(asdl_file)
+        
+        # Generate SPICE
+        generator = SPICEGenerator()
+        spice_output = generator.generate(expanded_file)
+        
+        # Verify critical differential pair connections in SPICE
+        # Should have separate gate connections for P and N transistors
+        assert 'X_MN_P in_p out_p tail vss nmos_unit' in spice_output
+        assert 'X_MN_N in_n out_n tail vss nmos_unit' in spice_output
+        
+        # Verify we don't have the bug (both connected to same input)
+        assert 'X_MN_N in_p out_p tail vss nmos_unit' not in spice_output
+        
+        # Verify resistor loads
+        assert 'X_RL_P vdd out_p resistor_unit' in spice_output
+        assert 'X_RL_N vdd out_n resistor_unit' in spice_output 

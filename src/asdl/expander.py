@@ -342,9 +342,19 @@ class PatternExpander:
                         expanded_mappings[exp_port] = net_name
                     
             elif not port_has_pattern and net_has_pattern:
-                # One-sided pattern (net side only) - map to first expanded net
-                expanded_nets = self._expand_literal_pattern(net_name)
-                expanded_mappings[port_name] = expanded_nets[0]
+                # One-sided pattern (net side only)
+                if instance_has_pattern:
+                    # Ensure the net pattern matches the instance pattern count
+                    net_items = self._extract_literal_pattern(net_name)
+                    self._validate_pattern_counts(instance_items, net_items)
+                    
+                    # Use the corresponding net for this instance
+                    expanded_nets = self._expand_literal_pattern(net_name)
+                    expanded_mappings[port_name] = expanded_nets[instance_index]
+                else:
+                    # No instance pattern, map to first expanded net
+                    expanded_nets = self._expand_literal_pattern(net_name)
+                    expanded_mappings[port_name] = expanded_nets[0]
                 
             else:
                 # No patterns - keep as is

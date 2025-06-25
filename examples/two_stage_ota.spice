@@ -34,50 +34,50 @@
 .ends
 
 * Bias generator
-.subckt bias_gen ibias vbn vdd vss
+.subckt bias_gen ibias vbn vss vdd
   X_MN_BIAS vbn vbn vss vss nmos_unit M=1
   X_J1 ibias vbn jumper
 .ends
 
 * 5-transistor OTA: differential pair with current mirror load
-.subckt ota_5t in_n in_p out vbn vdd vss
+.subckt ota_5t in_p in_n out vbn vss vdd
   .param M=2
   * NMOS input transistors
   X_MN_P in_p vd tail vss nmos_unit M={M}
   * NMOS input transistors
-  X_MN_N in_p vd tail vss nmos_unit M={M}
+  X_MN_N in_n out tail vss nmos_unit M={M}
   * NMOS tail current source
   X_MN_TAIL vbn tail vss vss nmos_unit M={M}*2
   * PMOS current mirror load
   X_MP_P out_n out_p vdd vdd pmos_unit M={M}*3
   * PMOS current mirror load
-  X_MP_N out_n out_p vdd vdd pmos_unit M={M}*3
+  X_MP_N out_n out_n vdd vdd pmos_unit M={M}*3
 .ends
 
 * Second stage: PMOS Common source amplifier with NMOS current source load
-.subckt common_source_pmos in out vbn vdd vss
+.subckt common_source_pmos in out vbn vss vdd
   .param M=4
   X_MP_CS in out vdd vdd pmos_unit M={M}*3
   X_MN_LOAD vbn out vss vss nmos_unit M={M}
 .ends
 
 * Miller compensation network
-.subckt miller_comp minus plus
+.subckt miller_comp plus minus
   X_CC plus v_int comp_cap
   X_RC v_int minus comp_res
 .ends
 
 * Two-stage Miller-compensated operational transconductance amplifier
-.subckt two_stage_ota ibias in_n in_p out vdd vss
+.subckt two_stage_ota in_p in_n out ibias vss vdd
   .param M.first_stage=2
   .param M.second_stage=4
-  X_BIAS_GEN ibias vbn vdd vss bias_gen
-  X_FIRST_STAGE in_p in_n first_stage_out vbn vdd vss ota_5t
-  X_SECOND_STAGE first_stage_out out vbn vdd vss common_source_pmos
-  X_COMP out first_stage_out miller_comp
+  X_BIAS_GEN ibias vbn vss vdd bias_gen
+  X_FIRST_STAGE in_n in_p first_stage_out vbn vss vdd ota_5t
+  X_SECOND_STAGE first_stage_out out vbn vss vdd common_source_pmos
+  X_COMP first_stage_out out miller_comp
 .ends
 
 * Main circuit instantiation
-XMAIN ibias in_n in_p out vdd vss two_stage_ota
+XMAIN in_p in_n out ibias vss vdd two_stage_ota
 
 .end
