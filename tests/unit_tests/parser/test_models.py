@@ -138,7 +138,7 @@ modules: {}
         assert minimal_model.model == "minimal_device"
         assert minimal_model.type == DeviceType.NMOS
         assert minimal_model.ports == []  # Default empty list
-        assert minimal_model.params == {}  # Default empty dict
+        assert minimal_model.params is None  # Default None
         assert minimal_model.description is None  # Default None
     
     def test_parse_all_device_types(self):

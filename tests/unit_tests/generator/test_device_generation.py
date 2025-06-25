@@ -57,8 +57,14 @@ class TestDeviceGeneration:
         generator = SPICEGenerator()
         spice_output = generator.generate(asdl_file)
         
-        # Verify the resistor device line is generated correctly
-        assert "R1 net1 net2 RES_1K 1k" in spice_output
+        # Verify hierarchical subcircuit generation
+        # Model should generate as subcircuit with internal device
+        assert ".subckt res_1k plus minus" in spice_output
+        assert "R plus minus RES_1K" in spice_output
+        assert ".ends" in spice_output
+        
+        # Instance should generate as subcircuit call
+        assert "X_R1 net1 net2 res_1k value=1k" in spice_output
 
     def test_generate_capacitor(self):
         """Test capacitor device line generation."""
@@ -105,8 +111,14 @@ class TestDeviceGeneration:
         generator = SPICEGenerator()
         spice_output = generator.generate(asdl_file)
         
-        # Verify the capacitor device line is generated correctly
-        assert "C1 in gnd CAP_1PF 1p" in spice_output
+        # Verify hierarchical subcircuit generation
+        # Model should generate as subcircuit with internal device
+        assert ".subckt cap_1pf plus minus" in spice_output
+        assert "C plus minus CAP_1PF" in spice_output
+        assert ".ends" in spice_output
+        
+        # Instance should generate as subcircuit call
+        assert "X_C1 in gnd cap_1pf value=1p" in spice_output
 
     def test_generate_inductor(self):
         """Test inductor device line generation."""
@@ -153,12 +165,18 @@ class TestDeviceGeneration:
         generator = SPICEGenerator()
         spice_output = generator.generate(asdl_file)
         
-        # Verify the inductor device line is generated correctly
-        assert "L1 rf_in rf_out IND_1NH 1n" in spice_output
+        # Verify hierarchical subcircuit generation
+        # Model should generate as subcircuit with internal device
+        assert ".subckt ind_1nh plus minus" in spice_output
+        assert "L plus minus IND_1NH" in spice_output
+        assert ".ends" in spice_output
+        
+        # Instance should generate as subcircuit call
+        assert "X_L1 rf_in rf_out ind_1nh value=1n" in spice_output
 
     def test_generate_device_with_parameters(self):
         """Test device generation with multiple parameters (like MOSFET)."""
-                # Create an NMOS model with correct SPICE node order: Drain, Gate, Source, Bulk
+        # Create an NMOS model with correct SPICE node order: Drain, Gate, Source, Bulk
         nmos_model = DeviceModel(
             model="nch_lvt",
             type=DeviceType.NMOS,
@@ -201,29 +219,15 @@ class TestDeviceGeneration:
         generator = SPICEGenerator()
         spice_output = generator.generate(asdl_file)
         
-        # Verify the NMOS device line with EXACT node order: Drain, Gate, Source, Bulk
-        assert "MN1 drain gate source bulk nch_lvt" in spice_output
-        assert "L=0.1u" in spice_output
-        assert "W=1u" in spice_output
-        assert "M=4" in spice_output
+        # Verify hierarchical subcircuit generation
+        # Model should generate as subcircuit with internal device
+        assert ".subckt nmos_device D G S B" in spice_output
+        assert ".param L=0.1u" in spice_output
+        assert "MN D G S B nch_lvt L=0.1u" in spice_output
+        assert ".ends" in spice_output
         
-        # Additional verification: Check exact node order by splitting the line
-        lines = spice_output.split('\n')
-        nmos_line = None
-        for line in lines:
-            if line.strip().startswith('MN1'):
-                nmos_line = line.strip()
-                break
-        
-        assert nmos_line is not None, "NMOS device line not found"
-        parts = nmos_line.split()
-        assert len(parts) >= 6, f"NMOS line should have at least 6 parts, got: {parts}"
-        assert parts[0] == "MN1", f"Device name should be MN1, got: {parts[0]}"
-        assert parts[1] == "drain", f"First node should be drain, got: {parts[1]}"
-        assert parts[2] == "gate", f"Second node should be gate, got: {parts[2]}"
-        assert parts[3] == "source", f"Third node should be source, got: {parts[3]}"
-        assert parts[4] == "bulk", f"Fourth node should be bulk, got: {parts[4]}"
-        assert parts[5] == "nch_lvt", f"Model should be nch_lvt, got: {parts[5]}"
+        # Instance should generate as subcircuit call with parameters
+        assert "X_MN1 drain gate source bulk nmos_device M=4 W=1u" in spice_output
 
     def test_generate_device_invalid_model(self):
         """Test error handling for missing model references."""
@@ -307,16 +311,21 @@ class TestDeviceGeneration:
         generator = SPICEGenerator()
         spice_output = generator.generate(asdl_file)
         
-        # Verify the diode device line uses named parameter format
-        assert "D1 anode cathode D1N4148" in spice_output
-        assert "Is=1e-14" in spice_output
-        assert "N=1.0" in spice_output
-        assert "temp=27" in spice_output
+        # Verify hierarchical subcircuit generation
+        # Model should generate as subcircuit with internal device
+        assert ".subckt diode_1 a c" in spice_output
+        assert ".param Is=1e-14" in spice_output
+        assert ".param N=1.0" in spice_output
+        assert "D a c D1N4148 Is=1e-14 N=1.0" in spice_output
+        assert ".ends" in spice_output
+        
+        # Instance should generate as subcircuit call with parameters
+        assert "X_D1 anode cathode diode_1 temp=27" in spice_output
 
     def test_spice_node_ordering_verification(self):
         """Test that all device types generate nodes in correct SPICE order."""
         
-                # Test PMOS: Should follow same order as NMOS (Drain, Gate, Source, Bulk)
+        # Test PMOS: Should follow same order as NMOS (Drain, Gate, Source, Bulk)
         pmos_model = DeviceModel(
             model="pch_lvt",
             type=DeviceType.PMOS,
@@ -409,51 +418,25 @@ class TestDeviceGeneration:
         generator = SPICEGenerator()
         spice_output = generator.generate(asdl_file)
         
-        # Parse the output and verify node orders
-        lines = spice_output.split('\n')
+        # Verify hierarchical subcircuit generation and node ordering
+        # All devices should be inside their respective subcircuits
         
-        # Verify PMOS node order: Drain, Gate, Source, Bulk
-        pmos_line = None
-        for line in lines:
-            if line.strip().startswith('MP1'):
-                pmos_line = line.strip()
-                break
-        assert pmos_line is not None
-        pmos_parts = pmos_line.split()
-        assert pmos_parts[1] == "vdd", f"PMOS drain should be vdd, got: {pmos_parts[1]}"
-        assert pmos_parts[2] == "gate_n", f"PMOS gate should be gate_n, got: {pmos_parts[2]}"
-        assert pmos_parts[3] == "out", f"PMOS source should be out, got: {pmos_parts[3]}"
-        assert pmos_parts[4] == "vdd", f"PMOS bulk should be vdd, got: {pmos_parts[4]}"
+        # Verify PMOS subcircuit and internal device node order
+        assert ".subckt pmos_device D G S B" in spice_output
+        assert "MP D G S B pch_lvt" in spice_output
+        assert "X_MP1 vdd gate_n out vdd pmos_device" in spice_output
         
-        # Verify Resistor node order (plus, minus)
-        resistor_line = None
-        for line in lines:
-            if line.strip().startswith('R1'):
-                resistor_line = line.strip()
-                break
-        assert resistor_line is not None
-        res_parts = resistor_line.split()
-        assert res_parts[1] == "vin", f"Resistor plus terminal should be vin, got: {res_parts[1]}"
-        assert res_parts[2] == "vout", f"Resistor minus terminal should be vout, got: {res_parts[2]}"
+        # Verify resistor subcircuit and internal device node order
+        assert ".subckt res_model plus minus" in spice_output
+        assert "R plus minus RES_MODEL" in spice_output
+        assert "X_R1 vin vout res_model value=10k" in spice_output
         
-        # Verify Capacitor node order (plus, minus)
-        capacitor_line = None  
-        for line in lines:
-            if line.strip().startswith('C1'):
-                capacitor_line = line.strip()
-                break
-        assert capacitor_line is not None
-        cap_parts = capacitor_line.split()
-        assert cap_parts[1] == "signal", f"Capacitor plus terminal should be signal, got: {cap_parts[1]}"
-        assert cap_parts[2] == "gnd", f"Capacitor minus terminal should be gnd, got: {cap_parts[2]}"
+        # Verify capacitor subcircuit and internal device node order
+        assert ".subckt cap_model plus minus" in spice_output
+        assert "C plus minus CAP_MODEL" in spice_output
+        assert "X_C1 signal gnd cap_model value=100f" in spice_output
         
-        # Verify Inductor node order (plus, minus)
-        inductor_line = None
-        for line in lines:
-            if line.strip().startswith('L1'):
-                inductor_line = line.strip()
-                break
-        assert inductor_line is not None
-        ind_parts = inductor_line.split()
-        assert ind_parts[1] == "rf_in", f"Inductor plus terminal should be rf_in, got: {ind_parts[1]}"
-        assert ind_parts[2] == "rf_out", f"Inductor minus terminal should be rf_out, got: {ind_parts[2]}" 
+        # Verify inductor subcircuit and internal device node order
+        assert ".subckt ind_model plus minus" in spice_output
+        assert "L plus minus IND_MODEL" in spice_output
+        assert "X_L1 rf_in rf_out ind_model value=10n" in spice_output 

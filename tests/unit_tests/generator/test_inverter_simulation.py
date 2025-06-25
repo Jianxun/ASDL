@@ -1,4 +1,4 @@
-from fixture_inverter import *
+from .fixture_inverter import *
 import os
 
 

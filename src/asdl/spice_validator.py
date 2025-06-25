@@ -13,9 +13,10 @@ try:
     PYSPICE_AVAILABLE = True
 except ImportError:
     PYSPICE_AVAILABLE = False
+    Circuit = None  # Define Circuit as None when PySpice is not available
 
 
-def parse_spice_netlist(spice_content: str) -> Circuit:
+def parse_spice_netlist(spice_content: str) -> "Circuit":
     """
     Parse SPICE netlist content into a PySpice.Circuit object.
     

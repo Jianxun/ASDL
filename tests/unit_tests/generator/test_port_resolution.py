@@ -51,10 +51,10 @@ class TestPortResolution:
         assert '.subckt pmos_unit G D S B' in reordered_spice
         
         # Verify the primitive devices inside models are identical
-        assert 'MN D G S B nch_lvt W=1u L=0.1u' in original_spice
-        assert 'MN D G S B nch_lvt W=1u L=0.1u' in reordered_spice
-        assert 'MP D G S B pch_lvt W=1u L=0.1u' in original_spice
-        assert 'MP D G S B pch_lvt W=1u L=0.1u' in reordered_spice
+        assert 'MN D G S B nfet_03v3 L=0.5u W=4u nf=2' in original_spice
+        assert 'MN D G S B nfet_03v3 L=0.5u W=4u nf=2' in reordered_spice
+        assert 'MP D G S B pfet_03v3 L=0.5u W=5u nf=2' in original_spice
+        assert 'MP D G S B pfet_03v3 L=0.5u W=5u nf=2' in reordered_spice
 
     def test_port_resolution_with_missing_mapping(self):
         """Test error handling when instance mapping is missing a required port."""
@@ -133,4 +133,126 @@ class TestPortResolution:
         assert 'MN D G S B nch_lvt W=1u L=0.1u' in model_subckt
         
         # The SPICE device order is preserved: D G S B (Drain Gate Source Bulk)
-        # This is the strict SPICE device requirement 
+        # This is the strict SPICE device requirement
+
+    def test_invalid_port_mapping_validation(self):
+        """Test validation of invalid port mappings in module instances."""
+        from src.asdl.data_structures import (DeviceModel, DeviceType, Instance, ASDLFile, 
+                                               FileInfo, Module, Port, PortDirection, SignalType)
+        
+        # Create a module with specific ports
+        test_module = Module(
+            doc="Test module with two ports",
+            ports={
+                "input": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
+                "output": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE)
+            },
+            instances={},
+            nets=None,
+            parameters=None
+        )
+        
+        # Create instance with invalid port mappings
+        invalid_instance = Instance(
+            model="test_module",
+            mappings={
+                "wrong_port": "net1",    # Invalid port name
+                "another_bad": "net2"    # Invalid port name  
+            },
+            parameters=None
+        )
+        
+        # Create test structure
+        file_info = FileInfo(
+            top_module="main_circuit",
+            doc="Test circuit for port mapping validation",
+            revision="1.0",
+            author="test",
+            date="2024-01-01"
+        )
+        
+        main_module = Module(
+            doc="Main test module",
+            ports={},
+            instances={"BAD_INST": invalid_instance},
+            nets=None,
+            parameters=None
+        )
+        
+        asdl_file = ASDLFile(
+            file_info=file_info,
+            models={},
+            modules={
+                "test_module": test_module,
+                "main_circuit": main_module
+            }
+        )
+        
+        # Generate SPICE - should raise ValueError for invalid ports
+        generator = SPICEGenerator()
+        with pytest.raises(ValueError, match="maps to invalid ports"):
+            generator.generate(asdl_file)
+
+    def test_mixed_valid_invalid_port_mappings(self):
+        """Test validation when some ports are valid and some are invalid."""
+        from src.asdl.data_structures import (DeviceModel, DeviceType, Instance, ASDLFile, 
+                                               FileInfo, Module, Port, PortDirection, SignalType)
+        
+        # Create a module with specific ports
+        test_module = Module(
+            doc="Test module with defined ports",
+            ports={
+                "input": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
+                "output": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE),
+                "enable": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE)
+            },
+            instances={},
+            nets=None,
+            parameters=None
+        )
+        
+        # Create instance with mixed valid/invalid mappings
+        mixed_instance = Instance(
+            model="test_module",
+            mappings={
+                "input": "input_net",      # Valid
+                "invalid_port": "bad_net", # Invalid
+                "output": "output_net"     # Valid
+            },
+            parameters=None
+        )
+        
+        # Create test structure
+        file_info = FileInfo(
+            top_module="main_circuit",
+            doc="Test circuit for mixed port mapping validation",
+            revision="1.0",
+            author="test",
+            date="2024-01-01"
+        )
+        
+        main_module = Module(
+            doc="Main test module",
+            ports={},
+            instances={"MIXED_INST": mixed_instance},
+            nets=None,
+            parameters=None
+        )
+        
+        asdl_file = ASDLFile(
+            file_info=file_info,
+            models={},
+            modules={
+                "test_module": test_module,
+                "main_circuit": main_module
+            }
+        )
+        
+        # Generate SPICE - should raise ValueError identifying the invalid port
+        generator = SPICEGenerator()
+        with pytest.raises(ValueError) as exc_info:
+            generator.generate(asdl_file)
+        
+        # Verify the error message contains the invalid port name
+        assert "invalid_port" in str(exc_info.value)
+        assert "MIXED_INST" in str(exc_info.value) 

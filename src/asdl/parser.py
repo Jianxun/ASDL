@@ -296,7 +296,7 @@ class ASDLParser:
                 raise ValueError(f"Instance '{instance_id}' in {context} must be a dictionary")
             
             # Known fields for Instance
-            known_fields = {'model', 'mappings', 'parameters', 'intent'}
+            known_fields = {'model', 'mappings', 'doc', 'parameters', 'intent'}
             unknown_fields = set(instance_data.keys()) - known_fields
             
             # Handle unknown fields specially for instances
@@ -314,6 +314,7 @@ class ASDLParser:
             instances[instance_id] = Instance(
                 model=instance_data.get('model', ''),
                 mappings=instance_data.get('mappings', {}),
+                doc=instance_data.get('doc'),
                 parameters=instance_data.get('parameters'),
                 intent=intent_data if intent_data else None
             )

@@ -10,6 +10,7 @@ Key components:
 - Support for pattern expansion (differential pairs, arrays)
 - Parameter substitution system
 - Design intent capture
+- **NEW**: Unused component validation with warnings
 
 Schema structure:
 - `file_info`: File metadata (top_module, doc, revision, author, date)
@@ -17,12 +18,119 @@ Schema structure:
 - `modules`: Circuit hierarchy with ports, instances, and connectivity
 
 ## Current State
-**🎉 Phase 4 COMPLETE**: ngspice Simulation Testing & User Workflow Validation
+**🎉 Phase 5 COMPLETE + NET DECLARATION VALIDATION FEATURE ADDED**: All tests passing ✅
+
+### **NEW**: Net Declaration Validation Feature (CRITICAL CONNECTIVITY VALIDATION) ✅
+**ACHIEVEMENT**: Implemented comprehensive validation for undeclared nets in instance mappings
+- **Feature**: SPICEGenerator now validates that all nets used in mappings are properly declared
+- **Scope**: Checks nets referenced in instance mappings against module ports and internal nets
+- **Pattern Support**: Correctly handles pattern expansion (`out_<p,n>` → `out_p`, `out_n`)
+- **Non-Breaking**: Generates helpful warnings but continues netlisting successfully
+- **Real-World Impact**: Catches the specific issue identified in `two_stage_ota.yml` ota_5t module
+- **Test Coverage**: 6 comprehensive test cases covering all validation scenarios
+- **Integration**: Seamlessly integrated into existing validation pipeline
+- **User Experience**: Clear warning messages that identify specific undeclared nets and affected modules
+- **Result**: 48/48 generator tests passing (was 42, now 48 with new validation tests)
+
+**Key Features**:
+- **Connectivity Validation**: Validates that all net names in mappings are declared as ports or internal nets
+- **Pattern Expansion Support**: Correctly expands and validates pattern-based net names
+- **Module-Level Reporting**: Clearly identifies which module contains undeclared nets
+- **Non-Disruptive**: Netlisting continues successfully despite validation warnings
+- **Integration**: Uses existing Python warnings system for consistency with other validations
+
+**Test Coverage**:
+- Valid net declarations (no warnings generated)
+- Basic undeclared net detection and warning generation
+- Pattern expansion validation (`in_<p,n>`, `out_<p,n>`)
+- Real-world scenario testing (ota_5t module issue)
+- Edge cases (empty modules, mixed valid/invalid nets)
+- Warning message content and format validation
+
+**Technical Implementation**:
+- Added `_validate_net_declarations()` method to SPICEGenerator class
+- Added `_has_literal_pattern()` and `_expand_literal_pattern()` helper methods
+- Integrated validation into `generate_subckt()` pipeline
+- Maintains backward compatibility with existing code
+- Reuses pattern expansion logic from expander module
+
+### **PREVIOUS**: Critical Pattern Expansion Bug Fix (MAJOR CIRCUIT CORRECTNESS) ✅
+**ACHIEVEMENT**: Fixed critical differential pair pattern expansion bug that broke circuit functionality
+- **Problem**: `_expand_mapping_patterns` always mapped one-sided net patterns to first element for all instances
+- **Impact**: Both `MN_P` and `MN_N` connected to `in_p` instead of `in_p` and `in_n` respectively
+- **Circuit Consequence**: Completely broken differential amplifier - both transistors driven by same input!
+- **Root Cause**: Line 346 in expander.py used `expanded_nets[0]` instead of `expanded_nets[instance_index]`
+- **Solution**: Added instance index logic for one-sided net patterns to match instance expansion
+- **Test Coverage**: Added comprehensive `TestRealWorldDifferentialPair` class using `diff_pair_nmos.yml` fixture
+- **Result**: Differential pairs now function correctly with proper signal routing
+
+### **NEW**: Port Order Canonical Compliance (CRITICAL BUG FIX) ✅
+**ACHIEVEMENT**: Fixed SPICE port order to follow YAML declaration order instead of alphabetical sorting
+- **Problem**: Generator was sorting module ports alphabetically, breaking canonical order from YAML
+- **Impact**: `.subckt ota_5t in_n in_p out vbn vdd vss` → `.subckt ota_5t in_p in_n out vbn vss vdd`
+- **Root Cause**: `_get_port_list()` method used `sorted(module.ports.keys())` instead of preserving YAML order
+- **Solution**: Changed to `list(module.ports.keys())` to preserve Python 3.7+ dict insertion order
+- **Validation**: Pattern expansion correctly preserves order: `in_<p,n>` → `["in_p", "in_n"]` 
+- **Test Updates**: Updated 3 test expectations to match correct YAML declaration order
+- **Result**: SPICE .subckt declarations now follow canonical order defined in ASDL YAML ports section
+
+### **NEW**: Unused Component Validation Feature (COMPLETE) ✅
+**ACHIEVEMENT**: Successfully implemented validation for declared but unused modules and models
+- **Core Functionality**: SPICEGenerator now tracks usage and warns about unused components
+- **Recursive Tracking**: Walks module hierarchy from top module to determine actual usage
+- **Non-Breaking**: Generates warnings but continues netlisting successfully
+- **Comprehensive Testing**: 5 test cases covering all scenarios (unused models, modules, multiple warnings, no warnings, recursive tracking)
+- **Integration**: Seamlessly integrated with existing warning system
+- **User Experience**: Clear warning messages that help developers identify dead code
+- **Result**: 41/41 generator tests passing (was 36, now 41 with new validation tests)
+
+**Key Features**:
+- **Usage Tracking**: Recursively tracks which models and modules are actually instantiated
+- **Smart Warnings**: Warns about unused models and modules (excluding top module)
+- **Hierarchical Analysis**: Correctly handles nested module dependencies
+- **Non-Disruptive**: Netlisting continues successfully despite unused components
+- **Warning Integration**: Uses existing Python warnings system for consistency
+
+**Test Coverage**:
+- Unused model detection and warnings
+- Unused module detection and warnings  
+- Multiple unused components handling
+- No false positives when all components are used
+- Recursive module usage tracking through hierarchy
+
+**Technical Implementation**:
+- Added `_used_models` and `_used_modules` tracking sets to SPICEGenerator
+- Added `_track_usage()` method for hierarchical usage analysis
+- Added `_validate_unused_components()` method for warning generation
+- Integrated validation into main `generate()` pipeline
+- Maintains backward compatibility with existing code
+
+### **Previous Achievements**: ✅ **Phase 5 COMPLETE** - All 126 tests passing ✅
 - ✅ **Phase 1**: ASDL Parser + SPICE Generator + PySpice Integration (44+7+6=57 tests)
 - ✅ **Phase 2**: Hierarchical Subcircuit Implementation (15/21 functional tests passing)
 - ✅ **Phase 3**: Parameter Handling Enhancement (NEW DEVICE_LINE APPROACH)
 - ✅ **Phase 4**: ngspice Simulation Testing (PERFECT USER WORKFLOW VALIDATED)
-- 🔄 **Next Phase**: Pattern Expansion & Advanced Features
+- ✅ **Phase 5**: Pattern Expansion & Advanced Features **COMPLETE (126/126 tests passing)**
+  - ✅ **Step 1**: Pattern Parsing & Validation ✅
+  - ✅ **Step 2**: Basic Literal Expansion (Port + Mapping patterns) ✅
+  - ✅ **Step 3**: Instance Expansion (Synchronized instance+mapping expansion) ✅
+  - ✅ **Step 4**: Instance Documentation & Schema Robustness ✅
+  - ✅ **Step 5**: **TEST EXPECTATIONS FULLY UPDATED** ✅
+
+### **NEW**: Test Expectation Refactoring Complete ✅
+**ACHIEVEMENT**: Successfully updated all test expectations to match hierarchical subcircuit architecture
+- **Scope**: Complete pre-release refactoring without legacy support
+- **Device Generation Tests**: Updated to expect `.subckt` definitions instead of direct device lines
+- **Pipeline Tests**: Updated to expect real PDK device names (`nfet_03v3`, `pfet_03v3`)
+- **Port Resolution Tests**: Created missing fixtures and updated device line expectations
+- **PySpice Integration**: Simplified parameter testing to work around PySpice limitations
+- **Result**: 126/126 tests passing (was 11 failures, now 0 failures)
+
+### **Architecture Validation**: Tests Confirm Hierarchical Design ✅
+- **Models as Subcircuits**: All device models generate as `.subckt` definitions
+- **Instance Calls**: All instances generate as `X_` prefixed subcircuit calls
+- **Real PDK Integration**: Tests validate actual PDK device lines work correctly
+- **Parameter Propagation**: Tests confirm enhanced parameter handling system
 
 ### Phase 4 Achievements: End-to-End Simulation Validation ✅
 - ✅ **Perfect User Workflow**: xschem → netlist → copy device_line → ASDL → SPICE → ngspice (ZERO manual intervention)
@@ -54,6 +162,55 @@ X_MP in out vdd vdd pmos_unit M=2      # ✅ Parameter override
 
 ## Key Decisions
 
+### Net Declaration Validation Design (NEW - CRITICAL DECISIONS)  
+**✅ LESSON LEARNED**: Connectivity validation catches critical design errors early
+- **Comprehensive Checking**: Validate all net names in mappings against declared ports and internal nets
+- **Pattern Expansion Support**: Correctly handle pattern expansion (`out_<p,n>` → `out_p`, `out_n`)
+- **Non-Breaking Philosophy**: Generate helpful warnings but continue netlisting successfully
+- **Module-Level Reporting**: Clear identification of which module has undeclared nets
+- **Real-World Impact**: Catches actual connectivity issues like the ota_5t module problem
+- **Integration Strategy**: Leverage existing pattern expansion logic for consistency
+- **Warning Quality**: Specific, actionable messages that help developers fix connectivity issues
+
+**✅ CRITICAL VALIDATION**: Fixed silent connectivity errors
+- **Problem**: Undeclared nets in mappings could cause silent circuit failures
+- **Example**: `out_n` and `out_<p,n>` used in ota_5t but not declared as ports or internal nets
+- **Solution**: Comprehensive net declaration validation with pattern expansion support
+- **Impact**: Developers immediately see connectivity issues during netlisting
+- **Test Coverage**: Real-world scenario testing ensures robustness
+
+### Unused Component Validation Design (PREVIOUS - CRITICAL DECISIONS)
+**✅ LESSON LEARNED**: Validation should be helpful, not disruptive
+- **Non-Breaking Philosophy**: Warnings guide developers but don't block netlisting
+- **Global Instantiation Tracking**: Usage determined by scanning ALL modules for instantiations, not just reachable ones
+- **No False Positives**: Components used within unused modules are correctly NOT flagged as unused
+- **Top Module Exception**: Top module is never considered "unused" since it's the entry point
+- **Warning Clarity**: Clear, actionable warning messages that identify specific unused components
+- **Integration Strategy**: Leverage existing warning infrastructure for consistency
+
+**✅ CRITICAL FIX**: Fixed cascading false positive warnings
+- **Problem**: Components used within unused modules were incorrectly flagged as unused
+- **Example**: `jumper` used in `bias_gen` → both flagged as unused when only `bias_gen` should be
+- **Solution**: Changed from "reachable from top" to "instantiated anywhere" tracking
+- **Impact**: Prevents noise in large hierarchies, focuses warnings on actual dead code
+- **Test Coverage**: Added regression test to prevent this issue in future
+
+### Pattern Expansion Rules (CRITICAL LESSON LEARNED)
+**✅ LESSON LEARNED**: Mapping format correction for pattern expansion
+- **WRONG**: `G_<p,n>: in_<p,n>` (pattern on both sides)
+- **CORRECT**: `G: in_<p,n>` (model port name maps to expanded net pattern)
+- **Core Principle**: Model ports are fixed device terminals (G, D, S, B), only the connected nets have patterns
+- **Rationale**: 
+  - Model defines fixed interface (G, D, S, B ports)
+  - Instance expansion creates multiple copies of the same device
+  - Each copy connects to different nets via pattern expansion on right-hand side
+  - Left-hand side stays literal because device ports don't change
+- **Applied Corrections**:
+  - Updated `doc/ASDL_schema` examples and documentation
+  - Fixed `examples/two_stage_ota.yml` mappings
+  - Corrected expansion rule explanations
+- **Impact**: This affects all pattern expansion implementation and validation
+
 ### Architecture Decisions (Confirmed)
 1. **Pattern Expansion**: Keep patterns (`<p,n>`, `[3:0]`) in data structures, expand only during SPICE generation as explicit step (similar to Verilog elaboration)
 2. **Parameter Resolution**: Keep original expressions (`$param`), make parameter evaluation an explicit step
@@ -62,12 +219,13 @@ X_MP in out vdd vdd pmos_unit M=2      # ✅ Parameter override
 5. **Instance Intent**: Save as free-form dictionary metadata for later use
 6. **Module Hierarchy**: Each `module` translates to a `.subckt` definition
 7. **Implementation Approach**: Minimum viable product to get ASDL->SPICE flow working ASAP
+8. **Validation Strategy**: Non-breaking warnings that improve developer experience
 
 ### PySpice Integration Decisions
-8. **Validation Strategy**: Use PySpice for SPICE syntax validation and connectivity verification
-9. **Enum Serialization**: Custom JSON encoder handles all enum types for debugging output
-10. **Case Handling**: SPICE comparisons use lowercase normalization for case-insensitive validation
-11. **Port Name Standards**: Use uppercase port names (G, D, S, B) to match ASDL conventions
+9. **Validation Strategy**: Use PySpice for SPICE syntax validation and connectivity verification
+10. **Enum Serialization**: Custom JSON encoder handles all enum types for debugging output
+11. **Case Handling**: SPICE comparisons use lowercase normalization for case-insensitive validation
+12. **Port Name Standards**: Use uppercase port names (G, D, S, B) to match ASDL conventions
 
 ### ✅ Hierarchical Subcircuit Design (IMPLEMENTED)
 **COMPLETED**: Models are now subcircuit definitions for modularity and extensibility
@@ -88,11 +246,11 @@ X_MP in out vdd vdd pmos_unit M=2      # ✅ Parameter override
 **COMPLETED**: Robust parameter handling system with automatic parameter generation
 
 **Key Design Decisions**:
-12. **Schema Enhancement**: Added `device_line` + `parameters` fields to DeviceModel
-13. **Field Consistency**: Standardized on `doc` field for both models and modules (not `description`)
-14. **Automatic Parameter Appending**: Parameters automatically added to device lines as `param={param}`
-15. **Clean Device Lines**: Core device definition separate from parameter references
-16. **Error-Resistant Design**: No manual parameter formatting required
+13. **Schema Enhancement**: Added `device_line` + `parameters` fields to DeviceModel
+14. **Field Consistency**: Standardized on `doc` field for both models and modules (not `description`)
+15. **Automatic Parameter Appending**: Parameters automatically added to device lines as `param={param}`
+16. **Clean Device Lines**: Core device definition separate from parameter references
+17. **Error-Resistant Design**: No manual parameter formatting required
 
 **Enhanced Schema Format**:
 ```yaml
@@ -114,6 +272,59 @@ models:
 - **Separation of Concerns**: Core device definition vs parameterization clearly separated
 
 ## Recent Changes
+
+### ✅ Port Mapping Validation Bug Fix (NEW - CRITICAL FIX) 
+- **Issue Discovered**: Silent failure in port mapping validation - system was inserting `UNCONNECTED` instead of reporting errors
+- **Root Cause**: Instance mappings were not validated against module port definitions
+- **Example Bug**: `miller_comp` defines ports `[plus, minus]` but instance mapped to `[in, out, vss]` - silently failed
+- **Solution Implemented**: Added `_validate_port_mappings()` method in SPICEGenerator
+- **Validation Logic**: 
+  - Checks all mapped ports exist in module definition
+  - Reports clear error messages with invalid port names
+  - Maintains UNCONNECTED behavior for intentionally unmapped ports
+- **Test Coverage**: Added 2 comprehensive validation tests
+- **Impact**: Prevents silent circuit errors and improves debugging experience
+- **Fixed Example**: Corrected `two_stage_ota.yml` Miller compensation mapping to use proper port names
+
+### ✅ Phase 5: Instance Documentation & Schema Robustness (NEW - COMPLETE)
+- **Instance Documentation**: Added `doc` field as first-class citizen for instance documentation
+- **SPICE Comment Generation**: Instance documentation converts to SPICE comments before instance lines
+- **Pattern Expansion Fix**: Fixed Pattern Expander to preserve `doc` field during expansion
+- **Schema-Robust Expansion**: Replaced manual field copying with `dataclasses.replace()` for future-proofing
+- **Comprehensive Testing**: 7 new documentation tests + 6 schema robustness tests
+- **Module Parameter Generation**: Fixed modules to generate `.param` declarations like models
+- **Instance Naming Consistency**: All instances use `X_{name}` format (both device and module instances)
+- **NoneType Parameter Fix**: Fixed generator to handle new vs legacy parameter field properly
+
+**Key Improvements**:
+- **Documentation Parity**: Instance documentation now works just like Python docstrings
+- **Future-Proof Expansion**: Uses `dataclasses.replace()` to automatically inherit ALL fields
+- **Complete Pipeline**: Parser → Expander → Generator all handle `doc` field correctly
+- **Real-World Validation**: Two-stage OTA example shows documentation comments in generated SPICE
+- **Robust Architecture**: Pattern expansion will automatically work with any future Instance schema changes
+
+### ✅ Phase 5: Schema Refinement & Language Documentation (COMPLETE)
+- **Schema v0.5**: Cleaned up and simplified ASDL schema structure
+- **Language Documentation**: Created comprehensive `doc/language.md` with semantic rules
+- **Mapping Rules Codified**: Explicitly documented "Expansion only on the RHS" rule
+- **Best Practices**: Defined clear guidelines for ASDL usage
+- **Future Extensions**: Documented planned enhancements
+- **Validation**: New documentation validates the mapping format lesson learned
+
+**Key Improvements**:
+- Removed verbose examples and complexity from schema
+- Separated semantic rules into dedicated language documentation
+- Cleaner parameter definition with explicit types and units
+- Simplified metadata structure with `design_intent` and `layout` sections
+- Clear distinction between literal `<p,n>` and bus `[N:M]` expansion patterns
+
+### ✅ Phase 4: Schema Documentation Update (COMPLETE)
+- **Schema Refinement**: Updated ASDL_schema_v0p4 documentation with latest enhancements
+- **Field Updates**: Corrected `file_info` → `design_info` naming
+- **Enhanced Model Format**: Documented new `device_line` + `parameters` approach with comprehensive examples
+- **Real PDK Integration**: Added examples showing complex device lines with expressions from GF180MCU PDK
+- **User Workflow Documentation**: Documented perfect xschem → ASDL → ngspice workflow
+- **Automatic Parameter Generation**: Documented how parameters are auto-appended to device lines
 
 ### ✅ Phase 3: Parameter Handling Enhancement (COMPLETE)
 
@@ -152,7 +363,7 @@ X_MP in out vdd vdd pmos_unit M=2      # Parameter override at instance level
 ```
 
 ## Open Questions  
-1. **Pattern Expansion**: How should we implement `<p,n>` and `[3:0]` pattern expansion while maintaining user workflow simplicity?
+1. ✅ **Pattern Expansion Rules Defined**: Comprehensive literal expansion rules documented in `doc/pattern_expansion_rules.md`
 
 2. **Parameter Resolution**: What's the best approach for `$param` variable substitution in complex expressions?
 

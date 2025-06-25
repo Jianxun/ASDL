@@ -5,7 +5,8 @@ Handles expansion of differential patterns (<p,n>) and bus patterns ([3:0])
 as an explicit elaboration step, similar to Verilog elaboration.
 """
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
+from dataclasses import replace
 from .data_structures import ASDLFile, Module, Port, Instance
 
 
@@ -34,9 +35,18 @@ class PatternExpander:
         Returns:
             New ASDL design with all patterns expanded
         """
-        # TODO: Implement pattern expansion
-        # For now, return the original file unchanged
-        return asdl_file
+        # Expand patterns in all modules
+        expanded_modules = {}
+        for module_name, module in asdl_file.modules.items():
+            expanded_modules[module_name] = self.expand_module_patterns(module)
+        
+        # Create new ASDLFile with expanded modules
+        # Models don't contain patterns, so they're passed through unchanged
+        return ASDLFile(
+            file_info=asdl_file.file_info,
+            models=asdl_file.models,  # Models unchanged
+            modules=expanded_modules  # Modules with expanded patterns
+        )
     
     def expand_module_patterns(self, module: Module) -> Module:
         """
@@ -48,14 +58,13 @@ class PatternExpander:
         Returns:
             Module with patterns expanded
         """
-        # TODO: Implement module pattern expansion
         expanded_ports = self.expand_port_patterns(module.ports or {})
         expanded_instances = self.expand_instance_patterns(module.instances or {})
         
         return Module(
             doc=module.doc,
             ports=expanded_ports,
-            nets=module.nets,  # TODO: Expand patterns in nets
+            nets=module.nets,  # Nets typically don't contain patterns
             parameters=module.parameters,
             instances=expanded_instances
         )
@@ -74,17 +83,16 @@ class PatternExpander:
         Returns:
             Dictionary with expanded port names
         """
-        # TODO: Implement port pattern expansion
         expanded_ports = {}
         
         for port_name, port in ports.items():
-            if self._has_diff_pattern(port_name):
-                # Handle differential patterns <p,n>
-                expanded_names = self._expand_diff_pattern(port_name)
+            if self._has_literal_pattern(port_name):
+                # Handle literal patterns <p,n>
+                expanded_names = self._expand_literal_pattern(port_name)
                 for expanded_name in expanded_names:
                     expanded_ports[expanded_name] = port
             elif self._has_bus_pattern(port_name):
-                # Handle bus patterns [3:0]
+                # Handle bus patterns [3:0] (future implementation)
                 expanded_names = self._expand_bus_pattern(port_name)
                 for expanded_name in expanded_names:
                     expanded_ports[expanded_name] = port
@@ -106,13 +114,12 @@ class PatternExpander:
         Returns:
             Dictionary with expanded instance IDs and mappings
         """
-        # TODO: Implement instance pattern expansion
         expanded_instances = {}
         
         for instance_id, instance in instances.items():
-            if self._has_diff_pattern(instance_id):
-                # Expand instance name pattern
-                expanded_ids = self._expand_diff_pattern(instance_id)
+            if self._has_literal_pattern(instance_id):
+                # Expand instance name pattern using literal expansion
+                expanded_ids = self._expand_literal_pattern(instance_id)
                 for expanded_id in expanded_ids:
                     # Also need to expand mappings for this instance
                     expanded_mappings = self._expand_mapping_patterns(
@@ -120,11 +127,10 @@ class PatternExpander:
                         instance_id, 
                         expanded_id
                     )
-                    expanded_instances[expanded_id] = Instance(
-                        model=instance.model,
-                        mappings=expanded_mappings,
-                        parameters=instance.parameters,
-                        intent=instance.intent
+                    # Create new instance inheriting all fields from original, only changing mappings
+                    expanded_instances[expanded_id] = replace(
+                        instance,
+                        mappings=expanded_mappings
                     )
             else:
                 # No pattern in instance name, but might have patterns in mappings
@@ -133,36 +139,128 @@ class PatternExpander:
                     instance_id,
                     instance_id
                 )
-                expanded_instances[instance_id] = Instance(
-                    model=instance.model,
-                    mappings=expanded_mappings,
-                    parameters=instance.parameters,
-                    intent=instance.intent
+                # Create new instance inheriting all fields from original, only changing mappings
+                expanded_instances[instance_id] = replace(
+                    instance,
+                    mappings=expanded_mappings
                 )
                 
         return expanded_instances
     
-    def _has_diff_pattern(self, name: str) -> bool:
-        """Check if name contains differential pattern <...>."""
-        return '<' in name and '>' in name
+
     
     def _has_bus_pattern(self, name: str) -> bool:
         """Check if name contains bus pattern [...].""" 
         return '[' in name and ']' in name and ':' in name
     
-    def _expand_diff_pattern(self, name: str) -> List[str]:
+    def _has_literal_pattern(self, name: str) -> bool:
+        """Check if name contains literal pattern <...>."""
+        # Must have both < and > 
+        if not ('<' in name and '>' in name):
+            return False
+        
+        # Check that there's a complete pattern
+        start = name.find('<')
+        end = name.find('>')
+        if start == -1 or end == -1 or start >= end:
+            return False
+            
+        # Check for multiple bracket pairs (not supported)
+        remaining = name[end+1:]
+        if '<' in remaining and '>' in remaining:
+            return False
+            
+        # Check for mixed bracket types inside pattern (array syntax inside literal)
+        pattern_content = name[start+1:end]
+        if '[' in pattern_content and ']' in pattern_content:
+            return False
+            
+        # Any content inside brackets (even empty or single item) is a pattern attempt
+        # Validation will enforce comma requirement
+        return True
+    
+    def _extract_literal_pattern(self, name: str) -> Optional[List[str]]:
         """
-        Expand differential pattern in name.
+        Extract literal pattern items from name.
+        
+        Example: "in_<p,n>" -> ["p", "n"]
+        Returns None if no pattern found.
+        """
+        if not self._has_literal_pattern(name):
+            return None
+        
+        start = name.find('<')
+        end = name.find('>')
+        pattern_content = name[start+1:end]
+        
+        # Handle empty pattern
+        if not pattern_content:
+            return []
+        
+        # Split by comma and strip whitespace - this handles single items too
+        items = [item.strip() for item in pattern_content.split(',')]
+        return items
+    
+    def _validate_literal_pattern(self, items: List[str]) -> None:
+        """
+        Validate literal pattern items according to expansion rules.
+        
+        Raises ValueError for invalid patterns.
+        """
+        if not items:
+            raise ValueError("Pattern cannot be empty")
+        
+        if len(items) < 2:
+            raise ValueError("Pattern must have at least 2 items")
+        
+        # Check that at least one item is non-empty
+        if all(item == "" for item in items):
+            raise ValueError("At least one item must be non-empty")
+    
+    def _validate_pattern_counts(self, left_items: Optional[List[str]], 
+                               right_items: Optional[List[str]]) -> None:
+        """
+        Validate that pattern counts match for mappings.
+        
+        Raises ValueError if both sides have patterns but different counts.
+        """
+        # If one side is None (no pattern), that's OK
+        if left_items is None or right_items is None:
+            return
+        
+        # Both sides have patterns - counts must match
+        if len(left_items) != len(right_items):
+            raise ValueError(f"Pattern item counts must match: {len(left_items)} vs {len(right_items)}")
+    
+    def _expand_literal_pattern(self, name: str) -> List[str]:
+        """
+        Expand literal pattern in name.
         
         Example: "in_<p,n>" -> ["in_p", "in_n"]
+        Returns [name] if no pattern.
         """
-        # TODO: Implement differential pattern expansion
-        # Simple placeholder implementation
-        if '<p,n>' in name:
-            return [name.replace('<p,n>', 'p'), name.replace('<p,n>', 'n')]
-        elif '<P,N>' in name:
-            return [name.replace('<P,N>', 'P'), name.replace('<P,N>', 'N')]
-        return [name]
+        items = self._extract_literal_pattern(name)
+        if items is None:
+            return [name]
+        
+        # Validate pattern
+        self._validate_literal_pattern(items)
+        
+        # Find pattern location
+        start = name.find('<')
+        end = name.find('>')
+        prefix = name[:start]
+        suffix = name[end+1:]
+        
+        # Generate expanded names
+        expanded = []
+        for item in items:
+            expanded_name = prefix + item + suffix
+            expanded.append(expanded_name)
+        
+        return expanded
+    
+
     
     def _expand_bus_pattern(self, name: str) -> List[str]:
         """
@@ -179,8 +277,87 @@ class PatternExpander:
         """
         Expand patterns in port-to-net mappings.
         
-        Handles order-matched expansion where the i-th expanded port
-        maps to the i-th expanded net.
+        For instance expansion, this creates the mappings for a single expanded instance.
         """
-        # TODO: Implement mapping pattern expansion
-        return mappings  # Placeholder 
+        expanded_mappings = {}
+        
+        # Get the index of this expanded instance if the instance itself had a pattern
+        instance_has_pattern = self._has_literal_pattern(original_instance_id)
+        if instance_has_pattern:
+            # Get the index of this particular expansion
+            instance_items = self._extract_literal_pattern(original_instance_id)
+            instance_expansions = self._expand_literal_pattern(original_instance_id)
+            try:
+                instance_index = instance_expansions.index(expanded_instance_id)
+            except ValueError:
+                # If we can't find the index, something is wrong
+                instance_index = 0
+        else:
+            instance_index = 0
+        
+        for port_name, net_name in mappings.items():
+            # Check for patterns in port and net names
+            port_has_pattern = self._has_literal_pattern(port_name)
+            net_has_pattern = self._has_literal_pattern(net_name)
+            
+            if port_has_pattern and net_has_pattern:
+                # Both sides have patterns - order-sensitive expansion
+                port_items = self._extract_literal_pattern(port_name)
+                net_items = self._extract_literal_pattern(net_name)
+                
+                # Validate pattern counts match
+                self._validate_pattern_counts(port_items, net_items)
+                
+                # For instance expansion, select the corresponding port and net
+                if instance_has_pattern:
+                    # Ensure the mapping patterns match the instance pattern count
+                    self._validate_pattern_counts(instance_items, port_items)
+                    self._validate_pattern_counts(instance_items, net_items)
+                    
+                    # Use the same index for port and net expansion
+                    expanded_ports = self._expand_literal_pattern(port_name)
+                    expanded_nets = self._expand_literal_pattern(net_name)
+                    expanded_mappings[expanded_ports[instance_index]] = expanded_nets[instance_index]
+                else:
+                    # No instance pattern, expand all port-net pairs
+                    expanded_ports = self._expand_literal_pattern(port_name)
+                    expanded_nets = self._expand_literal_pattern(net_name)
+                    for exp_port, exp_net in zip(expanded_ports, expanded_nets):
+                        expanded_mappings[exp_port] = exp_net
+                    
+            elif port_has_pattern and not net_has_pattern:
+                # One-sided pattern (port side only)
+                if instance_has_pattern:
+                    # Ensure the port pattern matches the instance pattern count
+                    port_items = self._extract_literal_pattern(port_name)
+                    self._validate_pattern_counts(instance_items, port_items)
+                    
+                    # Use the corresponding port for this instance
+                    expanded_ports = self._expand_literal_pattern(port_name)
+                    expanded_mappings[expanded_ports[instance_index]] = net_name
+                else:
+                    # No instance pattern, expand all ports to same net
+                    expanded_ports = self._expand_literal_pattern(port_name)
+                    for exp_port in expanded_ports:
+                        expanded_mappings[exp_port] = net_name
+                    
+            elif not port_has_pattern and net_has_pattern:
+                # One-sided pattern (net side only)
+                if instance_has_pattern:
+                    # Ensure the net pattern matches the instance pattern count
+                    net_items = self._extract_literal_pattern(net_name)
+                    self._validate_pattern_counts(instance_items, net_items)
+                    
+                    # Use the corresponding net for this instance
+                    expanded_nets = self._expand_literal_pattern(net_name)
+                    expanded_mappings[port_name] = expanded_nets[instance_index]
+                else:
+                    # No instance pattern, map to first expanded net
+                    expanded_nets = self._expand_literal_pattern(net_name)
+                    expanded_mappings[port_name] = expanded_nets[0]
+                
+            else:
+                # No patterns - keep as is
+                expanded_mappings[port_name] = net_name
+                
+        return expanded_mappings 
