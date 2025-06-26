@@ -12,7 +12,7 @@ project_root = test_dir.parent.parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
 from asdl.parser import ASDLParser
-from asdl.data_structures import Module, Port, Instance, PortConstraints
+from asdl.data_structures import Module, Port, Instance, PortConstraints, PortDirection, SignalType
 
 class TestModulesParsing:
     """Test Module section parsing (no validation)."""
@@ -52,8 +52,8 @@ modules:
         assert inverter.ports is not None
         assert "in" in inverter.ports
         assert "out" in inverter.ports
-        assert inverter.ports["in"].dir == "in"
-        assert inverter.ports["out"].type == "voltage"
+        assert inverter.ports["in"].dir == PortDirection.IN
+        assert inverter.ports["in"].type == SignalType.VOLTAGE
 
         assert inverter.instances is not None
         assert "MN1" in inverter.instances
@@ -70,7 +70,7 @@ modules:
   full_module:
     doc: "A complete module."
     ports:
-      in: {dir: "in"}
+      in: {dir: "in", type: "digital"}
     internal_nets: ["net1", "net2"]
     parameters:
       param1: "value1"

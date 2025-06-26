@@ -79,8 +79,10 @@ modules:
     ports:
       in:
         dir: in
+        type: voltage
       out:
         dir: out
+        type: voltage
   buffer:
     doc: "A simple buffer."
 """
@@ -95,7 +97,7 @@ modules:
 
         assert "buffer" in asdl_file.modules
         buffer = asdl_file.modules["buffer"]
-        assert buffer.start_line == 12
+        assert buffer.start_line == 14
         assert buffer.start_col == 3
 
     def test_port_location(self):
@@ -109,8 +111,10 @@ modules:
       # port comment
       in:
         dir: in
+        type: voltage
       out:
         dir: out
+        type: voltage
 """
         parser = ASDLParser()
         asdl_file, _ = parser.parse_string(yaml_content)
@@ -125,7 +129,7 @@ modules:
 
         assert "out" in inverter.ports
         port_out = inverter.ports["out"]
-        assert port_out.start_line == 10
+        assert port_out.start_line == 11
         assert port_out.start_col == 7
 
     def test_instance_location(self):

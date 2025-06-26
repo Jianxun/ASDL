@@ -15,7 +15,8 @@ modules:
     test_module:
         ports:
             "in<p,n>[0]":
-                direction: input
+                dir: in
+                type: digital
 """
     parser = ASDLParser()
     asdl_file, parser_diags = parser.parse_string(asdl_str)
@@ -73,7 +74,8 @@ modules:
     test_module:
         ports:
             in<p,n>:
-                direction: input
+                dir: in
+                type: digital
         instances:
             M<1,2>:
                 model: some_model

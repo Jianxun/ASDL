@@ -176,26 +176,27 @@ class ASDLParser:
         )
         return asdl_file, diagnostics
     
-    def _get_locatable_from_key(self, parent_data: Any, key: str, file_path: Optional[Path]) -> Locatable:
+    def _get_locatable_from_key(self, parent_data: YAMLObject, key: str, file_path: Optional[Path]) -> Locatable:
         """Extracts a full Locatable object from a ruamel.yaml key."""
         loc = Locatable(file_path=file_path)
         try:
-            # ruamel.yaml provides start_mark and end_mark on its internal objects
-            start_mark = parent_data.lc.start_mark
-            end_mark = parent_data.lc.end_mark
-            
-            # For mappings, we need to get the mark of the specific key
-            key_start_mark = parent_data.lc.key_start_mark.get(key)
-            key_end_mark = parent_data.lc.key_end_mark.get(key)
-            
-            if key_start_mark:
-                loc.start_line = key_start_mark.line + 1
-                loc.start_col = key_start_mark.column + 1
-            if key_end_mark:
-                loc.end_line = key_end_mark.line + 1
-                loc.end_col = key_end_mark.column + 1
+            # .lc.key(key) returns a tuple of (line, col) for the key
+            key_line, key_col = parent_data.lc.key(key)
+            loc.start_line = key_line + 1
+            loc.start_col = key_col + 1
 
-        except AttributeError:
+            # The end location is harder. We can get the location of the value node.
+            value_node = parent_data[key]
+            if hasattr(value_node, 'lc') and hasattr(value_node.lc, 'end_mark') and value_node.lc.end_mark is not None:
+                end_mark = value_node.lc.end_mark
+                loc.end_line = end_mark.line + 1
+                loc.end_col = end_mark.column + 1
+            elif loc.start_line is not None and loc.start_col is not None:
+                # Fallback: for scalars, the end is on the same line.
+                # This is an approximation.
+                loc.end_line = loc.start_line
+                loc.end_col = loc.start_col + len(key)
+        except (AttributeError, KeyError, TypeError):
             # Fallback for objects that don't have detailed location info
             pass
         return loc
@@ -247,15 +248,15 @@ class ASDLParser:
             modules[module_id] = Module(
                 **loc.__dict__,
                 doc=module_data.get('doc'),
-                ports=self._parse_ports(module_data.get('ports'), file_path),
+                ports=self._parse_ports(module_data.get('ports'), diagnostics, file_path),
                 internal_nets=module_data.get('internal_nets'),
                 parameters=module_data.get('parameters'),
-                instances=self._parse_instances(module_data.get('instances'), file_path),
+                instances=self._parse_instances(module_data.get('instances'), diagnostics, file_path),
                 metadata=module_data.get('metadata')
             )
         return modules
     
-    def _parse_ports(self, data: Any, file_path: Optional[Path]) -> Optional[Dict[str, Port]]:
+    def _parse_ports(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Optional[Dict[str, Port]]:
         """Parse the ports section of a module."""
         if not data:
             return None
@@ -267,34 +268,52 @@ class ASDLParser:
             # Validate required fields
             dir_val = port_data.get('dir')
             if not dir_val:
-                diagnostics.append(self._create_diagnostic(
-                    "P104", "Missing Required Field", f"Port '{port_name}' is missing the required 'dir' field.", loc
+                diagnostics.append(Diagnostic(
+                    code="P104", 
+                    title="Missing Required Field", 
+                    details=f"Port '{port_name}' is missing the required 'dir' field.", 
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc
                 ))
                 continue
-
+    
             type_val = port_data.get('type')
             if not type_val:
-                diagnostics.append(self._create_diagnostic(
-                    "P104", "Missing Required Field", f"Port '{port_name}' is missing the required 'type' field.", loc
+                diagnostics.append(Diagnostic(
+                    code="P104", 
+                    title="Missing Required Field", 
+                    details=f"Port '{port_name}' is missing the required 'type' field.", 
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc
                 ))
                 continue
 
-            ports[port_name] = Port(
-                **loc.__dict__,
-                dir=PortDirection(dir_val.lower()),
-                type=SignalType(type_val.lower()),
-                constraints=self._parse_constraints(port_data.get('constraints')),
-                metadata=port_data.get('metadata')
-            )
+            try:
+                ports[port_name] = Port(
+                    **loc.__dict__,
+                    dir=PortDirection(dir_val.lower()),
+                    type=SignalType(type_val.lower()),
+                    constraints=self._parse_constraints(port_data.get('constraints')),
+                    metadata=port_data.get('metadata')
+                )
+            except Exception as e:
+                diagnostics.append(Diagnostic(
+                    code="P105",
+                    title="Port Parsing Error",
+                    details=f"An error occurred while parsing port '{port_name}': {e}",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc,
+                    suggestion="Review the port definition for correctness and try again later."
+                ))
         return ports
     
     def _parse_constraints(self, data: Any) -> Optional[PortConstraints]:
-        """Parse port constraints."""
+        """Parse port constraints (currently a placeholder)."""
         if not data:
             return None
         return PortConstraints(constraints=data)
     
-    def _parse_instances(self, data: Any, file_path: Optional[Path]) -> Optional[Dict[str, Instance]]:
+    def _parse_instances(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Optional[Dict[str, Instance]]:
         """Parse the instances section of a module."""
         if not data:
             return None
@@ -302,9 +321,21 @@ class ASDLParser:
         yaml_data = cast(YAMLObject, data)
         for instance_name, instance_data in yaml_data.items():
             loc = self._get_locatable_from_key(yaml_data, instance_name, file_path)
+
+            model_val = instance_data.get('model')
+            if not model_val:
+                diagnostics.append(Diagnostic(
+                    code="P104", 
+                    title="Missing Required Field", 
+                    details=f"Instance '{instance_name}' is missing the required 'model' field.",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc
+                ))
+                continue
+
             instances[instance_name] = Instance(
                 **loc.__dict__,
-                model=instance_data.get('model'),
+                model=model_val,
                 mappings=instance_data.get('mappings'),
                 doc=instance_data.get('doc'),
                 parameters=instance_data.get('parameters'),

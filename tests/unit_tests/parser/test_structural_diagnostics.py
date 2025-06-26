@@ -42,7 +42,7 @@ modules:
     diagnostic = diagnostics[0]
     assert diagnostic.code == "P103"
     assert diagnostic.severity == DiagnosticSeverity.ERROR
-    assert "section 'modules' must be a dictionary" in diagnostic.details
+    assert "must be a dictionary (mapping)" in diagnostic.details
 
 def test_unknown_top_level_section():
     """

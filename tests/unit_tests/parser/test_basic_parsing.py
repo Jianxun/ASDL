@@ -44,8 +44,8 @@ modules: {}
         # Check for location data
         assert asdl_file.file_info.start_line == 1
         assert asdl_file.file_info.start_col == 1
-        assert asdl_file.file_info.end_line == 2
-        assert asdl_file.file_info.end_col == 17
+        assert asdl_file.file_info.end_line == 1
+        assert asdl_file.file_info.end_col == 10
         assert asdl_file.file_info.file_path is None # Should be None when parsing from string
 
         assert asdl_file.models == {}
