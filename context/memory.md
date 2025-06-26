@@ -18,6 +18,36 @@ Schema structure:
 - `modules`: Circuit hierarchy with ports, instances, and connectivity
 
 ## Current State
+**🚀 DATA STRUCTURE REFACTOR IN PROGRESS ✅**
+
+### **NEW**: Data Structure Refactor Phase 1 (TDD Implementation) ✅
+**ACHIEVEMENT**: Started implementing data structure refactor following TDD principles
+- **PrimitiveType Enum**: Successfully implemented new `PrimitiveType` enum to replace `DeviceType` ✅
+  - Added `PDK_DEVICE` and `SPICE_DEVICE` classifications for primitive origin
+  - Clean, unambiguous classification system based on design document
+  - 8/8 comprehensive test cases passing ✅
+- **Universal Metadata Field**: Started implementing metadata field for extensible storage ✅
+  - Added `Metadata` type alias: `Dict[str, Any]` ✅
+  - Added metadata field to `DeviceModel` with comprehensive test ✅
+  - Tests validate optional nature (None when not specified) and extensibility ✅
+- **TDD Workflow Established**: Proper red-green-refactor cycle ✅
+  - Write test → See it fail → Implement feature → See it pass ✅
+  - Tests import from actual `src.asdl.data_structures` module ✅
+  - Following development guidelines for single test file focus ✅
+
+**Technical Implementation**:
+- Created `tests/unit_tests/data_structures/` directory for refactor tests ✅
+- Implemented proper import patterns from `src.asdl.data_structures` ✅
+- Added `PrimitiveType` enum with `PDK_DEVICE` and `SPICE_DEVICE` values ✅
+- Added universal `Metadata = Dict[str, Any]` type alias ✅
+- Enhanced `DeviceModel` with `metadata: Optional[Metadata] = None` field ✅
+
+**Next TDD Steps**:
+- Add metadata field to remaining data structures (FileInfo, Port, Module, Instance)
+- Test simplified DeviceModel structure (remove legacy fields)
+- Test internal_nets field replacing Nets class
+- Implement serialization module separation
+
 **🎉 CRITICAL PARAMETER PROPAGATION BUG FIX COMPLETED ✅**
 
 ### **NEW**: Parameter Propagation Bug Fix (CRITICAL FUNCTIONALITY RESTORE) ✅
@@ -387,6 +417,29 @@ models:
 X_MP in out vdd vdd pmos_unit M=2      # Parameter override at instance level
 ```
 
+## Linter & Compiler Architecture Refactor
+
+A major architectural refactoring was designed to support a new standalone linter while maximizing code reuse with the existing compiler.
+
+### Key Decisions
+1.  **Shared Analysis Pipeline**: Both the linter and compiler will use a shared "Middle-End" analysis pipeline. This prevents code duplication for validation logic.
+
+2.  **Multi-Stage Validation**: Validation is treated as a continuous process.
+    -   **Stage 1 (Expander)**: `PatternExpander` is the first analysis stage. It no longer raises exceptions on errors (e.g., mismatched pattern counts). Instead, it logs them as `Diagnostic` objects and continues where possible.
+    -   **Stage 2 (Validator)**: A new `Validator` module will contain all semantic checks (e.g., undeclared nets, unused components). It takes the output of the expander and appends its own findings to the list of diagnostics.
+
+3.  **Standardized Diagnostics**: A new `diagnostics.py` module will define common data structures (`Diagnostic`, `DiagnosticLevel`) to be used by all analysis stages.
+
+4.  **Decoupled Back-Ends**:
+    -   **Linter**: The linter is a simple back-end that runs the full analysis pipeline and then formats and prints the final list of diagnostics.
+    -   **Compiler**: The compiler runs the same analysis pipeline, but first checks for fatal errors in the diagnostics list before proceeding to the `SPICEGenerator`.
+
+5.  **Data Structure Refactoring**: We decided on several key improvements to the core data structures:
+    -   **Serialization Logic Removed**: All `to_json`, `to_yaml`, and `save_to_file` methods will be removed from `ASDLFile` and moved to a dedicated `serialization.py` module, making the data classes pure data containers.
+    -   **`DeviceModel` Simplified**: All legacy fields (`model`, `params`) will be removed to enforce a single, robust `device_line`-based workflow.
+    -   **`PrimitiveType` Enum Introduced**: A new `PrimitiveType` enum (`PDK_DEVICE`, `SPICE_DEVICE`) will replace the old `DeviceType` to provide a clear, unambiguous classification based on the primitive's origin.
+    -   **`Nets` Class Removed**: The `Nets` class is redundant. It will be replaced by a simpler `internal_nets: List[str]` field directly on the `Module` class for clarity.
+
 ## Open Questions  
 1. ✅ **Pattern Expansion Rules Defined**: Comprehensive literal expansion rules documented in `doc/pattern_expansion_rules.md`
 
@@ -412,3 +465,9 @@ X_MP in out vdd vdd pmos_unit M=2      # Parameter override at instance level
 - **PySpice Integration**: ✅ Complete validation layer for SPICE syntax and connectivity 
 - **Hierarchical Design**: ✅ Complete subcircuit-based hierarchical methodology 
 - **Parameter Handling**: ✅ **NEW**: Robust automatic parameter generation system implemented
+
+- **Data Structure Refactoring Plan (Session of YYYY-MM-DD):**
+  - **Decouple Serialization:** All serialization logic (e.g., `to_yaml`, `to_json`) will be moved from `src/asdl/data_structures.py` into a new, dedicated `src/asdl/serialization.py` module to improve separation of concerns.
+  - **Simplify DeviceModel:** The `DeviceModel` will be streamlined to use a single, robust `device_line` approach, removing legacy fields (`model`, `params`). The `DeviceType` enum will be replaced with a clearer `PrimitiveType` enum (`PDK_DEVICE`, `SPICE_DEVICE`).
+  - **Streamline Net Declaration:** The nested `Nets` class will be removed and replaced by a direct `internal_nets: Optional[List[str]]` field on the `Module` class.
+  - **Universal Metadata:** A free-form `metadata: Optional[Dict[str, Any]]` field will be added to all major ASDL data structures to provide a uniform and extensible way to store annotations and design intent, replacing the `Instance.intent` field.

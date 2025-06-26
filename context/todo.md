@@ -62,7 +62,53 @@
 
 **Technical Achievement**: SPICEGenerator now provides intelligent validation that helps developers identify dead code while maintaining robust netlisting functionality.
 
-## Next Sprint: Advanced Validation & User Experience
+## Current Sprint: Data Structure Refactor (TDD Implementation)
+
+### **🚀 Phase 1: Core Data Structure Changes (IN PROGRESS)**
+- [X] **PrimitiveType Enum Implementation** ✅
+  - [X] Create test file for PrimitiveType enum ✅
+  - [X] Implement PrimitiveType enum in data_structures.py ✅
+  - [X] Verify 8/8 tests passing ✅
+- [X] **Universal Metadata Field - DeviceModel** ✅
+  - [X] Create comprehensive test file for metadata field ✅
+  - [X] Add Metadata type alias ✅
+  - [X] Add metadata field to DeviceModel ✅
+  - [X] Verify metadata optional behavior test passes ✅
+- [ ] **Universal Metadata Field - Remaining Structures**
+  - [ ] Add metadata field to FileInfo
+  - [ ] Add metadata field to Port
+  - [ ] Add metadata field to Module
+  - [ ] Add metadata field to Instance (replacing intent)
+  - [ ] Add metadata field to ASDLFile
+  - [ ] Run full metadata test suite
+- [ ] **Simplified DeviceModel Structure**
+  - [ ] Create test for device_line-focused DeviceModel
+  - [ ] Test PrimitiveType usage instead of DeviceType
+  - [ ] Remove legacy fields (model, params, description)
+  - [ ] Update existing DeviceModel to use new structure
+- [ ] **Internal Nets Field Implementation**
+  - [ ] Create test for internal_nets field on Module
+  - [ ] Remove Nets class
+  - [ ] Add internal_nets: Optional[List[str]] to Module
+  - [ ] Test net declaration functionality
+
+## Next Sprint: Linter & Compiler Architecture Refactoring
+- [ ] **Phase 2: Serialization Separation**
+  - [ ] Create serialization.py module
+  - [ ] Remove serialization methods from ASDLFile
+  - [ ] Move to_yaml(), save_to_file(), to_json(), dump_json() to serialization module
+- [ ] **Phase 3: Foundation**
+  - [ ] Create shared `Diagnostic` data structures (`src/asdl/diagnostics.py`)
+- [ ] **Phase 2: Analysis Pipeline**
+  - [ ] Refactor `PatternExpander` to return `Diagnostics` instead of raising exceptions
+  - [ ] Create new `Validator` module (`src/asdl/validator.py`)
+  - [ ] Migrate validation logic from `SPICEGenerator` to `Validator`
+- [ ] **Phase 3: Tooling Back-Ends**
+  - [ ] Create Linter entry point script (`scripts/asdl_linter.py`)
+  - [ ] Update compiler pipeline to use the new `Validator`
+  - [ ] Create `serialization.py` module and move I/O logic there
+
+## Backlog: Advanced Validation & User Experience
 
 ### **Enhanced Validation Features** (NEW PRIORITY)
 - [ ] **Cross-Reference Validation**
@@ -215,4 +261,17 @@
 - [X] Verify virtual environment setup
 - [X] Install/verify all dependencies
 - [X] Setup development tools (black, flake8, pytest)
-- [X] Create initial source code structure 
+- [X] Create initial source code structure
+
+## Current Sprint
+- [ ] **Refactor Core Data Structures**: Implement the changes outlined in `doc/data_structure_design.md` and recorded in `context/memory.md`.
+  - [ ] Move serialization logic from `data_structures.py` to a new `serialization.py` file.
+  - [ ] Refactor `DeviceModel` and `DeviceType`.
+  - [ ] Replace `Nets` class with `internal_nets` on `Module`.
+  - [ ] Add the universal `metadata` field to all relevant classes.
+
+## Backlog
+[List of tasks for future sprints]
+
+## Completed Tasks
+[List of completed tasks] 

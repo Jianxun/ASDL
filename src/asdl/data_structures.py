@@ -13,6 +13,9 @@ import yaml
 import json
 from pathlib import Path
 
+# Universal metadata type alias
+Metadata = Dict[str, Any]
+
 
 # ─────────────────────────────────────────
 # Top-Level Container
@@ -128,6 +131,18 @@ class FileInfo:
 # Device Models (PDK Primitives)
 # ─────────────────────────────────────────
 
+class PrimitiveType(Enum):
+    """
+    Classifies the origin of the primitive model.
+    
+    This enum provides a simple, unambiguous classification:
+    - PDK_DEVICE: Physical device model from external PDK library
+    - SPICE_DEVICE: Primitive natively understood by SPICE simulator
+    """
+    PDK_DEVICE = "pdk_device"
+    SPICE_DEVICE = "spice_device"
+
+
 class DeviceType(Enum):
     """Enumeration of supported device types."""
     NMOS = "nmos"
@@ -177,6 +192,9 @@ class DeviceModel:
     model: Optional[str] = None              # PDK model name (used as-is in SPICE)
     params: Optional[Dict[str, Any]] = None  # Default parameters
     description: Optional[str] = None        # Legacy description field (for backward compatibility)
+    
+    # Universal metadata field
+    metadata: Optional[Metadata] = None      # Extensible metadata storage
     
     def has_device_line(self) -> bool:
         """Check if this model uses the new device_line approach."""
