@@ -32,7 +32,7 @@ def test_empty_pattern_diagnostic():
     assert len(diagnostics) == 1
     diagnostic = diagnostics[0]
     assert diagnostic.severity == DiagnosticSeverity.ERROR
-    assert "Pattern cannot be empty" in diagnostic.message
+    assert "A literal pattern `<>` cannot be empty" in diagnostic.details
     # TODO: Also assert on the location of the diagnostic 
 
 def test_single_item_pattern_diagnostic():
@@ -57,7 +57,7 @@ def test_single_item_pattern_diagnostic():
     assert len(diagnostics) == 1
     diagnostic = diagnostics[0]
     assert diagnostic.severity == DiagnosticSeverity.ERROR
-    assert "Pattern must have at least 2 items" in diagnostic.message
+    assert "A literal pattern must contain at least two items" in diagnostic.details
 
 def test_empty_items_pattern_diagnostic():
     """
@@ -81,4 +81,4 @@ def test_empty_items_pattern_diagnostic():
     assert len(diagnostics) == 1
     diagnostic = diagnostics[0]
     assert diagnostic.severity == DiagnosticSeverity.ERROR
-    assert "At least one item must be non-empty" in diagnostic.message 
+    assert "All items in a literal pattern were empty strings" in diagnostic.details 

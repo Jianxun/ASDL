@@ -42,6 +42,7 @@ class TestInternalNetsField:
         )
         
         assert module.internal_nets == []
+        assert module.internal_nets is not None
         assert len(module.internal_nets) == 0
         
     def test_module_with_ports_and_internal_nets(self):
@@ -80,6 +81,7 @@ class TestInternalNetsField:
             internal_nets=ordered_nets
         )
         
+        assert module.internal_nets is not None
         assert module.internal_nets == ordered_nets
         assert module.internal_nets[0] == "first_net"
         assert module.internal_nets[1] == "second_net"
@@ -118,7 +120,7 @@ class TestInternalNetsField:
             doc="Test module",
             internal_nets=["net1", "net2", "net3"]
         )
-        
+        assert module.internal_nets is not None
         # All elements should be strings
         assert all(isinstance(net, str) for net in module.internal_nets)
         

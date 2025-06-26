@@ -13,6 +13,7 @@ sys.path.insert(0, str(project_root / "src"))
 
 from asdl.parser import ASDLParser
 from asdl.data_structures import DeviceModel
+from asdl.data_structures import PrimitiveType
 
 class TestModelsParsing:
     """Test DeviceModel section parsing (no validation)."""
@@ -20,6 +21,8 @@ class TestModelsParsing:
     def test_parse_single_basic_model(self):
         """Test parsing a single, basic device model."""
         yaml_content = """
+file_info:
+  top_module: "test"
 models:
   nmos_test:
     type: pdk_device
@@ -27,13 +30,13 @@ models:
     device_line: "M_nmos_test D G S B nfet_03v3"
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, diagnostics = parser.parse_string(yaml_content)
 
+        assert asdl_file is not None
+        assert not diagnostics
         assert "nmos_test" in asdl_file.models
         model = asdl_file.models["nmos_test"]
-
-        assert isinstance(model, DeviceModel)
-        assert model.type == "pdk_device"
+        assert model.type == PrimitiveType.PDK_DEVICE
         assert model.ports == ["D", "G", "S", "B"]
         assert model.device_line == "M_nmos_test D G S B nfet_03v3"
         assert model.doc is None
@@ -43,6 +46,8 @@ models:
     def test_parse_multiple_models_with_all_fields(self):
         """Test parsing multiple models with all fields populated."""
         yaml_content = """
+file_info:
+  top_module: "test"
 models:
   nmos_full:
     type: pdk_device
@@ -66,11 +71,11 @@ models:
       author: "tester"
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, diagnostics = parser.parse_string(yaml_content)
 
+        assert asdl_file is not None
+        assert not diagnostics
         assert len(asdl_file.models) == 2
-        assert "nmos_full" in asdl_file.models
-        assert "pmos_full" in asdl_file.models
 
         nmos = asdl_file.models["nmos_full"]
         assert nmos.doc == "An NMOS transistor"
@@ -78,6 +83,7 @@ models:
         assert nmos.metadata == {"version": 1}
 
         pmos = asdl_file.models["pmos_full"]
+        assert pmos.type == PrimitiveType.SPICE_DEVICE
         assert pmos.doc == "A PMOS transistor"
         assert pmos.parameters == {"w": "2u", "l": "0.1u"}
         assert pmos.metadata == {"author": "tester"} 

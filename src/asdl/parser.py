@@ -13,7 +13,7 @@ Future-proofing features:
 
 from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List, Tuple, Protocol, cast
 from pathlib import Path
 
 from .data_structures import (
@@ -22,6 +22,25 @@ from .data_structures import (
     Instance, Locatable
 )
 from .diagnostics import Diagnostic, DiagnosticSeverity
+
+
+class LCInfo(Protocol):
+    """Protocol for ruamel.yaml's line/column info object."""
+    line: int
+    col: int
+
+    def key(self, key: Any) -> Tuple[Optional[int], Optional[int]]: ...
+    def value(self, key: Any) -> Tuple[Optional[int], Optional[int]]: ...
+    def item(self, index: int) -> Tuple[Optional[int], Optional[int]]: ...
+
+class YAMLObject(Protocol):
+    """Protocol for ruamel.yaml's loaded objects with location info."""
+    lc: LCInfo
+
+    def get(self, key: Any, default: Any = None) -> Any: ...
+    def items(self) -> Any: ...
+    def __getitem__(self, key: Any) -> Any: ...
+    def __contains__(self, key: Any) -> bool: ...
 
 
 class ASDLParser:
@@ -126,9 +145,32 @@ class ASDLParser:
             ))
             return None, diagnostics
 
-        file_info = self._parse_file_info(data, 'file_info')
-        models = self._parse_models(data.get('models', {}), diagnostics)
-        modules = self._parse_modules(data.get('modules', {}), diagnostics)
+        yaml_data = cast(YAMLObject, data)
+            
+        file_info = self._parse_file_info(yaml_data, 'file_info')
+        models = self._parse_models(yaml_data.get('models', {}), diagnostics)
+        modules = self._parse_modules(yaml_data.get('modules', {}), diagnostics)
+        
+        # Check for unknown top-level sections
+        allowed_keys = {'file_info', 'models', 'modules'}
+        if isinstance(data, dict):
+            for key in data.keys():
+                if key not in allowed_keys:
+                    start_line, start_col = (None, None)
+                    line, col = yaml_data.lc.key(key)
+                    if line is not None:
+                        start_line = line + 1
+                    if col is not None:
+                        start_col = col + 1
+                    
+                    diagnostics.append(Diagnostic(
+                        code="P200",
+                        title="Unknown Top-Level Section",
+                        details=f"The top-level section '{key}' is not a recognized ASDL section.",
+                        severity=DiagnosticSeverity.WARNING,
+                        location=Locatable(start_line=start_line, start_col=start_col),
+                        suggestion=f"Recognized sections are: {', '.join(allowed_keys)}. Please check for a typo or remove the section if it is not needed."
+                    ))
         
         asdl_file = ASDLFile(
             file_info=file_info,
@@ -137,18 +179,17 @@ class ASDLParser:
         )
         return asdl_file, diagnostics
     
-    def _parse_file_info(self, parent_data: Any, key: str) -> FileInfo:
+    def _parse_file_info(self, parent_data: YAMLObject, key: str) -> FileInfo:
         """Parse the file_info section."""
         data = parent_data.get(key, {})
         
         # Get location from the key in the parent mapping
         start_line, start_col = (None, None)
-        if hasattr(parent_data, 'lc'):
-            line, col = parent_data.lc.key(key)
-            if line is not None:
-                start_line = line + 1 # ruamel.yaml is 0-indexed for lines
-            if col is not None:
-                start_col = col + 1 # ruamel.yaml is 0-indexed for columns
+        line, col = parent_data.lc.key(key)
+        if line is not None:
+            start_line = line + 1 # ruamel.yaml is 0-indexed for lines
+        if col is not None:
+            start_col = col + 1 # ruamel.yaml is 0-indexed for columns
 
         return FileInfo(
             start_line=start_line,
@@ -167,19 +208,19 @@ class ASDLParser:
             return {}
 
         models = {}
-        for model_alias, model_data in data.items():
+        yaml_data = cast(YAMLObject, data)
+        for model_alias, model_data in yaml_data.items():
             start_line, start_col = (None, None)
-            if hasattr(data, 'lc'):
-                line, col = data.lc.key(model_alias)
-                if line is not None:
-                    start_line = line + 1
-                if col is not None:
-                    start_col = col + 1
+            line, col = yaml_data.lc.key(model_alias)
+            if line is not None:
+                start_line = line + 1
+            if col is not None:
+                start_col = col + 1
 
             models[model_alias] = DeviceModel(
                 start_line=start_line,
                 start_col=start_col,
-                type=model_data.get('type'),
+                type=PrimitiveType(model_data.get('type')),
                 ports=model_data.get('ports'),
                 device_line=model_data.get('device_line'),
                 doc=model_data.get('doc'),
@@ -194,14 +235,14 @@ class ASDLParser:
             return {}
 
         modules = {}
-        for module_id, module_data in data.items():
+        yaml_data = cast(YAMLObject, data)
+        for module_id, module_data in yaml_data.items():
             start_line, start_col = (None, None)
-            if hasattr(data, 'lc'):
-                line, col = data.lc.key(module_id)
-                if line is not None:
-                    start_line = line + 1
-                if col is not None:
-                    start_col = col + 1
+            line, col = yaml_data.lc.key(module_id)
+            if line is not None:
+                start_line = line + 1
+            if col is not None:
+                start_col = col + 1
 
             modules[module_id] = Module(
                 start_line=start_line,
@@ -221,14 +262,14 @@ class ASDLParser:
             return None
             
         ports = {}
-        for port_name, port_data in data.items():
+        yaml_data = cast(YAMLObject, data)
+        for port_name, port_data in yaml_data.items():
             start_line, start_col = (None, None)
-            if hasattr(data, 'lc'):
-                line, col = data.lc.key(port_name)
-                if line is not None:
-                    start_line = line + 1
-                if col is not None:
-                    start_col = col + 1
+            line, col = yaml_data.lc.key(port_name)
+            if line is not None:
+                start_line = line + 1
+            if col is not None:
+                start_col = col + 1
             ports[port_name] = Port(
                 start_line=start_line,
                 start_col=start_col,
@@ -251,14 +292,14 @@ class ASDLParser:
             return None
             
         instances = {}
-        for instance_id, instance_data in data.items():
+        yaml_data = cast(YAMLObject, data)
+        for instance_id, instance_data in yaml_data.items():
             start_line, start_col = (None, None)
-            if hasattr(data, 'lc'):
-                line, col = data.lc.key(instance_id)
-                if line is not None:
-                    start_line = line + 1
-                if col is not None:
-                    start_col = col + 1
+            line, col = yaml_data.lc.key(instance_id)
+            if line is not None:
+                start_line = line + 1
+            if col is not None:
+                start_col = col + 1
             instances[instance_id] = Instance(
                 start_line=start_line,
                 start_col=start_col,
@@ -275,10 +316,14 @@ class ASDLParser:
         if not isinstance(data, dict):
             loc = Locatable(start_line=1, start_col=1)
             # Try to get better location if available
-            if hasattr(data, 'lc'):
-                line, col = data.lc.line, data.lc.col
+            try:
+                yaml_obj = cast(YAMLObject, data)
+                line, col = yaml_obj.lc.line, yaml_obj.lc.col
                 if line is not None:
                     loc = Locatable(start_line=line + 1, start_col=col + 1)
+            except (AttributeError, TypeError):
+                # data doesn't have .lc, so we can't get a better location
+                pass
 
             diagnostics.append(Diagnostic(
                 code="P103",

@@ -31,7 +31,7 @@ models: {}
 modules: {}
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, diagnostics = parser.parse_string(yaml_content)
 
         assert isinstance(asdl_file, ASDLFile)
         assert isinstance(asdl_file.file_info, FileInfo)
@@ -63,7 +63,7 @@ modules: {}
         
         try:
             parser = ASDLParser()
-            asdl_file = parser.parse_file(tmp_file_path)
+            asdl_file, diagnostics = parser.parse_file(tmp_file_path)
             
             assert isinstance(asdl_file, ASDLFile)
             assert asdl_file.file_info.top_module == "file_test"
@@ -78,21 +78,26 @@ modules: {}
             parser.parse_file("non_existent_file.yml")
 
     def test_parse_invalid_yaml_syntax(self):
-        """Test parsing invalid YAML syntax raises YAMLError."""
+        """Test parsing invalid YAML syntax returns a diagnostic."""
         invalid_yaml = "key: [unclosed bracket"
         parser = ASDLParser()
-        with pytest.raises(YAMLError):
-            parser.parse_string(invalid_yaml)
+        asdl_file, diagnostics = parser.parse_string(invalid_yaml)
+        assert asdl_file is None
+        assert len(diagnostics) == 1
+        assert diagnostics[0].code == "P100"
 
     def test_parse_non_dictionary_root(self):
-        """Test parsing YAML that's not a dictionary raises ValueError."""
+        """Test parsing YAML that's not a dictionary returns a diagnostic."""
         non_dict_yaml = "- item1\\n- item2"
         parser = ASDLParser()
-        with pytest.raises(ValueError, match="ASDL file must contain a YAML dictionary"):
-            parser.parse_string(non_dict_yaml)
+        asdl_file, diagnostics = parser.parse_string(non_dict_yaml)
+        assert asdl_file is None
+        assert len(diagnostics) == 1
+        assert diagnostics[0].code == "P101"
 
     def test_parse_empty_yaml(self):
-        """Test parsing empty YAML raises ValueError."""
+        """Test parsing empty YAML returns no file and no diagnostics."""
         parser = ASDLParser()
-        with pytest.raises(ValueError, match="ASDL file must contain a YAML dictionary"):
-            parser.parse_string("") 
+        asdl_file, diagnostics = parser.parse_string("")
+        assert asdl_file is None
+        assert not diagnostics 

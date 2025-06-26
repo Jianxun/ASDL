@@ -6,11 +6,15 @@ The metadata field provides extensible storage for annotations, tool-specific da
 """
 
 import pytest
-from src.asdl.data_structures import (
+from pathlib import Path
+from asdl.data_structures import (
     ASDLFile, FileInfo, DeviceModel, PrimitiveType, 
     Port, PortDirection, SignalType, Module, Instance
 )
+from asdl.parser import ASDLParser
 
+test_dir = Path(__file__).resolve().parent
+project_root = test_dir.parent.parent.parent
 
 class TestMetadataField:
     """Test cases for universal metadata field across all data structures."""

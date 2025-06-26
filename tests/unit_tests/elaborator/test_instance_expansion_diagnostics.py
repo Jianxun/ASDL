@@ -38,7 +38,7 @@ def test_mismatched_pattern_count_diagnostic():
     assert len(diagnostics) == 1
     diagnostic = diagnostics[0]
     assert diagnostic.severity == DiagnosticSeverity.ERROR
-    assert "Pattern item counts must match: 2 vs 3" in diagnostic.message
+    assert "The number of items in the instance pattern (2) does not match the number of items in the net pattern (3)" in diagnostic.details
     
     # Check that the original instance is preserved on error
     assert elaborated_file.modules is not None

@@ -20,6 +20,8 @@ class TestModulesParsing:
     def test_parse_basic_module(self):
         """Test parsing a basic module with ports and one instance."""
         yaml_content = """
+file_info:
+  top_module: "test"
 modules:
   inverter:
     doc: "A simple inverter."
@@ -38,33 +40,32 @@ modules:
           D: "out"
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, diagnostics = parser.parse_string(yaml_content)
 
+        assert asdl_file is not None
+        assert not diagnostics
         assert "inverter" in asdl_file.modules
-        module = asdl_file.modules["inverter"]
 
-        assert isinstance(module, Module)
-        assert module.doc == "A simple inverter."
+        inverter = asdl_file.modules["inverter"]
+        assert inverter.doc == "A simple inverter."
         
-        # Check ports
-        assert module.ports is not None
-        assert "in" in module.ports
-        port_in = module.ports["in"]
-        assert isinstance(port_in, Port)
-        assert port_in.dir == "in"
-        assert port_in.type == "voltage"
+        assert inverter.ports is not None
+        assert "in" in inverter.ports
+        assert "out" in inverter.ports
+        assert inverter.ports["in"].dir == "in"
+        assert inverter.ports["out"].type == "voltage"
 
-        # Check instances
-        assert module.instances is not None
-        assert "MN1" in module.instances
-        instance = module.instances["MN1"]
-        assert isinstance(instance, Instance)
+        assert inverter.instances is not None
+        assert "MN1" in inverter.instances
+        instance = inverter.instances["MN1"]
         assert instance.model == "nmos_test"
         assert instance.mappings == {"G": "in", "D": "out"}
 
     def test_parse_module_all_fields(self):
         """Test parsing a module with all possible fields populated."""
         yaml_content = """
+file_info:
+  top_module: "test"
 modules:
   full_module:
     doc: "A complete module."
@@ -81,14 +82,16 @@ modules:
       version: 2
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, diagnostics = parser.parse_string(yaml_content)
 
+        assert asdl_file is not None
+        assert not diagnostics
         assert "full_module" in asdl_file.modules
-        module = asdl_file.modules["full_module"]
 
+        module = asdl_file.modules["full_module"]
         assert module.doc == "A complete module."
-        assert module.ports is not None and "in" in module.ports
+        assert module.ports and "in" in module.ports
         assert module.internal_nets == ["net1", "net2"]
         assert module.parameters == {"param1": "value1"}
-        assert module.instances is not None and "I1" in module.instances
+        assert module.instances and "I1" in module.instances
         assert module.metadata == {"version": 2} 

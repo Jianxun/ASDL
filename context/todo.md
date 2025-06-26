@@ -127,10 +127,10 @@
     - [ ] Add `_expand_bus_pattern` method to handle range-based expansion (e.g., `[3:0]`).
     - [ ] Create tests for bus pattern expansion, including error cases.
 - [ ] **Phase 5: Parser Hardening (TDD)**
-  - [ ] **Roadblock**: Resolve type-safe access to `ruamel.yaml` location data (`.lc` attribute) to satisfy linter.
+  - [X] **Roadblock Resolved**: Type-safe access to `ruamel.yaml` location data is working. ✅
+  - [X] Implement and test `P200`: Unknown Top-Level Section (Warning). ✅
   - [ ] Implement and test `P102`: Missing Required Section.
   - [ ] Implement and test `P103`: Invalid Section Type.
-  - [ ] Implement and test `P200`: Unknown Top-Level Section (Warning).
   - [ ] Implement and test `P201`: Unknown Field (Warning).
 - [ ] **Phase 6: Elaboration & Analysis Pipeline**
   - [ ] **Step 5: Deprecate Old Code**

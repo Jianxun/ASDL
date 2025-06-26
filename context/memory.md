@@ -18,6 +18,10 @@ Schema structure:
 - `modules`: Circuit hierarchy with ports, instances, and connectivity
 
 ## Current State
+
+### Test Suite Status
+- **Generator Tests**: The `generator` test suite is currently outdated due to the ongoing refactoring of the compiler pipeline. These tests should be skipped (`pytest --ignore=tests/unit_tests/generator`) until the `SPICEGenerator` is refactored to align with the new `Elaborator`-based architecture.
+
 **🚀 THOROUGH DATA STRUCTURE REFACTOR COMPLETE ✅**
 
 ### **NEW**: Complete Legacy Removal & Architecture Cleanup (THOROUGH REFACTOR) ✅

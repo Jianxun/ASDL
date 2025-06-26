@@ -24,13 +24,14 @@ class TestParserErrorHandling:
         """
         yaml_content = "- a list, not a dictionary"
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, diagnostics = parser.parse_string(yaml_content)
 
         assert asdl_file is None
-        assert len(parser.diagnostics) == 1
-        diagnostic = parser.diagnostics[0]
+        assert len(diagnostics) == 1
+        diagnostic = diagnostics[0]
         assert diagnostic.severity == DiagnosticSeverity.ERROR
-        assert "Top-level content must be a YAML dictionary" in diagnostic.message
+        assert "The root of an ASDL file must be a dictionary" in diagnostic.details
+        assert diagnostic.location is not None
         assert diagnostic.location.start_line == 1
         assert diagnostic.location.start_col == 1
 
@@ -43,12 +44,13 @@ file_info:
  bad_indent: here
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, diagnostics = parser.parse_string(yaml_content)
 
         assert asdl_file is None
-        assert len(parser.diagnostics) == 1
-        diagnostic = parser.diagnostics[0]
+        assert len(diagnostics) == 1
+        diagnostic = diagnostics[0]
         assert diagnostic.severity == DiagnosticSeverity.ERROR
-        assert "YAML syntax error" in diagnostic.message
+        assert "The file could not be parsed" in diagnostic.details
+        assert diagnostic.location is not None
         assert diagnostic.location.start_line == 4
         assert diagnostic.location.start_col == 2 

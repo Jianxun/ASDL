@@ -42,4 +42,27 @@ modules:
     diagnostic = diagnostics[0]
     assert diagnostic.code == "P103"
     assert diagnostic.severity == DiagnosticSeverity.ERROR
-    assert "section 'modules' must be a dictionary" in diagnostic.details 
+    assert "section 'modules' must be a dictionary" in diagnostic.details
+
+def test_unknown_top_level_section():
+    """
+    Test that P200 is raised as a warning for an unknown top-level section.
+    """
+    asdl_str = """
+file_info:
+    top_module: "test"
+future_feature:
+    option: true
+"""
+    parser = ASDLParser()
+    asdl_file, diagnostics = parser.parse_string(asdl_str)
+    
+    assert asdl_file is not None
+    assert len(diagnostics) == 1
+    diagnostic = diagnostics[0]
+    assert diagnostic.code == "P200"
+    assert diagnostic.severity == DiagnosticSeverity.WARNING
+    assert "section 'future_feature' is not a recognized" in diagnostic.details
+    assert diagnostic.location is not None
+    assert diagnostic.location.start_line == 4
+    assert diagnostic.location.start_col == 1 

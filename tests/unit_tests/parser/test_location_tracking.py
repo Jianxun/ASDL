@@ -33,10 +33,9 @@ file_info:
   doc: "An example inverter."
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, _ = parser.parse_string(yaml_content)
+        assert asdl_file is not None
         file_info = asdl_file.file_info
-
-        assert file_info is not None
         assert file_info.start_line == 3
         assert file_info.start_col == 1
 
@@ -56,7 +55,8 @@ models:
     device_line: "M D G S B pfet"
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, _ = parser.parse_string(yaml_content)
+        assert asdl_file is not None
 
         assert "nmos_test" in asdl_file.models
         nmos = asdl_file.models["nmos_test"]
@@ -85,7 +85,8 @@ modules:
     doc: "A simple buffer."
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, _ = parser.parse_string(yaml_content)
+        assert asdl_file is not None
 
         assert "inverter" in asdl_file.modules
         inverter = asdl_file.modules["inverter"]
@@ -112,7 +113,8 @@ modules:
         dir: out
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, _ = parser.parse_string(yaml_content)
+        assert asdl_file is not None
 
         inverter = asdl_file.modules["inverter"]
         assert inverter.ports is not None
@@ -141,7 +143,8 @@ modules:
         model: pmos
 """
         parser = ASDLParser()
-        asdl_file = parser.parse_string(yaml_content)
+        asdl_file, _ = parser.parse_string(yaml_content)
+        assert asdl_file is not None
 
         inverter = asdl_file.modules["inverter"]
         assert inverter.instances is not None
