@@ -44,6 +44,9 @@ modules: {}
         # Check for location data
         assert asdl_file.file_info.start_line == 1
         assert asdl_file.file_info.start_col == 1
+        assert asdl_file.file_info.end_line == 2
+        assert asdl_file.file_info.end_col == 17
+        assert asdl_file.file_info.file_path is None # Should be None when parsing from string
 
         assert asdl_file.models == {}
         assert asdl_file.modules == {}
@@ -65,9 +68,14 @@ modules: {}
             parser = ASDLParser()
             asdl_file, diagnostics = parser.parse_file(tmp_file_path)
             
-            assert isinstance(asdl_file, ASDLFile)
+            assert not diagnostics
+            assert asdl_file is not None
             assert asdl_file.file_info.top_module == "file_test"
             assert asdl_file.file_info.doc == "Test file parsing"
+            
+            # Check for file path in location data
+            assert asdl_file.file_info.file_path == Path(tmp_file_path)
+            
         finally:
             os.unlink(tmp_file_path)
 

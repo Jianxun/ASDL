@@ -62,6 +62,7 @@ class ASDLParser:
         """
         self.preserve_unknown = preserve_unknown
         self._yaml = YAML(typ='rt')
+        self._yaml.composer.anchors = {} # Silence anchor warnings
     
     def parse_file(self, filepath: str) -> Tuple[Optional[ASDLFile], List[Diagnostic]]:
         """
@@ -83,14 +84,15 @@ class ASDLParser:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
             
-        return self.parse_string(content)
+        return self.parse_string(content, file_path)
     
-    def parse_string(self, yaml_content: str) -> Tuple[Optional[ASDLFile], List[Diagnostic]]:
+    def parse_string(self, yaml_content: str, file_path: Optional[Path] = None) -> Tuple[Optional[ASDLFile], List[Diagnostic]]:
         """
         Parse an ASDL YAML string into data structures.
         
         Args:
             yaml_content: YAML content as a string.
+            file_path: Optional path to the file for location tracking.
             
         Returns:
             A tuple containing an ASDLFile object or None, and a list of diagnostics.
@@ -102,6 +104,7 @@ class ASDLParser:
             loc = None
             if e.problem_mark: # type: ignore
                 loc = Locatable(
+                    file_path=file_path,
                     start_line=e.problem_mark.line + 1, # type: ignore
                     start_col=e.problem_mark.column + 1, # type: ignore
                 )
@@ -122,7 +125,7 @@ class ASDLParser:
             return None, diagnostics
 
         if not isinstance(data, dict):
-            loc = Locatable(start_line=1, start_col=1)
+            loc = Locatable(start_line=1, start_col=1, file_path=file_path)
             diagnostics.append(Diagnostic(
                 code="P101",
                 title="Invalid Root Type",
@@ -140,35 +143,29 @@ class ASDLParser:
                 title="Missing Required Section",
                 details="'file_info' is a mandatory section and must be present at the top level of the ASDL file.",
                 severity=DiagnosticSeverity.ERROR,
-                location=Locatable(start_line=1, start_col=1),
+                location=Locatable(start_line=1, start_col=1, file_path=file_path),
                 suggestion="Add a 'file_info' section with at least a 'top_module' key."
             ))
             return None, diagnostics
 
         yaml_data = cast(YAMLObject, data)
             
-        file_info = self._parse_file_info(yaml_data, 'file_info')
-        models = self._parse_models(yaml_data.get('models', {}), diagnostics)
-        modules = self._parse_modules(yaml_data.get('modules', {}), diagnostics)
+        file_info = self._parse_file_info(yaml_data, 'file_info', file_path)
+        models = self._parse_models(yaml_data.get('models', {}), diagnostics, file_path)
+        modules = self._parse_modules(yaml_data.get('modules', {}), diagnostics, file_path)
         
         # Check for unknown top-level sections
         allowed_keys = {'file_info', 'models', 'modules'}
         if isinstance(data, dict):
             for key in data.keys():
                 if key not in allowed_keys:
-                    start_line, start_col = (None, None)
-                    line, col = yaml_data.lc.key(key)
-                    if line is not None:
-                        start_line = line + 1
-                    if col is not None:
-                        start_col = col + 1
-                    
+                    loc = self._get_locatable_from_key(yaml_data, key, file_path)
                     diagnostics.append(Diagnostic(
                         code="P200",
                         title="Unknown Top-Level Section",
                         details=f"The top-level section '{key}' is not a recognized ASDL section.",
                         severity=DiagnosticSeverity.WARNING,
-                        location=Locatable(start_line=start_line, start_col=start_col),
+                        location=loc,
                         suggestion=f"Recognized sections are: {', '.join(allowed_keys)}. Please check for a typo or remove the section if it is not needed."
                     ))
         
@@ -179,21 +176,37 @@ class ASDLParser:
         )
         return asdl_file, diagnostics
     
-    def _parse_file_info(self, parent_data: YAMLObject, key: str) -> FileInfo:
+    def _get_locatable_from_key(self, parent_data: Any, key: str, file_path: Optional[Path]) -> Locatable:
+        """Extracts a full Locatable object from a ruamel.yaml key."""
+        loc = Locatable(file_path=file_path)
+        try:
+            # ruamel.yaml provides start_mark and end_mark on its internal objects
+            start_mark = parent_data.lc.start_mark
+            end_mark = parent_data.lc.end_mark
+            
+            # For mappings, we need to get the mark of the specific key
+            key_start_mark = parent_data.lc.key_start_mark.get(key)
+            key_end_mark = parent_data.lc.key_end_mark.get(key)
+            
+            if key_start_mark:
+                loc.start_line = key_start_mark.line + 1
+                loc.start_col = key_start_mark.column + 1
+            if key_end_mark:
+                loc.end_line = key_end_mark.line + 1
+                loc.end_col = key_end_mark.column + 1
+
+        except AttributeError:
+            # Fallback for objects that don't have detailed location info
+            pass
+        return loc
+
+    def _parse_file_info(self, parent_data: YAMLObject, key: str, file_path: Optional[Path]) -> FileInfo:
         """Parse the file_info section."""
         data = parent_data.get(key, {})
-        
-        # Get location from the key in the parent mapping
-        start_line, start_col = (None, None)
-        line, col = parent_data.lc.key(key)
-        if line is not None:
-            start_line = line + 1 # ruamel.yaml is 0-indexed for lines
-        if col is not None:
-            start_col = col + 1 # ruamel.yaml is 0-indexed for columns
+        loc = self._get_locatable_from_key(parent_data, key, file_path)
 
         return FileInfo(
-            start_line=start_line,
-            start_col=start_col,
+            **loc.__dict__,
             top_module=data.get('top_module'),
             doc=data.get('doc'),
             revision=data.get('revision'),
@@ -202,24 +215,17 @@ class ASDLParser:
             metadata=data.get('metadata')
         )
     
-    def _parse_models(self, data: Any, diagnostics: List[Diagnostic]) -> Dict[str, DeviceModel]:
+    def _parse_models(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Dict[str, DeviceModel]:
         """Parse the models section."""
-        if not self._validate_section_is_dict(data, 'models', diagnostics):
+        if not self._validate_section_is_dict(data, 'models', diagnostics, file_path):
             return {}
 
         models = {}
         yaml_data = cast(YAMLObject, data)
         for model_alias, model_data in yaml_data.items():
-            start_line, start_col = (None, None)
-            line, col = yaml_data.lc.key(model_alias)
-            if line is not None:
-                start_line = line + 1
-            if col is not None:
-                start_col = col + 1
-
+            loc = self._get_locatable_from_key(yaml_data, model_alias, file_path)
             models[model_alias] = DeviceModel(
-                start_line=start_line,
-                start_col=start_col,
+                **loc.__dict__,
                 type=PrimitiveType(model_data.get('type')),
                 ports=model_data.get('ports'),
                 device_line=model_data.get('device_line'),
@@ -229,52 +235,54 @@ class ASDLParser:
             )
         return models
     
-    def _parse_modules(self, data: Any, diagnostics: List[Diagnostic]) -> Dict[str, Module]:
+    def _parse_modules(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Dict[str, Module]:
         """Parse the modules section."""
-        if not self._validate_section_is_dict(data, 'modules', diagnostics):
+        if not self._validate_section_is_dict(data, 'modules', diagnostics, file_path):
             return {}
 
         modules = {}
         yaml_data = cast(YAMLObject, data)
         for module_id, module_data in yaml_data.items():
-            start_line, start_col = (None, None)
-            line, col = yaml_data.lc.key(module_id)
-            if line is not None:
-                start_line = line + 1
-            if col is not None:
-                start_col = col + 1
-
+            loc = self._get_locatable_from_key(yaml_data, module_id, file_path)
             modules[module_id] = Module(
-                start_line=start_line,
-                start_col=start_col,
+                **loc.__dict__,
                 doc=module_data.get('doc'),
-                ports=self._parse_ports(module_data.get('ports')),
+                ports=self._parse_ports(module_data.get('ports'), file_path),
                 internal_nets=module_data.get('internal_nets'),
                 parameters=module_data.get('parameters'),
-                instances=self._parse_instances(module_data.get('instances')),
+                instances=self._parse_instances(module_data.get('instances'), file_path),
                 metadata=module_data.get('metadata')
             )
         return modules
     
-    def _parse_ports(self, data: Any) -> Optional[Dict[str, Port]]:
-        """Parse the ports section."""
-        if data is None:
+    def _parse_ports(self, data: Any, file_path: Optional[Path]) -> Optional[Dict[str, Port]]:
+        """Parse the ports section of a module."""
+        if not data:
             return None
-            
         ports = {}
         yaml_data = cast(YAMLObject, data)
         for port_name, port_data in yaml_data.items():
-            start_line, start_col = (None, None)
-            line, col = yaml_data.lc.key(port_name)
-            if line is not None:
-                start_line = line + 1
-            if col is not None:
-                start_col = col + 1
+            loc = self._get_locatable_from_key(yaml_data, port_name, file_path)
+            
+            # Validate required fields
+            dir_val = port_data.get('dir')
+            if not dir_val:
+                diagnostics.append(self._create_diagnostic(
+                    "P104", "Missing Required Field", f"Port '{port_name}' is missing the required 'dir' field.", loc
+                ))
+                continue
+
+            type_val = port_data.get('type')
+            if not type_val:
+                diagnostics.append(self._create_diagnostic(
+                    "P104", "Missing Required Field", f"Port '{port_name}' is missing the required 'type' field.", loc
+                ))
+                continue
+
             ports[port_name] = Port(
-                start_line=start_line,
-                start_col=start_col,
-                dir=port_data.get('dir'),
-                type=port_data.get('type'),
+                **loc.__dict__,
+                dir=PortDirection(dir_val.lower()),
+                type=SignalType(type_val.lower()),
                 constraints=self._parse_constraints(port_data.get('constraints')),
                 metadata=port_data.get('metadata')
             )
@@ -282,27 +290,20 @@ class ASDLParser:
     
     def _parse_constraints(self, data: Any) -> Optional[PortConstraints]:
         """Parse port constraints."""
-        if data is None:
+        if not data:
             return None
         return PortConstraints(constraints=data)
     
-    def _parse_instances(self, data: Any) -> Optional[Dict[str, Instance]]:
-        """Parse the instances section."""
-        if data is None:
+    def _parse_instances(self, data: Any, file_path: Optional[Path]) -> Optional[Dict[str, Instance]]:
+        """Parse the instances section of a module."""
+        if not data:
             return None
-            
         instances = {}
         yaml_data = cast(YAMLObject, data)
-        for instance_id, instance_data in yaml_data.items():
-            start_line, start_col = (None, None)
-            line, col = yaml_data.lc.key(instance_id)
-            if line is not None:
-                start_line = line + 1
-            if col is not None:
-                start_col = col + 1
-            instances[instance_id] = Instance(
-                start_line=start_line,
-                start_col=start_col,
+        for instance_name, instance_data in yaml_data.items():
+            loc = self._get_locatable_from_key(yaml_data, instance_name, file_path)
+            instances[instance_name] = Instance(
+                **loc.__dict__,
                 model=instance_data.get('model'),
                 mappings=instance_data.get('mappings'),
                 doc=instance_data.get('doc'),
@@ -311,27 +312,16 @@ class ASDLParser:
             )
         return instances
 
-    def _validate_section_is_dict(self, data: Any, section_name: str, diagnostics: List[Diagnostic]) -> bool:
-        """Validate that a section's data is a dictionary."""
+    def _validate_section_is_dict(self, data: Any, section_name: str, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> bool:
+        """Validates that a section's data is a dictionary."""
         if not isinstance(data, dict):
-            loc = Locatable(start_line=1, start_col=1)
-            # Try to get better location if available
-            try:
-                yaml_obj = cast(YAMLObject, data)
-                line, col = yaml_obj.lc.line, yaml_obj.lc.col
-                if line is not None:
-                    loc = Locatable(start_line=line + 1, start_col=col + 1)
-            except (AttributeError, TypeError):
-                # data doesn't have .lc, so we can't get a better location
-                pass
-
             diagnostics.append(Diagnostic(
                 code="P103",
                 title="Invalid Section Type",
-                details=f"The top-level section '{section_name}' must be a dictionary (mapping of keys to values), not a list or scalar.",
+                details=f"The '{section_name}' section must be a dictionary (mapping), but found {type(data).__name__}.",
                 severity=DiagnosticSeverity.ERROR,
-                location=loc,
-                suggestion=f"Ensure the '{section_name}' section is indented correctly and uses key: value pairs."
+                location=Locatable(start_line=1, start_col=1, file_path=file_path), # Fallback location
+                suggestion=f"Ensure the '{section_name}' key is followed by a correctly indented set of key-value pairs."
             ))
             return False
         return True 

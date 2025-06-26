@@ -25,9 +25,10 @@ Diagnostic codes are structured to be easily identifiable and searchable.
 | :----- | :------------------------ | :-------------------- | :------------ |
 | **P100**   | Invalid YAML Syntax       | ✅ Implemented       | ✅ Covered    |
 | **P101**   | Invalid Root Type         | ✅ Implemented       | ✅ Covered    |
-| **P102**   | Missing Required Section  | ❌ Not Implemented   | ❌ Not Covered|
+| **P102**   | Missing Required Section  | ✅ Implemented       | ✅ Covered    |
 | **P103**   | Invalid Section Type      | ❌ Not Implemented   | ❌ Not Covered|
-| **P200**   | Unknown Top-Level Section | ❌ Not Implemented   | ❌ Not Covered|
+| **P104**   | Missing Required Field    | ❌ Not Implemented   | ❌ Not Covered|
+| **P200**   | Unknown Top-Level Section | ✅ Implemented       | ✅ Covered    |
 | **P201**   | Unknown Field             | ❌ Not Implemented   | ❌ Not Covered|
 
 ### P100: Invalid YAML Syntax
@@ -53,6 +54,45 @@ Diagnostic codes are structured to be easily identifiable and searchable.
       top_module: "test"
   ```
 - **Suggestion**: Ensure the ASDL file starts with a key-value structure, not a list (indicated by a leading `-`).
+
+### P102: Missing Required Section
+- **Type**: `Error`
+- **Component**: `Parser`
+- **Title**: `Missing Required Section`
+- **Details**: A mandatory top-level section (like `file_info`) is missing from the ASDL file.
+- **Example (Incorrect)**:
+  ```yaml
+  # 'file_info' section is missing
+  modules:
+    ...
+  ```
+- **Suggestion**: Add the missing mandatory section to the file.
+
+### P103: Invalid Section Type
+- **Type**: `Error`
+- **Component**: `Parser`
+- **Title**: `Invalid Section Type`
+- **Details**: The section type is not recognized or supported by the parser.
+- **Example (Incorrect)**:
+  ```yaml
+  # 'file_info' section is missing
+  modules:
+    ...
+  ```
+- **Suggestion**: Ensure the section type is valid and supported by the parser.
+
+### P104: Missing Required Field
+- **Type**: `Error`
+- **Component**: `Parser`
+- **Title**: `Missing Required Field`
+- **Details**: A mandatory field is missing from the ASDL file.
+- **Example (Incorrect)**:
+  ```yaml
+  # 'file_info' section is missing
+  modules:
+    ...
+  ```
+- **Suggestion**: Add the missing mandatory field to the file.
 
 ---
 

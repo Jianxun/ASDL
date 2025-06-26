@@ -210,6 +210,7 @@ class TestMetadataField:
             metadata=complex_metadata
         )
         
+        assert module.metadata is not None
         assert module.metadata["simulation"]["ac_analysis"]["start_freq"] == "1Hz"
         assert module.metadata["layout"]["routing"]["metal_layers"] == [1, 2, 3]
         assert module.metadata["validation"]["corners"] == ["TT", "SS", "SF", "FS", "FF"] 

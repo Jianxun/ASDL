@@ -6,9 +6,10 @@ format including patterns and parameter expressions. Pattern expansion and
 parameter resolution are handled as separate explicit steps.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # Universal metadata type alias
 Metadata = Dict[str, Any]
@@ -27,9 +28,9 @@ class ASDLFile:
     The full chip design will be composed of multiple ASDL files with dependencies.
     """
     file_info: 'FileInfo'
-    models: Dict[str, 'DeviceModel']  # model_alias -> DeviceModel
-    modules: Dict[str, 'Module']      # module_id -> Module
-    metadata: Optional[Metadata] = None  # Universal metadata field
+    models: Dict[str, 'DeviceModel']
+    modules: Dict[str, 'Module']
+    metadata: Optional[Metadata] = None
 
 
 # ─────────────────────────────────────────
@@ -38,9 +39,15 @@ class ASDLFile:
 
 @dataclass
 class Locatable:
-    """Base class for objects that have a location in the source file."""
+    """
+    Represents a full span in a source file, including start and end
+    positions and the file it belongs to.
+    """
+    file_path: Optional[Path] = None
     start_line: Optional[int] = None
     start_col: Optional[int] = None
+    end_line: Optional[int] = None
+    end_col: Optional[int] = None
 
 
 @dataclass
@@ -70,8 +77,8 @@ class PrimitiveType(Enum):
     SPICE_DEVICE = "spice_device"
 
 
-@dataclass
-class DeviceModel:
+@dataclass(kw_only=True)
+class DeviceModel(Locatable):
     """
     Template for a primitive component, which can be a physical PDK device
     or a built-in SPICE primitive.
@@ -82,8 +89,6 @@ class DeviceModel:
     doc: Optional[str] = None
     parameters: Optional[Dict[str, str]] = None
     metadata: Optional[Metadata] = None
-    start_line: Optional[int] = None
-    start_col: Optional[int] = None
 
 
 # ─────────────────────────────────────────
@@ -112,11 +117,11 @@ class PortConstraints:
     Constraints are stored as raw data for future implementation.
     This allows us to defer constraint handling while preserving the data.
     """
-    constraints: Any  # Store raw constraint data as-is
+    constraints: Any
 
 
-@dataclass
-class Port:
+@dataclass(kw_only=True)
+class Port(Locatable):
     """
     Port definition with direction, type, and optional constraints.
     
@@ -127,12 +132,10 @@ class Port:
     type: SignalType
     constraints: Optional[PortConstraints] = None
     metadata: Optional[Metadata] = None
-    start_line: Optional[int] = None
-    start_col: Optional[int] = None
 
 
-@dataclass
-class Instance:
+@dataclass(kw_only=True)
+class Instance(Locatable):
     """
     Instance of a DeviceModel or Module.
     
@@ -155,8 +158,6 @@ class Instance:
     doc: Optional[str] = None
     parameters: Optional[Dict[str, Any]] = None
     metadata: Optional[Metadata] = None
-    start_line: Optional[int] = None
-    start_col: Optional[int] = None
     
     def is_device_instance(self, asdl_file: 'ASDLFile') -> bool:
         """Check if this instance references a DeviceModel."""
@@ -168,7 +169,7 @@ class Instance:
 
 
 @dataclass
-class Module:
+class Module(Locatable):
     """
     Circuit module definition.
     
@@ -184,6 +185,4 @@ class Module:
     internal_nets: Optional[List[str]] = None
     parameters: Optional[Dict[str, Any]] = None
     instances: Optional[Dict[str, Instance]] = None
-    metadata: Optional[Metadata] = None
-    start_line: Optional[int] = None
-    start_col: Optional[int] = None 
+    metadata: Optional[Metadata] = None 

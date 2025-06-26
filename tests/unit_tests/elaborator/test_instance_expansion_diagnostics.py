@@ -9,6 +9,7 @@ from asdl.elaborator import Elaborator
 from asdl.diagnostics import Diagnostic, DiagnosticSeverity
 
 
+
 def test_mismatched_pattern_count_diagnostic():
     """
     Test that a diagnostic is generated when instance and mapping patterns
