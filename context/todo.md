@@ -94,11 +94,7 @@
 **🎯 PRODUCTION READY**: Clean architecture, 34/34 data structure tests passing ✅
 
 ## Next Sprint: Linter & Compiler Architecture Refactoring
-- [ ] **Phase 2: Serialization Separation**
-  - [ ] Create serialization.py module
-  - [ ] Remove serialization methods from ASDLFile
-  - [ ] Move to_yaml(), save_to_file(), to_json(), dump_json() to serialization module
-- [ ] **Phase 3: Foundation**
+- [ ] **Phase 1: Foundation**
   - [ ] Create shared `Diagnostic` data structures (`src/asdl/diagnostics.py`)
 - [ ] **Phase 2: Analysis Pipeline**
   - [ ] Refactor `PatternExpander` to return `Diagnostics` instead of raising exceptions
@@ -107,9 +103,11 @@
 - [ ] **Phase 3: Tooling Back-Ends**
   - [ ] Create Linter entry point script (`scripts/asdl_linter.py`)
   - [ ] Update compiler pipeline to use the new `Validator`
-  - [ ] Create `serialization.py` module and move I/O logic there
 
 ## Backlog: Advanced Validation & User Experience
+
+### **Testing & Refinements**
+- [ ] Thoroughly test `serialization.py` module
 
 ### **Enhanced Validation Features** (NEW PRIORITY)
 - [ ] **Cross-Reference Validation**

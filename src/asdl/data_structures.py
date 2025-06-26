@@ -6,7 +6,7 @@ format including patterns and parameter expressions. Pattern expansion and
 parameter resolution are handled as separate explicit steps.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
 from enum import Enum
 
@@ -38,13 +38,13 @@ class ASDLFile:
 
 @dataclass
 class FileInfo:
-    """File metadata and information from file_info section."""
-    top_module: str
-    doc: str
-    revision: str
-    author: str
-    date: str  # ISO 8601 format
-    metadata: Optional[Metadata] = None  # Universal metadata field
+    """Represents the file_info section of an ASDL file."""
+    top_module: Optional[str] = None
+    doc: Optional[str] = None
+    revision: Optional[str] = None
+    author: Optional[str] = None
+    date: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 # ─────────────────────────────────────────
