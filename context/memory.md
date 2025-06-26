@@ -209,6 +209,13 @@ X_SECOND_STAGE first_stage_out out vbn vss vdd common_source_pmos M={M_second_st
 - **TDD Process**: Followed a strict test-driven development cycle to rewrite the parser's test suite from scratch, ensuring the new implementation is robust and well-tested.
 - **Impact**: This is a foundational step for the ASDL Linter, as it allows for precise, user-friendly error reporting (e.g., "Error on line 15, column 5").
 
+### **NEW**: Parser Emits Diagnostics for Fatal Errors ✅
+**ACHIEVEMENT**: The ASDLParser has been refactored to emit diagnostics instead of raising exceptions for fundamental parsing errors.
+- **Error Handling**: The parser now catches `YAMLError` for syntax issues and checks for invalid top-level structures (e.g., a list instead of a dictionary).
+- **Diagnostic Generation**: Instead of crashing, the parser now populates a `diagnostics` list with detailed error information, including line and column numbers.
+- **Robustness**: The `parse_string` and `parse_file` methods now return `Optional[ASDLFile]`, signaling a fatal error by returning `None`. This makes the parsing process more resilient and provides structured error data for consumers like a linter or IDE.
+- **TDD Verified**: This functionality was developed using TDD, with the new `tests/unit_tests/parser/test_error_handling.py` file verifying the correct behavior.
+
 ### **Architecture Validation**: Tests Confirm Hierarchical Design ✅
 - **Models as Subcircuits**: All device models generate as `.subckt` definitions
 - **Instance Calls**: All instances generate as `X_` prefixed subcircuit calls

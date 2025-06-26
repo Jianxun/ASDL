@@ -99,13 +99,15 @@
   - [X] Integrate `ruamel.yaml` for location tracking ✅
   - [X] Rewrite parser test suite using TDD ✅
   - [X] Implement location tracking for `FileInfo` ✅
-- [ ] **Phase 2: Full Location Tracking**
-  - [ ] Add `Locatable` base class to all relevant data structures (`DeviceModel`, `Module`, `Port`, `Instance`).
-  - [ ] Update parser to populate location data for all structures.
-  - [ ] Update tests to assert correct location data for all structures.
-- [ ] **Phase 3: Foundation**
-  - [ ] Create shared `Diagnostic` data structures (`src/asdl/diagnostics.py`)
+- [X] **Phase 2: Full Location Tracking** ✅
+  - [X] Add `Locatable` base class to all relevant data structures (`DeviceModel`, `Module`, `Port`, `Instance`). ✅
+  - [X] Update parser to populate location data for all structures. ✅
+  - [X] Update tests to assert correct location data for all structures. ✅
+- [X] **Phase 3: Foundation** ✅
+  - [X] Create shared `Diagnostic` data structures (`src/asdl/diagnostics.py`) ✅
+  - [X] Create tests for diagnostic data structures ✅
 - [ ] **Phase 4: Analysis Pipeline**
+  - [X] Refactor `ASDLParser` to emit `Diagnostics` instead of raising exceptions ✅
   - [ ] Refactor `PatternExpander` to return `Diagnostics` instead of raising exceptions
   - [ ] Create new `Validator` module (`src/asdl/validator.py`)
   - [ ] Migrate validation logic from `SPICEGenerator` to `Validator`

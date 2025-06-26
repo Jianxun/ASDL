@@ -79,12 +79,14 @@ class DeviceModel:
     Template for a primitive component, which can be a physical PDK device
     or a built-in SPICE primitive.
     """
-    type: PrimitiveType                      # Classifies the origin of the primitive model
-    ports: List[str]                         # Defines terminal order, e.g., ['D', 'G', 'S', 'B']
-    device_line: str                         # Raw SPICE line with {placeholders}, e.g., "MN {D} {G} {S} {B} nch W={W}"
-    doc: Optional[str] = None                # Optional documentation
-    parameters: Optional[Dict[str, str]] = None  # Default values for parameters used in device_line
-    metadata: Optional[Metadata] = None      # Extensible metadata storage
+    type: PrimitiveType
+    ports: List[str]
+    device_line: str
+    doc: Optional[str] = None
+    parameters: Optional[Dict[str, str]] = None
+    metadata: Optional[Metadata] = None
+    start_line: Optional[int] = None
+    start_col: Optional[int] = None
 
 
 # ─────────────────────────────────────────
@@ -127,7 +129,9 @@ class Port:
     dir: PortDirection
     type: SignalType
     constraints: Optional[PortConstraints] = None
-    metadata: Optional[Metadata] = None  # Universal metadata field
+    metadata: Optional[Metadata] = None
+    start_line: Optional[int] = None
+    start_col: Optional[int] = None
 
 
 
@@ -152,11 +156,13 @@ class Instance:
     - Tool-specific metadata: {"simulator": "spectre", "model_opts": {...}}
     - Future extensions: Any additional fields can be preserved here
     """
-    model: str                                # References DeviceModel alias or Module name
-    mappings: Dict[str, str]                  # Port-to-net mapping (may contain patterns)
-    doc: Optional[str] = None                 # Instance documentation (first-class citizen)
-    parameters: Optional[Dict[str, Any]] = None  # Instance parameters (may contain expressions)
-    metadata: Optional[Metadata] = None       # Universal metadata field
+    model: str
+    mappings: Dict[str, str]
+    doc: Optional[str] = None
+    parameters: Optional[Dict[str, Any]] = None
+    metadata: Optional[Metadata] = None
+    start_line: Optional[int] = None
+    start_col: Optional[int] = None
     
     def is_device_instance(self, asdl_file: 'ASDLFile') -> bool:
         """Check if this instance references a DeviceModel."""
@@ -180,8 +186,10 @@ class Module:
     Each Module becomes a .subckt definition in SPICE.
     """
     doc: Optional[str] = None
-    ports: Optional[Dict[str, Port]] = None               # port_name -> Port (may contain patterns)
-    internal_nets: Optional[List[str]] = None             # Internal net declarations
-    parameters: Optional[Dict[str, Any]] = None           # Module parameters  
-    instances: Optional[Dict[str, Instance]] = None       # instance_id -> Instance
-    metadata: Optional[Metadata] = None                   # Universal metadata field 
+    ports: Optional[Dict[str, Port]] = None
+    internal_nets: Optional[List[str]] = None
+    parameters: Optional[Dict[str, Any]] = None
+    instances: Optional[Dict[str, Instance]] = None
+    metadata: Optional[Metadata] = None
+    start_line: Optional[int] = None
+    start_col: Optional[int] = None 
