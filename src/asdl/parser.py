@@ -114,9 +114,21 @@ class ASDLParser:
             ))
             return None, diagnostics
             
+        # Check for mandatory sections
+        if 'file_info' not in data:
+            diagnostics.append(Diagnostic(
+                code="P102",
+                title="Missing Required Section",
+                details="'file_info' is a mandatory section and must be present at the top level of the ASDL file.",
+                severity=DiagnosticSeverity.ERROR,
+                location=Locatable(start_line=1, start_col=1),
+                suggestion="Add a 'file_info' section with at least a 'top_module' key."
+            ))
+            return None, diagnostics
+
         file_info = self._parse_file_info(data, 'file_info')
-        models = self._parse_models(data.get('models', {}))
-        modules = self._parse_modules(data.get('modules', {}))
+        models = self._parse_models(data.get('models', {}), diagnostics)
+        modules = self._parse_modules(data.get('modules', {}), diagnostics)
         
         asdl_file = ASDLFile(
             file_info=file_info,
@@ -149,10 +161,11 @@ class ASDLParser:
             metadata=data.get('metadata')
         )
     
-    def _parse_models(self, data: Any) -> Dict[str, DeviceModel]:
+    def _parse_models(self, data: Any, diagnostics: List[Diagnostic]) -> Dict[str, DeviceModel]:
         """Parse the models section."""
-        if not data:
+        if not self._validate_section_is_dict(data, 'models', diagnostics):
             return {}
+
         models = {}
         for model_alias, model_data in data.items():
             start_line, start_col = (None, None)
@@ -175,10 +188,11 @@ class ASDLParser:
             )
         return models
     
-    def _parse_modules(self, data: Any) -> Dict[str, Module]:
+    def _parse_modules(self, data: Any, diagnostics: List[Diagnostic]) -> Dict[str, Module]:
         """Parse the modules section."""
-        if not data:
+        if not self._validate_section_is_dict(data, 'modules', diagnostics):
             return {}
+
         modules = {}
         for module_id, module_data in data.items():
             start_line, start_col = (None, None)
@@ -254,4 +268,25 @@ class ASDLParser:
                 parameters=instance_data.get('parameters'),
                 metadata=instance_data.get('metadata')
             )
-        return instances 
+        return instances
+
+    def _validate_section_is_dict(self, data: Any, section_name: str, diagnostics: List[Diagnostic]) -> bool:
+        """Validate that a section's data is a dictionary."""
+        if not isinstance(data, dict):
+            loc = Locatable(start_line=1, start_col=1)
+            # Try to get better location if available
+            if hasattr(data, 'lc'):
+                line, col = data.lc.line, data.lc.col
+                if line is not None:
+                    loc = Locatable(start_line=line + 1, start_col=col + 1)
+
+            diagnostics.append(Diagnostic(
+                code="P103",
+                title="Invalid Section Type",
+                details=f"The top-level section '{section_name}' must be a dictionary (mapping of keys to values), not a list or scalar.",
+                severity=DiagnosticSeverity.ERROR,
+                location=loc,
+                suggestion=f"Ensure the '{section_name}' section is indented correctly and uses key: value pairs."
+            ))
+            return False
+        return True 
