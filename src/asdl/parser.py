@@ -13,7 +13,7 @@ Future-proofing features:
 
 from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 
 from .data_structures import (
@@ -42,10 +42,9 @@ class ASDLParser:
             preserve_unknown: If True, preserve unknown fields in extensible structures.
         """
         self.preserve_unknown = preserve_unknown
-        self.diagnostics: List[Diagnostic] = []
         self._yaml = YAML(typ='rt')
     
-    def parse_file(self, filepath: str) -> Optional[ASDLFile]:
+    def parse_file(self, filepath: str) -> Tuple[Optional[ASDLFile], List[Diagnostic]]:
         """
         Parse an ASDL YAML file into data structures.
         
@@ -53,8 +52,7 @@ class ASDLParser:
             filepath: Path to the ASDL YAML file
             
         Returns:
-            A raw, un-validated ASDL file representation, or None if a
-            fatal error occurs.
+            A tuple containing an ASDLFile object or None, and a list of diagnostics.
             
         Raises:
             FileNotFoundError: If the file doesn't exist.
@@ -68,7 +66,7 @@ class ASDLParser:
             
         return self.parse_string(content)
     
-    def parse_string(self, yaml_content: str) -> Optional[ASDLFile]:
+    def parse_string(self, yaml_content: str) -> Tuple[Optional[ASDLFile], List[Diagnostic]]:
         """
         Parse an ASDL YAML string into data structures.
         
@@ -76,10 +74,9 @@ class ASDLParser:
             yaml_content: YAML content as a string.
             
         Returns:
-            A raw, un-validated ASDL file representation, or None if a
-            fatal error occurs.
+            A tuple containing an ASDLFile object or None, and a list of diagnostics.
         """
-        self.diagnostics.clear()
+        diagnostics: List[Diagnostic] = []
         try:
             data = self._yaml.load(yaml_content)
         except YAMLError as e:
@@ -89,36 +86,44 @@ class ASDLParser:
                     start_line=e.problem_mark.line + 1, # type: ignore
                     start_col=e.problem_mark.column + 1, # type: ignore
                 )
-            self.diagnostics.append(
+            diagnostics.append(
                 Diagnostic(
-                    f"YAML syntax error: {e.problem}", # type: ignore
-                    DiagnosticSeverity.ERROR,
-                    loc
+                    code="P100",
+                    title="Invalid YAML Syntax",
+                    details=f"The file could not be parsed because of a syntax error: {e.problem}", # type: ignore
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc,
+                    suggestion="Review the file for syntax errors, paying close attention to indentation and the use of special characters."
                 )
             )
-            return None
+            return None, diagnostics
         
         if data is None:
-            return None
+            # This can happen for an empty file
+            return None, diagnostics
 
         if not isinstance(data, dict):
             loc = Locatable(start_line=1, start_col=1)
-            self.diagnostics.append(Diagnostic(
-                "Top-level content must be a YAML dictionary.",
-                DiagnosticSeverity.ERROR,
-                loc
+            diagnostics.append(Diagnostic(
+                code="P101",
+                title="Invalid Root Type",
+                details="The root of an ASDL file must be a dictionary (a set of key-value pairs).",
+                severity=DiagnosticSeverity.ERROR,
+                location=loc,
+                suggestion="Ensure the ASDL file starts with a key-value structure, not a list (indicated by a leading '-')."
             ))
-            return None
+            return None, diagnostics
             
         file_info = self._parse_file_info(data, 'file_info')
         models = self._parse_models(data.get('models', {}))
         modules = self._parse_modules(data.get('modules', {}))
         
-        return ASDLFile(
+        asdl_file = ASDLFile(
             file_info=file_info,
             models=models,
             modules=modules
         )
+        return asdl_file, diagnostics
     
     def _parse_file_info(self, parent_data: Any, key: str) -> FileInfo:
         """Parse the file_info section."""

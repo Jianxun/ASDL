@@ -175,6 +175,9 @@ class Elaborator:
         instance_items = self._extract_literal_pattern(original_instance_id)
 
         # Validate pattern counts
+        if mappings is None:
+            return {}, []
+            
         for port_name, net_name in mappings.items():
             net_items = self._extract_literal_pattern(net_name)
             diags = self._validate_pattern_counts(instance_items, net_items, locatable)
