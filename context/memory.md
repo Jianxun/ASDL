@@ -527,3 +527,14 @@ A major architectural refactoring was designed to support a new standalone linte
 - **Pipeline Simplification**: Moving parameter resolution into the `Elaborator` will significantly simplify the downstream `SPICEGenerator`, making it a pure translation backend.
 
 **Impact**: This architectural shift creates a more robust, scalable, and maintainable compiler. It provides a solid foundation for advanced validation and high-quality, user-friendly diagnostics.
+
+### **NEW**: Structured Diagnostic System
+- **Achievement**: Established a formal, documented system for compiler diagnostics (errors and warnings).
+- **Architecture**:
+    - **Structured Data**: The `Diagnostic` class in `src/asdl/diagnostics.py` was refactored from a simple message string to a structured object containing `code`, `title`, `details`, `severity`, `location`, and an optional `suggestion`.
+    - **Error Codes**: A standardized error code system (`P100`, `E101`, etc.) was created to uniquely identify each diagnostic. The prefix indicates the component (Parser, Elaborator, Validator).
+    - **Centralized Documentation**: All diagnostic codes are now documented in a new file, `doc/diagnostic_codes.md`. This file serves as the single source of truth, detailing each code's meaning, implementation status, and test coverage.
+- **Impact**: This provides a robust foundation for building a user-friendly linter and validator, enabling consistent and helpful error reporting.
+
+**Key Features**:
+- **Consistent API**: Module instances now use same parameter format as device instances

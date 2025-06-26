@@ -20,9 +20,12 @@ class Diagnostic:
     """
     Represents a single diagnostic message.
     """
-    message: str
+    code: str
+    title: str
+    details: str
     severity: DiagnosticSeverity
     location: Optional[Locatable] = None
+    suggestion: Optional[str] = None
 
     def __str__(self) -> str:
         """Provides a user-friendly string representation."""
@@ -30,4 +33,5 @@ class Diagnostic:
         if self.location:
             location += f" at {self.location}"
         
-        return f"[{self.severity.name}]{location}: {self.message}" 
+        suggestion_text = f"\nSuggestion: {self.suggestion}" if self.suggestion else ""
+        return f"[{self.severity.name} {self.code}]{location}: {self.title}\n{self.details}{suggestion_text}" 

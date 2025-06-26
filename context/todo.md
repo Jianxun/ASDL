@@ -106,7 +106,11 @@
 - [X] **Phase 3: Foundation** ✅
   - [X] Create shared `Diagnostic` data structures (`src/asdl/diagnostics.py`) ✅
   - [X] Create tests for diagnostic data structures ✅
-- [ ] **Phase 4: Elaboration & Analysis Pipeline**
+- [X] **Phase 4: Diagnostic System Foundation** ✅
+  - [X] Defined structured diagnostic codes for Parser, Elaborator, and Validator. ✅
+  - [X] Created `doc/diagnostic_codes.md` to document all codes, their status, and test coverage. ✅
+  - [X] Refactored `Diagnostic` data class to support structured data (`code`, `title`, `details`, `suggestion`). ✅
+- [ ] **Phase 5: Elaboration & Analysis Pipeline**
   - [X] **Step 1: Create the `Elaborator` Foundation** ✅
     - [X] Create new file `src/asdl/elaborator.py` with the `Elaborator` class skeleton. ✅
     - [X] Create new test suite `tests/unit_tests/elaborator/`. ✅
