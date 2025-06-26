@@ -17,9 +17,9 @@ from typing import Dict, Any, Optional, Set, List
 from pathlib import Path
 
 from .data_structures import (
-    ASDLFile, FileInfo, DeviceModel, DeviceType, 
+    ASDLFile, FileInfo, DeviceModel, PrimitiveType, 
     Module, Port, PortDirection, SignalType, PortConstraints,
-    Nets, Instance
+    Instance
 )
 
 
@@ -161,35 +161,35 @@ class ASDLParser:
         )
     
     def _parse_models(self, data: Dict[str, Any]) -> Dict[str, DeviceModel]:
-        """Parse models section with robust field handling."""
+        """Parse models section with PrimitiveType handling."""
         models = {}
         for model_alias, model_data in data.items():
             if not isinstance(model_data, dict):
                 raise ValueError(f"Model '{model_alias}' must be a dictionary")
             
-            # Known fields for DeviceModel (including new fields)
-            known_fields = {'model', 'type', 'ports', 'params', 'description', 'doc', 'device_line', 'parameters'}
+            # Known fields for DeviceModel
+            known_fields = {'type', 'ports', 'doc', 'device_line', 'parameters', 'metadata'}
             self._check_unknown_fields(model_data, known_fields, f"model '{model_alias}'")
             
-            # Parse device type with validation
-            device_type_str = model_data.get('type', 'nmos')
+            # Parse primitive type with validation
+            primitive_type_str = model_data.get('type', 'pdk_device')
             try:
-                device_type = DeviceType(device_type_str)
+                primitive_type = PrimitiveType(primitive_type_str)
             except ValueError:
-                raise ValueError(f"Invalid device type '{device_type_str}' in model '{model_alias}'. "
-                               f"Valid types: {[dt.value for dt in DeviceType]}")
+                raise ValueError(f"Invalid primitive type '{primitive_type_str}' in model '{model_alias}'. "
+                               f"Valid types: {[pt.value for pt in PrimitiveType]}")
+            
+            # Validate required fields
+            if 'device_line' not in model_data:
+                raise ValueError(f"Model '{model_alias}' missing required field 'device_line'")
             
             models[model_alias] = DeviceModel(
-                type=device_type,
+                type=primitive_type,
                 ports=model_data.get('ports', []),
+                device_line=model_data['device_line'],
                 doc=model_data.get('doc'),
-                # NEW fields
-                device_line=model_data.get('device_line'),
                 parameters=model_data.get('parameters'),
-                # LEGACY fields (for backward compatibility)
-                model=model_data.get('model'),
-                params=model_data.get('params'),
-                description=model_data.get('description')  # Legacy field
+                metadata=model_data.get('metadata')
             )
         return models
     
@@ -207,7 +207,7 @@ class ASDLParser:
             modules[module_id] = Module(
                 doc=module_data.get('doc'),
                 ports=self._parse_ports(module_data.get('ports'), module_id) if 'ports' in module_data else None,
-                nets=self._parse_nets(module_data.get('nets'), module_id),
+                internal_nets=self._parse_nets(module_data.get('nets'), module_id),
                 parameters=module_data.get('parameters'),
                 instances=self._parse_instances(module_data.get('instances'), module_id) if 'instances' in module_data else None
             )
@@ -267,23 +267,23 @@ class ASDLParser:
         # Simple placeholder - store constraints as-is
         return PortConstraints(constraints=data)
     
-    def _parse_nets(self, data: Any, context: str) -> Optional[Nets]:
-        """Parse nets section with future-proofing."""
+    def _parse_nets(self, data: Any, context: str) -> Optional[List[str]]:
+        """Parse nets section and extract internal nets."""
         if data is None:
             return None
         
         if isinstance(data, dict):
-            # Known fields for Nets
+            # Known fields for legacy Nets structure
             known_fields = {'internal'}
             self._check_unknown_fields(data, known_fields, f"nets in {context}")
             
-            return Nets(internal=data.get('internal'))
+            return data.get('internal')
         else:
             self._warnings.append(f"Non-dictionary nets format in {context}, treating as internal list")
             if isinstance(data, list):
-                return Nets(internal=data)
+                return data
             else:
-                return Nets(internal=[str(data)])
+                return [str(data)]
     
     def _parse_instances(self, data: Optional[Dict[str, Any]], context: str) -> Optional[Dict[str, Instance]]:
         """Parse instances section with intent preservation."""
@@ -296,7 +296,7 @@ class ASDLParser:
                 raise ValueError(f"Instance '{instance_id}' in {context} must be a dictionary")
             
             # Known fields for Instance
-            known_fields = {'model', 'mappings', 'doc', 'parameters', 'intent'}
+            known_fields = {'model', 'mappings', 'doc', 'parameters', 'intent', 'metadata'}
             unknown_fields = set(instance_data.keys()) - known_fields
             
             # Handle unknown fields specially for instances
@@ -316,6 +316,6 @@ class ASDLParser:
                 mappings=instance_data.get('mappings', {}),
                 doc=instance_data.get('doc'),
                 parameters=instance_data.get('parameters'),
-                intent=intent_data if intent_data else None
+                metadata=intent_data if intent_data else None
             )
         return instances 

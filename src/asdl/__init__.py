@@ -8,20 +8,19 @@ from .data_structures import (
     ASDLFile,
     FileInfo, 
     DeviceModel,
-    DeviceType,
+    PrimitiveType,
     Module,
     Port,
     PortDirection,
     SignalType,
     PortConstraints,
-    Nets,
     Instance
 )
 
 from .parser import ASDLParser
 from .expander import PatternExpander  
 from .resolver import ParameterResolver
-from .generator import SPICEGenerator
+# from .generator import SPICEGenerator  # Temporarily commented out for data structure testing
 
 __version__ = "0.1.0"
 __all__ = [
@@ -29,17 +28,16 @@ __all__ = [
     "ASDLFile",
     "FileInfo",
     "DeviceModel", 
-    "DeviceType",
+    "PrimitiveType",
     "Module",
     "Port",
     "PortDirection", 
     "SignalType",
     "PortConstraints",
-    "Nets",
     "Instance",
     # Processing pipeline
     "ASDLParser",
     "PatternExpander",
-    "ParameterResolver", 
-    "SPICEGenerator"
+    "ParameterResolver" 
+    # "SPICEGenerator"  # Temporarily commented out for data structure testing
 ] 
