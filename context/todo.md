@@ -106,11 +106,26 @@
 - [X] **Phase 3: Foundation** ✅
   - [X] Create shared `Diagnostic` data structures (`src/asdl/diagnostics.py`) ✅
   - [X] Create tests for diagnostic data structures ✅
-- [ ] **Phase 4: Analysis Pipeline**
-  - [X] Refactor `ASDLParser` to emit `Diagnostics` instead of raising exceptions ✅
-  - [ ] Refactor `PatternExpander` to return `Diagnostics` instead of raising exceptions
+- [ ] **Phase 4: Elaboration & Analysis Pipeline**
+  - [X] **Step 1: Create the `Elaborator` Foundation** ✅
+    - [X] Create new file `src/asdl/elaborator.py` with the `Elaborator` class skeleton. ✅
+    - [X] Create new test suite `tests/unit_tests/elaborator/`. ✅
+    - [X] Document the design plan in `doc/elaborator_design_plan.md`. ✅
+  - [X] **Step 2: Migrate Pattern Expansion (TDD)** ✅
+    - [X] Incrementally move pattern expansion logic from `PatternExpander` to `Elaborator`. ✅
+    - [X] Refactor all `ValueError` exceptions to `Diagnostic` reports. ✅
+    - [X] Ensure all new logic is covered by tests in the new test suite. ✅
+  - [ ] **Step 3: Implement Parameter Resolution (TDD)**
+    - [ ] Add logic to the `Elaborator` to resolve and substitute parameter values.
+    - [ ] Create tests for parameter resolution, including error cases (e.g., undefined parameters).
+  - [ ] **Step 4: Implement Bus Pattern Expansion (TDD)**
+    - [ ] Implement robust `_has_bus_pattern` detection logic.
+    - [ ] Add `_expand_bus_pattern` method to handle range-based expansion (e.g., `[3:0]`).
+    - [ ] Create tests for bus pattern expansion, including error cases.
+  - [ ] **Step 5: Deprecate Old Code**
+    - [ ] Delete `src/asdl/expander.py` and its associated tests.
+    - [ ] Remove parameter resolution logic from `SPICEGenerator`.
   - [ ] Create new `Validator` module (`src/asdl/validator.py`)
-  - [ ] Migrate validation logic from `SPICEGenerator` to `Validator`
 - [ ] **Phase 5: Tooling Back-Ends**
   - [ ] Create Linter entry point script (`scripts/asdl_linter.py`)
   - [ ] Update compiler pipeline to use the new `Validator`

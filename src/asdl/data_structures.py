@@ -41,7 +41,7 @@ class Locatable:
     """Base class for objects that have a location in the source file."""
     start_line: Optional[int] = None
     start_col: Optional[int] = None
-    # end_line and end_col can be added later if needed
+
 
 @dataclass
 class FileInfo(Locatable):
@@ -68,9 +68,6 @@ class PrimitiveType(Enum):
     """
     PDK_DEVICE = "pdk_device"
     SPICE_DEVICE = "spice_device"
-
-
-
 
 
 @dataclass
@@ -132,9 +129,6 @@ class Port:
     metadata: Optional[Metadata] = None
     start_line: Optional[int] = None
     start_col: Optional[int] = None
-
-
-
 
 
 @dataclass

@@ -70,6 +70,14 @@ Schema structure:
 
 **🎉 CRITICAL PARAMETER PROPAGATION BUG FIX COMPLETED ✅**
 
+### **NEW**: Compiler Elaborator & Pattern Expansion ✅
+**ACHIEVEMENT**: Created the new `Elaborator` component, which is the first major step in refactoring the compiler pipeline.
+- **Architecture**: The `Elaborator` replaces the old `PatternExpander` and is responsible for transforming the parsed ASDL data structures into a fully specified design.
+- **Pattern Expansion**: Successfully migrated all literal pattern (`<p,n>`) expansion logic for both ports and instances from the old `PatternExpander` into the new `Elaborator`.
+- **Diagnostic-Based Error Handling**: The `Elaborator` no longer raises `ValueError` exceptions for invalid patterns. Instead, it collects all validation issues as a list of `Diagnostic` objects, allowing the compiler to report multiple errors at once.
+- **TDD Verified**: The entire component was developed using a strict Test-Driven Development approach, with a comprehensive test suite covering both successful expansion and diagnostic generation for invalid patterns. 7/7 tests are passing.
+- **Next Steps**: The foundation is now set to implement bus pattern (`[3:0]`) expansion and parameter resolution within the `Elaborator`.
+
 ### **NEW**: Parameter Propagation Bug Fix (CRITICAL FUNCTIONALITY RESTORE) ✅
 **ACHIEVEMENT**: Fixed missing parameter propagation in module instances
 - **Problem**: Module instances weren't passing parameters to subcircuit calls in SPICE output
@@ -506,3 +514,16 @@ A major architectural refactoring was designed to support a new standalone linte
   - **Simplify DeviceModel:** The `DeviceModel` will be streamlined to use a single, robust `device_line` approach, removing legacy fields (`model`, `params`). The `DeviceType` enum will be replaced with a clearer `PrimitiveType` enum (`PDK_DEVICE`, `SPICE_DEVICE`).
   - **Streamline Net Declaration:** The nested `Nets` class will be removed and replaced by a direct `internal_nets: Optional[List[str]]` field on the `Module` class.
   - **Universal Metadata:** A free-form `metadata: Optional[Dict[str, Any]]` field will be added to all major ASDL data structures to provide a uniform and extensible way to store annotations and design intent, replacing the `Instance.intent` field.
+
+### **NEW**: Architectural Decision: The `Elaborator`
+**ACHIEVEMENT**: Defined a clear architectural plan for a new `Elaborator` component that will replace the `PatternExpander` and form a core part of the compiler pipeline.
+
+**Key Decisions**:
+- **New Component**: A new `Elaborator` class will be created from scratch in `src/asdl/elaborator.py`.
+- **Unified Responsibilities**: The `Elaborator` will handle both **pattern expansion** and **parameter resolution**, creating a single, coherent elaboration phase. This aligns with industry-standard compiler design.
+- **Diagnostic-Based**: It will not raise exceptions for validation errors. Instead, it will collect and return a list of `Diagnostic` objects, enabling comprehensive error reporting.
+- **Clean API**: Its main method, `elaborate()`, will take an `ASDLFile` and return a tuple: `(ASDLFile, List[Diagnostic])`.
+- **TDD Implementation**: The new component will be built using a strict, test-driven approach to ensure correctness and robustness.
+- **Pipeline Simplification**: Moving parameter resolution into the `Elaborator` will significantly simplify the downstream `SPICEGenerator`, making it a pure translation backend.
+
+**Impact**: This architectural shift creates a more robust, scalable, and maintainable compiler. It provides a solid foundation for advanced validation and high-quality, user-friendly diagnostics.
