@@ -32,6 +32,7 @@ class ASDLFile:
     file_info: 'FileInfo'
     models: Dict[str, 'DeviceModel']  # model_alias -> DeviceModel
     modules: Dict[str, 'Module']      # module_id -> Module
+    metadata: Optional[Metadata] = None  # Universal metadata field
     
     def to_yaml(self) -> str:
         """
@@ -125,6 +126,7 @@ class FileInfo:
     revision: str
     author: str
     date: str  # ISO 8601 format
+    metadata: Optional[Metadata] = None  # Universal metadata field
 
 
 # ─────────────────────────────────────────
@@ -255,6 +257,7 @@ class Port:
     dir: PortDirection
     type: SignalType
     constraints: Optional[PortConstraints] = None
+    metadata: Optional[Metadata] = None  # Universal metadata field
 
 
 @dataclass
@@ -295,7 +298,7 @@ class Instance:
     Mappings and parameters may contain patterns and expressions that will
     be resolved during the expansion and resolution phases.
     
-    The intent field provides extensible metadata storage for:
+    The metadata field provides extensible metadata storage for:
     - Design intent annotations: {"purpose": "current mirror", "matching": "critical"}
     - Layout hints: {"placement": "symmetric", "routing": "minimize_parasitic"}
     - Optimization directives: {"optimize": ["power", "area"], "constraint": "speed"}
@@ -306,7 +309,8 @@ class Instance:
     mappings: Dict[str, str]                  # Port-to-net mapping (may contain patterns)
     doc: Optional[str] = None                 # Instance documentation (first-class citizen)
     parameters: Optional[Dict[str, Any]] = None  # Instance parameters (may contain expressions)
-    intent: Optional[Dict[str, Any]] = None      # Free-form intent metadata
+    intent: Optional[Dict[str, Any]] = None      # Free-form intent metadata (legacy)
+    metadata: Optional[Metadata] = None          # Universal metadata field (replaces intent)
     
     def is_device_instance(self, asdl_file: 'ASDLFile') -> bool:
         """Check if this instance references a DeviceModel."""
@@ -331,6 +335,8 @@ class Module:
     """
     doc: Optional[str] = None
     ports: Optional[Dict[str, Port]] = None               # port_name -> Port (may contain patterns)
-    nets: Optional[Nets] = None                 # Net declarations
+    nets: Optional[Nets] = None                 # Net declarations (legacy)
+    internal_nets: Optional[List[str]] = None             # Internal net declarations (replaces Nets class)
     parameters: Optional[Dict[str, Any]] = None           # Module parameters  
-    instances: Optional[Dict[str, Instance]] = None       # instance_id -> Instance 
+    instances: Optional[Dict[str, Instance]] = None       # instance_id -> Instance
+    metadata: Optional[Metadata] = None                   # Universal metadata field 

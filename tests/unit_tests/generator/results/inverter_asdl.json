@@ -4,7 +4,8 @@
     "doc": "Basic CMOS inverter",
     "revision": "v0.4",
     "author": "ASDL",
-    "date": "2024-03-19"
+    "date": "2024-03-19",
+    "metadata": null
   },
   "models": {
     "nmos_unit": {
@@ -22,7 +23,8 @@
       },
       "model": null,
       "params": null,
-      "description": null
+      "description": null,
+      "metadata": null
     },
     "pmos_unit": {
       "type": "pmos",
@@ -39,7 +41,8 @@
       },
       "model": null,
       "params": null,
-      "description": null
+      "description": null,
+      "metadata": null
     }
   },
   "modules": {
@@ -49,17 +52,20 @@
         "in": {
           "dir": "in",
           "type": "voltage",
-          "constraints": null
+          "constraints": null,
+          "metadata": null
         },
         "out": {
           "dir": "out",
           "type": "voltage",
-          "constraints": null
+          "constraints": null,
+          "metadata": null
         },
         "vss": {
           "dir": "in_out",
           "type": "voltage",
-          "constraints": null
+          "constraints": null,
+          "metadata": null
         },
         "vdd": {
           "dir": "in_out",
@@ -68,10 +74,12 @@
             "constraints": {
               "Vdd": 1.8
             }
-          }
+          },
+          "metadata": null
         }
       },
       "nets": null,
+      "internal_nets": null,
       "parameters": {
         "M": 1
       },
@@ -97,7 +105,8 @@
               "type": "single",
               "symmetry": "none"
             }
-          }
+          },
+          "metadata": null
         },
         "MN": {
           "model": "nmos_unit",
@@ -120,9 +129,12 @@
               "type": "single",
               "symmetry": "none"
             }
-          }
+          },
+          "metadata": null
         }
-      }
+      },
+      "metadata": null
     }
-  }
+  },
+  "metadata": null
 }
