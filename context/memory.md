@@ -201,6 +201,14 @@ X_SECOND_STAGE first_stage_out out vbn vss vdd common_source_pmos M={M_second_st
 - **PySpice Integration**: Simplified parameter testing to work around PySpice limitations
 - **Result**: 126/126 tests passing (was 11 failures, now 0 failures)
 
+### **NEW**: Parser Refactoring & Location Tracking (Linter Foundation) ✅
+**ACHIEVEMENT**: Successfully refactored the ASDL parser into a pure, non-validating parser and implemented line/column tracking for high-quality diagnostics.
+- **Architecture**: Separated parsing from validation. The parser's sole responsibility is now to convert YAML into raw data objects.
+- **Technology**: Integrated `ruamel.yaml` library, replacing `PyYAML`, to enable location tracking.
+- **Location Data**: Implemented logic to extract and store `start_line` and `start_col` for parsed objects, starting with `FileInfo`. A `Locatable` base class was created for reusability.
+- **TDD Process**: Followed a strict test-driven development cycle to rewrite the parser's test suite from scratch, ensuring the new implementation is robust and well-tested.
+- **Impact**: This is a foundational step for the ASDL Linter, as it allows for precise, user-friendly error reporting (e.g., "Error on line 15, column 5").
+
 ### **Architecture Validation**: Tests Confirm Hierarchical Design ✅
 - **Models as Subcircuits**: All device models generate as `.subckt` definitions
 - **Instance Calls**: All instances generate as `X_` prefixed subcircuit calls

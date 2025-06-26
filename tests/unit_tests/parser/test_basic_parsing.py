@@ -25,8 +25,7 @@ class TestBasicParsing:
 
     def test_parse_minimal_valid_yaml(self):
         """Test that the parser can create a basic ASDLFile object from a valid YAML string."""
-        yaml_content = """
-file_info:
+        yaml_content = """file_info:
   top_module: "test_module"
 models: {}
 modules: {}
@@ -41,6 +40,11 @@ modules: {}
         assert asdl_file.file_info.revision is None
         assert asdl_file.file_info.author is None
         assert asdl_file.file_info.date is None
+
+        # Check for location data
+        assert asdl_file.file_info.start_line == 1
+        assert asdl_file.file_info.start_col == 1
+
         assert asdl_file.models == {}
         assert asdl_file.modules == {}
 

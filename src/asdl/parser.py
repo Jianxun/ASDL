@@ -40,7 +40,7 @@ class ASDLParser:
             preserve_unknown: If True, preserve unknown fields in extensible structures.
         """
         self.preserve_unknown = preserve_unknown
-        self._yaml = YAML(typ='safe')
+        self._yaml = YAML(typ='rt')
     
     def parse_file(self, filepath: str) -> ASDLFile:
         """
@@ -84,7 +84,7 @@ class ASDLParser:
             # This is a fundamental structure check, so it remains in the parser.
             raise ValueError("ASDL file must contain a YAML dictionary")
             
-        file_info = self._parse_file_info(data.get('file_info', {}))
+        file_info = self._parse_file_info(data, 'file_info')
         models = self._parse_models(data.get('models', {}))
         modules = self._parse_modules(data.get('modules', {}))
         
@@ -94,9 +94,22 @@ class ASDLParser:
             modules=modules
         )
     
-    def _parse_file_info(self, data: Dict[str, Any]) -> FileInfo:
+    def _parse_file_info(self, parent_data: Any, key: str) -> FileInfo:
         """Parse the file_info section."""
+        data = parent_data.get(key, {})
+        
+        # Get location from the key in the parent mapping
+        start_line, start_col = (None, None)
+        if hasattr(parent_data, 'lc'):
+            line, col = parent_data.lc.key(key)
+            if line is not None:
+                start_line = line + 1 # ruamel.yaml is 0-indexed for lines
+            if col is not None:
+                start_col = col + 1 # ruamel.yaml is 0-indexed for columns
+
         return FileInfo(
+            start_line=start_line,
+            start_col=start_col,
             top_module=data.get('top_module'),
             doc=data.get('doc'),
             revision=data.get('revision'),

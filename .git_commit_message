@@ -1,1 +1,1 @@
-feat(parser): Refactor to pure non-validating parser and rewrite tests 
+feat(parser): Add location tracking for linter diagnostics 

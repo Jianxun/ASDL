@@ -94,13 +94,22 @@
 **🎯 PRODUCTION READY**: Clean architecture, 34/34 data structure tests passing ✅
 
 ## Next Sprint: Linter & Compiler Architecture Refactoring
-- [ ] **Phase 1: Foundation**
+- [X] **Phase 1: Parser Refactoring** ✅
+  - [X] Rewrite parser to be pure, non-validating ✅
+  - [X] Integrate `ruamel.yaml` for location tracking ✅
+  - [X] Rewrite parser test suite using TDD ✅
+  - [X] Implement location tracking for `FileInfo` ✅
+- [ ] **Phase 2: Full Location Tracking**
+  - [ ] Add `Locatable` base class to all relevant data structures (`DeviceModel`, `Module`, `Port`, `Instance`).
+  - [ ] Update parser to populate location data for all structures.
+  - [ ] Update tests to assert correct location data for all structures.
+- [ ] **Phase 3: Foundation**
   - [ ] Create shared `Diagnostic` data structures (`src/asdl/diagnostics.py`)
-- [ ] **Phase 2: Analysis Pipeline**
+- [ ] **Phase 4: Analysis Pipeline**
   - [ ] Refactor `PatternExpander` to return `Diagnostics` instead of raising exceptions
   - [ ] Create new `Validator` module (`src/asdl/validator.py`)
   - [ ] Migrate validation logic from `SPICEGenerator` to `Validator`
-- [ ] **Phase 3: Tooling Back-Ends**
+- [ ] **Phase 5: Tooling Back-Ends**
   - [ ] Create Linter entry point script (`scripts/asdl_linter.py`)
   - [ ] Update compiler pipeline to use the new `Validator`
 

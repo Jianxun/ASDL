@@ -37,7 +37,14 @@ class ASDLFile:
 # ─────────────────────────────────────────
 
 @dataclass
-class FileInfo:
+class Locatable:
+    """Base class for objects that have a location in the source file."""
+    start_line: Optional[int] = None
+    start_col: Optional[int] = None
+    # end_line and end_col can be added later if needed
+
+@dataclass
+class FileInfo(Locatable):
     """Represents the file_info section of an ASDL file."""
     top_module: Optional[str] = None
     doc: Optional[str] = None
