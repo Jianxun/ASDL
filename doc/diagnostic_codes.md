@@ -64,10 +64,11 @@ Diagnostic codes are structured to be easily identifiable and searchable.
 | **E100**   | Empty Pattern                  | ✅ Implemented       | ✅ Covered    |
 | **E101**   | Single-Item Pattern            | ✅ Implemented       | ✅ Covered    |
 | **E102**   | Pattern Count Mismatch         | ✅ Implemented       | ✅ Covered    |
-| **E103**   | Mixed Pattern Types            | ✅ Implemented       | ✅ Covered    |
+| **E103**   | Mixed Pattern Types            | ✅ Implemented       | ❌ Not Covered|
 | **E104**   | Invalid Bus Range              | ❌ Not Implemented   | ❌ Not Covered|
 | **E105**   | Undefined Parameter            | ❌ Not Implemented   | ❌ Not Covered|
 | **E106**   | Malformed Parameter Expression | ❌ Not Implemented   | ❌ Not Covered|
+| **E107**   | Empty Pattern Item             | ✅ Implemented       | ✅ Covered    |
 
 
 ### E100: Empty Pattern
@@ -123,6 +124,19 @@ Diagnostic codes are structured to be easily identifiable and searchable.
       direction: input
   ```
 - **Suggestion**: Choose one pattern type for a given name. Use multiple declarations if necessary.
+
+### E107: Empty Pattern Item
+- **Type**: `Error`
+- **Component**: `Elaborator`
+- **Title**: `Empty Pattern Item`
+- **Details**: All items provided in a literal pattern were empty strings (e.g., `sig<,>`). While empty strings can be part of a pattern (e.g., `sig<p,,n>`), at least one item must be non-empty.
+- **Example (Incorrect)**:
+  ```yaml
+  ports:
+    "sig<,>":
+      direction: input
+  ```
+- **Suggestion**: Ensure that at least one item inside the pattern is a non-empty string.
 
 ---
 

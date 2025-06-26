@@ -70,6 +70,18 @@ class Elaborator:
         diagnostics: List[Diagnostic] = []
         
         for port_name, port in ports.items():
+            if self._is_mixed_pattern(port_name):
+                diagnostics.append(Diagnostic(
+                    code="E103",
+                    title="Mixed Pattern Types",
+                    details=f"The name '{port_name}' contains both a literal pattern ('<>') and a bus pattern ('[]').",
+                    suggestion="Use either a literal pattern or a bus pattern for a single name, not both.",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=Locatable(start_line=port.start_line, start_col=port.start_col)
+                ))
+                expanded_ports[port_name] = port # Keep original on error
+                continue
+            
             if self._has_literal_pattern(port_name):
                 expanded_names, validation_diagnostics = self._expand_literal_pattern(port_name, port)
                 if validation_diagnostics:
@@ -99,6 +111,18 @@ class Elaborator:
         diagnostics: List[Diagnostic] = []
 
         for instance_id, instance in instances.items():
+            if self._is_mixed_pattern(instance_id):
+                diagnostics.append(Diagnostic(
+                    code="E103",
+                    title="Mixed Pattern Types",
+                    details=f"The instance name '{instance_id}' contains both a literal pattern ('<>') and a bus pattern ('[]').",
+                    suggestion="Use either a literal pattern or a bus pattern for a single name, not both.",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=Locatable(start_line=instance.start_line, start_col=instance.start_col)
+                ))
+                expanded_instances[instance_id] = instance
+                continue
+
             if self._has_literal_pattern(instance_id):
                 expanded_ids, id_diags = self._expand_literal_pattern(instance_id, instance)
                 if id_diags:
@@ -199,11 +223,20 @@ class Elaborator:
         
         if len(left_items) != len(right_items):
             diagnostics.append(Diagnostic(
-                message=f"Pattern item counts must match: {len(left_items)} vs {len(right_items)}",
+                code="E102",
+                title="Pattern Count Mismatch",
+                details=f"The number of items in the instance pattern ({len(left_items)}) does not match the number of items in the net pattern ({len(right_items)}).",
                 severity=DiagnosticSeverity.ERROR,
-                location=Locatable(start_line=locatable.start_line, start_col=locatable.start_col)
+                location=Locatable(start_line=locatable.start_line, start_col=locatable.start_col),
+                suggestion="Ensure that patterns being mapped to each other have the same number of comma-separated items."
             ))
         return diagnostics
+
+    def _is_mixed_pattern(self, name: str) -> bool:
+        """Check if name contains both literal and bus patterns."""
+        has_literal_brackets = '<' in name and '>' in name
+        has_bus_brackets = '[' in name and ']' in name
+        return has_literal_brackets and has_bus_brackets
 
     def _has_bus_pattern(self, name: str) -> bool:
         """Check if name contains bus pattern [...].""" 
@@ -266,21 +299,30 @@ class Elaborator:
 
         if not items:
             diagnostics.append(Diagnostic(
-                message="Pattern cannot be empty",
+                code="E100",
+                title="Empty Pattern",
+                details="A literal pattern `<>` cannot be empty. It must contain items to expand.",
                 severity=DiagnosticSeverity.ERROR,
-                location=location
+                location=location,
+                suggestion="Provide at least two comma-separated items inside the pattern brackets, like `in<p,n>`."
             ))
         elif len(items) < 2:
             diagnostics.append(Diagnostic(
-                message="Pattern must have at least 2 items",
+                code="E101",
+                title="Single-Item Pattern",
+                details="A literal pattern must contain at least two items to be meaningful. A pattern with one item provides no expansion benefit.",
                 severity=DiagnosticSeverity.ERROR,
-                location=location
+                location=location,
+                suggestion="Ensure the pattern contains at least two items, like `in<p,n>`, or remove the pattern syntax if only a single port is needed (`in_p`)."
             ))
         elif all(item == "" for item in items):
             diagnostics.append(Diagnostic(
-                message="At least one item must be non-empty",
+                code="E107",
+                title="Empty Pattern Item",
+                details="All items in a literal pattern were empty strings.",
                 severity=DiagnosticSeverity.ERROR,
-                location=location
+                location=location,
+                suggestion="Ensure that at least one item inside the pattern is a non-empty string."
             ))
 
         if diagnostics:
