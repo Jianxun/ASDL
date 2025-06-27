@@ -1,4 +1,4 @@
-design_info:
+file_info:
   top_module: inverter
   doc: "Basic CMOS inverter"
   revision: "v0.4"
@@ -8,21 +8,27 @@ design_info:
 models:
   nmos_unit:
     doc: "NMOS transistor unit cell"
-    type: nmos
+    type: pdk_device
     ports: [G, D, S, B]
     device_line: |
-      MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+      MN {D} {G} {S} {B} nfet_03v3 L={L} W={W} nf={nf} M={M} ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
     parameters:
       M: 1
+      nf: 2
+      L: 0.5u
+      W: 4u
 
   pmos_unit:
     doc: "PMOS transistor unit cell"
-    type: pmos
+    type: pdk_device
     ports: [G, D, S, B]
     device_line: |
-      MP {D} {G} {S} {B} pfet_03v3 L=0.5u W=5u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+      MP {D} {G} {S} {B} pfet_03v3 L={L} W={W} nf={nf} M={M} ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
     parameters:
       M: 1
+      nf: 2
+      L: 0.5u
+      W: 5u
     
 
 modules:

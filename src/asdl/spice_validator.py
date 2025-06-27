@@ -6,17 +6,21 @@ Simple utility to parse SPICE netlists into PySpice.Circuit objects for validati
 
 import tempfile
 import os
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from PySpice.Spice.Netlist import Circuit
+else:
+    Circuit = None
 
 try:
-    from PySpice.Spice.Netlist import Circuit
     from PySpice.Spice.Parser import SpiceParser
     PYSPICE_AVAILABLE = True
 except ImportError:
     PYSPICE_AVAILABLE = False
-    Circuit = None  # Define Circuit as None when PySpice is not available
 
 
-def parse_spice_netlist(spice_content: str) -> "Circuit":
+def parse_spice_netlist(spice_content: str) -> Any:
     """
     Parse SPICE netlist content into a PySpice.Circuit object.
     
