@@ -1,55 +1,32 @@
-feat(generator): restore SPICEGenerator functionality with modern data structures
+feat(scripts): update netlist_asdl.py to modern ASDL pipeline
 
-MAJOR MILESTONE: Complete SPICEGenerator refactoring and modernization
+Updates the command-line netlist generation script to use the new
+Elaborator-based pipeline instead of the deprecated PatternExpander.
 
-This commit successfully restores the SPICEGenerator to full functionality
-after the data structure refactoring, implementing a modern device_line
-approach and removing all deprecated legacy code.
+## Changes
 
-## Core Changes
+### Pipeline Modernization
+- Replace PatternExpander import with Elaborator
+- Update parser result handling for tuple return (ASDLFile, diagnostics)
+- Fix type handling for auto-generated output filenames
+- Update step descriptions: "expand" → "elaborate"
 
-### Data Structure Compatibility
-- Update imports: DeviceType → PrimitiveType  
-- Fix DeviceModel interface calls: .params → .parameters, .get_doc() → .doc
-- Remove all deprecated method calls and update to new architecture
+### Robust Error Handling
+- Handle parser diagnostics reporting
+- Handle elaboration diagnostics reporting  
+- Validate None returns from parser/elaborator
+- Improved error messages for pipeline failures
 
-### Device Generation Modernization  
-- Remove deprecated DEVICE_FORMATS template system (32 lines removed)
-- Implement pure device_line approach with parameter substitution
-- Fix device_line placeholder logic for both ports and parameters
-- Streamline device generation to single modern approach
-
-### Schema Updates
-- Update diff_pair_nmos.yml fixture: design_info → file_info
-- Update model types: nmos/resistor → pdk_device  
-- Update module structure: nets → internal_nets
-- Remove all legacy field support as requested
-
-## Testing & Validation
-
-### Integration Tests Created
-- tests/integration/test_generator_pipeline.py with 2 comprehensive tests
-- Simple resistor pipeline test (basic functionality)
-- Complex diff_pair_nmos test (pattern expansion + real ASDL file)
-
-### End-to-End Pipeline Verified
-- Parser → Elaborator → Generator: All working ✅
-- Pattern expansion fully functional (MN_<P,N> → MN_P, MN_N)
-- Parameter substitution working ({value} placeholders)
-- Hierarchical SPICE generation with proper subcircuits
-
-## Generated SPICE Quality
-- Proper .subckt structure with model-defined port order
-- Clean parameter handling with .param declarations  
-- Modern device_line integration with placeholder substitution
-- Valid ngspice-compatible output format
+### Functionality Verified
+- Tested with diff_pair_nmos.yml (complex circuit with pattern expansion)
+- Auto-filename generation working (@filename syntax)
+- Verbose output shows complete pipeline statistics
+- Generated SPICE identical to integration test quality
 
 ## Results
-- Integration tests: 2/2 passing ✅
-- Real ASDL files: Successfully processed complex circuits ✅
-- Generator status: Fully restored and modernized ✅
+- Script fully functional with modern ASDL architecture ✅
+- All CLI features preserved and enhanced ✅  
+- End-to-end YAML → SPICE conversion working ✅
 
-This completes the SPICEGenerator refactoring and validates the entire
-ASDL pipeline (parsing, elaboration, generation) with real-world circuits.
-
-Co-authored-by: ASDL Test Suite <test@asdl.org> 
+The netlist script now provides a complete command-line interface
+for the modernized ASDL toolchain. 

@@ -17,6 +17,7 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 
 ### 🔧 **Current Status**
 - **Test Suite**: 76/76 tests passing (70 non-generator + 6 validator) + 2/2 integration tests passing
+- **CLI Tools**: netlist_asdl.py script updated to modern pipeline and fully functional
 - **Generator Status**: ✅ **FULLY RESTORED** - Complete refactoring successful
   - Fixed: DeviceType → PrimitiveType migration
   - Fixed: DeviceModel interface compatibility (device_line approach)

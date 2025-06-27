@@ -152,6 +152,10 @@
   - [X] Complex diff_pair_nmos pipeline test with pattern expansion ✅
 - [X] **Test generator with real ASDL files** ✅
 - [X] **Update fixture files to new schema** ✅
+- [X] **Update netlist_asdl.py script to modern pipeline** ✅
+  - [X] Replace PatternExpander with Elaborator ✅
+  - [X] Fix parser tuple handling ✅  
+  - [X] Test script with real ASDL files ✅
 
 ## Backlog
 - [ ] Enhanced validation features

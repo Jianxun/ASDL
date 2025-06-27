@@ -8,7 +8,7 @@ Usage:
 
 Integrates the full ASDL pipeline:
 1. Parse ASDL YAML file
-2. Expand patterns (differential, bus, etc.)
+2. Elaborate patterns (differential, bus, etc.)
 3. Generate SPICE netlist
 4. Save to output file
 """
@@ -22,7 +22,7 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from asdl.parser import ASDLParser
-from asdl.expander import PatternExpander
+from asdl.elaborator import Elaborator
 from asdl.generator import SPICEGenerator
 
 
@@ -46,9 +46,9 @@ def netlist_asdl_file(input_file: str, output_file: Optional[str] = None, verbos
     
     # Auto-generate output filename if not provided
     if output_file is None:
-        output_file = input_path.with_suffix('.spice')
-    
-    output_path = Path(output_file)
+        output_path = input_path.with_suffix('.spice')
+    else:
+        output_path = Path(output_file)
     
     if verbose:
         print(f"🔄 Processing ASDL file: {input_path}")
@@ -60,7 +60,21 @@ def netlist_asdl_file(input_file: str, output_file: Optional[str] = None, verbos
             print("📖 Step 1: Parsing ASDL file...")
         
         parser = ASDLParser()
-        asdl_file = parser.parse_file(str(input_path))
+        parse_result = parser.parse_file(str(input_path))
+        
+        # Handle parser result (could be tuple with diagnostics)
+        if isinstance(parse_result, tuple):
+            asdl_file, parse_diagnostics = parse_result
+            if verbose and parse_diagnostics:
+                print(f"⚠️  Parse diagnostics: {len(parse_diagnostics)}")
+                for diag in parse_diagnostics:
+                    print(f"   {diag}")
+        else:
+            asdl_file = parse_result
+            parse_diagnostics = []
+        
+        if asdl_file is None:
+            raise ValueError("Parsing failed - no ASDL file returned")
         
         if verbose:
             print(f"✅ Parsed successfully:")
@@ -68,19 +82,27 @@ def netlist_asdl_file(input_file: str, output_file: Optional[str] = None, verbos
             print(f"   - Models: {len(asdl_file.models)}")
             print(f"   - Modules: {len(asdl_file.modules)}")
         
-        # Step 2: Expand patterns
+        # Step 2: Elaborate patterns
         if verbose:
-            print("🔀 Step 2: Expanding patterns...")
+            print("🔀 Step 2: Elaborating patterns...")
         
-        expander = PatternExpander()
-        expanded_file = expander.expand_patterns(asdl_file)
+        elaborator = Elaborator()
+        elaborated_file, elab_diagnostics = elaborator.elaborate(asdl_file)
+        
+        if verbose and elab_diagnostics:
+            print(f"⚠️  Elaboration diagnostics: {len(elab_diagnostics)}")
+            for diag in elab_diagnostics:
+                print(f"   {diag}")
+        
+        if elaborated_file is None:
+            raise ValueError("Elaboration failed - no elaborated file returned")
         
         if verbose:
-            # Count expanded elements
-            expanded_modules = expanded_file.modules
-            total_ports = sum(len(mod.ports or {}) for mod in expanded_modules.values())
-            total_instances = sum(len(mod.instances or {}) for mod in expanded_modules.values())
-            print(f"✅ Pattern expansion completed:")
+            # Count elaborated elements
+            elaborated_modules = elaborated_file.modules
+            total_ports = sum(len(mod.ports or {}) for mod in elaborated_modules.values())
+            total_instances = sum(len(mod.instances or {}) for mod in elaborated_modules.values())
+            print(f"✅ Pattern elaboration completed:")
             print(f"   - Total ports: {total_ports}")
             print(f"   - Total instances: {total_instances}")
         
@@ -89,7 +111,7 @@ def netlist_asdl_file(input_file: str, output_file: Optional[str] = None, verbos
             print("⚡ Step 3: Generating SPICE netlist...")
         
         generator = SPICEGenerator()
-        spice_netlist = generator.generate(expanded_file)
+        spice_netlist = generator.generate(elaborated_file)
         
         if verbose:
             lines = spice_netlist.split('\n')
