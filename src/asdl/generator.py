@@ -71,8 +71,6 @@ class SPICEGenerator:
         """Initialize SPICE generator with default settings."""
         self.comment_style = "*"  # SPICE comment character
         self.indent = "  "        # Indentation for readability
-        self._used_models: Set[str] = set()      # Track model usage
-        self._used_modules: Set[str] = set()     # Track module usage
     
     def generate(self, asdl_file: ASDLFile) -> str:
         """
@@ -84,15 +82,7 @@ class SPICEGenerator:
         Returns:
             Complete SPICE netlist as string
         """
-        # Reset usage tracking for each generation
-        self._used_models = set()
-        self._used_modules = set()
-        
-        # First pass: track usage by walking through the design hierarchy
-        self._track_usage(asdl_file)
-        
-        # Validate and warn about unused components
-        self._validate_unused_components(asdl_file)
+
         
         lines = []
         
@@ -126,8 +116,6 @@ class SPICEGenerator:
                 top_module = asdl_file.modules[top_module_name]
                 lines.append(f"* Main circuit instantiation")
                 lines.append(f"XMAIN {self._get_top_level_nets(top_module)} {top_module_name}")
-                # Mark top module as used since it's instantiated
-                self._used_modules.add(top_module_name)
         
         # End SPICE netlist (ngspice compatibility)
         lines.append("")
@@ -163,8 +151,7 @@ class SPICEGenerator:
             for param_name, param_value in module.parameters.items():
                 lines.append(f"{self.indent}.param {param_name}={param_value}")
         
-        # Validate net declarations for all instances in this module
-        self._validate_net_declarations(module, module_name)
+
         
         # Generate instances
         if module.instances:
@@ -282,8 +269,7 @@ class SPICEGenerator:
         """
         module = asdl_file.modules[instance.model]
         
-        # Validate port mappings before generating
-        self._validate_port_mappings(instance_id, instance, module)
+
         
         # Get node connections in port order
         node_list = []
@@ -309,50 +295,7 @@ class SPICEGenerator:
         
         return " ".join(parts)
     
-    def _validate_port_mappings(self, instance_id: str, instance: Instance, module: Module) -> None:
-        """
-        Validate that instance port mappings match the target module's port definition.
-        
-        Checks:
-        1. All mapped ports exist in the target module
-        2. Reports unmapped module ports (allows UNCONNECTED, but warns)
-        
-        Args:
-            instance_id: Name of the instance for error reporting
-            instance: Instance with mappings to validate
-            module: Target module to validate against
-            
-        Raises:
-            ValueError: If mapped ports don't exist in module definition
-        """
-        if not module.ports:
-            # Module has no ports, but instance has mappings
-            if instance.mappings:
-                mapped_ports = list(instance.mappings.keys())
-                raise ValueError(
-                    f"Instance '{instance_id}' maps to ports {mapped_ports}, "
-                    f"but module '{instance.model}' defines no ports"
-                )
-            return
-        
-        # Get valid port names from module definition
-        valid_ports = set(module.ports.keys())
-        mapped_ports = set(instance.mappings.keys()) if instance.mappings else set()
-        
-        # Check 1: All mapped ports must exist in module definition
-        invalid_ports = mapped_ports - valid_ports
-        if invalid_ports:
-            raise ValueError(
-                f"Instance '{instance_id}' maps to invalid ports: {sorted(invalid_ports)}. "
-                f"Module '{instance.model}' only defines ports: {sorted(valid_ports)}"
-            )
-        
-        # Check 2: Report unmapped ports (allows UNCONNECTED but informs user)
-        unmapped_ports = valid_ports - mapped_ports
-        if unmapped_ports:
-            # For now, just allow this (UNCONNECTED behavior)
-            # Could add warning logging here in the future
-            pass
+
     
     def _get_port_list(self, module: Module) -> List[str]:
         """
@@ -526,219 +469,4 @@ class SPICEGenerator:
             template_data["params"] = self._format_named_parameters(model_params, model) if model_params else ""
         
         # Apply template
-        return device_format["template"].format(**template_data)
-    
-    def _track_usage(self, asdl_file: ASDLFile) -> None:
-        """
-        Track which models and modules are actually instantiated anywhere in the design.
-        
-        This method tracks two different concepts:
-        1. Components instantiated anywhere (for unused warnings)
-        2. Components reachable from top module (for future use)
-        
-        The key insight is that we should only warn about components that are
-        NEVER instantiated anywhere, not components that are instantiated but
-        not reachable from the top module.
-        
-        Args:
-            asdl_file: The complete ASDL design
-        """
-        # Track what's instantiated anywhere in the design
-        self._track_all_instantiations(asdl_file)
-        
-        # Also track what's reachable from top module (for future features)
-        if asdl_file.file_info.top_module:
-            top_module_name = asdl_file.file_info.top_module
-            if top_module_name in asdl_file.modules:
-                self._track_reachable_from_top(top_module_name, asdl_file)
-    
-    def _track_all_instantiations(self, asdl_file: ASDLFile) -> None:
-        """
-        Track all models and modules that are instantiated anywhere in the design.
-        
-        This walks through ALL modules (not just reachable ones) to find what's
-        actually instantiated somewhere. This is used for unused warnings.
-        
-        Args:
-            asdl_file: The complete ASDL design
-        """
-        # Walk through every module to see what it instantiates
-        for module_name, module in asdl_file.modules.items():
-            if module.instances:
-                for instance in module.instances.values():
-                    if instance.is_device_instance(asdl_file):
-                        # Track model instantiation
-                        self._used_models.add(instance.model)
-                    elif instance.is_module_instance(asdl_file):
-                        # Track module instantiation
-                        self._used_modules.add(instance.model)
-    
-    def _track_reachable_from_top(self, module_name: str, asdl_file: ASDLFile) -> None:
-        """
-        Recursively track modules reachable from the top module.
-        
-        This is kept for future features that might need to distinguish between
-        "instantiated somewhere" vs "reachable from top". Currently not used
-        for warnings.
-        
-        Args:
-            module_name: Name of the module to track
-            asdl_file: The complete ASDL design
-        """
-        # This could be used for future features that need to know what's
-        # reachable from the top module, but for now we don't need it
-        # for unused warnings since we use _track_all_instantiations instead
-        pass
-    
-    def _validate_unused_components(self, asdl_file: ASDLFile) -> None:
-        """
-        Validate and warn about unused models and modules.
-        
-        This validation helps identify dead code while maintaining non-breaking netlisting.
-        Components are considered "used" if they are instantiated anywhere in the design,
-        not just reachable from the top module.
-        """
-        # Identify unused models
-        defined_models = set(asdl_file.models.keys())
-        unused_models = defined_models - self._used_models
-        
-        # Identify unused modules (exclude top module from unused warnings)
-        defined_modules = set(asdl_file.modules.keys())
-        unused_modules = defined_modules - self._used_modules
-        
-        # Remove top module from unused warnings since it's the entry point
-        if asdl_file.file_info.top_module:
-            unused_modules.discard(asdl_file.file_info.top_module)
-        
-        # Generate warnings for unused components
-        if unused_models:
-            models_list = ", ".join(f"'{model}'" for model in sorted(unused_models))
-            warnings.warn(
-                f"Unused models detected: {models_list}. "
-                f"These models are defined but never instantiated.",
-                UserWarning
-            )
-        
-        if unused_modules:
-            modules_list = ", ".join(f"'{module}'" for module in sorted(unused_modules))
-            warnings.warn(
-                f"Unused modules detected: {modules_list}. "
-                f"These modules are defined but never instantiated.",
-                UserWarning
-            )
-
-    def _validate_net_declarations(self, module: Module, module_name: str) -> None:
-        """
-        Validate that all nets used in instance mappings are properly declared.
-        
-        Checks that all net names used in instance mappings are either:
-        1. Declared as module ports
-        2. Declared in the module's internal nets
-        
-        This validation handles pattern expansion to check expanded net names.
-        Generates warnings for undeclared nets but does not block netlisting.
-        
-        Args:
-            module: Module to validate
-            module_name: Name of the module for error reporting
-        """
-        if not module.instances:
-            return
-        
-        # Get all declared nets (ports + internal nets)
-        declared_nets = set()
-        
-        # Add all declared ports (handling patterns)
-        if module.ports:
-            for port_name in module.ports.keys():
-                if self._has_literal_pattern(port_name):
-                    # Expand port patterns to get actual net names
-                    expanded_ports = self._expand_literal_pattern(port_name)
-                    declared_nets.update(expanded_ports)
-                else:
-                    declared_nets.add(port_name)
-        
-        # Add internal nets if declared
-        if module.nets and module.nets.internal:
-            declared_nets.update(module.nets.internal)
-        
-        # Check all nets used in instance mappings
-        undeclared_nets = set()
-        for instance_id, instance in module.instances.items():
-            if not instance.mappings:
-                continue
-                
-            for port_name, net_name in instance.mappings.items():
-                # Handle pattern expansion in net names
-                if self._has_literal_pattern(net_name):
-                    # Expand net patterns to get actual net names
-                    expanded_nets = self._expand_literal_pattern(net_name)
-                    for expanded_net in expanded_nets:
-                        if expanded_net not in declared_nets:
-                            undeclared_nets.add(expanded_net)
-                else:
-                    # Single net name
-                    if net_name not in declared_nets:
-                        undeclared_nets.add(net_name)
-        
-        # Generate warning for undeclared nets
-        if undeclared_nets:
-            nets_list = ", ".join(f"'{net}'" for net in sorted(undeclared_nets))
-            warnings.warn(
-                f"In module '{module_name}', undeclared nets used in instance mappings: {nets_list}. "
-                f"These nets are not declared as ports or internal nets.",
-                UserWarning
-            )
-
-    def _has_literal_pattern(self, name: str) -> bool:
-        """Check if name contains literal pattern <...>."""
-        # Must have both < and > 
-        if not ('<' in name and '>' in name):
-            return False
-        
-        # Check that there's a complete pattern
-        start = name.find('<')
-        end = name.find('>')
-        if start == -1 or end == -1 or start >= end:
-            return False
-            
-        # Check for multiple bracket pairs (not supported)
-        remaining = name[end+1:]
-        if '<' in remaining and '>' in remaining:
-            return False
-            
-        # Check for mixed bracket types inside pattern (array syntax inside literal)
-        pattern_content = name[start+1:end]
-        if '[' in pattern_content and ']' in pattern_content:
-            return False
-            
-        # Any content inside brackets (even empty or single item) is a pattern attempt
-        # Validation will enforce comma requirement
-        return True
-
-    def _expand_literal_pattern(self, name: str) -> List[str]:
-        """
-        Expand literal pattern in name.
-        
-        Example: "in_<p,n>" -> ["in_p", "in_n"]
-        Returns [name] if no pattern.
-        """
-        if not self._has_literal_pattern(name):
-            return [name]
-        
-        start = name.find('<')
-        end = name.find('>')
-        pattern_content = name[start+1:end]
-        
-        # Handle empty pattern
-        if not pattern_content:
-            return []
-        
-        # Split by comma and strip whitespace
-        items = [item.strip() for item in pattern_content.split(',')]
-        
-        # Replace pattern with each item
-        prefix = name[:start]
-        suffix = name[end+1:]
-        
-        return [f"{prefix}{item}{suffix}" for item in items] 
+        return device_format["template"].format(**template_data) 
