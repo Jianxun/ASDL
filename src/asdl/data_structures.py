@@ -49,6 +49,21 @@ class Locatable:
     end_line: Optional[int] = None
     end_col: Optional[int] = None
 
+    def __str__(self) -> str:
+        """Format location information for display in error messages."""
+        parts = []
+        
+        if self.file_path:
+            parts.append(str(self.file_path))
+        
+        if self.start_line is not None:
+            if self.start_col is not None:
+                parts.append(f"{self.start_line}:{self.start_col}")
+            else:
+                parts.append(f"{self.start_line}")
+        
+        return ":".join(parts) if parts else "unknown location"
+
 
 @dataclass
 class FileInfo(Locatable):

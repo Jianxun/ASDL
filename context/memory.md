@@ -4,27 +4,27 @@
 ASDL (Analog System Description Language) is a comprehensive Python framework for analog circuit design and verification. The project provides parsing, elaboration, validation, and SPICE netlist generation capabilities with a focus on hierarchical design and test-driven development.
 
 ## Current State
-**Major Milestone Completed: Validation Extraction from Generator**
+**Major Milestone Completed: Enhanced Error Reporting System**
 
 ### ✅ **Recently Completed (Current Session)**
-- **Validation Pipeline**: Successfully extracted all validation logic from SPICEGenerator using TDD approach
-- **ASDLValidator Implementation**: Complete validator with 3 core validation methods (6 test cases passing)
-  - Port mapping validation (V001, V002) - Errors for invalid port mappings
-  - Net declaration validation (V003) - Warnings for undeclared nets  
-  - Unused components validation (V004, V005) - Warnings for unused models/modules
-- **Clean Separation**: Generator now purely focused on generation, validator handles all validation concerns
-- **Test Coverage**: 6/6 validator tests passing, complete TDD implementation
+- **Enhanced Error Reporting**: Successfully implemented comprehensive diagnostic system with line/column information
+- **Locatable String Formatting**: Added `__str__` method to `Locatable` class for proper location display
+- **Diagnostic Integration**: Updated `netlist_asdl.py` script to leverage full diagnostic pipeline
+- **Precise Error Messages**: Transformed generic errors into actionable diagnostics with exact file locations
+- **Pipeline Error Handling**: Proper error propagation from Parse → Elaborate → Generate stages
+- **Real-world Testing**: Successfully debugged and fixed `two_stage_ota.yml` duplicate key issue
 
 ### 🔧 **Current Status**
 - **Test Suite**: 76/76 tests passing (70 non-generator + 6 validator) + 2/2 integration tests passing
-- **CLI Tools**: netlist_asdl.py script updated to modern pipeline and fully functional
+- **CLI Tools**: netlist_asdl.py script with enhanced diagnostic reporting - fully functional
+- **Error Reporting**: ✅ **PRODUCTION READY** - Line/column information in all error messages
 - **Generator Status**: ✅ **FULLY RESTORED** - Complete refactoring successful
   - Fixed: DeviceType → PrimitiveType migration
   - Fixed: DeviceModel interface compatibility (device_line approach)
   - Fixed: All data structure method calls updated
   - Fixed: Complete device_line substitution system
   - Tested: End-to-end pipeline with real ASDL files
-- **Architecture**: Clean validation pipeline + fully functional modern generator
+- **Architecture**: Clean validation pipeline + fully functional modern generator + comprehensive error reporting
 
 ### 📊 **Component Health**
 - ✅ **Parser**: 23/23 tests passing - Complete location tracking and diagnostics
