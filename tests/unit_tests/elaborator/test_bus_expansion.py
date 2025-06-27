@@ -65,7 +65,7 @@ class TestBusExpansion:
 
     def test_simple_port_bus_expansion_ascending(self):
         """
-        Tests that a simple bus pattern on a port, like `data[3:0]`,
+        Tests that a simple bus pattern on a port, like `data[0:3]`,
         is correctly expanded into ascending order.
         """
         asdl_string = """
@@ -74,7 +74,7 @@ class TestBusExpansion:
         modules:
             test:
                 ports:
-                    "data[3:0]":
+                    "data[0:3]":
                         dir: IN
                         type: DIGITAL
         """
@@ -91,7 +91,8 @@ class TestBusExpansion:
 
         test_module = elaborated_file.modules.get("test")
         assert test_module is not None
-        assert "data[3:0]" not in test_module.ports
+        assert test_module.ports is not None
+        assert "data[0:3]" not in test_module.ports
         
         expected_ports = ["data0", "data1", "data2", "data3"]
         assert list(test_module.ports.keys()) == expected_ports
@@ -99,5 +100,5 @@ class TestBusExpansion:
         for port_name in expected_ports:
             assert port_name in test_module.ports
             port = test_module.ports[port_name]
-            assert port.dir.value == "IN"
-            assert port.type.value == "DIGITAL" 
+            assert port.dir == PortDirection.IN
+            assert port.type == SignalType.DIGITAL 

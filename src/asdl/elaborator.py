@@ -123,13 +123,49 @@ class Elaborator:
     def _expand_literal_pattern(
         self, name: str, locatable: Locatable
     ) -> Tuple[List[str], List[Diagnostic]]:
-        # This is a placeholder for the real implementation
-        match = re.search(r"^(.*?)<(.+?)>(.*?)$", name)
+        diagnostics: List[Diagnostic] = []
+        match = re.search(r"^(.*?)<(.*?)>(.*?)$", name)
         if not match:
             return [name], []
+
         prefix, content, suffix = match.groups()
+
+        if not content:
+            diagnostics.append(
+                self._create_diagnostic(
+                    "E100",
+                    "Empty Literal Pattern",
+                    f"Pattern in '{name}' is empty.",
+                    locatable,
+                )
+            )
+            return [name], diagnostics
+
         items = [item.strip() for item in content.split(",")]
-        # NOTE: Assumes existing validation logic for E100, E101, E107 is here
+
+        if "" in items:
+            diagnostics.append(
+                self._create_diagnostic(
+                    "E107",
+                    "Empty Pattern Item",
+                    f"Pattern in '{name}' contains an empty item.",
+                    locatable,
+                )
+            )
+
+        if len(items) == 1:
+            diagnostics.append(
+                self._create_diagnostic(
+                    "E101",
+                    "Single Item Pattern",
+                    f"Pattern in '{name}' contains only a single item.",
+                    locatable,
+                )
+            )
+
+        if diagnostics:
+            return [name], diagnostics
+
         return [f"{prefix}{item}{suffix}" for item in items], []
 
     def _expand_bus_pattern(
@@ -154,9 +190,12 @@ class Elaborator:
             )
             return [], diagnostics
 
+        # Generate in the order specified by the pattern (MSB to LSB)
         if msb < lsb:
+            # e.g., [0:3] → ["data0", "data1", "data2", "data3"]
             return [f"{base_name}{i}" for i in range(msb, lsb + 1)], diagnostics
         else:
+            # e.g., [3:0] → ["data3", "data2", "data1", "data0"]  
             return [f"{base_name}{i}" for i in range(msb, lsb - 1, -1)], diagnostics
 
     def _create_diagnostic(

@@ -151,6 +151,22 @@ X_SECOND_STAGE first_stage_out out vbn vss vdd common_source_pmos M={M_second_st
 - Maintains backward compatibility with existing code
 - Reuses pattern expansion logic from expander module
 
+### **NEW**: Parser & Test Suite Hardening (Locatable Refactor Follow-up) ✅
+**ACHIEVEMENT**: Successfully stabilized the test suite after the `Locatable` data structure was refactored.
+- **Problem**: The initial test run after the `Locatable` refactor showed 19 failures.
+- **Root Cause Analysis**:
+  - The parser's location-tracking logic was not being populated correctly.
+  - A `NameError` bug in the parser's diagnostic reporting was causing crashes.
+  - Many parser tests were outdated and failing due to improved validation (e.g., missing required fields in test YAML).
+- **Solution**:
+  - Corrected the `ruamel.yaml` location extraction logic in `ASDLParser`.
+  - Fixed the `NameError` by passing the `diagnostics` list correctly.
+  - Systematically updated all failing parser tests to use valid YAML and correct assertions.
+- **Result**: Reduced test failures from 19 to 8. All remaining failures are now correctly isolated to the `Elaborator` component, which is the next development target. The codebase is now in a stable, committed state.
+
+**Key Features**:
+- **Connectivity Validation**: Validates that all net names in mappings are declared as ports or internal nets
+
 ### **NEW**: Port Order Canonical Compliance (CRITICAL BUG FIX) ✅
 **ACHIEVEMENT**: Fixed SPICE port order to follow YAML declaration order instead of alphabetical sorting
 - **Problem**: Generator was sorting module ports alphabetically, breaking canonical order from YAML
