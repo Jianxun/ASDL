@@ -30,7 +30,7 @@ modules:
     diagnostic = diagnostics[0]
     assert diagnostic.code == "E103"
     assert diagnostic.severity == DiagnosticSeverity.ERROR
-    assert "contains both a literal pattern ('<>') and a bus pattern ('[]')" in diagnostic.details
+    assert "contains both a literal ('<>') and bus ('[]') pattern" in diagnostic.details
     assert diagnostic.location is not None
     assert diagnostic.location.start_line == 7
 
@@ -59,7 +59,7 @@ modules:
     diagnostic = diagnostics[0]
     assert diagnostic.code == "E103"
     assert diagnostic.severity == DiagnosticSeverity.ERROR
-    assert "contains both a literal pattern ('<>') and a bus pattern ('[]')" in diagnostic.details
+    assert "contains both a literal ('<>') and bus ('[]') pattern" in diagnostic.details
     assert diagnostic.location is not None
     assert diagnostic.location.start_line == 7
 
