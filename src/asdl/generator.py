@@ -7,7 +7,7 @@ have been expanded and parameters have been resolved.
 
 import warnings
 from typing import Dict, List, Any, Optional, Set
-from .data_structures import ASDLFile, Module, Instance, DeviceModel, DeviceType
+from .data_structures import ASDLFile, Module, Instance, DeviceModel, PrimitiveType
 
 
 class SPICEGenerator:
@@ -29,50 +29,12 @@ class SPICEGenerator:
     4. End statement (.end)
     """
     
-    # Device formatting templates with explicit port mapping
-    # Templates directly show SPICE format with named port placeholders
-    # Two-terminal devices use consistent "plus"/"minus" naming
-    DEVICE_FORMATS = {
-        DeviceType.RESISTOR: {
-            "template": "{name} {plus} {minus} {model} {value}",
-            "value_param": "value",
-            "param_format": "bare"
-        },
-        DeviceType.CAPACITOR: {
-            "template": "{name} {plus} {minus} {model} {value}",
-            "value_param": "value",
-            "param_format": "bare"
-        },
-        DeviceType.INDUCTOR: {
-            "template": "{name} {plus} {minus} {model} {value}",
-            "value_param": "value", 
-            "param_format": "bare"
-        },
-        DeviceType.NMOS: {
-            "template": "{name} {D} {G} {S} {B} {model} {params}",
-            "param_format": "named"
-        },
-        DeviceType.PMOS: {
-            "template": "{name} {D} {G} {S} {B} {model} {params}",
-            "param_format": "named"
-        },
-        DeviceType.DIODE: {
-            "template": "{name} {a} {c} {model} {params}",
-            "param_format": "named"
-        },
-        # Default format for unknown device types
-        "default": {
-            "template": "{name} {model} {params}",
-            "param_format": "named"
-        }
-    }
+
     
     def __init__(self):
         """Initialize SPICE generator with default settings."""
         self.comment_style = "*"  # SPICE comment character
         self.indent = "  "        # Indentation for readability
-        self._used_models: Set[str] = set()      # Track model usage
-        self._used_modules: Set[str] = set()     # Track module usage
     
     def generate(self, asdl_file: ASDLFile) -> str:
         """
@@ -84,15 +46,7 @@ class SPICEGenerator:
         Returns:
             Complete SPICE netlist as string
         """
-        # Reset usage tracking for each generation
-        self._used_models = set()
-        self._used_modules = set()
-        
-        # First pass: track usage by walking through the design hierarchy
-        self._track_usage(asdl_file)
-        
-        # Validate and warn about unused components
-        self._validate_unused_components(asdl_file)
+
         
         lines = []
         
@@ -126,8 +80,6 @@ class SPICEGenerator:
                 top_module = asdl_file.modules[top_module_name]
                 lines.append(f"* Main circuit instantiation")
                 lines.append(f"XMAIN {self._get_top_level_nets(top_module)} {top_module_name}")
-                # Mark top module as used since it's instantiated
-                self._used_modules.add(top_module_name)
         
         # End SPICE netlist (ngspice compatibility)
         lines.append("")
@@ -163,8 +115,7 @@ class SPICEGenerator:
             for param_name, param_value in module.parameters.items():
                 lines.append(f"{self.indent}.param {param_name}={param_value}")
         
-        # Validate net declarations for all instances in this module
-        self._validate_net_declarations(module, module_name)
+
         
         # Generate instances
         if module.instances:
@@ -242,8 +193,8 @@ class SPICEGenerator:
         all_params = {}
         
         # Add device model parameters (with defaults)
-        if device_model.params:
-            all_params.update(device_model.params)
+        if device_model.parameters:
+            all_params.update(device_model.parameters)
         
         # Override with instance parameters
         if instance.parameters:
@@ -255,14 +206,14 @@ class SPICEGenerator:
         """Format parameters as param=value pairs using model-defined order."""
         param_parts = []
         
-        if model and model.params:
+        if model and model.parameters:
             # First, add parameters in model-defined order
-            for param_name in model.params.keys():
+            for param_name in model.parameters.keys():
                 if param_name in params:
                     param_parts.append(f"{param_name}={params[param_name]}")
             
             # Then add any instance-only parameters (alphabetically for consistency)
-            instance_only = set(params.keys()) - set(model.params.keys())
+            instance_only = set(params.keys()) - set(model.parameters.keys())
             for param_name in sorted(instance_only):
                 param_parts.append(f"{param_name}={params[param_name]}")
         else:
@@ -282,8 +233,7 @@ class SPICEGenerator:
         """
         module = asdl_file.modules[instance.model]
         
-        # Validate port mappings before generating
-        self._validate_port_mappings(instance_id, instance, module)
+
         
         # Get node connections in port order
         node_list = []
@@ -309,50 +259,7 @@ class SPICEGenerator:
         
         return " ".join(parts)
     
-    def _validate_port_mappings(self, instance_id: str, instance: Instance, module: Module) -> None:
-        """
-        Validate that instance port mappings match the target module's port definition.
-        
-        Checks:
-        1. All mapped ports exist in the target module
-        2. Reports unmapped module ports (allows UNCONNECTED, but warns)
-        
-        Args:
-            instance_id: Name of the instance for error reporting
-            instance: Instance with mappings to validate
-            module: Target module to validate against
-            
-        Raises:
-            ValueError: If mapped ports don't exist in module definition
-        """
-        if not module.ports:
-            # Module has no ports, but instance has mappings
-            if instance.mappings:
-                mapped_ports = list(instance.mappings.keys())
-                raise ValueError(
-                    f"Instance '{instance_id}' maps to ports {mapped_ports}, "
-                    f"but module '{instance.model}' defines no ports"
-                )
-            return
-        
-        # Get valid port names from module definition
-        valid_ports = set(module.ports.keys())
-        mapped_ports = set(instance.mappings.keys()) if instance.mappings else set()
-        
-        # Check 1: All mapped ports must exist in module definition
-        invalid_ports = mapped_ports - valid_ports
-        if invalid_ports:
-            raise ValueError(
-                f"Instance '{instance_id}' maps to invalid ports: {sorted(invalid_ports)}. "
-                f"Module '{instance.model}' only defines ports: {sorted(valid_ports)}"
-            )
-        
-        # Check 2: Report unmapped ports (allows UNCONNECTED but informs user)
-        unmapped_ports = valid_ports - mapped_ports
-        if unmapped_ports:
-            # For now, just allow this (UNCONNECTED behavior)
-            # Could add warning logging here in the future
-            pass
+
     
     def _get_port_list(self, module: Module) -> List[str]:
         """
@@ -409,18 +316,16 @@ class SPICEGenerator:
         lines = []
         
         # Add model documentation
-        doc = model.get_doc()
-        if doc:
-            lines.append(f"* {doc}")
+        if model.doc:
+            lines.append(f"* {model.doc}")
         
         # Generate .subckt header with model-defined port order
         port_list = model.ports
         lines.append(f".subckt {model_name} {' '.join(port_list)}")
         
         # Add parameter declarations with default values
-        param_defaults = model.get_parameter_defaults()
-        if param_defaults:
-            for param_name, param_value in param_defaults.items():
+        if model.parameters:
+            for param_name, param_value in model.parameters.items():
                 lines.append(f"{self.indent}.param {param_name}={param_value}")
         
         # Generate the internal device instance
@@ -437,7 +342,7 @@ class SPICEGenerator:
         Generate the internal device instance for a model subcircuit.
         
         This creates the primitive device line that goes inside the model subcircuit.
-        Uses either the new device_line approach or legacy template approach.
+        Uses the device_line approach with parameter substitution.
         
         Args:
             model: DeviceModel definition
@@ -445,300 +350,34 @@ class SPICEGenerator:
         Returns:
             SPICE device line as string
         """
-        if model.has_device_line():
-            # NEW APPROACH: Use raw device_line with parameter substitution
-            return self._generate_from_device_line(model)
-        else:
-            # LEGACY APPROACH: Use templates (backward compatibility)
-            return self._generate_from_legacy_template(model)
+        return self._generate_from_device_line(model)
     
     def _generate_from_device_line(self, model: DeviceModel) -> str:
         """
-        Generate device line using the new device_line approach.
+        Generate device line using the device_line approach.
         
-        Substitutes port names in the device line and automatically appends parameter assignments.
+        Substitutes port names and parameter names in the device line.
         """
-        if model.device_line is None:
-            raise ValueError(f"Model {model} has device_line set to None")
         device_line = model.device_line.strip()
         
-        # Build substitution data for ports only
+        # Build substitution data for both ports and parameters
         template_data = {}
         
         # Add port mappings (identity mapping within subcircuit)
         for port in model.ports:
             template_data[port] = port
+            
+        # Add parameter mappings (parameter name -> {parameter_name} for SPICE substitution)
+        if model.parameters:
+            for param_name in model.parameters.keys():
+                template_data[param_name] = f"{{{param_name}}}"
         
-        # Apply port substitutions to the base device line
+        # Apply substitutions to the device line
         try:
-            base_line = device_line.format(**template_data)
+            final_line = device_line.format(**template_data) 
         except KeyError as e:
-            raise ValueError(f"Missing port placeholder in device_line: {e}")
+            raise ValueError(f"Missing placeholder in device_line: {e}")
         
-        # Automatically append parameter assignments
-        param_defaults = model.get_parameter_defaults()
-        if param_defaults:
-            param_assignments = []
-            for param_name in param_defaults.keys():
-                param_assignments.append(f"{param_name}={{{param_name}}}")
-            
-            # Combine base line with parameter assignments
-            return f"{base_line} {' '.join(param_assignments)}"
-        else:
-            return base_line
+        return final_line
     
-    def _generate_from_legacy_template(self, model: DeviceModel) -> str:
-        """
-        Generate device line using legacy template approach (backward compatibility).
-        """
-        # Get device format specification
-        device_format = self.DEVICE_FORMATS.get(model.type, self.DEVICE_FORMATS["default"])
-        
-        # Determine device name prefix based on device type
-        device_prefixes = {
-            DeviceType.RESISTOR: "R",
-            DeviceType.CAPACITOR: "C", 
-            DeviceType.INDUCTOR: "L",
-            DeviceType.NMOS: "MN",
-            DeviceType.PMOS: "MP",
-            DeviceType.DIODE: "D"
-        }
-        device_name = device_prefixes.get(model.type, "X")
-        
-        # Build template data
-        template_data = {
-            "name": device_name,
-            "model": model.model,
-        }
-        
-        # Map each port to itself (identity mapping within subcircuit)
-        for port in model.ports:
-            template_data[port] = port
-        
-        # Add parameter data based on format type
-        model_params = model.get_parameter_defaults()  # Use unified parameter access
-        if device_format["param_format"] == "bare":
-            # Use bare value for simple devices (R, L, C)
-            value_param = device_format["value_param"]
-            template_data["value"] = str(model_params.get(value_param, "")) if model_params else ""
-        else:
-            # Use named parameters for complex devices (transistors, etc.)
-            template_data["params"] = self._format_named_parameters(model_params, model) if model_params else ""
-        
-        # Apply template
-        return device_format["template"].format(**template_data)
-    
-    def _track_usage(self, asdl_file: ASDLFile) -> None:
-        """
-        Track which models and modules are actually instantiated anywhere in the design.
-        
-        This method tracks two different concepts:
-        1. Components instantiated anywhere (for unused warnings)
-        2. Components reachable from top module (for future use)
-        
-        The key insight is that we should only warn about components that are
-        NEVER instantiated anywhere, not components that are instantiated but
-        not reachable from the top module.
-        
-        Args:
-            asdl_file: The complete ASDL design
-        """
-        # Track what's instantiated anywhere in the design
-        self._track_all_instantiations(asdl_file)
-        
-        # Also track what's reachable from top module (for future features)
-        if asdl_file.file_info.top_module:
-            top_module_name = asdl_file.file_info.top_module
-            if top_module_name in asdl_file.modules:
-                self._track_reachable_from_top(top_module_name, asdl_file)
-    
-    def _track_all_instantiations(self, asdl_file: ASDLFile) -> None:
-        """
-        Track all models and modules that are instantiated anywhere in the design.
-        
-        This walks through ALL modules (not just reachable ones) to find what's
-        actually instantiated somewhere. This is used for unused warnings.
-        
-        Args:
-            asdl_file: The complete ASDL design
-        """
-        # Walk through every module to see what it instantiates
-        for module_name, module in asdl_file.modules.items():
-            if module.instances:
-                for instance in module.instances.values():
-                    if instance.is_device_instance(asdl_file):
-                        # Track model instantiation
-                        self._used_models.add(instance.model)
-                    elif instance.is_module_instance(asdl_file):
-                        # Track module instantiation
-                        self._used_modules.add(instance.model)
-    
-    def _track_reachable_from_top(self, module_name: str, asdl_file: ASDLFile) -> None:
-        """
-        Recursively track modules reachable from the top module.
-        
-        This is kept for future features that might need to distinguish between
-        "instantiated somewhere" vs "reachable from top". Currently not used
-        for warnings.
-        
-        Args:
-            module_name: Name of the module to track
-            asdl_file: The complete ASDL design
-        """
-        # This could be used for future features that need to know what's
-        # reachable from the top module, but for now we don't need it
-        # for unused warnings since we use _track_all_instantiations instead
-        pass
-    
-    def _validate_unused_components(self, asdl_file: ASDLFile) -> None:
-        """
-        Validate and warn about unused models and modules.
-        
-        This validation helps identify dead code while maintaining non-breaking netlisting.
-        Components are considered "used" if they are instantiated anywhere in the design,
-        not just reachable from the top module.
-        """
-        # Identify unused models
-        defined_models = set(asdl_file.models.keys())
-        unused_models = defined_models - self._used_models
-        
-        # Identify unused modules (exclude top module from unused warnings)
-        defined_modules = set(asdl_file.modules.keys())
-        unused_modules = defined_modules - self._used_modules
-        
-        # Remove top module from unused warnings since it's the entry point
-        if asdl_file.file_info.top_module:
-            unused_modules.discard(asdl_file.file_info.top_module)
-        
-        # Generate warnings for unused components
-        if unused_models:
-            models_list = ", ".join(f"'{model}'" for model in sorted(unused_models))
-            warnings.warn(
-                f"Unused models detected: {models_list}. "
-                f"These models are defined but never instantiated.",
-                UserWarning
-            )
-        
-        if unused_modules:
-            modules_list = ", ".join(f"'{module}'" for module in sorted(unused_modules))
-            warnings.warn(
-                f"Unused modules detected: {modules_list}. "
-                f"These modules are defined but never instantiated.",
-                UserWarning
-            )
-
-    def _validate_net_declarations(self, module: Module, module_name: str) -> None:
-        """
-        Validate that all nets used in instance mappings are properly declared.
-        
-        Checks that all net names used in instance mappings are either:
-        1. Declared as module ports
-        2. Declared in the module's internal nets
-        
-        This validation handles pattern expansion to check expanded net names.
-        Generates warnings for undeclared nets but does not block netlisting.
-        
-        Args:
-            module: Module to validate
-            module_name: Name of the module for error reporting
-        """
-        if not module.instances:
-            return
-        
-        # Get all declared nets (ports + internal nets)
-        declared_nets = set()
-        
-        # Add all declared ports (handling patterns)
-        if module.ports:
-            for port_name in module.ports.keys():
-                if self._has_literal_pattern(port_name):
-                    # Expand port patterns to get actual net names
-                    expanded_ports = self._expand_literal_pattern(port_name)
-                    declared_nets.update(expanded_ports)
-                else:
-                    declared_nets.add(port_name)
-        
-        # Add internal nets if declared
-        if module.nets and module.nets.internal:
-            declared_nets.update(module.nets.internal)
-        
-        # Check all nets used in instance mappings
-        undeclared_nets = set()
-        for instance_id, instance in module.instances.items():
-            if not instance.mappings:
-                continue
-                
-            for port_name, net_name in instance.mappings.items():
-                # Handle pattern expansion in net names
-                if self._has_literal_pattern(net_name):
-                    # Expand net patterns to get actual net names
-                    expanded_nets = self._expand_literal_pattern(net_name)
-                    for expanded_net in expanded_nets:
-                        if expanded_net not in declared_nets:
-                            undeclared_nets.add(expanded_net)
-                else:
-                    # Single net name
-                    if net_name not in declared_nets:
-                        undeclared_nets.add(net_name)
-        
-        # Generate warning for undeclared nets
-        if undeclared_nets:
-            nets_list = ", ".join(f"'{net}'" for net in sorted(undeclared_nets))
-            warnings.warn(
-                f"In module '{module_name}', undeclared nets used in instance mappings: {nets_list}. "
-                f"These nets are not declared as ports or internal nets.",
-                UserWarning
-            )
-
-    def _has_literal_pattern(self, name: str) -> bool:
-        """Check if name contains literal pattern <...>."""
-        # Must have both < and > 
-        if not ('<' in name and '>' in name):
-            return False
-        
-        # Check that there's a complete pattern
-        start = name.find('<')
-        end = name.find('>')
-        if start == -1 or end == -1 or start >= end:
-            return False
-            
-        # Check for multiple bracket pairs (not supported)
-        remaining = name[end+1:]
-        if '<' in remaining and '>' in remaining:
-            return False
-            
-        # Check for mixed bracket types inside pattern (array syntax inside literal)
-        pattern_content = name[start+1:end]
-        if '[' in pattern_content and ']' in pattern_content:
-            return False
-            
-        # Any content inside brackets (even empty or single item) is a pattern attempt
-        # Validation will enforce comma requirement
-        return True
-
-    def _expand_literal_pattern(self, name: str) -> List[str]:
-        """
-        Expand literal pattern in name.
-        
-        Example: "in_<p,n>" -> ["in_p", "in_n"]
-        Returns [name] if no pattern.
-        """
-        if not self._has_literal_pattern(name):
-            return [name]
-        
-        start = name.find('<')
-        end = name.find('>')
-        pattern_content = name[start+1:end]
-        
-        # Handle empty pattern
-        if not pattern_content:
-            return []
-        
-        # Split by comma and strip whitespace
-        items = [item.strip() for item in pattern_content.split(',')]
-        
-        # Replace pattern with each item
-        prefix = name[:start]
-        suffix = name[end+1:]
-        
-        return [f"{prefix}{item}{suffix}" for item in items] 
+ 

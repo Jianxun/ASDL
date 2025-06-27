@@ -1,4 +1,4 @@
-design_info:
+file_info:
   top_module: diff_pair_nmos
   doc: "NMOS differential pair with resistor loads - Pattern expansion test circuit"
   revision: "v0.4" 
@@ -9,7 +9,7 @@ models:
   # NMOS transistor unit cell with enhanced parameter handling
   nmos_unit:
     doc: "NMOS transistor unit cell"
-    type: nmos
+    type: pdk_device
     ports: [G, D, S, B]
     device_line: |
       MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
@@ -19,7 +19,7 @@ models:
   # Resistor load unit
   resistor_unit:
     doc: "Resistor unit cell"
-    type: resistor
+    type: pdk_device
     ports: [plus, minus]
     device_line: |
       R1 {plus} {minus} ppolyf_u L=2u W=1u m=1
@@ -41,8 +41,7 @@ modules:
       iref:      {dir: in, type: current, constraints: {nominal_current: 100u}}
       tail:      {dir: in_out, type: voltage}
     
-    nets:
-      internal: [tail, bias_gate]
+    internal_nets: [tail, bias_gate]
     
     parameters:
       # Differential pair sizing

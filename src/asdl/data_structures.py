@@ -6,12 +6,13 @@ format including patterns and parameter expressions. Pattern expansion and
 parameter resolution are handled as separate explicit steps.
 """
 
-from dataclasses import dataclass, asdict
-from typing import Dict, List, Optional, Any, Union
+from dataclasses import dataclass
 from enum import Enum
-import yaml
-import json
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+# Universal metadata type alias
+Metadata = Dict[str, Any]
 
 
 # ─────────────────────────────────────────
@@ -27,87 +28,9 @@ class ASDLFile:
     The full chip design will be composed of multiple ASDL files with dependencies.
     """
     file_info: 'FileInfo'
-    models: Dict[str, 'DeviceModel']  # model_alias -> DeviceModel
-    modules: Dict[str, 'Module']      # module_id -> Module
-    
-    def to_yaml(self) -> str:
-        """
-        Convert ASDLFile back to YAML string (round-trip).
-        
-        Note: Round-trip is only guaranteed for original ASDLFile instances
-        (before pattern expansion and parameter resolution).
-        
-        Returns:
-            YAML string representation of the ASDLFile
-        """
-        # Convert to dictionary, handling enum serialization
-        data = self._to_serializable_dict()
-        return yaml.dump(data, default_flow_style=False, sort_keys=False)
-    
-    def save_to_file(self, filepath: str) -> None:
-        """
-        Save ASDLFile to YAML file (round-trip).
-        
-        Args:
-            filepath: Path to save the YAML file to
-        """
-        yaml_content = self.to_yaml()
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(yaml_content)
-    
-    def to_json(self) -> str:
-        """
-        Convert ASDLFile to JSON string for debugging.
-        
-        Returns:
-            JSON string representation for debugging purposes
-        """
-        data = self._to_serializable_dict()
-        return json.dumps(data, indent=2, ensure_ascii=False)
-    
-    def dump_json(self, filepath: str) -> None:
-        """
-        Save ASDLFile as JSON file for debugging.
-        
-        Args:
-            filepath: Path to save the JSON file to
-        """
-        json_content = self.to_json()
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(json_content)
-    
-    def _to_serializable_dict(self) -> Dict[str, Any]:
-        """
-        Convert ASDLFile to a dictionary with proper serialization of enums and objects.
-        
-        Returns:
-            Dictionary representation suitable for YAML/JSON serialization
-        """
-        def convert_value(obj):
-            """Recursively convert objects to serializable format."""
-            if isinstance(obj, Enum):
-                return obj.value
-            elif hasattr(obj, '__dict__'):
-                return {k: convert_value(v) for k, v in obj.__dict__.items()}
-            elif isinstance(obj, dict):
-                return {k: convert_value(v) for k, v in obj.items()}
-            elif isinstance(obj, (list, tuple)):
-                return [convert_value(item) for item in obj]
-            else:
-                return obj
-        
-        # Convert the dataclass to dict
-        data_dict = asdict(self)
-        
-        # Apply custom serialization
-        result = convert_value(data_dict)
-        
-        # Use 'file_info' key (v0.4 format) for consistency
-        return {
-            'file_info': result['file_info'],
-            'models': result['models'],
-            'modules': result['modules']
-        }
+    models: Dict[str, 'DeviceModel']
+    modules: Dict[str, 'Module']
+    metadata: Optional[Metadata] = None
 
 
 # ─────────────────────────────────────────
@@ -115,86 +38,72 @@ class ASDLFile:
 # ─────────────────────────────────────────
 
 @dataclass
-class FileInfo:
-    """File metadata and information from file_info section."""
-    top_module: str
-    doc: str
-    revision: str
-    author: str
-    date: str  # ISO 8601 format
+class Locatable:
+    """
+    Represents a full span in a source file, including start and end
+    positions and the file it belongs to.
+    """
+    file_path: Optional[Path] = None
+    start_line: Optional[int] = None
+    start_col: Optional[int] = None
+    end_line: Optional[int] = None
+    end_col: Optional[int] = None
+
+    def __str__(self) -> str:
+        """Format location information for display in error messages."""
+        parts = []
+        
+        if self.file_path:
+            parts.append(str(self.file_path))
+        
+        if self.start_line is not None:
+            if self.start_col is not None:
+                parts.append(f"{self.start_line}:{self.start_col}")
+            else:
+                parts.append(f"{self.start_line}")
+        
+        return ":".join(parts) if parts else "unknown location"
+
+
+@dataclass
+class FileInfo(Locatable):
+    """Represents the file_info section of an ASDL file."""
+    top_module: Optional[str] = None
+    doc: Optional[str] = None
+    revision: Optional[str] = None
+    author: Optional[str] = None
+    date: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 # ─────────────────────────────────────────
 # Device Models (PDK Primitives)
 # ─────────────────────────────────────────
 
-class DeviceType(Enum):
-    """Enumeration of supported device types."""
-    NMOS = "nmos"
-    PMOS = "pmos"
-    RESISTOR = "resistor"
-    CAPACITOR = "capacitor"
-    DIODE = "diode"
-    # Future device types for extensibility
-    AMPLIFIER = "amplifier"
-    INDUCTOR = "inductor"
-    TRANSMISSION_LINE = "transmission_line"
-    CURRENT_SOURCE = "current_source"
-    VOLTAGE_SOURCE = "voltage_source"
-    # Add more device types as needed
+class PrimitiveType(Enum):
+    """
+    Classifies the origin of the primitive model.
     
-    @classmethod
-    def _missing_(cls, value):
-        """Handle unknown device types gracefully."""
-        # Create a pseudo-enum member for unknown types
-        # This allows parsing to continue while preserving the original value
-        pseudo_member = object.__new__(cls)
-        pseudo_member._name_ = f"UNKNOWN_{value.upper()}"
-        pseudo_member._value_ = value
-        return pseudo_member
+    This enum provides a simple, unambiguous classification:
+    - PDK_DEVICE: Physical device model from external PDK library
+    - SPICE_DEVICE: Primitive natively understood by SPICE simulator
+    """
+    PDK_DEVICE = "pdk_device"
+    SPICE_DEVICE = "spice_device"
 
 
-@dataclass
-class DeviceModel:
+@dataclass(kw_only=True)
+class DeviceModel(Locatable):
     """
-    Device template that maps to PDK primitives.
-    
-    Two approaches supported:
-    1. New robust approach: Use 'device_line' with PDK-exact device definition + 'parameters'
-    2. Legacy approach: Use 'model' + 'params' (for backward compatibility)
-    
-    If 'device_line' is present, it takes precedence over legacy fields.
+    Template for a primitive component, which can be a physical PDK device
+    or a built-in SPICE primitive.
     """
-    type: DeviceType                         # Device type classification
-    ports: List[str]                         # Terminal order [G, D, S, B]
-    doc: Optional[str] = None                # Optional documentation
-    
-    # NEW: Robust PDK approach (preferred)
-    device_line: Optional[str] = None        # Raw PDK device line with {placeholders}
-    parameters: Optional[Dict[str, str]] = None  # Parameterizable values with defaults
-    
-    # LEGACY: Simple approach (backward compatibility)
-    model: Optional[str] = None              # PDK model name (used as-is in SPICE)
-    params: Optional[Dict[str, Any]] = None  # Default parameters
-    description: Optional[str] = None        # Legacy description field (for backward compatibility)
-    
-    def has_device_line(self) -> bool:
-        """Check if this model uses the new device_line approach."""
-        return self.device_line is not None
-    
-    def get_parameter_defaults(self) -> Dict[str, str]:
-        """Get parameter defaults, preferring new 'parameters' over legacy 'params'."""
-        if self.parameters:
-            return self.parameters
-        elif self.params:
-            # Convert legacy params to string format for consistency
-            return {k: str(v) for k, v in self.params.items()}
-        else:
-            return {}
-    
-    def get_doc(self) -> Optional[str]:
-        """Get documentation, preferring new 'doc' over legacy 'description'."""
-        return self.doc or self.description
+    type: PrimitiveType
+    ports: List[str]
+    device_line: str
+    doc: Optional[str] = None
+    parameters: Optional[Dict[str, str]] = None
+    metadata: Optional[Metadata] = None
 
 
 # ─────────────────────────────────────────
@@ -223,11 +132,11 @@ class PortConstraints:
     Constraints are stored as raw data for future implementation.
     This allows us to defer constraint handling while preserving the data.
     """
-    constraints: Any  # Store raw constraint data as-is
+    constraints: Any
 
 
-@dataclass
-class Port:
+@dataclass(kw_only=True)
+class Port(Locatable):
     """
     Port definition with direction, type, and optional constraints.
     
@@ -237,36 +146,11 @@ class Port:
     dir: PortDirection
     type: SignalType
     constraints: Optional[PortConstraints] = None
+    metadata: Optional[Metadata] = None
 
 
-@dataclass
-class Nets:
-    """
-    Net declaration for module (optional).
-    
-    Each port implicitly declares a net of the same name. The internal list
-    specifies additional nets that are not ports.
-    """
-    internal: Optional[List[str]] = None
-    
-    def get_all_nets(self, port_names: List[str]) -> List[str]:
-        """
-        Get all nets: ports (implicit) + internal (explicit).
-        
-        Args:
-            port_names: List of port names from the module
-            
-        Returns:
-            Combined list of all net names
-        """
-        nets = list(port_names)  # Ports implicitly declare nets
-        if self.internal:
-            nets.extend(self.internal)
-        return nets
-
-
-@dataclass
-class Instance:
+@dataclass(kw_only=True)
+class Instance(Locatable):
     """
     Instance of a DeviceModel or Module.
     
@@ -277,18 +161,18 @@ class Instance:
     Mappings and parameters may contain patterns and expressions that will
     be resolved during the expansion and resolution phases.
     
-    The intent field provides extensible metadata storage for:
+    The metadata field provides extensible metadata storage for:
     - Design intent annotations: {"purpose": "current mirror", "matching": "critical"}
     - Layout hints: {"placement": "symmetric", "routing": "minimize_parasitic"}
     - Optimization directives: {"optimize": ["power", "area"], "constraint": "speed"}
     - Tool-specific metadata: {"simulator": "spectre", "model_opts": {...}}
     - Future extensions: Any additional fields can be preserved here
     """
-    model: str                                # References DeviceModel alias or Module name
-    mappings: Dict[str, str]                  # Port-to-net mapping (may contain patterns)
-    doc: Optional[str] = None                 # Instance documentation (first-class citizen)
-    parameters: Optional[Dict[str, Any]] = None  # Instance parameters (may contain expressions)
-    intent: Optional[Dict[str, Any]] = None      # Free-form intent metadata
+    model: str
+    mappings: Dict[str, str]
+    doc: Optional[str] = None
+    parameters: Optional[Dict[str, Any]] = None
+    metadata: Optional[Metadata] = None
     
     def is_device_instance(self, asdl_file: 'ASDLFile') -> bool:
         """Check if this instance references a DeviceModel."""
@@ -300,7 +184,7 @@ class Instance:
 
 
 @dataclass
-class Module:
+class Module(Locatable):
     """
     Circuit module definition.
     
@@ -312,7 +196,8 @@ class Module:
     Each Module becomes a .subckt definition in SPICE.
     """
     doc: Optional[str] = None
-    ports: Optional[Dict[str, Port]] = None               # port_name -> Port (may contain patterns)
-    nets: Optional[Nets] = None                 # Net declarations
-    parameters: Optional[Dict[str, Any]] = None           # Module parameters  
-    instances: Optional[Dict[str, Instance]] = None       # instance_id -> Instance 
+    ports: Optional[Dict[str, Port]] = None
+    internal_nets: Optional[List[str]] = None
+    parameters: Optional[Dict[str, Any]] = None
+    instances: Optional[Dict[str, Instance]] = None
+    metadata: Optional[Metadata] = None 

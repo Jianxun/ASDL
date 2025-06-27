@@ -1,7 +1,7 @@
 ---
-description: A growing collection of project-specific lessons learned that should be referenced and updated throughout development
+description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 # Overview
 
@@ -29,56 +29,38 @@ This document maintains project-specific lessons and best practices. It serves a
 
 # Lessons
 
-## Git Workflow
-- Always check repository status (`git status`) before adding files to commit
-- This helps ensure we're only committing the intended changes and nothing else
-- It also helps catch any unexpected changes or files that shouldn't be committed
+## How to Fix Test Suite Import Errors
 
-## Testing with pytest
-- Use pytest fixtures for test setup and teardown
-- Organize test files with clear naming: `test_*.py`
-- Use descriptive test function names: `test_*`
-- Group related tests using classes
-- Use pytest's assert statements for cleaner test code
-- Save test results in dedicated directories under `/tests/{test name}/results`
-- Use pytest's built-in fixtures (e.g., `tmp_path`) for temporary files
-- Leverage pytest's parameterize decorator for testing multiple cases
-- Use pytest's markers for categorizing tests
-- Document test cases clearly with docstrings
+### Problem
+The test suite was failing with `ModuleNotFoundError: No module named 'src'` errors. This occurred because the test files used absolute imports from the `src` directory (e.g., `from src.asdl.parser import ASDLParser`), but the Python interpreter was not configured to know where `src` was located.
 
-## Key Type Handling in Dictionaries
-- When using dictionary keys that could be represented as either strings or integers, ensure consistent key type handling
-- In our window text overrides bug, window definitions from symbol_def used string keys ('0', '3'), while window overrides in the rendered symbol used integer keys (0, 3)
-- This mismatch caused window overrides to not be applied, even though they were correctly parsed and available
-- The solution includes:
-  1. Convert string keys to integers when possible for comparison
-  2. Always check for both formats when looking up values
-  3. Use a clear indicator (like a boolean flag) to track whether an override was found
-  4. Use detailed logging to track values through the processing pipeline
-- This approach allows for flexible dictionary key handling while maintaining backward compatibility
+### Bad Solution: `sys.path` Manipulation
+A common but incorrect workaround is to add `sys.path` manipulation to the top of each test file:
 
-## Mocking JSON File I/O in Tests
-- When testing code that reads JSON files, simple MagicMock objects won't work for json.load() operations
-- The TypeError "JSON object must be str, bytes or bytearray, not MagicMock" occurs when passing a mock to json.load()
-- Effective approach for mocking JSON files includes:
-  1. Create a simplified version of the expected JSON data in the test
-  2. Configure the mock file object to return this JSON data as a string when read() is called
-  3. Use a side_effect function with builtins.open mock to return the JSON mock only for specific filenames
-  4. Ensure mocks are targeting the correct import paths used by the code under test
-- This pattern allows tests to run without file system access while providing valid data to json.load()
+```python
+import sys
+from pathlib import Path
+# This is an anti-pattern!
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+```
+This is brittle, verbose, and hides the underlying configuration problem.
 
-## Comprehensive Repository Updates
-- When making significant documentation or configuration updates, use `git add .` to include all changes
-- This approach ensures:
-  1. All related changes are committed together (documentation, code, images, etc.)
-  2. Moved files are properly tracked (like images relocated to different directories)
-  3. Configuration changes are applied consistently across the project
-- For improved traceability, still review the full list of changes using `git status` first
-- Use descriptive commit messages that summarize the different categories of changes
-- This approach is particularly useful for:
-  1. Documentation updates that span multiple files
-  2. Project reorganization that moves files between directories
-  3. Configuration changes that affect multiple aspects of the project
-  4. Fixes spanning both code and documentation
+### Correct Solution: `pyproject.toml` Configuration
+The correct and robust solution is to configure the test environment directly in the `pyproject.toml` file. By adding a `pythonpath` setting, we tell `pytest` which directories to add to the Python path before it starts collecting tests.
+
+**Implementation**:
+
+Add the following section to `pyproject.toml`:
+
+```toml
+[tool.pytest.ini_options]
+pythonpath = ["."]
+```
+
+**Reasoning**:
+- **`pythonpath = ["."]`**: This tells `pytest` to add the project's root directory (`/workspaces/ASDL/`) to the `PYTHONPATH`.
+- Since the root directory is on the path, imports that start from a directory within the root (like `src`) will now resolve correctly. `from src.asdl...` now works as intended everywhere.
+- This is a single, centralized configuration that fixes the issue for the entire test suite without modifying individual test files.
+
 
 

@@ -11,56 +11,71 @@ Future-proofing features:
 - Comprehensive validation and error reporting
 """
 
-import yaml
-import warnings
-from typing import Dict, Any, Optional, Set, List
+from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
+from typing import Dict, Any, Optional, List, Tuple, Protocol, cast
 from pathlib import Path
 
 from .data_structures import (
-    ASDLFile, FileInfo, DeviceModel, DeviceType, 
+    ASDLFile, FileInfo, DeviceModel, PrimitiveType, 
     Module, Port, PortDirection, SignalType, PortConstraints,
-    Nets, Instance
+    Instance, Locatable
 )
+from .diagnostics import Diagnostic, DiagnosticSeverity
+
+
+class LCInfo(Protocol):
+    """Protocol for ruamel.yaml's line/column info object."""
+    line: int
+    col: int
+
+    def key(self, key: Any) -> Tuple[Optional[int], Optional[int]]: ...
+    def value(self, key: Any) -> Tuple[Optional[int], Optional[int]]: ...
+    def item(self, index: int) -> Tuple[Optional[int], Optional[int]]: ...
+
+class YAMLObject(Protocol):
+    """Protocol for ruamel.yaml's loaded objects with location info."""
+    lc: LCInfo
+
+    def get(self, key: Any, default: Any = None) -> Any: ...
+    def items(self) -> Any: ...
+    def __getitem__(self, key: Any) -> Any: ...
+    def __contains__(self, key: Any) -> bool: ...
 
 
 class ASDLParser:
     """
-    YAML parser for ASDL files with future-proofing capabilities.
+    YAML parser for ASDL files.
     
-    Parses ASDL YAML content into structured data while preserving:
-    - Pattern syntax in port names and instance mappings
-    - Parameter expressions in values  
-    - Intent metadata as free-form dictionaries
-    - Unknown fields for forward compatibility
-    - Schema version differences
+    This parser is responsible only for converting ASDL YAML content into
+    the raw data structures defined in `data_structures.py`. It does not
+    perform any semantic validation. It uses `ruamel.yaml` to allow for
+    the future possibility of tracking line numbers for diagnostics.
     """
     
-    def __init__(self, strict_mode: bool = False, preserve_unknown: bool = True):
+    def __init__(self, preserve_unknown: bool = True):
         """
-        Initialize parser with configuration options.
+        Initialize the parser.
         
         Args:
-            strict_mode: If True, raise errors for unknown fields. If False, warn only.
             preserve_unknown: If True, preserve unknown fields in extensible structures.
         """
-        self.strict_mode = strict_mode
         self.preserve_unknown = preserve_unknown
-        self._warnings: List[str] = []
+        self._yaml = YAML(typ='rt')
+        self._yaml.composer.anchors = {} # Silence anchor warnings
     
-    def parse_file(self, filepath: str) -> ASDLFile:
+    def parse_file(self, filepath: str) -> Tuple[Optional[ASDLFile], List[Diagnostic]]:
         """
-        Parse ASDL YAML file into data structures.
+        Parse an ASDL YAML file into data structures.
         
         Args:
             filepath: Path to the ASDL YAML file
             
         Returns:
-            Parsed ASDL file representation
+            A tuple containing an ASDLFile object or None, and a list of diagnostics.
             
         Raises:
-            FileNotFoundError: If file doesn't exist
-            yaml.YAMLError: If YAML parsing fails
-            ValueError: If ASDL structure is invalid
+            FileNotFoundError: If the file doesn't exist.
         """
         file_path = Path(filepath)
         if not file_path.exists():
@@ -69,253 +84,275 @@ class ASDLParser:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
             
-        return self.parse_string(content)
+        return self.parse_string(content, file_path)
     
-    def parse_string(self, yaml_content: str) -> ASDLFile:
+    def parse_string(self, yaml_content: str, file_path: Optional[Path] = None) -> Tuple[Optional[ASDLFile], List[Diagnostic]]:
         """
-        Parse ASDL YAML string into data structures.
+        Parse an ASDL YAML string into data structures.
         
         Args:
-            yaml_content: YAML content as string
+            yaml_content: YAML content as a string.
+            file_path: Optional path to the file for location tracking.
             
         Returns:
-            Parsed ASDL file representation
-            
-        Raises:
-            yaml.YAMLError: If YAML parsing fails
-            ValueError: If ASDL structure is invalid
+            A tuple containing an ASDLFile object or None, and a list of diagnostics.
         """
+        diagnostics: List[Diagnostic] = []
         try:
-            data = yaml.safe_load(yaml_content)
-        except yaml.YAMLError as e:
-            raise yaml.YAMLError(f"Failed to parse YAML: {e}")
+            data = self._yaml.load(yaml_content)
+        except YAMLError as e:
+            loc = None
+            if e.problem_mark: # type: ignore
+                loc = Locatable(
+                    file_path=file_path,
+                    start_line=e.problem_mark.line + 1, # type: ignore
+                    start_col=e.problem_mark.column + 1, # type: ignore
+                )
+            diagnostics.append(
+                Diagnostic(
+                    code="P100",
+                    title="Invalid YAML Syntax",
+                    details=f"The file could not be parsed because of a syntax error: {e.problem}", # type: ignore
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc,
+                    suggestion="Review the file for syntax errors, paying close attention to indentation and the use of special characters."
+                )
+            )
+            return None, diagnostics
         
+        if data is None:
+            # This can happen for an empty file
+            return None, diagnostics
+
         if not isinstance(data, dict):
-            raise ValueError("ASDL file must contain a YAML dictionary")
+            loc = Locatable(start_line=1, start_col=1, file_path=file_path)
+            diagnostics.append(Diagnostic(
+                code="P101",
+                title="Invalid Root Type",
+                details="The root of an ASDL file must be a dictionary (a set of key-value pairs).",
+                severity=DiagnosticSeverity.ERROR,
+                location=loc,
+                suggestion="Ensure the ASDL file starts with a key-value structure, not a list (indicated by a leading '-')."
+            ))
+            return None, diagnostics
             
-        # Clear warnings from previous parse
-        self._warnings = []
+        # Check for mandatory sections
+        if 'file_info' not in data:
+            diagnostics.append(Diagnostic(
+                code="P102",
+                title="Missing Required Section",
+                details="'file_info' is a mandatory section and must be present at the top level of the ASDL file.",
+                severity=DiagnosticSeverity.ERROR,
+                location=Locatable(start_line=1, start_col=1, file_path=file_path),
+                suggestion="Add a 'file_info' section with at least a 'top_module' key."
+            ))
+            return None, diagnostics
+
+        yaml_data = cast(YAMLObject, data)
+            
+        file_info = self._parse_file_info(yaml_data, 'file_info', file_path)
+        models = self._parse_models(yaml_data.get('models', {}), diagnostics, file_path)
+        modules = self._parse_modules(yaml_data.get('modules', {}), diagnostics, file_path)
         
-        # Parse each section with future-proofing
-        file_info = self._parse_file_info(data)
-        models = self._parse_models(data.get('models', {}))
-        modules = self._parse_modules(data.get('modules', {}))
+        # Check for unknown top-level sections
+        allowed_keys = {'file_info', 'models', 'modules'}
+        if isinstance(data, dict):
+            for key in data.keys():
+                if key not in allowed_keys:
+                    loc = self._get_locatable_from_key(yaml_data, key, file_path)
+                    diagnostics.append(Diagnostic(
+                        code="P200",
+                        title="Unknown Top-Level Section",
+                        details=f"The top-level section '{key}' is not a recognized ASDL section.",
+                        severity=DiagnosticSeverity.WARNING,
+                        location=loc,
+                        suggestion=f"Recognized sections are: {', '.join(allowed_keys)}. Please check for a typo or remove the section if it is not needed."
+                    ))
         
-        # Check for unknown top-level fields
-        known_top_level = {'file_info', 'design_info', 'models', 'modules'}
-        self._check_unknown_fields(data, known_top_level, "top-level")
-        
-        # Report warnings if any
-        if self._warnings:
-            for warning in self._warnings:
-                warnings.warn(warning, UserWarning)
-        
-        return ASDLFile(
+        asdl_file = ASDLFile(
             file_info=file_info,
             models=models,
             modules=modules
         )
+        return asdl_file, diagnostics
     
-    def _check_unknown_fields(self, data: Dict[str, Any], known_fields: Set[str], context: str) -> None:
-        """
-        Check for unknown fields and handle according to parser configuration.
-        
-        Args:
-            data: Dictionary to check
-            known_fields: Set of expected field names
-            context: Context string for error messages
-        """
-        unknown_fields = set(data.keys()) - known_fields
-        if unknown_fields:
-            message = f"Unknown fields in {context}: {unknown_fields}"
-            if self.strict_mode:
-                raise ValueError(message)
-            else:
-                self._warnings.append(message)
-    
-    def _parse_file_info(self, data: Dict[str, Any]) -> FileInfo:
-        """
-        Parse file_info section with backward compatibility.
-        
-        Handles both 'file_info' (v0.4) and 'design_info' (legacy) for backwards compatibility.
-        """
-        # Handle both legacy 'design_info' and new 'file_info' keys
-        file_info_data = data.get('file_info')
-        if file_info_data is None:
-            file_info_data = data.get('design_info', {})
-        
-        # Validate required fields
-        if not isinstance(file_info_data, dict):
-            raise ValueError("file_info/design_info must be a dictionary")
-        
-        # Known fields for this version
-        known_fields = {'top_module', 'doc', 'revision', 'author', 'date'}
-        self._check_unknown_fields(file_info_data, known_fields, "file_info")
-        
+    def _get_locatable_from_key(self, parent_data: YAMLObject, key: str, file_path: Optional[Path]) -> Locatable:
+        """Extracts a full Locatable object from a ruamel.yaml key."""
+        loc = Locatable(file_path=file_path)
+        try:
+            # .lc.key(key) returns a tuple of (line, col) for the key
+            key_line, key_col = parent_data.lc.key(key)
+            loc.start_line = key_line + 1
+            loc.start_col = key_col + 1
+
+            # The end location is harder. We can get the location of the value node.
+            value_node = parent_data[key]
+            if hasattr(value_node, 'lc') and hasattr(value_node.lc, 'end_mark') and value_node.lc.end_mark is not None:
+                end_mark = value_node.lc.end_mark
+                loc.end_line = end_mark.line + 1
+                loc.end_col = end_mark.column + 1
+            elif loc.start_line is not None and loc.start_col is not None:
+                # Fallback: for scalars, the end is on the same line.
+                # This is an approximation.
+                loc.end_line = loc.start_line
+                loc.end_col = loc.start_col + len(key)
+        except (AttributeError, KeyError, TypeError):
+            # Fallback for objects that don't have detailed location info
+            pass
+        return loc
+
+    def _parse_file_info(self, parent_data: YAMLObject, key: str, file_path: Optional[Path]) -> FileInfo:
+        """Parse the file_info section."""
+        data = parent_data.get(key, {})
+        loc = self._get_locatable_from_key(parent_data, key, file_path)
+
         return FileInfo(
-            top_module=file_info_data.get('top_module', ''),
-            doc=file_info_data.get('doc', ''),
-            revision=file_info_data.get('revision', ''),
-            author=file_info_data.get('author', ''),
-            date=file_info_data.get('date', '')
+            **loc.__dict__,
+            top_module=data.get('top_module'),
+            doc=data.get('doc'),
+            revision=data.get('revision'),
+            author=data.get('author'),
+            date=data.get('date'),
+            metadata=data.get('metadata')
         )
     
-    def _parse_models(self, data: Dict[str, Any]) -> Dict[str, DeviceModel]:
-        """Parse models section with robust field handling."""
+    def _parse_models(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Dict[str, DeviceModel]:
+        """Parse the models section."""
+        if not self._validate_section_is_dict(data, 'models', diagnostics, file_path):
+            return {}
+
         models = {}
-        for model_alias, model_data in data.items():
-            if not isinstance(model_data, dict):
-                raise ValueError(f"Model '{model_alias}' must be a dictionary")
-            
-            # Known fields for DeviceModel (including new fields)
-            known_fields = {'model', 'type', 'ports', 'params', 'description', 'doc', 'device_line', 'parameters'}
-            self._check_unknown_fields(model_data, known_fields, f"model '{model_alias}'")
-            
-            # Parse device type with validation
-            device_type_str = model_data.get('type', 'nmos')
-            try:
-                device_type = DeviceType(device_type_str)
-            except ValueError:
-                raise ValueError(f"Invalid device type '{device_type_str}' in model '{model_alias}'. "
-                               f"Valid types: {[dt.value for dt in DeviceType]}")
-            
+        yaml_data = cast(YAMLObject, data)
+        for model_alias, model_data in yaml_data.items():
+            loc = self._get_locatable_from_key(yaml_data, model_alias, file_path)
             models[model_alias] = DeviceModel(
-                type=device_type,
-                ports=model_data.get('ports', []),
-                doc=model_data.get('doc'),
-                # NEW fields
+                **loc.__dict__,
+                type=PrimitiveType(model_data.get('type')),
+                ports=model_data.get('ports'),
                 device_line=model_data.get('device_line'),
+                doc=model_data.get('doc'),
                 parameters=model_data.get('parameters'),
-                # LEGACY fields (for backward compatibility)
-                model=model_data.get('model'),
-                params=model_data.get('params'),
-                description=model_data.get('description')  # Legacy field
+                metadata=model_data.get('metadata')
             )
         return models
     
-    def _parse_modules(self, data: Dict[str, Any]) -> Dict[str, Module]:
-        """Parse modules section with comprehensive field handling."""
+    def _parse_modules(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Dict[str, Module]:
+        """Parse the modules section."""
+        if not self._validate_section_is_dict(data, 'modules', diagnostics, file_path):
+            return {}
+
         modules = {}
-        for module_id, module_data in data.items():
-            if not isinstance(module_data, dict):
-                raise ValueError(f"Module '{module_id}' must be a dictionary")
-            
-            # Known fields for Module
-            known_fields = {'doc', 'ports', 'nets', 'parameters', 'instances'}
-            self._check_unknown_fields(module_data, known_fields, f"module '{module_id}'")
-            
+        yaml_data = cast(YAMLObject, data)
+        for module_id, module_data in yaml_data.items():
+            loc = self._get_locatable_from_key(yaml_data, module_id, file_path)
             modules[module_id] = Module(
+                **loc.__dict__,
                 doc=module_data.get('doc'),
-                ports=self._parse_ports(module_data.get('ports'), module_id) if 'ports' in module_data else None,
-                nets=self._parse_nets(module_data.get('nets'), module_id),
+                ports=self._parse_ports(module_data.get('ports'), diagnostics, file_path),
+                internal_nets=module_data.get('internal_nets'),
                 parameters=module_data.get('parameters'),
-                instances=self._parse_instances(module_data.get('instances'), module_id) if 'instances' in module_data else None
+                instances=self._parse_instances(module_data.get('instances'), diagnostics, file_path),
+                metadata=module_data.get('metadata')
             )
         return modules
     
-    def _parse_ports(self, data: Optional[Dict[str, Any]], context: str) -> Optional[Dict[str, Port]]:
-        """Parse ports section with validation."""
-        if data is None:
+    def _parse_ports(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Optional[Dict[str, Port]]:
+        """Parse the ports section of a module."""
+        if not data:
             return None
-            
         ports = {}
-        for port_name, port_data in data.items():
-            if isinstance(port_data, dict):
-                # Known fields for Port
-                known_fields = {'dir', 'type', 'constraints'}
-                self._check_unknown_fields(port_data, known_fields, f"port '{port_name}' in {context}")
-                
-                # Parse direction with validation
-                direction_str = port_data.get('dir', 'in')
-                try:
-                    direction = PortDirection(direction_str)
-                except ValueError:
-                    raise ValueError(f"Invalid port direction '{direction_str}' for port '{port_name}'. "
-                                   f"Valid directions: {[pd.value for pd in PortDirection]}")
-                
-                # Parse signal type with validation  
-                signal_type_str = port_data.get('type', 'voltage')
-                try:
-                    signal_type = SignalType(signal_type_str)
-                except ValueError:
-                    raise ValueError(f"Invalid signal type '{signal_type_str}' for port '{port_name}'. "
-                                   f"Valid types: {[st.value for st in SignalType]}")
-                
+        yaml_data = cast(YAMLObject, data)
+        for port_name, port_data in yaml_data.items():
+            loc = self._get_locatable_from_key(yaml_data, port_name, file_path)
+            
+            # Validate required fields
+            dir_val = port_data.get('dir')
+            if not dir_val:
+                diagnostics.append(Diagnostic(
+                    code="P104", 
+                    title="Missing Required Field", 
+                    details=f"Port '{port_name}' is missing the required 'dir' field.", 
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc
+                ))
+                continue
+    
+            type_val = port_data.get('type')
+            if not type_val:
+                diagnostics.append(Diagnostic(
+                    code="P104", 
+                    title="Missing Required Field", 
+                    details=f"Port '{port_name}' is missing the required 'type' field.", 
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc
+                ))
+                continue
+
+            try:
                 ports[port_name] = Port(
-                    dir=direction,
-                    type=signal_type,
-                    constraints=self._parse_constraints(port_data.get('constraints'), f"port '{port_name}'")
+                    **loc.__dict__,
+                    dir=PortDirection(dir_val.lower()),
+                    type=SignalType(type_val.lower()),
+                    constraints=self._parse_constraints(port_data.get('constraints')),
+                    metadata=port_data.get('metadata')
                 )
-            else:
-                # Handle legacy compact port format if needed
-                self._warnings.append(f"Port '{port_name}' uses non-dictionary format, assuming defaults")
-                ports[port_name] = Port(
-                    dir=PortDirection.IN,
-                    type=SignalType.VOLTAGE
-                )
+            except Exception as e:
+                diagnostics.append(Diagnostic(
+                    code="P105",
+                    title="Port Parsing Error",
+                    details=f"An error occurred while parsing port '{port_name}': {e}",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc,
+                    suggestion="Review the port definition for correctness and try again later."
+                ))
         return ports
     
-    def _parse_constraints(self, data: Any, context: str) -> Optional[PortConstraints]:
-        """
-        Parse port constraints (placeholder implementation).
-        
-        Stores constraint data as-is for future processing.
-        """
-        if data is None:
+    def _parse_constraints(self, data: Any) -> Optional[PortConstraints]:
+        """Parse port constraints (currently a placeholder)."""
+        if not data:
             return None
-        
-        # Simple placeholder - store constraints as-is
         return PortConstraints(constraints=data)
     
-    def _parse_nets(self, data: Any, context: str) -> Optional[Nets]:
-        """Parse nets section with future-proofing."""
-        if data is None:
+    def _parse_instances(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Optional[Dict[str, Instance]]:
+        """Parse the instances section of a module."""
+        if not data:
             return None
-        
-        if isinstance(data, dict):
-            # Known fields for Nets
-            known_fields = {'internal'}
-            self._check_unknown_fields(data, known_fields, f"nets in {context}")
-            
-            return Nets(internal=data.get('internal'))
-        else:
-            self._warnings.append(f"Non-dictionary nets format in {context}, treating as internal list")
-            if isinstance(data, list):
-                return Nets(internal=data)
-            else:
-                return Nets(internal=[str(data)])
-    
-    def _parse_instances(self, data: Optional[Dict[str, Any]], context: str) -> Optional[Dict[str, Instance]]:
-        """Parse instances section with intent preservation."""
-        if data is None:
-            return None
-            
         instances = {}
-        for instance_id, instance_data in data.items():
-            if not isinstance(instance_data, dict):
-                raise ValueError(f"Instance '{instance_id}' in {context} must be a dictionary")
-            
-            # Known fields for Instance
-            known_fields = {'model', 'mappings', 'doc', 'parameters', 'intent'}
-            unknown_fields = set(instance_data.keys()) - known_fields
-            
-            # Handle unknown fields specially for instances
-            intent_data = instance_data.get('intent', {})
-            if unknown_fields and self.preserve_unknown:
-                # Move unknown fields to intent for preservation
-                if not isinstance(intent_data, dict):
-                    intent_data = {}
-                for field in unknown_fields:
-                    intent_data[f"_unknown_{field}"] = instance_data[field]
-                self._warnings.append(f"Unknown fields in instance '{instance_id}' moved to intent: {unknown_fields}")
-            else:
-                self._check_unknown_fields(instance_data, known_fields, f"instance '{instance_id}' in {context}")
-            
-            instances[instance_id] = Instance(
-                model=instance_data.get('model', ''),
-                mappings=instance_data.get('mappings', {}),
+        yaml_data = cast(YAMLObject, data)
+        for instance_name, instance_data in yaml_data.items():
+            loc = self._get_locatable_from_key(yaml_data, instance_name, file_path)
+
+            model_val = instance_data.get('model')
+            if not model_val:
+                diagnostics.append(Diagnostic(
+                    code="P104", 
+                    title="Missing Required Field", 
+                    details=f"Instance '{instance_name}' is missing the required 'model' field.",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc
+                ))
+                continue
+
+            instances[instance_name] = Instance(
+                **loc.__dict__,
+                model=model_val,
+                mappings=instance_data.get('mappings'),
                 doc=instance_data.get('doc'),
                 parameters=instance_data.get('parameters'),
-                intent=intent_data if intent_data else None
+                metadata=instance_data.get('metadata')
             )
-        return instances 
+        return instances
+
+    def _validate_section_is_dict(self, data: Any, section_name: str, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> bool:
+        """Validates that a section's data is a dictionary."""
+        if not isinstance(data, dict):
+            diagnostics.append(Diagnostic(
+                code="P103",
+                title="Invalid Section Type",
+                details=f"The '{section_name}' section must be a dictionary (mapping), but found {type(data).__name__}.",
+                severity=DiagnosticSeverity.ERROR,
+                location=Locatable(start_line=1, start_col=1, file_path=file_path), # Fallback location
+                suggestion=f"Ensure the '{section_name}' key is followed by a correctly indented set of key-value pairs."
+            ))
+            return False
+        return True 

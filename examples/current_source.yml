@@ -1,0 +1,87 @@
+file_info:
+  top_module: current_source #placeholder
+  doc: "A collection of current sources"
+  revision: "v0.1"
+  author: "ASDL"
+  date: "2025-06-25"
+
+
+models: {}
+
+modules:
+  current_source_nmos:
+    doc: "NMOS current source"
+    ports:
+      vbn: {dir: in, type: voltage}
+      iout: {dir: out, type: current}
+      vss: {dir: in_out, type: voltage}
+    parameters:
+      M: 1
+    instances:
+      MN1:
+        model: nmos_unit
+        mappings: {D: iout, G: vbn, S: vss, B: vss}
+        parameters:
+          M: "{M}"
+
+
+  current_source_diff_nmos:
+    doc: "Differential NMOS current source"
+    ports:
+      vbn: {dir: in, type: voltage}
+      iout<p,n>: {dir: out, type: current}
+      vss: {dir: in_out, type: voltage}
+    parameters:
+      M: 1
+    instances:  
+      MN1<P,N>:
+        model: nmos_unit
+        mappings: {D: iout<p,n>, G: vbn, S: vss, B: vss}
+        parameters:
+          M: "{M}"
+
+  current_source_cascode_nmos:
+    doc: "Cascode NMOS current source"
+    ports:
+      vbn: {dir: in, type: voltage}
+      vmid: {dir: in_out, type: voltage}
+      vcas: {dir: in, type: voltage}
+      iout: {dir: out, type: current}
+      vss: {dir: in_out, type: voltage}
+    parameters:
+      M: 1
+      M_CAS: 1
+    instances:
+      MN1:
+        model: nmos_unit
+        mappings: {D: vmid, G: vbn, S: vss, B: vss}
+        parameters:
+          M: "{M}"
+      MN_CAS:
+        model: nmos_unit
+        mappings: {D: iout, G: vcas, S: vmid, B: vss}
+        parameters:
+          M: "{M_CAS}"
+
+  current_source_cascode_diff_nmos:
+    doc: "Cascode differential NMOS current source"
+    ports:
+      vbn: {dir: in, type: voltage}
+      vmid<p,n>: {dir: in_out, type: voltage}
+      vcas: {dir: in, type: voltage}
+      iout<p,n>: {dir: out, type: current}
+      vss: {dir: in_out, type: voltage}
+    parameters:
+      M: 1
+      M_CAS: 1
+    instances:
+      MN1<P,N>:
+        model: nmos_unit
+        mappings: {D: vmid<p,n>, G: vbn, S: vss, B: vss}
+        parameters:
+          M: "{M}"
+      MN_CAS<P,N>:
+        model: nmos_unit
+        mappings: {D: iout<p,n>, G: vcas, S: vmid<p,n>, B: vss}
+        parameters:
+          M: "{M_CAS}"

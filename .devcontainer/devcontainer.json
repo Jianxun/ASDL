@@ -23,7 +23,7 @@
 				// Add other extensions like linters, debuggers, etc.
 			],
 			"settings": {
-				"terminal.integrated.cwd": "/foss/designs",
+				"terminal.integrated.cwd": "/workspaces/ASDL",
 				"terminal.integrated.env.linux": {
 					"BASH_ENV": "/headless/.bashrc"
 				}

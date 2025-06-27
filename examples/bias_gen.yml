@@ -1,0 +1,125 @@
+file_info:
+  top_module: bias_gen
+  doc: "A collection of bias generators"
+  revision: "v0.1"
+  author: "ASDL"
+  date: "2025-06-25"
+
+models:
+  jumper:
+    doc: "Small resistor net jumper"
+    type: resistor
+    ports: [plus, minus]
+    device_line: |
+      R1 {plus} {minus} R=100m
+
+  nmos_unit:
+    doc: "NMOS transistor unit cell"
+    type: nmos
+    ports: [G, D, S, B]
+    device_line: |
+      MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+    parameters:
+      M: 1
+
+  pmos_unit:
+    doc: "PMOS transistor unit cell"
+    type: pmos
+    ports: [G, D, S, B]
+    device_line: |
+      MP {D} {G} {S} {B} pfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+    parameters:
+      M: 1
+
+  resistor:
+    doc: "Resistor"
+    type: resistor
+    ports: [plus, minus]
+    device_line: |
+      R1 {plus} {minus} R={R}
+    parameters:
+      R: 1k
+
+modules:
+  bias_gen_diode_nmos:
+    doc: "Simple diode bias generators"
+    ports:
+      ibias: {dir: in, type: current}
+      vbn: {dir: out, type: voltage}
+      vss: {dir: in_out, type: voltage}
+      vdd: {dir: in_out, type: voltage}
+    instances:
+      MN_DIODE:
+        model: nmos_unit
+        mappings: {D: vbn, G: vbn, S: vss, B: vss}
+        parameters:
+          M: 1
+      J1:
+        model: jumper
+        mappings: {plus: ibias, minus: vbn}
+
+  bias_gen_cascode_diode_nmos:
+    doc: "Simple diode bias generators"
+    ports:
+      ibias: {dir: in, type: current}
+      vbn: {dir: out, type: voltage}
+      vcas: {dir: in_out, type: voltage}
+      vss: {dir: in_out, type: voltage}
+      vdd: {dir: in_out, type: voltage}
+    instances:
+      MN_DIODE:
+        model: nmos_unit
+        mappings: {D: vbn, G: vbn, S: vss, B: vss}
+        parameters:
+          M: 1
+      MN_CAS:
+        model: nmos_unit
+        mappings: {D: vcas, G: vcas, S: vbn, B: vss}
+        parameters:
+          M: 1
+      J1:
+        model: jumper
+        mappings: {plus: ibias, minus: vcas}
+
+  bias_gen_cascode_high_swing_nmos:
+    doc: "Cascode bias generators with high swing"
+    ports: [ibias, vbn, vcas, vss, vdd]
+    nets: [vd1]
+    instances:
+      MN_DIODE:
+        model: nmos_unit
+        mappings: {D: vd1, G: vbn, S: vss, B: vss}
+        parameters:
+          M: 1
+      MN_CAS1:
+        model: nmos_unit
+        mappings: {D: vbn, G: vcas, S: vd1, B: vss}
+        parameters:
+          M: 1
+      J1:
+        model: jumper
+        mappings: {plus: ibias, minus: vbn}
+
+  bias_gen_cascode_self_biased_nmos:
+    doc: "Cascode bias generators with self-biased cascode"
+    ports: [ibias, vbn, vcas, vss, vdd]
+    nets: [vd1]
+    instances:
+      MN_DIODE:
+        model: nmos_unit
+        mappings: {D: vd1, G: vbn, S: vss, B: vss}
+        parameters:
+          M: 1
+      MN_CAS1:
+        model: nmos_unit
+        mappings: {D: vbn, G: vcas, S: vd1, B: vss}
+        parameters:
+          M: 1
+      R1:
+        model: resistor
+        mappings: {plus: vcas, minus: vbn}
+        parameters:
+          R: 2k
+      J1:
+        model: jumper
+        mappings: {plus: ibias, minus: vcas}

@@ -1,0 +1,26 @@
+file_info:
+  top_module: diff_pair #placeholder
+  doc: "A collection of differential pairs"
+  revision: "v0.1"
+  author: "ASDL"
+  date: "2025-06-25"
+
+
+models: {}
+
+modules:
+  diff_pair_nmos:
+    doc: "Differential pair NMOS"
+    ports:
+      in<p,n>: {dir: in, type: voltage}
+      out<p,n>: {dir: out, type: voltage}
+      tail: {dir: in_out, type: current} 
+      vss: {dir: in_out, type: voltage}
+    parameters:
+      M: 1
+    instances:
+      MN_DP<P,N>:
+        model: nmos_unit
+        mappings: {D: out<n,p>, G: in<p,n>, S: tail, B: vss}
+        parameters:
+          M: "{M}"

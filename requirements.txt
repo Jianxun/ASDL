@@ -12,4 +12,6 @@ numpy>=1.21.0
 matplotlib>=3.5.0
 
 # SPICE validation
-PySpice>=1.5.0 
+PySpice>=1.5.0
+
+ruamel.yaml>=0.17.21 

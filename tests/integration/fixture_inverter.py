@@ -31,8 +31,9 @@ def run_ngspice(netlist, sim_dir):
     print(f"  → Log: {sim_dir}/ngspice.log")
     print(f"  → Exit code: {result.returncode}")
 
-    # assert if the log file contains the word "Error"
-    assert "Error" not in result.stdout+result.stderr, f"ngspice simulation failed. Check {sim_dir}/ngspice.log"
+    # assert if the log file contains the word "error" (case-insensitive)
+    combined_output = (result.stdout + result.stderr).lower()
+    assert "error" not in combined_output, f"ngspice simulation failed. Check {sim_dir}/ngspice.log"
 
 #======================================================
 # Testbench Main Circuit

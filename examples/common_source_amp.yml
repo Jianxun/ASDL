@@ -1,0 +1,89 @@
+file_info:
+  top_module: primitive_amp_stage
+  doc: "A primitive amplifier stage"
+  revision: "v0.1"
+  author: "ASDL"
+  date: "2025-06-25"
+
+
+models: {}
+
+modules:
+  common_source_nmos:
+    doc: "Common source NMOS amplifier stage"
+    ports:
+      in: {dir: in, type: voltage}
+      out: {dir: out, type: voltage}
+      vss: {dir: in_out, type: voltage}
+    parameters:
+      M: 1
+    instances:
+      MN_CS:
+        model: nmos_unit
+        mappings: {D: out, G: in, S: vss, B: vss}
+        parameters:
+          M: "{M}"
+
+  common_source_diff_nmos:
+    doc: "Common source differential NMOS amplifier stage"
+    ports:
+      in<p,n>: {dir: in, type: voltage}
+      out<p,n>: {dir: out, type: voltage}
+      vss: {dir: in_out, type: voltage}
+    parameters:
+      M: 1
+    instances:
+      MN_CS<P,N>:
+        model: nmos_unit
+        mappings: {D: out<n,p>, G: in<p,n>, S: vss, B: vss}
+        parameters:
+          M: "{M}"
+
+  common_source_cascode_nmos:
+    doc: "Common source cascode NMOS amplifier stage"
+    ports:
+      in: {dir: in, type: voltage}
+      out: {dir: out, type: voltage}
+      vcas: {dir: in, type: voltage}
+      vss: {dir: in_out, type: voltage}
+    nets: 
+      - vmid
+    parameters:
+      M: 1
+      M_CAS: 1
+    instances:
+      MN_CS:
+        model: nmos_unit
+        mappings: {D: out, G: in, S: vcas, B: vss}
+        parameters:
+          M: "{M}"
+      MN_CAS:
+        model: nmos_unit
+        mappings: {D: out, G: vcas, S: vmid, B: vss}
+        parameters:
+          M: "{M_CAS}"
+
+  common_source_cascode_diff_nmos:
+    doc: "Common source cascode differential NMOS amplifier stage"
+    ports:
+      in<p,n>: {dir: in, type: voltage}
+      out<p,n>: {dir: out, type: voltage}
+      vcas: {dir: in, type: voltage}
+      vss: {dir: in_out, type: voltage}
+    nets: 
+      - vmid<p,n>
+    parameters:
+      M: 1
+      M_CAS: 1
+    instances:
+      MN_CS<P,N>: 
+        model: nmos_unit
+        mappings: {D: out<n,p>, G: in<p,n>, S: vcas, B: vss}
+        parameters:
+          M: "{M}"
+      MN_CAS<P,N>:
+        model: nmos_unit
+        mappings: {D: out<n,p>, G: vcas, S: vmid<p,n>, B: vss}
+        parameters:
+          M: "{M_CAS}"
+

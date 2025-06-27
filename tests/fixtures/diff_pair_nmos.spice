@@ -9,13 +9,13 @@
 * NMOS transistor unit cell
 .subckt nmos_unit G D S B
   .param M=1
-  MN D G S B nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 M={M}
+  MN D G S B nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
 .ends
 
 * Resistor unit cell
 .subckt resistor_unit plus minus
   .param R=10k
-  R1 plus minus ppolyf_u L=2u W=1u m=1 R={R}
+  R1 plus minus ppolyf_u L=2u W=1u m=1
 .ends
 
 * NMOS differential pair with resistor loads demonstrating pattern expansion

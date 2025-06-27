@@ -1,19 +1,29 @@
 [build-system]
-requires = ["setuptools>=45", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "asdl"
 version = "0.1.0"
-description = "Analog Structured Description Language - YAML-based analog circuit representation"
-authors = [{name = "ASDL Team"}]
-license = {text = "MIT"}
+description = "Analog Structured-Description Language"
 readme = "README.md"
-requires-python = ">=3.8"
-dependencies = [
-    "pyyaml>=6.0",
-    "click>=8.0.0",
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
 ]
+dependencies = [
+    "PyYAML>=6.0",
+    "click>=8.0.0",
+    "pydantic",
+    "ruamel.yaml",
+    "PySpice",
+    "matplotlib"
+]
+
+[project.scripts]
+asdl = "asdl.cli:cli"
 
 [project.optional-dependencies]
 dev = [
@@ -26,4 +36,10 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-dir]
-"" = "src" 
+"" = "src"
+
+[tool.pytest.ini_options]
+pythonpath = [
+  ".",
+  "src"
+] 

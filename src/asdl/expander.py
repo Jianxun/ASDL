@@ -45,7 +45,8 @@ class PatternExpander:
         return ASDLFile(
             file_info=asdl_file.file_info,
             models=asdl_file.models,  # Models unchanged
-            modules=expanded_modules  # Modules with expanded patterns
+            modules=expanded_modules,  # Modules with expanded patterns
+            metadata=asdl_file.metadata
         )
     
     def expand_module_patterns(self, module: Module) -> Module:
@@ -64,9 +65,12 @@ class PatternExpander:
         return Module(
             doc=module.doc,
             ports=expanded_ports,
-            nets=module.nets,  # Nets typically don't contain patterns
+            internal_nets=module.internal_nets,
             parameters=module.parameters,
-            instances=expanded_instances
+            instances=expanded_instances,
+            metadata=module.metadata,
+            start_line=module.start_line,
+            start_col=module.start_col
         )
     
     def expand_port_patterns(self, ports: Dict[str, Port]) -> Dict[str, Port]:
