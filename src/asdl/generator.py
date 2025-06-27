@@ -7,7 +7,7 @@ have been expanded and parameters have been resolved.
 
 import warnings
 from typing import Dict, List, Any, Optional, Set
-from .data_structures import ASDLFile, Module, Instance, DeviceModel, DeviceType
+from .data_structures import ASDLFile, Module, Instance, DeviceModel, PrimitiveType
 
 
 class SPICEGenerator:
@@ -29,43 +29,7 @@ class SPICEGenerator:
     4. End statement (.end)
     """
     
-    # Device formatting templates with explicit port mapping
-    # Templates directly show SPICE format with named port placeholders
-    # Two-terminal devices use consistent "plus"/"minus" naming
-    DEVICE_FORMATS = {
-        DeviceType.RESISTOR: {
-            "template": "{name} {plus} {minus} {model} {value}",
-            "value_param": "value",
-            "param_format": "bare"
-        },
-        DeviceType.CAPACITOR: {
-            "template": "{name} {plus} {minus} {model} {value}",
-            "value_param": "value",
-            "param_format": "bare"
-        },
-        DeviceType.INDUCTOR: {
-            "template": "{name} {plus} {minus} {model} {value}",
-            "value_param": "value", 
-            "param_format": "bare"
-        },
-        DeviceType.NMOS: {
-            "template": "{name} {D} {G} {S} {B} {model} {params}",
-            "param_format": "named"
-        },
-        DeviceType.PMOS: {
-            "template": "{name} {D} {G} {S} {B} {model} {params}",
-            "param_format": "named"
-        },
-        DeviceType.DIODE: {
-            "template": "{name} {a} {c} {model} {params}",
-            "param_format": "named"
-        },
-        # Default format for unknown device types
-        "default": {
-            "template": "{name} {model} {params}",
-            "param_format": "named"
-        }
-    }
+
     
     def __init__(self):
         """Initialize SPICE generator with default settings."""
@@ -229,8 +193,8 @@ class SPICEGenerator:
         all_params = {}
         
         # Add device model parameters (with defaults)
-        if device_model.params:
-            all_params.update(device_model.params)
+        if device_model.parameters:
+            all_params.update(device_model.parameters)
         
         # Override with instance parameters
         if instance.parameters:
@@ -242,14 +206,14 @@ class SPICEGenerator:
         """Format parameters as param=value pairs using model-defined order."""
         param_parts = []
         
-        if model and model.params:
+        if model and model.parameters:
             # First, add parameters in model-defined order
-            for param_name in model.params.keys():
+            for param_name in model.parameters.keys():
                 if param_name in params:
                     param_parts.append(f"{param_name}={params[param_name]}")
             
             # Then add any instance-only parameters (alphabetically for consistency)
-            instance_only = set(params.keys()) - set(model.params.keys())
+            instance_only = set(params.keys()) - set(model.parameters.keys())
             for param_name in sorted(instance_only):
                 param_parts.append(f"{param_name}={params[param_name]}")
         else:
@@ -352,18 +316,16 @@ class SPICEGenerator:
         lines = []
         
         # Add model documentation
-        doc = model.get_doc()
-        if doc:
-            lines.append(f"* {doc}")
+        if model.doc:
+            lines.append(f"* {model.doc}")
         
         # Generate .subckt header with model-defined port order
         port_list = model.ports
         lines.append(f".subckt {model_name} {' '.join(port_list)}")
         
         # Add parameter declarations with default values
-        param_defaults = model.get_parameter_defaults()
-        if param_defaults:
-            for param_name, param_value in param_defaults.items():
+        if model.parameters:
+            for param_name, param_value in model.parameters.items():
                 lines.append(f"{self.indent}.param {param_name}={param_value}")
         
         # Generate the internal device instance
@@ -380,7 +342,7 @@ class SPICEGenerator:
         Generate the internal device instance for a model subcircuit.
         
         This creates the primitive device line that goes inside the model subcircuit.
-        Uses either the new device_line approach or legacy template approach.
+        Uses the device_line approach with parameter substitution.
         
         Args:
             model: DeviceModel definition
@@ -388,85 +350,34 @@ class SPICEGenerator:
         Returns:
             SPICE device line as string
         """
-        if model.has_device_line():
-            # NEW APPROACH: Use raw device_line with parameter substitution
-            return self._generate_from_device_line(model)
-        else:
-            # LEGACY APPROACH: Use templates (backward compatibility)
-            return self._generate_from_legacy_template(model)
+        return self._generate_from_device_line(model)
     
     def _generate_from_device_line(self, model: DeviceModel) -> str:
         """
-        Generate device line using the new device_line approach.
+        Generate device line using the device_line approach.
         
-        Substitutes port names in the device line and automatically appends parameter assignments.
+        Substitutes port names and parameter names in the device line.
         """
-        if model.device_line is None:
-            raise ValueError(f"Model {model} has device_line set to None")
         device_line = model.device_line.strip()
         
-        # Build substitution data for ports only
+        # Build substitution data for both ports and parameters
         template_data = {}
         
         # Add port mappings (identity mapping within subcircuit)
         for port in model.ports:
             template_data[port] = port
-        
-        # Apply port substitutions to the base device line
-        try:
-            base_line = device_line.format(**template_data)
-        except KeyError as e:
-            raise ValueError(f"Missing port placeholder in device_line: {e}")
-        
-        # Automatically append parameter assignments
-        param_defaults = model.get_parameter_defaults()
-        if param_defaults:
-            param_assignments = []
-            for param_name in param_defaults.keys():
-                param_assignments.append(f"{param_name}={{{param_name}}}")
             
-            # Combine base line with parameter assignments
-            return f"{base_line} {' '.join(param_assignments)}"
-        else:
-            return base_line
+        # Add parameter mappings (parameter name -> {parameter_name} for SPICE substitution)
+        if model.parameters:
+            for param_name in model.parameters.keys():
+                template_data[param_name] = f"{{{param_name}}}"
+        
+        # Apply substitutions to the device line
+        try:
+            final_line = device_line.format(**template_data) 
+        except KeyError as e:
+            raise ValueError(f"Missing placeholder in device_line: {e}")
+        
+        return final_line
     
-    def _generate_from_legacy_template(self, model: DeviceModel) -> str:
-        """
-        Generate device line using legacy template approach (backward compatibility).
-        """
-        # Get device format specification
-        device_format = self.DEVICE_FORMATS.get(model.type, self.DEVICE_FORMATS["default"])
-        
-        # Determine device name prefix based on device type
-        device_prefixes = {
-            DeviceType.RESISTOR: "R",
-            DeviceType.CAPACITOR: "C", 
-            DeviceType.INDUCTOR: "L",
-            DeviceType.NMOS: "MN",
-            DeviceType.PMOS: "MP",
-            DeviceType.DIODE: "D"
-        }
-        device_name = device_prefixes.get(model.type, "X")
-        
-        # Build template data
-        template_data = {
-            "name": device_name,
-            "model": model.model,
-        }
-        
-        # Map each port to itself (identity mapping within subcircuit)
-        for port in model.ports:
-            template_data[port] = port
-        
-        # Add parameter data based on format type
-        model_params = model.get_parameter_defaults()  # Use unified parameter access
-        if device_format["param_format"] == "bare":
-            # Use bare value for simple devices (R, L, C)
-            value_param = device_format["value_param"]
-            template_data["value"] = str(model_params.get(value_param, "")) if model_params else ""
-        else:
-            # Use named parameters for complex devices (transistors, etc.)
-            template_data["params"] = self._format_named_parameters(model_params, model) if model_params else ""
-        
-        # Apply template
-        return device_format["template"].format(**template_data) 
+ 

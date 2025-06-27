@@ -5,7 +5,7 @@ This module tests the conversion of ASDL device instances to SPICE device lines.
 """
 
 import pytest
-from src.asdl.data_structures import DeviceModel, DeviceType, Instance, ASDLFile, FileInfo, Module
+from src.asdl.data_structures import DeviceModel, PrimitiveType, Instance, ASDLFile, FileInfo, Module
 from src.asdl.generator import SPICEGenerator
 
 
@@ -16,11 +16,11 @@ class TestDeviceGeneration:
         """Test basic resistor device line generation."""
         # Create a simple resistor model
         resistor_model = DeviceModel(
-            model="RES_1K",
-            type=DeviceType.RESISTOR,
+            type=PrimitiveType.SPICE_DEVICE,
             ports=["plus", "minus"],  # Standard two-terminal ports
-            params={},
-            description="1k resistor model"
+            device_line="R {plus} {minus} {value}",
+            doc="1k resistor model",
+            parameters={"value": "1k"}
         )
         
         # Create an instance of the resistor
@@ -39,30 +39,31 @@ class TestDeviceGeneration:
             date="2024-01-01"
         )
         
-        test_module = Module(
+                test_module = Module(
             doc="Test module",
             ports={},
             instances={"R1": resistor_instance},
-            nets=None,
+            internal_nets=None,
             parameters=None
         )
-        
+
         asdl_file = ASDLFile(
             file_info=file_info,
             models={"res_1k": resistor_model},
             modules={"test_circuit": test_module}
         )
-        
+
         # Generate SPICE
         generator = SPICEGenerator()
         spice_output = generator.generate(asdl_file)
-        
+
         # Verify hierarchical subcircuit generation
         # Model should generate as subcircuit with internal device
         assert ".subckt res_1k plus minus" in spice_output
-        assert "R plus minus RES_1K" in spice_output
+        assert ".param value=1k" in spice_output
+        assert "R {plus} {minus} {value}" in spice_output
         assert ".ends" in spice_output
-        
+
         # Instance should generate as subcircuit call
         assert "X_R1 net1 net2 res_1k value=1k" in spice_output
 

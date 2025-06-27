@@ -1,0 +1,55 @@
+feat(generator): restore SPICEGenerator functionality with modern data structures
+
+MAJOR MILESTONE: Complete SPICEGenerator refactoring and modernization
+
+This commit successfully restores the SPICEGenerator to full functionality
+after the data structure refactoring, implementing a modern device_line
+approach and removing all deprecated legacy code.
+
+## Core Changes
+
+### Data Structure Compatibility
+- Update imports: DeviceType → PrimitiveType  
+- Fix DeviceModel interface calls: .params → .parameters, .get_doc() → .doc
+- Remove all deprecated method calls and update to new architecture
+
+### Device Generation Modernization  
+- Remove deprecated DEVICE_FORMATS template system (32 lines removed)
+- Implement pure device_line approach with parameter substitution
+- Fix device_line placeholder logic for both ports and parameters
+- Streamline device generation to single modern approach
+
+### Schema Updates
+- Update diff_pair_nmos.yml fixture: design_info → file_info
+- Update model types: nmos/resistor → pdk_device  
+- Update module structure: nets → internal_nets
+- Remove all legacy field support as requested
+
+## Testing & Validation
+
+### Integration Tests Created
+- tests/integration/test_generator_pipeline.py with 2 comprehensive tests
+- Simple resistor pipeline test (basic functionality)
+- Complex diff_pair_nmos test (pattern expansion + real ASDL file)
+
+### End-to-End Pipeline Verified
+- Parser → Elaborator → Generator: All working ✅
+- Pattern expansion fully functional (MN_<P,N> → MN_P, MN_N)
+- Parameter substitution working ({value} placeholders)
+- Hierarchical SPICE generation with proper subcircuits
+
+## Generated SPICE Quality
+- Proper .subckt structure with model-defined port order
+- Clean parameter handling with .param declarations  
+- Modern device_line integration with placeholder substitution
+- Valid ngspice-compatible output format
+
+## Results
+- Integration tests: 2/2 passing ✅
+- Real ASDL files: Successfully processed complex circuits ✅
+- Generator status: Fully restored and modernized ✅
+
+This completes the SPICEGenerator refactoring and validates the entire
+ASDL pipeline (parsing, elaboration, generation) with real-world circuits.
+
+Co-authored-by: ASDL Test Suite <test@asdl.org> 

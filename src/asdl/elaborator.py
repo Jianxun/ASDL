@@ -2,8 +2,8 @@ from typing import List, Tuple, Dict, Any, Optional
 from dataclasses import replace
 import re
 
-from asdl.data_structures import ASDLFile, Module, Port, Locatable, Instance
-from asdl.diagnostics import Diagnostic, DiagnosticSeverity
+from .data_structures import ASDLFile, Module, Port, Locatable, Instance
+from .diagnostics import Diagnostic, DiagnosticSeverity
 
 
 class Elaborator:
