@@ -1,0 +1,396 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.controls button, .controls select {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.controls button:hover, .controls select:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Main container */
+.main-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 300px;
+    background: white;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.sidebar > div {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.sidebar h3 {
+    margin-bottom: 0.5rem;
+    color: #555;
+    font-size: 1rem;
+}
+
+/* Legend */
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+}
+
+.legend-symbol, .legend-line {
+    width: 30px;
+    height: 20px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nmos-symbol {
+    background: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.nmos-symbol::after {
+    content: 'N';
+    font-size: 12px;
+    font-weight: bold;
+    color: #2196f3;
+}
+
+.pmos-symbol {
+    background: #fce4ec;
+    border-color: #e91e63;
+}
+
+.pmos-symbol::after {
+    content: 'P';
+    font-size: 12px;
+    font-weight: bold;
+    color: #e91e63;
+}
+
+.resistor-symbol {
+    background: #fff3e0;
+    border-color: #ff9800;
+}
+
+.resistor-symbol::after {
+    content: 'R';
+    font-size: 12px;
+    font-weight: bold;
+    color: #ff9800;
+}
+
+.differential-line {
+    background: linear-gradient(90deg, #4caf50, #4caf50);
+    border: 2px solid #4caf50;
+    height: 4px;
+}
+
+.single-line {
+    background: #757575;
+    border: 1px solid #757575;
+    height: 2px;
+}
+
+/* Circuit info */
+.stats div {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+#circuitName {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+/* Net list */
+.net-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.net-name {
+    font-weight: 500;
+}
+
+.net-type {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 12px;
+    color: white;
+}
+
+.net-type.differential {
+    background: #4caf50;
+}
+
+.net-type.single {
+    background: #757575;
+}
+
+.net-type.internal {
+    background: #ff9800;
+}
+
+/* Canvas container */
+.canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.circuit-canvas {
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle, #ddd 1px, transparent 1px);
+    background-size: 20px 20px;
+    position: relative;
+    cursor: grab;
+}
+
+.circuit-canvas:active {
+    cursor: grabbing;
+}
+
+/* Component nodes */
+.circuit-node {
+    position: absolute;
+    width: 80px;
+    height: 60px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: move;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: transform 0.2s, box-shadow 0.2s;
+    user-select: none;
+}
+
+.circuit-node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.circuit-node.selected {
+    box-shadow: 0 0 0 3px rgba(103, 126, 234, 0.5);
+}
+
+/* Component-specific styling */
+.node-nmos {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border: 2px solid #2196f3;
+    color: #1976d2;
+}
+
+.node-pmos {
+    background: linear-gradient(135deg, #fce4ec, #f8bbd9);
+    border: 2px solid #e91e63;
+    color: #c2185b;
+}
+
+.node-resistor {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border: 2px solid #ff9800;
+    color: #f57c00;
+}
+
+.node-capacitor {
+    background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+    border: 2px solid #9c27b0;
+    color: #7b1fa2;
+}
+
+/* Node labels */
+.node-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.node-model {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+.node-pattern {
+    font-size: 0.6rem;
+    background: rgba(255,255,255,0.8);
+    padding: 1px 4px;
+    border-radius: 8px;
+    margin-top: 2px;
+}
+
+/* Connection ports */
+.connection-port {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #333;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: crosshair;
+}
+
+.connection-port:hover {
+    background: #667eea;
+    transform: scale(1.2);
+}
+
+/* Connection endpoints */
+.jtk-endpoint {
+    background: #333;
+    border: 2px solid white;
+    border-radius: 50%;
+}
+
+.jtk-endpoint:hover {
+    background: #667eea;
+    transform: scale(1.2);
+}
+
+/* Connection styling - Flowchart-builder style */
+.jtk-connector {
+    stroke-width: 2;
+    stroke: #757575;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.jtk-connector.differential {
+    stroke-width: 3;
+    stroke: #4caf50;
+}
+
+.jtk-connector.single {
+    stroke-width: 2;
+    stroke: #757575;
+}
+
+.jtk-connector:hover {
+    stroke: #667eea;
+    stroke-width: 3;
+    filter: drop-shadow(0 0 4px rgba(102, 126, 234, 0.3));
+}
+
+/* Arrow styling */
+.jtk-overlay.jtk-arrow {
+    fill: #757575;
+}
+
+.jtk-connector.differential .jtk-overlay.jtk-arrow {
+    fill: #4caf50;
+}
+
+/* Connection overlays - Professional labels */
+.jtk-overlay {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-size: 11px;
+    color: #333;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    font-weight: 500;
+}
+
+.connection-label {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    border-radius: 3px !important;
+    padding: 2px 4px !important;
+    font-size: 11px !important;
+    color: #333 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+    font-weight: 500 !important;
+}
+
+/* Status bar */
+.status-bar {
+    background: #333;
+    color: white;
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: 200px;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .controls {
+        flex-wrap: wrap;
+    }
+} 
