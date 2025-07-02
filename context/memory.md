@@ -6,16 +6,23 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 ## Current State
 **Major Milestone Completed: ASDL Visualization Prototype Development**
 
-### ✅ **Recently Completed (Current Session)**
-- **🎉 FRONTEND VISUALIZATION SYSTEM COMPLETED**: Successfully implemented complete Phase 1: Static Schematic Renderer with professional UI/UX
-- **HTML Structure**: Created `index.html` with comprehensive layout including canvas, sidebar, legend, and controls
-- **CSS Styling System**: Implemented `style.css` with component-specific styling, differential connection visualization, responsive design, and interactive elements
-- **JavaScript Application**: Built `app.js` with full ASDLVisualizer class including jsPlumb integration, JSON loading, node rendering, and connection drawing
-- **Component Visualization**: Successfully renders NMOS, PMOS, resistors with distinct styling and pattern indicators
-- **Connection System**: Thick green lines for differential connections, thin gray lines for single-ended connections with net labels
-- **Interactive Features**: Draggable nodes, hover effects, mouse coordinate tracking, circuit information display
-- **Production-Ready Interface**: Professional gradient header, sidebar with legend and net information, status bar with real-time feedback
-- **Live Demo Server**: HTTP server running on localhost:8000 serving the complete visualization system
+### ✅ **Recently Completed (Previous Session) - VISUALIZATION FRONTEND MILESTONE**
+- **🎉 COMPLETE FRONTEND VISUALIZATION SYSTEM**: Successfully delivered Phase 1: Static Schematic Renderer with production-ready quality
+- **jsPlumb Integration**: Resolved API version conflicts, implemented Community Edition 2.15.6 with orthogonal-style Flowchart connectors
+- **Professional UI Architecture**: Three-panel layout (header, sidebar, canvas) with responsive design and modern gradient styling
+- **Circuit Rendering Pipeline**: Full JSON loading → node creation → connection drawing → interactive visualization
+- **Component Styling System**: NMOS (blue), PMOS (pink), Resistor (orange) with pattern indicators and hover effects
+- **Connection Visualization**: Flowchart connectors with arrows, labels, differential/single-ended distinction, rounded corners
+- **Interactive Features**: Draggable nodes, hover effects, coordinate tracking, circuit statistics, net information display
+- **Repository Integration**: Committed to 'visualization' branch with comprehensive documentation and clean code structure
+- **Demo-Ready**: HTTP server tested, diff_pair.json renders perfectly, end-to-end pipeline validated
+- **🗃️ ARCHIVED**: Verbose implementation (698 lines) archived as reference in `prototype/visualization/archive/`
+
+### 🔄 **Current Session - MINIMAL VISUALIZER REWRITE**
+- **Architecture Decision**: Switching from verbose class-based to minimal functional architecture for better embeddability
+- **Requirements Clarification**: Minimal embeddable canvas, named port system (NMOS: G/S/D/B), Flowchart connectors, working zoom/pan
+- **Implementation Strategy**: Phased approach with zoom/pan in Phase 1 to establish coordinate system early
+- **Target**: ~100 lines total, functional modules, JSON-driven positioning, easily tweakable jsPlumb settings
 
 ### 🔧 **Current Status**
 - **Test Suite**: 82/82 tests passing (70 non-generator + 6 validator + 2 generator pipeline + 4 removed, now 8 integration tests) ✅
@@ -48,7 +55,7 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 1. **Integration Strategy**: How to integrate validator into the main pipeline (before generation)
 2. **Data Structure Fixes**: Need to fix DeviceModel compatibility in generator
 3. **Pipeline Testing**: Need end-to-end tests with validator + generator integration
-4. **Frontend Development**: Next phase is to build HTML/CSS/JavaScript frontend for jsPlumb visualization
+4. **Interactive Enhancement**: Add pan/zoom, tooltips, export features to visualization frontend
 
 ## Compiler Improvement Notes
 - **Parser Robustness**: The `ASDLParser` crashed when a `model` was missing the `type` field. It should instead produce a user-friendly error (e.g., `P104: Missing 'type' in model definition`).

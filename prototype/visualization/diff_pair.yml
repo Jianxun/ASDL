@@ -65,7 +65,11 @@ modules:
           M: "{M}"
       M_TAIL:
         model: nmos_unit
-        mappings: {D: tail, G: vbn, S: vss, B: vss}
+        mappings: 
+          D: tail
+          G: vbn
+          S: vss
+          B: vss
         parameters:
           M: "{M}"
       R_LOAD<P,N>:

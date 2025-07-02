@@ -1,6 +1,120 @@
 # Project Todo List
 
-## 🎉 **VISUALIZATION PROTOTYPE COMPLETED ✅** (MAJOR MILESTONE)
+## 🔄 **CURRENT SPRINT: MINIMAL VISUALIZER REWRITE** (IN PROGRESS)
+
+### **🎯 Goal**: Create embeddable, minimal circuit visualizer with named ports
+**Architecture**: Functional modules, ~100 lines total, easily tweakable jsPlumb settings
+
+### **Implementation Plan**:
+
+#### **Phase 1: Basic HTML Structure & Canvas Interactions** (45 minutes)
+**Goal**: Create minimal HTML structure with working zoom/pan canvas
+
+- [ ] **1.1 Create minimal HTML structure**
+  - [ ] Strip down `index.html` to bare canvas only (remove sidebar, header, controls, status bar)
+  - [ ] Simple full-screen canvas div
+
+- [ ] **1.2 Zoom and Pan Implementation** ⭐ **MOVED TO PHASE 1**
+  - [ ] Initialize jsPlumb with minimal config
+  - [ ] Mouse wheel zoom using `jsPlumb.setZoom(scale)`
+  - [ ] Mouse drag pan with canvas transform
+  - [ ] Limit zoom range (0.1x to 3.0x)
+  - [ ] Prevent pan conflicts with future node interactions
+
+- [ ] **1.3 Simplify CSS to basics**
+  - [ ] Remove all complex styling, legends, themes
+  - [ ] Keep only `.circuit-canvas` and `.circuit-node` styles
+  - [ ] Fixed 60x60px square nodes with simple border
+
+**Deliverable**: Empty canvas with working zoom/pan functionality  
+**Test**: Mouse wheel zooms smoothly, drag pans the canvas
+
+#### **Phase 2: Basic Node Rendering** (20 minutes)
+**Goal**: Render static nodes from JSON on the zoomable/pannable canvas
+
+- [ ] **2.1 Basic node rendering**
+  - [ ] Create `createNode(nodeData)` function
+  - [ ] Position nodes using `nodeData.x, nodeData.y` coordinates
+  - [ ] Display `nodeData.label` as text content
+  - [ ] Test with simple 2-3 node JSON file
+
+**Deliverable**: Static nodes visible on canvas at specified positions, zoom/pan works with nodes  
+**Test**: Load JSON file, see square nodes with labels, verify they zoom/pan correctly
+
+#### **Phase 3: Named Port System** (20 minutes)
+**Goal**: Add invisible port anchors to nodes without connections yet
+
+- [ ] **3.1 Define port layouts**
+  - [ ] Create `NODE_PORTS` constant with NMOS, PMOS, resistor port positions
+  - [ ] Use relative coordinates (0.0-1.0) for anchor positions
+
+- [ ] **3.2 Add jsPlumb endpoints**
+  - [ ] Add named endpoints to nodes using `NODE_PORTS[nodeType]`
+  - [ ] Use UUID pattern: `${nodeId}-${portName}` (e.g., "M1-G", "M1-D")
+
+**Deliverable**: Nodes have invisible named anchor points that work with zoom/pan  
+**Test**: Inspect jsPlumb endpoints, verify UUIDs are correct, zoom in to check positioning
+
+#### **Phase 4: Port-to-Port Connections** (20 minutes)
+**Goal**: Draw connections between named ports using Flowchart connector
+
+- [ ] **4.1 Connection rendering**
+  - [ ] Create `createConnection(connData)` function
+  - [ ] Connect using UUIDs: `from_node-from_port` → `to_node-to_port`
+  - [ ] Use Flowchart connector style as specified
+
+- [ ] **4.2 Test with realistic circuit**
+  - [ ] Update JSON to include connections with named ports
+  - [ ] Test NMOS drain-to-resistor, gate connections, etc.
+
+**Deliverable**: Visible connections between specific ports that work with zoom/pan  
+**Test**: Load circuit JSON, see Flowchart-style lines, verify connections scale with zoom
+
+#### **Phase 5: JSON Loading & Integration** (15 minutes)
+**Goal**: Dynamic circuit loading and cleanup
+
+- [ ] **5.1 Circuit loading**
+  - [ ] `loadCircuit(filename)` function with fetch()
+  - [ ] Clear previous circuit before loading new one
+  - [ ] Error handling for missing files
+
+- [ ] **5.2 Cleanup integration**
+  - [ ] Clear jsPlumb connections and endpoints
+  - [ ] Remove DOM nodes properly
+  - [ ] Reset zoom/pan state
+
+**Deliverable**: Can switch between different circuit JSON files  
+**Test**: Load different circuits, verify clean transitions, zoom/pan resets properly
+
+#### **Phase 6: Testing & Polish** (15 minutes)
+**Goal**: Ensure robust operation and clean code
+
+- [ ] **6.1 Browser compatibility**
+  - [ ] Test in Chrome, Firefox, Safari
+  - [ ] Verify zoom/pan works consistently
+  - [ ] Check for console errors
+
+- [ ] **6.2 Code cleanup**
+  - [ ] Remove any leftover verbose code from original app.js
+  - [ ] Add minimal comments
+  - [ ] Verify total line count is ~100 lines
+
+**Deliverable**: Production-ready minimal visualizer  
+**Test**: Works reliably across browsers, embeddable in other pages
+
+### **Success Criteria**:
+- ✅ **Minimal**: HTML+CSS+JS under 200 lines total
+- ✅ **Embeddable**: No UI chrome, just circuit canvas
+- ✅ **Named ports**: NMOS G/S/D/B connections work correctly
+- ✅ **Zoom/Pan**: Smooth, doesn't break connections
+- ✅ **Flowchart**: Connector style as specified
+- ✅ **JSON-driven**: Complete circuit definition in JSON
+
+**Estimated Total Time: 2 hours**
+
+---
+
+## 🎉 **VISUALIZATION PROTOTYPE COMPLETED ✅** (MAJOR MILESTONE - ARCHIVED)
 
 ### **🚀 Ready for Next Sprint: Frontend Development**
 **FOUNDATION COMPLETE**: The ASDL-to-JSON extraction pipeline is now production-ready with full differential pair support
@@ -26,9 +140,9 @@
 - [X] Test with `diff_pair.json` data ✅
 - [X] **BONUS**: Professional UI with sidebar, legend, controls, and status tracking ✅
 
-**🚀 LIVE DEMO**: Access at http://localhost:8000
+**🚀 PRODUCTION READY**: Complete frontend visualization system committed to repository
 
-## Current Sprint: **Phase 2: Interactive Features Enhancement**
+## Next Session: **Phase 2: Interactive Features Enhancement**
 
 ### **Phase 2: Interactive Features** 
 - [ ] Implement node dragging with connection preservation
