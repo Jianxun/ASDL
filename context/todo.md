@@ -35,18 +35,68 @@
 **✅ Test Results**: All functionality working - ready for Phase 2
 **📋 Documentation**: Created comprehensive `jsplumb_development_guide.md`
 
-#### **Phase 2: Basic Node Rendering** (20 minutes) [NEXT]
-**Goal**: Render static nodes from JSON on the zoomable/pannable canvas
+#### **Phase 2: Basic Node Rendering** (20 minutes) [READY TO START]
+**Goal**: Render static nodes from enhanced JSON on the zoomable/pannable canvas
 
-- [ ] **2.1 Basic node rendering**
-  - [ ] Create `createNode(nodeData)` function
-  - [ ] Position nodes using `nodeData.x, nodeData.y` coordinates  
+**✅ Prerequisites Complete**:
+- Enhanced JSON schema with coordinates, dimensions, and node types ✅
+- Port-to-device connection directions corrected ✅
+- VDD/VSS connections properly included ✅
+
+**Implementation Steps**:
+
+- [ ] **2.1 Create `createNode(nodeData)` function** (5 minutes)
+  - [ ] Handle three node types: `device`, `port` with `power_supply` model, `port` with `port` model
+  - [ ] Set position using `nodeData.x, nodeData.y` coordinates
+  - [ ] Set dimensions using `nodeData.width, nodeData.height`
   - [ ] Display `nodeData.label` as text content
-  - [ ] Remove test nodes, load from `diff_pair.json`
-  - [ ] Test with real circuit data (3 nodes: MN_DP, M_TAIL, R_LOAD)
+  - [ ] Apply different styling based on `nodeData.node_type` and `nodeData.model`
+  - [ ] Add CSS classes: `circuit-node`, `node-{node_type}`, `model-{model}`
+
+- [ ] **2.2 Add `loadCircuit(filename)` function** (5 minutes)
+  - [ ] Fetch JSON file using `fetch()` API
+  - [ ] Parse JSON and store in `this.circuitData`
+  - [ ] Clear existing nodes from canvas
+  - [ ] Create nodes using `createNode()` for each node in `nodes` array
+  - [ ] Add error handling for missing files
+
+- [ ] **2.3 Remove test nodes and integrate real data** (5 minutes)
+  - [ ] Remove `createTestNode()` function and its calls
+  - [ ] Update `init()` to call `loadCircuit('diff_pair_enhanced.json')`
+  - [ ] Ensure nodes are added to `this.content` container
+  - [ ] Make all nodes draggable with grid snap using `this.jsPlumbInstance.draggable()`
+
+- [ ] **2.4 Add CSS styling for node types** (3 minutes)
+  - [ ] Device nodes: 60×60px, border, centered text
+  - [ ] Power supply ports: 400×20px, horizontal bar styling
+  - [ ] Regular ports: 30×30px, smaller border, centered text
+  - [ ] Add hover effects for better interaction
+
+- [ ] **2.5 Test integration** (2 minutes)
+  - [ ] Verify 8 nodes render at correct positions
+  - [ ] Test zoom/pan functionality with real nodes
+  - [ ] Verify dragging works with 20px grid snap
+  - [ ] Check browser console for errors
 
 **Deliverable**: Real circuit nodes visible on canvas at JSON positions, zoom/pan works with nodes  
-**Test**: Load `diff_pair.json`, see circuit nodes with proper labels, verify they zoom/pan correctly
+**Test**: Load `diff_pair_enhanced.json`, see 8 nodes (3 devices + 5 ports), verify they zoom/pan correctly
+
+**Expected Output**:
+```
+VDD     [============================] ← 400×20px power supply
+        
+port_in [▢]                           ← 30×30px port
+        
+R_LOAD  [■]                           ← 60×60px device
+        
+MN_DP   [■]                           ← 60×60px device
+        
+M_TAIL  [■]         port_vbn[▢]       ← 60×60px device + 30×30px port
+        
+        port_out[▢]                   ← 30×30px port
+        
+VSS     [============================] ← 400×20px power supply
+```
 
 #### **Phase 3: Named Port System** (20 minutes)
 **Goal**: Add invisible port anchors to nodes without connections yet

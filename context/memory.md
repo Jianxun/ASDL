@@ -23,7 +23,15 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - **Core Functionality**: Cursor-centered zoom (0.1x-3.0x), smooth canvas panning, invisible grid-snap dragging (20px)
 - **Technical Implementation**: Two-layer container architecture, manual zoom/pan for Community Edition, proper event conflict resolution
 - **Documentation**: Created comprehensive `jsplumb_development_guide.md` with 350+ lines of patterns, pitfalls, and best practices
-- **Ready for Phase 2**: Solid foundation for circuit node rendering from JSON data
+
+### ✅ **JSON SCHEMA ENHANCEMENT COMPLETE - READY FOR PHASE 2**
+- **Enhanced Extractor**: Successfully modified `extractor.py` to generate visualization-ready JSON with coordinates and dimensions
+- **Three Node Types**: Device nodes (60×60px), power supply ports (400×20px horizontal bars), regular ports (30×30px)
+- **Complete Connectivity**: All VDD/VSS connections properly included with correct port-to-device signal flow direction
+- **Perfect Layout**: Hardcoded coordinates for vertical layout (VDD → R_LOAD → MN_DP → M_TAIL → VSS)
+- **Connection Filtering**: Bulk 'B' connections properly filtered out for clean visualization
+- **Production Ready**: `diff_pair_enhanced.json` contains 8 nodes (3 devices + 5 ports) with complete connectivity (8 connections)
+- **Ready for Phase 2**: Enhanced JSON schema provides everything needed for node rendering implementation
 
 ### 🔧 **Current Status**
 - **Test Suite**: 82/82 tests passing (70 non-generator + 6 validator + 2 generator pipeline + 4 removed, now 8 integration tests) ✅
@@ -54,13 +62,18 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 8. **jsPlumb Edition Choice**: Use Community Edition 2.15.6 with manual zoom/pan implementation vs commercial Toolkit
 9. **Container Architecture**: Two-layer viewport/content pattern essential for proper zoom/pan behavior
 10. **Event Handling**: Pan detection must exclude draggable elements to avoid jsPlumb conflicts
+11. **JSON Schema Design**: Three node types - devices (60×60px), power supply ports (400×20px bars), regular ports (30×30px)
+12. **Connection Direction**: Port-to-device signal flow (VDD/inputs as sources → devices, devices → output ports as sinks)
+13. **Layout Strategy**: Hardcoded coordinates for initial implementation, vertical stack layout for differential pair circuit
+14. **Connection Filtering**: Filter out MOSFET bulk 'B' connections to keep visualization clean and focused
 
 ## Open Questions
 1. **Integration Strategy**: How to integrate validator into the main pipeline (before generation)
 2. **Data Structure Fixes**: Need to fix DeviceModel compatibility in generator
 3. **Pipeline Testing**: Need end-to-end tests with validator + generator integration
-4. **Visualization Phase 2**: Implement circuit node rendering from JSON data with named ports (G/S/D/B)
-5. **Connection System**: Implement UUID-based port-to-port connections using Flowchart connectors
+4. ✅ **Visualization JSON Schema**: ~~Implement circuit node rendering from JSON data~~ → **COMPLETE** - Enhanced JSON with coordinates and node types ready
+5. ✅ **Connection System**: ~~Implement UUID-based port-to-port connections~~ → **READY** - All connections defined in enhanced JSON with proper signal flow
+6. **Phase 2 Implementation**: Implement `createNode()` function and load enhanced JSON data into minimal visualizer
 
 ## Compiler Improvement Notes
 - **Parser Robustness**: The `ASDLParser` crashed when a `model` was missing the `type` field. It should instead produce a user-friendly error (e.g., `P104: Missing 'type' in model definition`).
