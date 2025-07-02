@@ -7,7 +7,7 @@
       "model": "power_supply",
       "is_patterned": false,
       "x": 100,
-      "y": 450,
+      "y": 500,
       "width": 400,
       "height": 20,
       "node_type": "port"
@@ -28,10 +28,10 @@
       "label": "in",
       "model": "port",
       "is_patterned": true,
-      "x": 150,
-      "y": 150,
-      "width": 30,
-      "height": 30,
+      "x": 120,
+      "y": 280,
+      "width": 40,
+      "height": 40,
       "node_type": "port"
     },
     {
@@ -39,10 +39,10 @@
       "label": "out",
       "model": "port",
       "is_patterned": true,
-      "x": 350,
-      "y": 350,
-      "width": 30,
-      "height": 30,
+      "x": 460,
+      "y": 220,
+      "width": 40,
+      "height": 40,
       "node_type": "port"
     },
     {
@@ -50,10 +50,10 @@
       "label": "vbn",
       "model": "port",
       "is_patterned": false,
-      "x": 50,
-      "y": 300,
-      "width": 30,
-      "height": 30,
+      "x": 120,
+      "y": 400,
+      "width": 40,
+      "height": 40,
       "node_type": "port"
     },
     {
@@ -61,10 +61,10 @@
       "label": "MN_DP",
       "model": "nmos_unit",
       "is_patterned": true,
-      "x": 250,
-      "y": 250,
-      "width": 60,
-      "height": 60,
+      "x": 260,
+      "y": 260,
+      "width": 80,
+      "height": 80,
       "node_type": "device"
     },
     {
@@ -72,10 +72,10 @@
       "label": "M_TAIL",
       "model": "nmos_unit",
       "is_patterned": false,
-      "x": 250,
-      "y": 300,
-      "width": 60,
-      "height": 60,
+      "x": 260,
+      "y": 380,
+      "width": 80,
+      "height": 80,
       "node_type": "device"
     },
     {
@@ -83,10 +83,10 @@
       "label": "R_LOAD",
       "model": "res",
       "is_patterned": true,
-      "x": 250,
-      "y": 200,
-      "width": 60,
-      "height": 60,
+      "x": 260,
+      "y": 140,
+      "width": 80,
+      "height": 80,
       "node_type": "device"
     }
   ],
