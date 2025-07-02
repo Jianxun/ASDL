@@ -42,6 +42,15 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - **Error Reporting**: ✅ **PRODUCTION READY** - Line/column information in all error messages
 - **Generator Status**: ✅ **FULLY RESTORED & COMPREHENSIVELY TESTED** - Complete refactoring successful
 - **Device Models**: ✅ **PROFESSIONAL GRADE** - Fully parameterized with realistic PDK expressions
+- **PHASE 2-4 COMPLETE – NODE RENDERING, NAMED PORTS & CONNECTIONS**
+• Implemented `createNode()` with dynamic styling/positioning and grid-snap dragging.
+• Added `loadCircuit()` with JSON fetch, cleanup, batched node creation, and error handling.
+• Defined `NODE_PORTS` and added invisible jsPlumb endpoints using UUIDs.
+• Implemented automatic connection rendering between UUID endpoints using Flowchart connector.
+• Refined anchor placement: ports use left/right edges; power supplies use top/bottom edges for clean vertical rails.
+• All 8 nodes and 8 connections from `diff_pair_enhanced.json` render correctly with zoom/pan.
+• CSS updated with distinct styles and hover effects.
+• Codebase remains under 200 lines total (HTML+CSS+JS).
 
 ### 📊 **Component Health**
 - ✅ **Parser**: 23/23 tests passing - Complete location tracking and diagnostics (with known YAML pattern parsing limitation)
@@ -57,15 +66,7 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 3. **TDD Approach**: All validation methods implemented incrementally with tests first
 4. **Clean Separation**: Complete removal of validation logic from generator (214 lines removed)
 5. **Legacy Code Removal**: Removed all backward compatibility and legacy validation code as requested
-6. **Visualization Strategy**: Pre-elaboration data extraction to preserve high-level design abstractions like differential pairs
-7. **Parser Workaround**: Multi-line YAML format for mappings containing patterns to avoid ruamel.yaml parsing bugs
-8. **jsPlumb Edition Choice**: Use Community Edition 2.15.6 with manual zoom/pan implementation vs commercial Toolkit
-9. **Container Architecture**: Two-layer viewport/content pattern essential for proper zoom/pan behavior
-10. **Event Handling**: Pan detection must exclude draggable elements to avoid jsPlumb conflicts
-11. **JSON Schema Design**: Three node types - devices (60×60px), power supply ports (400×20px bars), regular ports (30×30px)
-12. **Connection Direction**: Port-to-device signal flow (VDD/inputs as sources → devices, devices → output ports as sinks)
-13. **Layout Strategy**: Hardcoded coordinates for initial implementation, vertical stack layout for differential pair circuit
-14. **Connection Filtering**: Filter out MOSFET bulk 'B' connections to keep visualization clean and focused
+6. ✅ **Phase 2-4 Implementation**: Node rendering, endpoints, and connections **COMPLETE**
 
 ## Open Questions
 1. **Integration Strategy**: How to integrate validator into the main pipeline (before generation)
@@ -73,7 +74,6 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 3. **Pipeline Testing**: Need end-to-end tests with validator + generator integration
 4. ✅ **Visualization JSON Schema**: ~~Implement circuit node rendering from JSON data~~ → **COMPLETE** - Enhanced JSON with coordinates and node types ready
 5. ✅ **Connection System**: ~~Implement UUID-based port-to-port connections~~ → **READY** - All connections defined in enhanced JSON with proper signal flow
-6. **Phase 2 Implementation**: Implement `createNode()` function and load enhanced JSON data into minimal visualizer
 
 ## Compiler Improvement Notes
 - **Parser Robustness**: The `ASDLParser` crashed when a `model` was missing the `type` field. It should instead produce a user-friendly error (e.g., `P104: Missing 'type' in model definition`).

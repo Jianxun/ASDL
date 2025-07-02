@@ -36,8 +36,6 @@ body {
 }
 
 .circuit-node {
-    width: 60px;
-    height: 60px;
     border: 2px solid #333;
     background-color: white;
     position: absolute;
@@ -49,4 +47,31 @@ body {
     border-radius: 4px;
     user-select: none;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.circuit-node:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+}
+
+/* Device nodes - 60x60px squares */
+.node-device {
+    background-color: #e3f2fd;
+    border-color: #1976d2;
+}
+
+/* Power supply ports - 400x20px bars */
+.model-power_supply {
+    background-color: #333;
+    color: white;
+    border-radius: 2px;
+    font-size: 10px;
+}
+
+/* Regular ports - 30x30px squares */
+.node-port:not(.model-power_supply) {
+    background-color: #fff3e0;
+    border-color: #f57722;
+    border-radius: 50%;
 } 

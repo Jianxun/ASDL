@@ -8,6 +8,34 @@ class CircuitVisualizer {
         this.panOffset = { x: 0, y: 0 };
         this.isDragging = false;
         this.dragStart = { x: 0, y: 0 };
+        this.circuitData = null;
+        
+        // Port layout definitions (relative coordinates 0.0-1.0)
+        this.NODE_PORTS = {
+            'nmos_unit': {
+                'G': { x: 0.0, y: 0.5 },   // Gate - left center
+                'D': { x: 0.5, y: 0.0 },   // Drain - top center  
+                'S': { x: 0.5, y: 1.0 }    // Source - bottom center
+            },
+            'res': {
+                'plus': { x: 0.5, y: 0.0 },   // Top center
+                'minus': { x: 0.5, y: 1.0 }   // Bottom center
+            },
+            'port': {
+                // Dynamic anchors: left and right edges
+                'terminal': [
+                    [0, 0.5, -1, 0],  // Left center
+                    [1, 0.5, 1, 0]    // Right center
+                ]
+            },
+            'power_supply': {
+                // Anchors at top and bottom edges for cleaner power rails
+                'terminal': [
+                    [0.5, 0, 0, -1],  // Top center (pointing up)
+                    [0.5, 1, 0, 1]    // Bottom center (pointing down)
+                ]
+            }
+        };
         
         this.init();
     }
@@ -29,38 +57,108 @@ class CircuitVisualizer {
         });
         
         this.setupZoomPan();
-        this.createTestNode();
+        this.loadCircuit('diff_pair_enhanced.json');
     }
     
-    createTestNode() {
-        // Add two test nodes to see zoom/pan and grid snap in action
-        const testNode1 = document.createElement('div');
-        testNode1.className = 'circuit-node';
-        testNode1.textContent = 'TEST1';
-        testNode1.id = 'test-node-1';
-        testNode1.style.left = '200px';
-        testNode1.style.top = '150px';
-        testNode1.style.backgroundColor = '#e3f2fd';  // Light blue
-        this.content.appendChild(testNode1);
+    createNode(nodeData) {
+        const element = document.createElement('div');
+        element.id = nodeData.id;
+        element.textContent = nodeData.label;
         
-        const testNode2 = document.createElement('div');
-        testNode2.className = 'circuit-node';
-        testNode2.textContent = 'TEST2';
-        testNode2.id = 'test-node-2';
-        testNode2.style.left = '350px';
-        testNode2.style.top = '250px';
-        testNode2.style.backgroundColor = '#f3e5f5';  // Light purple
-        this.content.appendChild(testNode2);
+        // Base classes
+        element.className = `circuit-node node-${nodeData.node_type} model-${nodeData.model}`;
         
-        // Make both test nodes draggable with grid snap
-        this.jsPlumbInstance.draggable(testNode1, {
+        // Position using JSON coordinates
+        element.style.left = `${nodeData.x}px`;
+        element.style.top = `${nodeData.y}px`;
+        element.style.width = `${nodeData.width}px`;
+        element.style.height = `${nodeData.height}px`;
+        
+        // Add to content container
+        this.content.appendChild(element);
+        
+        // Make draggable with grid snap
+        this.jsPlumbInstance.draggable(element, {
             grid: [20, 20],
             cursor: 'pointer'
         });
-        this.jsPlumbInstance.draggable(testNode2, {
-            grid: [20, 20], 
-            cursor: 'pointer'
+        
+        // Add named endpoints for this node
+        this.addEndpoints(element, nodeData);
+        
+        return element;
+    }
+    
+    addEndpoints(element, nodeData) {
+        // Determine key for NODE_PORTS lookup (prefer model, fallback to node_type)
+        const key = this.NODE_PORTS[nodeData.model] ? nodeData.model : nodeData.node_type;
+        const portLayout = this.NODE_PORTS[key];
+        if (!portLayout) return;  // No port layout defined
+
+        Object.entries(portLayout).forEach(([portName, pos]) => {
+            const uuid = `${nodeData.id}-${portName}`;
+            let anchorConfig;
+            if (Array.isArray(pos[0])) {
+                // pos is array of anchor arrays for dynamic anchors
+                anchorConfig = pos;  // dynamic anchor list
+            } else if (Array.isArray(pos)) {
+                anchorConfig = pos;  // Treat as provided list (already anchors)
+            } else {
+                anchorConfig = [pos.x, pos.y, 0, 0];  // single anchor definition
+            }
+
+            this.jsPlumbInstance.addEndpoint(element, {
+                uuid,
+                anchor: anchorConfig,
+                isSource: true,
+                isTarget: true,
+                maxConnections: -1
+            });
         });
+    }
+    
+    async loadCircuit(filename) {
+        try {
+            // Clear existing nodes and jsPlumb elements
+            this.jsPlumbInstance.deleteEveryConnection();
+            this.jsPlumbInstance.deleteEveryEndpoint();
+            const existingNodes = this.content.querySelectorAll('.circuit-node');
+            existingNodes.forEach(node => node.remove());
+            
+            // Fetch and parse JSON
+            const response = await fetch(filename);
+            if (!response.ok) {
+                throw new Error(`Failed to load ${filename}: ${response.status}`);
+            }
+            
+            this.circuitData = await response.json();
+            
+            // Batch node creation for performance
+            this.jsPlumbInstance.batch(() => {
+                // Create nodes from JSON data
+                this.circuitData.nodes.forEach(nodeData => {
+                    this.createNode(nodeData);
+                });
+
+                // Create connections between ports
+                this.circuitData.connections.forEach(conn => {
+                    const sourceUUID = `${conn.from_node}-${conn.from_port}`;
+                    const targetUUID = `${conn.to_node}-${conn.to_port}`;
+                    try {
+                        this.jsPlumbInstance.connect({ uuids: [sourceUUID, targetUUID] });
+                    } catch (e) {
+                        console.warn('Connection failed:', conn, e);
+                    }
+                });
+            });
+            
+            console.log(`Loaded circuit: ${this.circuitData.module_name}`);
+            console.log(`Nodes created: ${this.circuitData.nodes.length}`);
+            console.log(`Connections created: ${this.circuitData.connections.length}`);
+            
+        } catch (error) {
+            console.error('Error loading circuit:', error);
+        }
     }
     
     setupZoomPan() {
@@ -139,5 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('Circuit Visualizer initialized with zoom/pan functionality');
     console.log('Mouse wheel to zoom (0.1x - 3.0x), drag background to pan');
-    console.log('Drag TEST1/TEST2 nodes to see 20px grid snap');
+    console.log('Drag circuit nodes to see 20px grid snap');
+    console.log('Loading diff_pair_enhanced.json...');
 }); 
