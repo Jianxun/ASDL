@@ -18,11 +18,12 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - **Demo-Ready**: HTTP server tested, diff_pair.json renders perfectly, end-to-end pipeline validated
 - **🗃️ ARCHIVED**: Verbose implementation (698 lines) archived as reference in `prototype/visualization/archive/`
 
-### 🔄 **Current Session - MINIMAL VISUALIZER REWRITE**
-- **Architecture Decision**: Switching from verbose class-based to minimal functional architecture for better embeddability
-- **Requirements Clarification**: Minimal embeddable canvas, named port system (NMOS: G/S/D/B), Flowchart connectors, working zoom/pan
-- **Implementation Strategy**: Phased approach with zoom/pan in Phase 1 to establish coordinate system early
-- **Target**: ~100 lines total, functional modules, JSON-driven positioning, easily tweakable jsPlumb settings
+### ✅ **PHASE 1 COMPLETE - MINIMAL VISUALIZER FOUNDATION**
+- **Architecture Achievement**: Successfully implemented minimal functional architecture with jsPlumb Community Edition 2.15.6
+- **Core Functionality**: Cursor-centered zoom (0.1x-3.0x), smooth canvas panning, invisible grid-snap dragging (20px)
+- **Technical Implementation**: Two-layer container architecture, manual zoom/pan for Community Edition, proper event conflict resolution
+- **Documentation**: Created comprehensive `jsplumb_development_guide.md` with 350+ lines of patterns, pitfalls, and best practices
+- **Ready for Phase 2**: Solid foundation for circuit node rendering from JSON data
 
 ### 🔧 **Current Status**
 - **Test Suite**: 82/82 tests passing (70 non-generator + 6 validator + 2 generator pipeline + 4 removed, now 8 integration tests) ✅
@@ -50,12 +51,16 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 5. **Legacy Code Removal**: Removed all backward compatibility and legacy validation code as requested
 6. **Visualization Strategy**: Pre-elaboration data extraction to preserve high-level design abstractions like differential pairs
 7. **Parser Workaround**: Multi-line YAML format for mappings containing patterns to avoid ruamel.yaml parsing bugs
+8. **jsPlumb Edition Choice**: Use Community Edition 2.15.6 with manual zoom/pan implementation vs commercial Toolkit
+9. **Container Architecture**: Two-layer viewport/content pattern essential for proper zoom/pan behavior
+10. **Event Handling**: Pan detection must exclude draggable elements to avoid jsPlumb conflicts
 
 ## Open Questions
 1. **Integration Strategy**: How to integrate validator into the main pipeline (before generation)
 2. **Data Structure Fixes**: Need to fix DeviceModel compatibility in generator
 3. **Pipeline Testing**: Need end-to-end tests with validator + generator integration
-4. **Interactive Enhancement**: Add pan/zoom, tooltips, export features to visualization frontend
+4. **Visualization Phase 2**: Implement circuit node rendering from JSON data with named ports (G/S/D/B)
+5. **Connection System**: Implement UUID-based port-to-port connections using Flowchart connectors
 
 ## Compiler Improvement Notes
 - **Parser Robustness**: The `ASDLParser` crashed when a `model` was missing the `type` field. It should instead produce a user-friendly error (e.g., `P104: Missing 'type' in model definition`).

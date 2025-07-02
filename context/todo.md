@@ -1,45 +1,52 @@
 # Project Todo List
 
-## 🔄 **CURRENT SPRINT: MINIMAL VISUALIZER REWRITE** (IN PROGRESS)
+## 🔄 **CURRENT SPRINT: MINIMAL VISUALIZER PHASE 2** (READY TO START)
 
 ### **🎯 Goal**: Create embeddable, minimal circuit visualizer with named ports
 **Architecture**: Functional modules, ~100 lines total, easily tweakable jsPlumb settings
 
 ### **Implementation Plan**:
 
-#### **Phase 1: Basic HTML Structure & Canvas Interactions** (45 minutes)
+#### **✅ Phase 1: Basic HTML Structure & Canvas Interactions** (COMPLETED)
 **Goal**: Create minimal HTML structure with working zoom/pan canvas
 
-- [ ] **1.1 Create minimal HTML structure**
-  - [ ] Strip down `index.html` to bare canvas only (remove sidebar, header, controls, status bar)
-  - [ ] Simple full-screen canvas div
+- [X] **1.1 Create minimal HTML structure** ✅
+  - [X] Strip down `index.html` to bare canvas only (remove sidebar, header, controls, status bar)
+  - [X] Simple full-screen canvas div
 
-- [ ] **1.2 Zoom and Pan Implementation** ⭐ **MOVED TO PHASE 1**
-  - [ ] Initialize jsPlumb with minimal config
-  - [ ] Mouse wheel zoom using `jsPlumb.setZoom(scale)`
-  - [ ] Mouse drag pan with canvas transform
-  - [ ] Limit zoom range (0.1x to 3.0x)
-  - [ ] Prevent pan conflicts with future node interactions
+- [X] **1.2 Zoom and Pan Implementation** ✅ 
+  - [X] Initialize jsPlumb with minimal config
+  - [X] Mouse wheel zoom with cursor-centered implementation (Community Edition)
+  - [X] Mouse drag pan with canvas transform
+  - [X] Limit zoom range (0.1x to 3.0x)
+  - [X] Proper pan/drag conflict resolution
 
-- [ ] **1.3 Simplify CSS to basics**
-  - [ ] Remove all complex styling, legends, themes
-  - [ ] Keep only `.circuit-canvas` and `.circuit-node` styles
-  - [ ] Fixed 60x60px square nodes with simple border
+- [X] **1.3 Simplify CSS to basics** ✅
+  - [X] Remove all complex styling, legends, themes
+  - [X] Keep only `.circuit-canvas` and `.circuit-node` styles
+  - [X] Fixed 60x60px square nodes with simple border
 
-**Deliverable**: Empty canvas with working zoom/pan functionality  
-**Test**: Mouse wheel zooms smoothly, drag pans the canvas
+- [X] **1.4 Grid System Implementation** ✅
+  - [X] jsPlumb Community Edition grid snap (invisible)
+  - [X] Individual draggable element configuration
+  - [X] Proper event handling to avoid pan/drag conflicts
 
-#### **Phase 2: Basic Node Rendering** (20 minutes)
+**✅ Deliverable**: Fully functional canvas with cursor-centered zoom, smooth panning, grid-snap dragging  
+**✅ Test Results**: All functionality working - ready for Phase 2
+**📋 Documentation**: Created comprehensive `jsplumb_development_guide.md`
+
+#### **Phase 2: Basic Node Rendering** (20 minutes) [NEXT]
 **Goal**: Render static nodes from JSON on the zoomable/pannable canvas
 
 - [ ] **2.1 Basic node rendering**
   - [ ] Create `createNode(nodeData)` function
-  - [ ] Position nodes using `nodeData.x, nodeData.y` coordinates
+  - [ ] Position nodes using `nodeData.x, nodeData.y` coordinates  
   - [ ] Display `nodeData.label` as text content
-  - [ ] Test with simple 2-3 node JSON file
+  - [ ] Remove test nodes, load from `diff_pair.json`
+  - [ ] Test with real circuit data (3 nodes: MN_DP, M_TAIL, R_LOAD)
 
-**Deliverable**: Static nodes visible on canvas at specified positions, zoom/pan works with nodes  
-**Test**: Load JSON file, see square nodes with labels, verify they zoom/pan correctly
+**Deliverable**: Real circuit nodes visible on canvas at JSON positions, zoom/pan works with nodes  
+**Test**: Load `diff_pair.json`, see circuit nodes with proper labels, verify they zoom/pan correctly
 
 #### **Phase 3: Named Port System** (20 minutes)
 **Goal**: Add invisible port anchors to nodes without connections yet
