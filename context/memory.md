@@ -51,6 +51,7 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 • All 8 nodes and 8 connections from `diff_pair_enhanced.json` render correctly with zoom/pan.
 • CSS updated with distinct styles and hover effects.
 • Codebase remains under 200 lines total (HTML+CSS+JS).
+• Added Phase 5 "Save Layout" feature: fixed-position button downloads updated JSON and attempts File System Access API overwrite when available.
 
 ### 📊 **Component Health**
 - ✅ **Parser**: 23/23 tests passing - Complete location tracking and diagnostics (with known YAML pattern parsing limitation)

@@ -130,15 +130,9 @@ VSS     [============================] ← 400×20px power supply
 #### **Phase 5: JSON Loading & Integration** (15 minutes)
 **Goal**: Dynamic circuit loading and cleanup
 
-- [ ] **5.1 Circuit loading**
-  - [ ] `loadCircuit(filename)` function with fetch()
-  - [ ] Clear previous circuit before loading new one
-  - [ ] Error handling for missing files
-
-- [ ] **5.2 Cleanup integration**
-  - [ ] Clear jsPlumb connections and endpoints
-  - [ ] Remove DOM nodes properly
-  - [ ] Reset zoom/pan state
+- [X] **5.1 Circuit cleanup before reload** (handled by `loadCircuit()`)
+- [X] **5.2 Reset zoom/pan state when loading new circuit** (via `reset()` if needed)
+- [X] **5.3 Save Layout Button** – Added `#save-layout-btn`, `exportLayout()` downloads updated JSON
 
 **Deliverable**: Can switch between different circuit JSON files  
 **Test**: Load different circuits, verify clean transitions, zoom/pan resets properly

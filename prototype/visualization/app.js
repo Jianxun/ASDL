@@ -9,6 +9,7 @@ class CircuitVisualizer {
         this.isDragging = false;
         this.dragStart = { x: 0, y: 0 };
         this.circuitData = null;
+        this.currentFilename = null;  // Track loaded filename
         
         // Port layout definitions (relative coordinates 0.0-1.0)
         this.NODE_PORTS = {
@@ -58,6 +59,12 @@ class CircuitVisualizer {
         
         this.setupZoomPan();
         this.loadCircuit('diff_pair_enhanced.json');
+
+        // Bind save layout button
+        const saveBtn = document.getElementById('save-layout-btn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.exportLayout());
+        }
     }
     
     createNode(nodeData) {
@@ -132,6 +139,9 @@ class CircuitVisualizer {
             }
             
             this.circuitData = await response.json();
+            
+            // Remember current filename for save suggestion
+            this.currentFilename = filename;
             
             // Batch node creation for performance
             this.jsPlumbInstance.batch(() => {
@@ -228,6 +238,70 @@ class CircuitVisualizer {
         this.zoomLevel = 1.0;
         this.panOffset = { x: 0, y: 0 };
         this.updateTransform();
+    }
+
+    // Export current node coordinates back into JSON and trigger download
+    exportLayout() {
+        if (!this.circuitData) {
+            console.warn('No circuit loaded to export');
+            return;
+        }
+
+        // Deep copy circuitData to avoid mutating original reference
+        const updated = JSON.parse(JSON.stringify(this.circuitData));
+
+        updated.nodes.forEach(node => {
+            const el = document.getElementById(node.id);
+            if (el) {
+                const left = parseFloat(el.style.left) || 0;
+                const top = parseFloat(el.style.top) || 0;
+                node.x = left;
+                node.y = top;
+            }
+        });
+
+        const blob = new Blob([JSON.stringify(updated, null, 2)], {
+            type: 'application/json'
+        });
+
+        // Attempt to use File System Access API if available
+        if (window.showSaveFilePicker) {
+            (async () => {
+                try {
+                    const suggestedName = this.currentFilename || 'circuit_layout.json';
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName,
+                        types: [{
+                            description: 'JSON Files',
+                            accept: { 'application/json': ['.json'] }
+                        }]
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    console.log('Layout saved to file via File System Access API');
+                } catch (err) {
+                    console.warn('File save cancelled or failed, falling back to download.', err);
+                    this._downloadBlob(blob, updated.module_name);
+                }
+            })();
+        } else {
+            this._downloadBlob(blob, updated.module_name);
+        }
+    }
+
+    // Helper to trigger traditional download fallback
+    _downloadBlob(blob, moduleName = 'circuit') {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const fileNameBase = (moduleName || 'circuit').replace(/\s+/g, '_').toLowerCase();
+        a.download = `${fileNameBase}_layout.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        console.log('Layout downloaded (fallback)');
     }
 }
 
