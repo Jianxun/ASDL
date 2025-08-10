@@ -42,9 +42,9 @@ Focus: Implement core subcommands, JSON diagnostics, exit codes, packaging entri
 - [x] Exit code policy: 0 (ok), 1 (ERROR or WARNING under strict later), 2 (usage), 3 (unexpected failure)
 
 ### A3. `netlist` Command (MVP behavior)
-- [ ] End-to-end: parse → elaborate → validate → generate SPICE
-- [ ] Default output path (input stem + `.spice`) when `-o` not provided
-- [ ] Create output directories as needed
+- [x] End-to-end: parse → elaborate → validate → generate SPICE
+- [x] Default output path (input stem + `.spice`) when `-o` not provided
+- [x] Create output directories as needed
 
 ### A4. `elaborate` Command (MVP behavior)
 - [ ] Parse → elaborate and emit structure
