@@ -51,8 +51,8 @@ Focus: Implement core subcommands, JSON diagnostics, exit codes, packaging entri
 - [x] Output format option: `--format {yaml,json}`
 
 ### A5. `validate` Command (MVP behavior)
-- [ ] Parse → (elaborate if needed) → validate
-- [ ] Human text diagnostics; support `--json`
+- [x] Parse → (elaborate if needed) → validate
+- [x] Human text diagnostics; support `--json`
 
 ### A6. `diag-codes` and `version`
 - [x] Print known diagnostic code prefixes (stub)
