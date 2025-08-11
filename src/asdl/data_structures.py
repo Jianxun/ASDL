@@ -43,6 +43,9 @@ class Locatable:
     Represents a full span in a source file, including start and end
     positions and the file it belongs to.
     """
+    # Fields excluded from author-facing schema generation
+    __schema_exclude_fields__ = {"file_path", "start_line", "start_col", "end_line", "end_col"}
+
     file_path: Optional[Path] = None
     start_line: Optional[int] = None
     start_col: Optional[int] = None
