@@ -47,8 +47,8 @@ Focus: Implement core subcommands, JSON diagnostics, exit codes, packaging entri
 - [x] Create output directories as needed
 
 ### A4. `elaborate` Command (MVP behavior)
-- [ ] Parse → elaborate and emit structure
-- [ ] Output format option: `--format {yaml,json}`
+- [x] Parse → elaborate and emit structure
+- [x] Output format option: `--format {yaml,json}`
 
 ### A5. `validate` Command (MVP behavior)
 - [ ] Parse → (elaborate if needed) → validate

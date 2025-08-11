@@ -29,11 +29,13 @@ def asdl_to_dict(asdl_file: ASDLFile) -> Dict[str, Any]:
         """Recursively convert objects to serializable format."""
         if isinstance(obj, Enum):
             return obj.value
+        if isinstance(obj, Path):
+            return str(obj)
         elif hasattr(obj, '__dict__'):
             return {k: convert_value(v) for k, v in obj.__dict__.items()}
         elif isinstance(obj, dict):
             return {k: convert_value(v) for k, v in obj.items()}
-        elif isinstance(obj, (list, tuple)):
+        elif isinstance(obj, (list, tuple, set)):
             return [convert_value(item) for item in obj]
         else:
             return obj
