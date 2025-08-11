@@ -1,0 +1,185 @@
+{
+  "module_name": "Differential pair NMOS",
+  "nodes": [
+    {
+      "id": "VSS",
+      "label": "VSS",
+      "model": "power_supply",
+      "is_patterned": false,
+      "x": 100,
+      "y": 500,
+      "width": 400,
+      "height": 20,
+      "node_type": "port"
+    },
+    {
+      "id": "VDD",
+      "label": "VDD",
+      "model": "power_supply",
+      "is_patterned": false,
+      "x": 100,
+      "y": 50,
+      "width": 400,
+      "height": 20,
+      "node_type": "port"
+    },
+    {
+      "id": "port_in",
+      "label": "in",
+      "model": "port",
+      "is_patterned": true,
+      "x": 120,
+      "y": 280,
+      "width": 40,
+      "height": 40,
+      "node_type": "port"
+    },
+    {
+      "id": "port_out",
+      "label": "out",
+      "model": "port",
+      "is_patterned": true,
+      "x": 460,
+      "y": 220,
+      "width": 40,
+      "height": 40,
+      "node_type": "port"
+    },
+    {
+      "id": "port_vbn",
+      "label": "vbn",
+      "model": "port",
+      "is_patterned": false,
+      "x": 120,
+      "y": 400,
+      "width": 40,
+      "height": 40,
+      "node_type": "port"
+    },
+    {
+      "id": "MN_DP<P,N>",
+      "label": "MN_DP",
+      "model": "nmos_unit",
+      "is_patterned": true,
+      "x": 260,
+      "y": 260,
+      "width": 80,
+      "height": 80,
+      "node_type": "device"
+    },
+    {
+      "id": "M_TAIL",
+      "label": "M_TAIL",
+      "model": "nmos_unit",
+      "is_patterned": false,
+      "x": 260,
+      "y": 380,
+      "width": 80,
+      "height": 80,
+      "node_type": "device"
+    },
+    {
+      "id": "R_LOAD<P,N>",
+      "label": "R_LOAD",
+      "model": "res",
+      "is_patterned": true,
+      "x": 260,
+      "y": 140,
+      "width": 80,
+      "height": 80,
+      "node_type": "device"
+    }
+  ],
+  "nets": {
+    "vdd": {
+      "type": "single",
+      "is_internal": false
+    },
+    "in": {
+      "type": "differential",
+      "is_internal": false
+    },
+    "out": {
+      "type": "differential",
+      "is_internal": false
+    },
+    "vbn": {
+      "type": "single",
+      "is_internal": false
+    },
+    "vss": {
+      "type": "single",
+      "is_internal": false
+    },
+    "tail": {
+      "type": "single",
+      "is_internal": true
+    }
+  },
+  "connections": [
+    {
+      "from_node": "port_out",
+      "from_port": "terminal",
+      "to_node": "MN_DP<P,N>",
+      "to_port": "D",
+      "net": "out",
+      "type": "differential"
+    },
+    {
+      "from_node": "port_out",
+      "from_port": "terminal",
+      "to_node": "R_LOAD<P,N>",
+      "to_port": "minus",
+      "net": "out",
+      "type": "differential"
+    },
+    {
+      "from_node": "MN_DP<P,N>",
+      "from_port": "D",
+      "to_node": "R_LOAD<P,N>",
+      "to_port": "minus",
+      "net": "out",
+      "type": "differential"
+    },
+    {
+      "from_node": "port_in",
+      "from_port": "terminal",
+      "to_node": "MN_DP<P,N>",
+      "to_port": "G",
+      "net": "in",
+      "type": "differential"
+    },
+    {
+      "from_node": "MN_DP<P,N>",
+      "from_port": "S",
+      "to_node": "M_TAIL",
+      "to_port": "D",
+      "net": "tail",
+      "type": "single"
+    },
+    {
+      "from_node": "port_vbn",
+      "from_port": "terminal",
+      "to_node": "M_TAIL",
+      "to_port": "G",
+      "net": "vbn",
+      "type": "single"
+    },
+    {
+      "from_node": "VSS",
+      "from_port": "terminal",
+      "to_node": "M_TAIL",
+      "to_port": "S",
+      "net": "vss",
+      "type": "single"
+    },
+    {
+      "from_node": "VDD",
+      "from_port": "terminal",
+      "to_node": "R_LOAD<P,N>",
+      "to_port": "plus",
+      "net": "vdd",
+      "type": "single"
+    }
+  ]
+}

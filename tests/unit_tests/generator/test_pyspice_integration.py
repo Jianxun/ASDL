@@ -10,6 +10,7 @@ from pathlib import Path
 from src.asdl.parser import ASDLParser
 from src.asdl.generator import SPICEGenerator
 from src.asdl.spice_validator import parse_spice_netlist
+from src.asdl.spice_validator import PYSPICE_AVAILABLE
 
 
 @pytest.fixture
@@ -26,9 +27,7 @@ def inverter_asdl():
 
 def test_pyspice_parses_inverter_netlist(inverter_asdl):
     """Test that PySpice can parse the generated inverter SPICE netlist."""
-    import json
     from pathlib import Path
-    from dataclasses import asdict
     
     # Unpack the ASDL file and diagnostics
     asdl_file, diagnostics = inverter_asdl 
@@ -48,20 +47,11 @@ def test_pyspice_parses_inverter_netlist(inverter_asdl):
     results_dir = Path(__file__).parent / "results"
     results_dir.mkdir(exist_ok=True)
     
-    # Save ASDL data as JSON with custom encoder for enums
-    from src.asdl.data_structures import PrimitiveType, PortDirection, SignalType
-    from enum import Enum
-    
-    class ASDLJSONEncoder(json.JSONEncoder):
-        def default(self, obj):
-            # Handle all enum types by converting to their string value
-            if isinstance(obj, Enum):
-                return obj.value
-            return super().default(obj)
-    
-    asdl_dict = asdict(asdl_file)
-    with open(results_dir / "inverter_asdl.json", "w") as f:
-        json.dump(asdl_dict, f, indent=2, cls=ASDLJSONEncoder)
+    # Save ASDL data using package serializer (handles Enums/Paths)
+    from src.asdl.serialization import asdl_to_json_string
+    (results_dir / "inverter_asdl.json").write_text(
+        asdl_to_json_string(asdl_file), encoding="utf-8"
+    )
     
     # Save generated SPICE netlist
     with open(results_dir / "inverter_netlist.spice", "w") as f:
@@ -72,6 +62,8 @@ def test_pyspice_parses_inverter_netlist(inverter_asdl):
     print(f"- SPICE Netlist: {results_dir / 'inverter_netlist.spice'}")
     
     # Parse with PySpice - should not raise an exception
+    if not PYSPICE_AVAILABLE:
+        pytest.skip("PySpice not available in environment")
     circuit = parse_spice_netlist(spice_output)
     
     # Verify circuit parses successfully 
@@ -132,6 +124,8 @@ def test_pyspice_validates_nmos_instance(inverter_asdl):
 .end"""
     
     # This should parse successfully with basic parameters
+    if not PYSPICE_AVAILABLE:
+        pytest.skip("PySpice not available in environment")
     circuit = parse_spice_netlist(test_spice)
     assert circuit is not None
     assert 'MN' in circuit._elements
@@ -171,6 +165,8 @@ def test_pyspice_validates_pmos_instance(inverter_asdl):
 .end"""
     
     # This should parse successfully with basic parameters
+    if not PYSPICE_AVAILABLE:
+        pytest.skip("PySpice not available in environment")
     circuit = parse_spice_netlist(test_spice)
     assert circuit is not None
     assert 'MP' in circuit._elements
@@ -190,6 +186,8 @@ def test_pyspice_validates_subcircuit_ports(inverter_asdl):
     spice_output = generator.generate(asdl_file)
 
     # Parse with PySpice to ensure it's syntactically valid
+    if not PYSPICE_AVAILABLE:
+        pytest.skip("PySpice not available in environment")
     circuit = parse_spice_netlist(spice_output)
 
     # Verify the main circuit has the subcircuit instantiation
@@ -219,6 +217,8 @@ R1 node1 node2  # Missing model and value
 """
     
     # Should raise ValueError when parsing fails
+    if not PYSPICE_AVAILABLE:
+        pytest.skip("PySpice not available in environment")
     with pytest.raises(ValueError, match="SPICE.*failed"):
         parse_spice_netlist(bad_spice)
 

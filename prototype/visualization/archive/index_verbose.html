@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASDL Circuit Visualization</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- jsPlumb Community Edition (free) -->
+    <script src="https://unpkg.com/jsplumb@2.15.6/dist/js/jsplumb.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>ASDL Circuit Visualization</h1>
+        <div class="controls">
+            <button id="loadCircuit">Load Circuit</button>
+            <button id="resetView">Reset View</button>
+            <select id="circuitSelect">
+                <option value="diff_pair.json">Differential Pair</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="legend">
+                <h3>Legend</h3>
+                <div class="legend-item">
+                    <div class="legend-symbol nmos-symbol"></div>
+                    <span>NMOS Transistor</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol pmos-symbol"></div>
+                    <span>PMOS Transistor</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-symbol resistor-symbol"></div>
+                    <span>Resistor</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line differential-line"></div>
+                    <span>Differential Connection</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line single-line"></div>
+                    <span>Single Connection</span>
+                </div>
+            </div>
+
+            <div class="circuit-info">
+                <h3>Circuit Information</h3>
+                <div id="circuitName">No circuit loaded</div>
+                <div class="stats">
+                    <div id="nodeCount">Nodes: 0</div>
+                    <div id="connectionCount">Connections: 0</div>
+                </div>
+            </div>
+
+            <div class="net-list">
+                <h3>Nets</h3>
+                <div id="netsList"></div>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <div id="canvas" class="circuit-canvas">
+                <!-- Circuit nodes and connections will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <span id="statusText">Ready</span>
+        <span id="coordinates"></span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html> 

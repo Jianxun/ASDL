@@ -1,0 +1,711 @@
+file_info:
+  file_path: !!python/object/apply:pathlib.PosixPath
+  - examples
+  - two_stage_ota.yml
+  start_line: 1
+  start_col: 1
+  end_line: 1
+  end_col: 10
+  top_module: two_stage_ota
+  doc: Two-stage Miller-compensated operational transconductance amplifier
+  revision: v0.4
+  author: ASDL
+  date: '2025-06-14'
+  metadata: null
+models:
+  jumper:
+    file_path: !!python/object/apply:pathlib.PosixPath
+    - examples
+    - two_stage_ota.yml
+    start_line: 9
+    start_col: 3
+    end_line: 9
+    end_col: 9
+    type: spice_device
+    ports: {}
+    device_line: !!python/object/new:ruamel.yaml.scalarstring.LiteralScalarString
+    - 'R1 {plus} {minus} R=100m
+
+      '
+    doc: Small resistor net jumper
+    parameters: null
+    metadata: null
+  nmos_unit:
+    file_path: !!python/object/apply:pathlib.PosixPath
+    - examples
+    - two_stage_ota.yml
+    start_line: 16
+    start_col: 3
+    end_line: 16
+    end_col: 12
+    type: pdk_device
+    ports: {}
+    device_line: !!python/object/new:ruamel.yaml.scalarstring.LiteralScalarString
+    - 'MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad=''int((nf+1)/2) * W/nf * 0.18u''
+      as=''int((nf+2)/2) * W/nf * 0.18u'' pd=''2*int((nf+1)/2) * (W/nf + 0.18u)''
+      ps=''2*int((nf+2)/2) * (W/nf + 0.18u)'' nrd=''0.18u / W'' nrs=''0.18u / W''
+      sa=0 sb=0 sd=0
+
+      '
+    doc: NMOS transistor unit cell
+    parameters: {}
+    metadata: null
+  pmos_unit:
+    file_path: !!python/object/apply:pathlib.PosixPath
+    - examples
+    - two_stage_ota.yml
+    start_line: 25
+    start_col: 3
+    end_line: 25
+    end_col: 12
+    type: pdk_device
+    ports: {}
+    device_line: !!python/object/new:ruamel.yaml.scalarstring.LiteralScalarString
+    - 'MP {D} {G} {S} {B} pfet_03v3 L=0.5u W=4u nf=2 ad=''int((nf+1)/2) * W/nf * 0.18u''
+      as=''int((nf+2)/2) * W/nf * 0.18u'' pd=''2*int((nf+1)/2) * (W/nf + 0.18u)''
+      ps=''2*int((nf+2)/2) * (W/nf + 0.18u)'' nrd=''0.18u / W'' nrs=''0.18u / W''
+      sa=0 sb=0 sd=0
+
+      '
+    doc: PMOS transistor unit cell
+    parameters: {}
+    metadata: null
+  comp_cap:
+    file_path: !!python/object/apply:pathlib.PosixPath
+    - examples
+    - two_stage_ota.yml
+    start_line: 34
+    start_col: 3
+    end_line: 34
+    end_col: 11
+    type: spice_device
+    ports: {}
+    device_line: !!python/object/new:ruamel.yaml.scalarstring.LiteralScalarString
+    - 'C1 {plus} {minus} C=1p
+
+      '
+    doc: Miller compensation capacitor
+    parameters: null
+    metadata: null
+  comp_res:
+    file_path: !!python/object/apply:pathlib.PosixPath
+    - examples
+    - two_stage_ota.yml
+    start_line: 41
+    start_col: 3
+    end_line: 41
+    end_col: 11
+    type: spice_device
+    ports: {}
+    device_line: !!python/object/new:ruamel.yaml.scalarstring.LiteralScalarString
+    - 'R1 {plus} {minus} R=1k
+
+      '
+    doc: Miller compensation resistor
+    parameters: null
+    metadata: null
+modules:
+  bias_gen:
+    file_path: !!python/object/apply:pathlib.PosixPath
+    - examples
+    - two_stage_ota.yml
+    start_line: 49
+    start_col: 3
+    end_line: 49
+    end_col: 11
+    doc: Bias generator
+    ports:
+      ibias:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 52
+        start_col: 7
+        end_line: 52
+        end_col: 12
+        dir: in
+        type: current
+        constraints: null
+        metadata: null
+      vbn:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 53
+        start_col: 7
+        end_line: 53
+        end_col: 10
+        dir: out
+        type: voltage
+        constraints: null
+        metadata: null
+      vss:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 54
+        start_col: 7
+        end_line: 54
+        end_col: 10
+        dir: in_out
+        type: voltage
+        constraints: null
+        metadata: null
+      vdd:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 55
+        start_col: 7
+        end_line: 55
+        end_col: 10
+        dir: in_out
+        type: voltage
+        constraints:
+          constraints: {}
+        metadata: null
+    internal_nets: null
+    parameters: null
+    instances:
+      MN_BIAS:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 57
+        start_col: 7
+        end_line: 57
+        end_col: 14
+        model: nmos_unit
+        mappings:
+          G: vbn
+          D: vbn
+          S: vss
+          B: vss
+        doc: null
+        parameters: {}
+        metadata: null
+      J1:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 65
+        start_col: 7
+        end_line: 65
+        end_col: 9
+        model: jumper
+        mappings:
+          plus: ibias
+          minus: vbn
+        doc: null
+        parameters: null
+        metadata: null
+    metadata: null
+  ota_5t:
+    file_path: !!python/object/apply:pathlib.PosixPath
+    - examples
+    - two_stage_ota.yml
+    start_line: 70
+    start_col: 3
+    end_line: 70
+    end_col: 9
+    doc: '5-transistor OTA: differential pair with current mirror load'
+    ports:
+      in_p:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 73
+        start_col: 7
+        end_line: 73
+        end_col: 15
+        dir: in
+        type: voltage
+        constraints:
+          constraints: {}
+        metadata: null
+      in_n:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 73
+        start_col: 7
+        end_line: 73
+        end_col: 15
+        dir: in
+        type: voltage
+        constraints:
+          constraints: {}
+        metadata: null
+      out:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 74
+        start_col: 7
+        end_line: 74
+        end_col: 10
+        dir: out
+        type: voltage
+        constraints: null
+        metadata: null
+      vbn:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 75
+        start_col: 7
+        end_line: 75
+        end_col: 10
+        dir: in
+        type: voltage
+        constraints: null
+        metadata: null
+      vss:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 76
+        start_col: 7
+        end_line: 76
+        end_col: 10
+        dir: in_out
+        type: voltage
+        constraints: null
+        metadata: null
+      vdd:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 77
+        start_col: 7
+        end_line: 77
+        end_col: 10
+        dir: in_out
+        type: voltage
+        constraints:
+          constraints: {}
+        metadata: null
+    internal_nets: null
+    parameters: {}
+    instances:
+      MN_P:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 83
+        start_col: 7
+        end_line: 83
+        end_col: 15
+        model: nmos_unit
+        mappings:
+          G: in_p
+          D: vd
+          S: tail
+          B: vss
+        doc: NMOS input transistors
+        parameters: {}
+        metadata: null
+      MN_N:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 83
+        start_col: 7
+        end_line: 83
+        end_col: 15
+        model: nmos_unit
+        mappings:
+          G: in_n
+          D: out
+          S: tail
+          B: vss
+        doc: NMOS input transistors
+        parameters: {}
+        metadata: null
+      MN_TAIL:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 97
+        start_col: 7
+        end_line: 97
+        end_col: 14
+        model: nmos_unit
+        mappings:
+          G: vbn
+          D: tail
+          S: vss
+          B: vss
+        doc: NMOS tail current source
+        parameters: {}
+        metadata: null
+      MP_P:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 107
+        start_col: 7
+        end_line: 107
+        end_col: 15
+        model: pmos_unit
+        mappings:
+          G: vd
+          D: vd
+          S: vdd
+          B: vdd
+        doc: PMOS current mirror load
+        parameters: {}
+        metadata: null
+      MP_N:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 107
+        start_col: 7
+        end_line: 107
+        end_col: 15
+        model: pmos_unit
+        mappings:
+          G: vd
+          D: out
+          S: vdd
+          B: vdd
+        doc: PMOS current mirror load
+        parameters: {}
+        metadata: null
+    metadata: null
+  common_source_pmos:
+    file_path: !!python/object/apply:pathlib.PosixPath
+    - examples
+    - two_stage_ota.yml
+    start_line: 121
+    start_col: 3
+    end_line: 121
+    end_col: 21
+    doc: 'Second stage: PMOS Common source amplifier with NMOS current source load'
+    ports:
+      in:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 124
+        start_col: 7
+        end_line: 124
+        end_col: 9
+        dir: in
+        type: voltage
+        constraints: null
+        metadata: null
+      out:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 125
+        start_col: 7
+        end_line: 125
+        end_col: 10
+        dir: out
+        type: voltage
+        constraints: null
+        metadata: null
+      vbn:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 126
+        start_col: 7
+        end_line: 126
+        end_col: 10
+        dir: in
+        type: voltage
+        constraints: null
+        metadata: null
+      vss:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 127
+        start_col: 7
+        end_line: 127
+        end_col: 10
+        dir: in_out
+        type: voltage
+        constraints: null
+        metadata: null
+      vdd:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 128
+        start_col: 7
+        end_line: 128
+        end_col: 10
+        dir: in_out
+        type: voltage
+        constraints:
+          constraints: {}
+        metadata: null
+    internal_nets: null
+    parameters: {}
+    instances:
+      MP_CS:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 132
+        start_col: 7
+        end_line: 132
+        end_col: 12
+        model: pmos_unit
+        mappings:
+          G: in
+          D: out
+          S: vdd
+          B: vdd
+        doc: null
+        parameters: {}
+        metadata: null
+      MN_LOAD:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 141
+        start_col: 7
+        end_line: 141
+        end_col: 14
+        model: nmos_unit
+        mappings:
+          G: vbn
+          D: out
+          S: vss
+          B: vss
+        doc: null
+        parameters: {}
+        metadata: null
+    metadata: null
+  miller_comp:
+    file_path: !!python/object/apply:pathlib.PosixPath
+    - examples
+    - two_stage_ota.yml
+    start_line: 150
+    start_col: 3
+    end_line: 150
+    end_col: 14
+    doc: Miller compensation network
+    ports:
+      plus:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 153
+        start_col: 7
+        end_line: 153
+        end_col: 11
+        dir: in_out
+        type: voltage
+        constraints: null
+        metadata: null
+      minus:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 154
+        start_col: 7
+        end_line: 154
+        end_col: 12
+        dir: in_out
+        type: voltage
+        constraints: null
+        metadata: null
+    internal_nets: null
+    parameters: null
+    instances:
+      CC:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 158
+        start_col: 7
+        end_line: 158
+        end_col: 9
+        model: comp_cap
+        mappings:
+          plus: plus
+          minus: v_int
+        doc: null
+        parameters: null
+        metadata: null
+      RC:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 162
+        start_col: 7
+        end_line: 162
+        end_col: 9
+        model: comp_res
+        mappings:
+          plus: v_int
+          minus: minus
+        doc: null
+        parameters: null
+        metadata: null
+    metadata: null
+  two_stage_ota:
+    file_path: !!python/object/apply:pathlib.PosixPath
+    - examples
+    - two_stage_ota.yml
+    start_line: 167
+    start_col: 3
+    end_line: 167
+    end_col: 16
+    doc: Two-stage Miller-compensated operational transconductance amplifier
+    ports:
+      in_p:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 170
+        start_col: 7
+        end_line: 170
+        end_col: 15
+        dir: in
+        type: voltage
+        constraints:
+          constraints: {}
+        metadata: null
+      in_n:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 170
+        start_col: 7
+        end_line: 170
+        end_col: 15
+        dir: in
+        type: voltage
+        constraints:
+          constraints: {}
+        metadata: null
+      out:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 171
+        start_col: 7
+        end_line: 171
+        end_col: 10
+        dir: out
+        type: voltage
+        constraints: null
+        metadata: null
+      ibias:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 172
+        start_col: 7
+        end_line: 172
+        end_col: 12
+        dir: in
+        type: current
+        constraints: null
+        metadata: null
+      vss:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 173
+        start_col: 7
+        end_line: 173
+        end_col: 10
+        dir: in_out
+        type: voltage
+        constraints: null
+        metadata: null
+      vdd:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 174
+        start_col: 7
+        end_line: 174
+        end_col: 10
+        dir: in_out
+        type: voltage
+        constraints:
+          constraints: {}
+        metadata: null
+    internal_nets: null
+    parameters: {}
+    instances:
+      BIAS_GEN:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 181
+        start_col: 7
+        end_line: 181
+        end_col: 15
+        model: bias_gen
+        mappings:
+          ibias: ibias
+          vbn: vbn
+          vss: vss
+          vdd: vdd
+        doc: null
+        parameters: null
+        metadata: null
+      FIRST_STAGE:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 185
+        start_col: 7
+        end_line: 185
+        end_col: 18
+        model: ota_5t
+        mappings:
+          in_p: in_n
+          in_n: in_p
+          out: first_stage_out
+          vbn: vbn
+          vss: vss
+          vdd: vdd
+        doc: null
+        parameters: {}
+        metadata: null
+      SECOND_STAGE:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 196
+        start_col: 7
+        end_line: 196
+        end_col: 19
+        model: common_source_pmos
+        mappings:
+          in: first_stage_out
+          out: out
+          vbn: vbn
+          vss: vss
+          vdd: vdd
+        doc: null
+        parameters: {}
+        metadata: null
+      COMP:
+        file_path: !!python/object/apply:pathlib.PosixPath
+        - examples
+        - two_stage_ota.yml
+        start_line: 207
+        start_col: 7
+        end_line: 207
+        end_col: 11
+        model: miller_comp
+        mappings:
+          plus: first_stage_out
+          minus: out
+        doc: null
+        parameters: null
+        metadata: null
+    metadata: null

@@ -1,0 +1,6 @@
+# Intentionally invalid ASDL file (missing required 'file_info' section)
+models:
+  r:
+    type: spice_device
+    ports: [p, n]
+    device_line: R {p} {n} 1k

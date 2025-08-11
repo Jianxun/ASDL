@@ -1,0 +1,97 @@
+/* Minimal CSS for embeddable circuit visualizer */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* Override any jsPlumb default grid styling */
+.jtk-surface, .jtk-surface-canvas, 
+[data-jtk-container], [data-jtk-surface] {
+    background: transparent !important;
+    background-image: none !important;
+}
+
+.circuit-canvas {
+    width: 100vw;
+    height: 100vh;
+    background: #f8f9fa !important;  /* Force solid background, no grid */
+    background-image: none !important;  /* Override any default grid */
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+}
+
+.circuit-canvas:active {
+    cursor: grabbing;
+}
+
+.circuit-content {
+    width: 5000px;  /* Large enough to cover zoom/pan area */
+    height: 5000px;
+    position: relative;
+    transform-origin: 0 0;
+    background: transparent !important;  /* Ensure no background grid */
+    background-image: none !important;
+}
+
+.circuit-node {
+    border: 2px solid #333;
+    background-color: white;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 4px;
+    user-select: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.circuit-node:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+}
+
+/* Device nodes - 60x60px squares */
+.node-device {
+    background-color: #e3f2fd;
+    border-color: #1976d2;
+}
+
+/* Power supply ports - 400x20px bars */
+.model-power_supply {
+    background-color: #333;
+    color: white;
+    border-radius: 2px;
+    font-size: 10px;
+}
+
+/* Regular ports - 30x30px squares */
+.node-port:not(.model-power_supply) {
+    background-color: #fff3e0;
+    border-color: #f57722;
+    border-radius: 50%;
+}
+
+/* Save Layout Button */
+.save-layout-btn {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    padding: 8px 12px;
+    background-color: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 3000; /* above canvas */
+}
+
+.save-layout-btn:hover {
+    background-color: #1565c0;
+} 

@@ -1,0 +1,81 @@
+file_info:
+  top_module: diff_pair #placeholder
+  doc: "A collection of differential pairs"
+  revision: "v0.1"
+  author: "ASDL"
+  date: "2025-06-25"
+
+
+models:
+  nmos_unit:
+    doc: "NMOS transistor unit cell"
+    type: pdk_device
+    ports: [G, D, S, B]
+    device_line: |
+      MN {D} {G} {S} {B} nfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+    parameters:
+      M: 1
+
+  pmos_unit:
+    doc: "PMOS transistor unit cell"
+    type: pdk_device
+    ports: [G, D, S, B]
+    device_line: |
+      MP {D} {G} {S} {B} pfet_03v3 L=0.5u W=4u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0
+    parameters:
+      M: 1
+
+  cap:
+    doc: "Miller compensation capacitor"
+    type: spice_device
+    ports: [plus, minus]
+    device_line: | 
+      C1 {plus} {minus} C=1p
+
+  res:
+    doc: "Miller compensation resistor"
+    type: spice_device
+    ports: [plus, minus]
+    device_line: |
+      R1 {plus} {minus} R=1k
+
+modules:
+  diff_pair_nmos:
+    doc: "Differential pair NMOS"
+    ports:
+      vdd: {dir: in, type: voltage}
+      in<p,n>: {dir: in, type: voltage}
+      out<p,n>: {dir: out, type: voltage}
+      vbn: {dir: in, type: voltage} 
+      vss: {dir: in, type: voltage}
+    internal_nets:
+      - tail
+    parameters:
+      R: "1k"
+      M: 1
+    instances:
+      MN_DP<P,N>:
+        model: nmos_unit
+        mappings: 
+          D: out<n,p>
+          G: in<p,n>
+          S: tail
+          B: vss
+        parameters:
+          M: "{M}"
+      M_TAIL:
+        model: nmos_unit
+        mappings: 
+          D: tail
+          G: vbn
+          S: vss
+          B: vss
+        parameters:
+          M: "{M}"
+      R_LOAD<P,N>:
+        model: res
+        mappings: 
+          plus: vdd
+          minus: out<n,p>
+        parameters:
+          R: "{R}"

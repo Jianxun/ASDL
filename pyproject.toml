@@ -23,6 +23,7 @@ dependencies = [
 ]
 
 [project.scripts]
+asdlc = "asdl.cli:cli"
 asdl = "asdl.cli:cli"
 
 [project.optional-dependencies]
