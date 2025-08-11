@@ -6,7 +6,7 @@ format including patterns and parameter expressions. Pattern expansion and
 parameter resolution are handled as separate explicit steps.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -27,10 +27,10 @@ class ASDLFile:
     Each ASDL file is like a library that can be included/imported by other files.
     The full chip design will be composed of multiple ASDL files with dependencies.
     """
-    file_info: 'FileInfo'
-    models: Dict[str, 'DeviceModel']
-    modules: Dict[str, 'Module']
-    metadata: Optional[Metadata] = None
+    file_info: 'FileInfo'  # schema: description="Document metadata; does not affect netlisting"
+    models: Dict[str, 'DeviceModel']  # schema: description="Map of device model aliases to device templates"
+    modules: Dict[str, 'Module']  # schema: description="Map of hierarchical module definitions keyed by module name"
+    metadata: Optional[Metadata] = None  # schema: description="Open extension bag; agents should preserve unknown keys"
 
 
 # ─────────────────────────────────────────
@@ -71,12 +71,12 @@ class Locatable:
 @dataclass
 class FileInfo(Locatable):
     """Represents the file_info section of an ASDL file."""
-    top_module: Optional[str] = None
-    doc: Optional[str] = None
-    revision: Optional[str] = None
-    author: Optional[str] = None
-    date: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    top_module: Optional[str] = None  # schema: description="Default top module name in this ASDL file"
+    doc: Optional[str] = None  # schema: description="Human-readable description of the design/library"
+    revision: Optional[str] = None  # schema: description="Revision identifier for this document"
+    author: Optional[str] = None  # schema: description="Author name or contact"
+    date: Optional[str] = None  # schema: description="Date string"
+    metadata: Optional[Dict[str, Any]] = None  # schema: description="Additional metadata for tools and annotations"
 
 
 # ─────────────────────────────────────────
@@ -101,12 +101,12 @@ class DeviceModel(Locatable):
     Template for a primitive component, which can be a physical PDK device
     or a built-in SPICE primitive.
     """
-    type: PrimitiveType
-    ports: List[str]
-    device_line: str
-    doc: Optional[str] = None
-    parameters: Optional[Dict[str, str]] = None
-    metadata: Optional[Metadata] = None
+    type: PrimitiveType  # schema: description="Origin of primitive; determines SPICE interpretation"
+    ports: List[str]  # schema: description="Ordered list of port names; order must match device_line"
+    device_line: str  # schema: description="SPICE device template or model identifier"
+    doc: Optional[str] = None  # schema: description="Documentation for this model"
+    parameters: Optional[Dict[str, str]] = None  # schema: description="Default parameter values or expressions"
+    metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
 
 
 # ─────────────────────────────────────────
@@ -135,7 +135,7 @@ class PortConstraints:
     Constraints are stored as raw data for future implementation.
     This allows us to defer constraint handling while preserving the data.
     """
-    constraints: Any
+    constraints: Any  # schema: description="Placeholder for future formal constraints; preserved as-is"
 
 
 @dataclass(kw_only=True)
@@ -146,10 +146,10 @@ class Port(Locatable):
     Port names may contain patterns (e.g., "in_<p,n>") that will be expanded
     during the pattern expansion phase.
     """
-    dir: PortDirection
-    type: SignalType
-    constraints: Optional[PortConstraints] = None
-    metadata: Optional[Metadata] = None
+    dir: PortDirection  # schema: description="Port direction classification"
+    type: SignalType  # schema: description="Port signal type classification"
+    constraints: Optional[PortConstraints] = None  # schema: description="Optional constraint object"
+    metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
 
 
 @dataclass(kw_only=True)
@@ -171,11 +171,11 @@ class Instance(Locatable):
     - Tool-specific metadata: {"simulator": "spectre", "model_opts": {...}}
     - Future extensions: Any additional fields can be preserved here
     """
-    model: str
-    mappings: Dict[str, str]
-    doc: Optional[str] = None
-    parameters: Optional[Dict[str, Any]] = None
-    metadata: Optional[Metadata] = None
+    model: str  # schema: description="Reference to a DeviceModel or Module by key/name"
+    mappings: Dict[str, str]  # schema: description="Map from target's port names to net names"
+    doc: Optional[str] = None  # schema: description="Instance-level documentation"
+    parameters: Optional[Dict[str, Any]] = None  # schema: description="Parameter overrides for this instance"
+    metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
     
     def is_device_instance(self, asdl_file: 'ASDLFile') -> bool:
         """Check if this instance references a DeviceModel."""
@@ -198,9 +198,9 @@ class Module(Locatable):
     
     Each Module becomes a .subckt definition in SPICE.
     """
-    doc: Optional[str] = None
-    ports: Optional[Dict[str, Port]] = None
-    internal_nets: Optional[List[str]] = None
-    parameters: Optional[Dict[str, Any]] = None
-    instances: Optional[Dict[str, Instance]] = None
-    metadata: Optional[Metadata] = None 
+    doc: Optional[str] = None  # schema: description="Module-level documentation"
+    ports: Optional[Dict[str, Port]] = None  # schema: description="Port declarations keyed by port name"
+    internal_nets: Optional[List[str]] = None  # schema: description="Internal nets local to this module"
+    parameters: Optional[Dict[str, Any]] = None  # schema: description="Module parameters and default values"
+    instances: Optional[Dict[str, Instance]] = None  # schema: description="Map of instance id to Instance"
+    metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"

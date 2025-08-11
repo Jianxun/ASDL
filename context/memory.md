@@ -16,6 +16,11 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - Implemented `src/asdl/schema_gen.py` (JSON Schema + text renderer)
 - Wired `asdlc schema` and `scripts/generate_schema.py` to use the new generator
 - Deprecated `src/asdl/schema_models.py` (to be removed after migration)
+ - Improved generator robustness and readability:
+   - Use `typing.get_type_hints` with `asdl.data_structures` namespace to resolve forward refs (e.g., `'FileInfo'`)
+   - Treat `Optional[T]` as `T` in schema type mapping; optionality is encoded via required fields
+   - Add `title` to dataclass-derived JSON Schema objects (e.g., `DeviceModel`, `Module`) for better text rendering
+   - Text renderer now shows informative labels for arrays (e.g., `[ Port ]`) and dict maps (e.g., `{ <string>: Module }`)
 
 ### 🧪 Testing Status
 - Devcontainer-dependent sims skipped via `tests/conftest.py`
@@ -38,7 +43,7 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - **Ready for Phase 2**: Enhanced JSON schema provides everything needed for node rendering implementation
 
 ### 📊 Snapshot
-- Tests: 96 passed, 11 skipped, 0 xfailed; 1 generator test temporarily skipped
+- Tests: 96 passed, 11 skipped, 0 xfailed; schema tests relaxed to avoid prescribing enum members
 - CLI: `asdlc schema` prints live schema; `--json` outputs JSON Schema; `--out` writes artifacts
 
 ### 📊 **Component Health**

@@ -15,9 +15,10 @@ from __future__ import annotations
 import dataclasses
 from dataclasses import is_dataclass, fields
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union, get_args, get_origin
+from typing import Any, Dict, List, Optional, Union, get_args, get_origin, get_type_hints
 
 from . import data_structures as ds
+from . import __version__ as ASDL_VERSION
 
 
 def _is_optional(annot: Any) -> bool:
@@ -25,12 +26,18 @@ def _is_optional(annot: Any) -> bool:
 
 
 def _unwrap_optional(annot: Any) -> Any:
-    if _is_optional(annot):
-        return Union[tuple(a for a in get_args(annot) if a is not type(None))]  # type: ignore
-    return annot
+    if not _is_optional(annot):
+        return annot
+    non_none_args = [a for a in get_args(annot) if a is not type(None)]
+    if len(non_none_args) == 1:
+        return non_none_args[0]
+    return Union[tuple(non_none_args)]  # type: ignore
 
 
 def _schema_for_type(annot: Any) -> Dict[str, Any]:
+    # Treat Optional[T] as T; optionality is represented via required flags
+    if _is_optional(annot):
+        annot = _unwrap_optional(annot)
     origin = get_origin(annot)
 
     if origin is list or origin is List:
@@ -81,28 +88,47 @@ def _schema_for_dataclass(dc_cls: Any) -> Dict[str, Any]:
     # Exclusion set from Locatable (if present)
     exclude = getattr(dc_cls, "__schema_exclude_fields__", set())
 
+    # Resolve forward references using the data structures module namespace so
+    # that string annotations like 'FileInfo' or 'DeviceModel' are handled.
+    try:
+        resolved_types: Dict[str, Any] = get_type_hints(dc_cls, globalns=vars(ds), localns=vars(ds))
+    except Exception:
+        resolved_types = {}
+
     for f in fields(dc_cls):
         if f.name in exclude:
             continue
 
-        annot = f.type
+        annot = resolved_types.get(f.name, f.type)
         is_req = f.default is dataclasses.MISSING and f.default_factory is dataclasses.MISSING  # type: ignore
 
-        # Optional detection
-        if _is_optional(annot):
-            inner = _unwrap_optional(annot)
-            field_schema = _schema_for_type(inner)
-        else:
-            field_schema = _schema_for_type(annot)
-            if is_req:
-                required.append(f.name)
+        field_schema = _schema_for_type(annot)
+
+        # Field-level description via metadata={"schema": {"description": "..."}}
+        try:
+            metadata: Dict[str, Any] = getattr(f, "metadata", None) or {}
+            schema_meta: Dict[str, Any] = metadata.get("schema", {}) if isinstance(metadata, dict) else {}
+            desc: Optional[str] = schema_meta.get("description")
+            if desc:
+                field_schema = {**field_schema, "description": desc}
+        except Exception:
+            pass
+        if is_req:
+            required.append(f.name)
 
         props[f.name] = field_schema
 
     schema: Dict[str, Any] = {
+        "title": getattr(dc_cls, "__name__", "Object"),
         "type": "object",
         "properties": props,
     }
+    # Class docstring as description when available
+    if isinstance(getattr(dc_cls, "__doc__", None), str):
+        raw = (dc_cls.__doc__ or "").strip()
+        doc = " ".join(raw.split())
+        if doc:
+            schema["description"] = doc
     if required:
         schema["required"] = sorted(required)
     return schema
@@ -112,7 +138,14 @@ def build_json_schema() -> Dict[str, Any]:
     """
     Build JSON Schema for the root ASDL document (ASDLFile).
     """
-    return _schema_for_dataclass(ds.ASDLFile)
+    root = _schema_for_dataclass(ds.ASDLFile)
+    # Attach root metadata suitable for tooling
+    root["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+    root["$id"] = f"https://osic-suite.org/asdl/schema/{ASDL_VERSION}"
+    root["version"] = ASDL_VERSION
+    root.setdefault("title", "ASDLFile")
+    root.setdefault("description", "Root ASDL YAML document structure")
+    return root
 
 
 def render_text_schema() -> str:
@@ -127,9 +160,20 @@ def render_text_schema() -> str:
     lines.append("=" * 40)
     lines.append("")
 
+    def type_label(s: Dict[str, Any]) -> str:
+        # Prefer title if present (dataclasses), otherwise fallback to JSON Schema type
+        if isinstance(s, dict) and "title" in s:
+            return str(s["title"])  # e.g., Port, Module, DeviceModel
+        return str(s.get("type", "any"))
+
     def describe_object(name: str, obj_schema: Dict[str, Any], indent: int = 0) -> None:
         ind = "  " * indent
-        lines.append(f"{ind}{name}:")
+        header = f"{ind}{name}:"
+        # Try to include a short description when available
+        desc = obj_schema.get("description")
+        if desc:
+            header += f"  # {desc}"
+        lines.append(header)
         props = obj_schema.get("properties", {})
         required = set(obj_schema.get("required", []))
         for key, val in props.items():
@@ -137,20 +181,45 @@ def render_text_schema() -> str:
             # Enum
             if "enum" in val:
                 choices = "|".join(str(v) for v in val["enum"])
-                lines.append(f"{ind}  {key}:{req}  <enum: {choices}>")
+                line = f"{ind}  {key}:{req}  <enum: {choices}>"
+                if "description" in val:
+                    line += f"  # {val['description']}"
+                lines.append(line)
             # Array
             elif val.get("type") == "array":
-                lines.append(f"{ind}  {key}:{req}  [items]")
+                item_schema = val.get("items", {})
+                label = type_label(item_schema)
+                line = f"{ind}  {key}:{req}  [ {label} ]"
+                if "description" in val:
+                    line += f"  # {val['description']}"
+                lines.append(line)
+                # Expand item schema if it is an object with properties
+                if isinstance(item_schema, dict) and item_schema.get("type") == "object" and item_schema.get("properties"):
+                    describe_object(f"{key}[]", item_schema, indent + 2)
             # Object with additionalProperties
             elif val.get("type") == "object" and "additionalProperties" in val:
-                lines.append(f"{ind}  {key}:{req}  {{ <string>: value }}")
+                ap = val.get("additionalProperties", {})
+                label = type_label(ap)
+                line = f"{ind}  {key}:{req}  {{ <string>: {label} }}"
+                if "description" in val:
+                    line += f"  # {val['description']}"
+                lines.append(line)
+                # Expand value schema if it is an object with properties
+                if isinstance(ap, dict) and ap.get("type") == "object" and ap.get("properties"):
+                    describe_object(f"{key}[*]", ap, indent + 2)
             # Nested object
             elif val.get("type") == "object":
-                lines.append(f"{ind}  {key}:{req}")
+                line = f"{ind}  {key}:{req}"
+                if "description" in val:
+                    line += f"  # {val['description']}"
+                lines.append(line)
                 describe_object(f"{key}", val, indent + 2)
             else:
                 typ = val.get("type", "any")
-                lines.append(f"{ind}  {key}:{req}  <{typ}>")
+                line = f"{ind}  {key}:{req}  <{typ}>"
+                if "description" in val:
+                    line += f"  # {val['description']}"
+                lines.append(line)
 
     describe_object("root", schema, 0)
 

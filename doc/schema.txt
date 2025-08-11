@@ -1,0 +1,9 @@
+========================================
+ASDL YAML Configuration Schema
+========================================
+
+root:
+  file_info: (required)  <any>
+  models: (required)  { <string>: any }
+  modules: (required)  { <string>: any }
+  metadata:  { <string>: any }
