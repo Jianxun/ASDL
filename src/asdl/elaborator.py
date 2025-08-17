@@ -188,7 +188,14 @@ class Elaborator:
         return new_instances, diagnostics
 
     def _has_literal_pattern(self, name: str) -> bool:
-        """Check if name contains literal pattern <...>."""
+        """Check if name contains literal pattern <...>.
+
+        Accept any input type and coerce to string to handle numeric net names (e.g., 0).
+        """
+        try:
+            name = str(name)
+        except Exception:
+            return False
         # Must have both < and >
         if not ('<' in name and '>' in name):
             return False
@@ -214,13 +221,25 @@ class Elaborator:
         return True
 
     def _has_bus_pattern(self, name: str) -> bool:
-        """Check if name contains bus pattern [...]."""
-        return '[' in name and ']' in name
+        """Check if name contains bus pattern [...].
+
+        Accept any input type and coerce to string to handle numeric net names (e.g., 0).
+        """
+        try:
+            s = str(name)
+        except Exception:
+            return False
+        return '[' in s and ']' in s
 
     def _expand_literal_pattern(
         self, name: str, locatable: Locatable
     ) -> Tuple[List[str], List[Diagnostic]]:
         diagnostics: List[Diagnostic] = []
+        # Coerce to string for robust handling of non-string names
+        try:
+            name = str(name)
+        except Exception:
+            return [name], diagnostics
         match = re.search(r"^(.*?)<(.*?)>(.*?)$", name)
         if not match:
             return [name], []
@@ -270,6 +289,11 @@ class Elaborator:
         self, name: str, locatable: Locatable
     ) -> Tuple[List[str], List[Diagnostic]]:
         diagnostics = []
+        # Coerce to string for robust handling of non-string names
+        try:
+            name = str(name)
+        except Exception:
+            return [name], diagnostics
         match = re.search(r"^(.*)\[(\d+):(\d+)\]$", name)
         if not match:
             return [name], diagnostics
@@ -440,8 +464,8 @@ class Elaborator:
                         expanded_mappings[port_name] = expanded_nets[0]
                 
             else:
-                # No patterns - keep as is
-                expanded_mappings[port_name] = net_name
+                # No patterns - keep as is, but coerce net name to string for robustness
+                expanded_mappings[port_name] = net_name if isinstance(net_name, str) else str(net_name)
                 
         return expanded_mappings, diagnostics
 
@@ -455,6 +479,8 @@ class Elaborator:
         if not self._has_literal_pattern(name):
             return None
         
+        # Ensure we operate on a string
+        name = str(name)
         start = name.find('<')
         end = name.find('>')
         pattern_content = name[start+1:end]
@@ -476,13 +502,17 @@ class Elaborator:
         """
         items = self._extract_literal_pattern(name)
         if items is None:
-            return [name]
+            try:
+                return [str(name)]
+            except Exception:
+                return [name]
         
         # Find pattern location
-        start = name.find('<')
-        end = name.find('>')
-        prefix = name[:start]
-        suffix = name[end+1:]
+        sname = str(name)
+        start = sname.find('<')
+        end = sname.find('>')
+        prefix = sname[:start]
+        suffix = sname[end+1:]
         
         # Generate expanded names
         expanded = []
