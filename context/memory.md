@@ -4,7 +4,44 @@
 ASDL (Analog System Description Language) is a comprehensive Python framework for analog circuit design and verification. The project provides parsing, elaboration, validation, and SPICE netlist generation capabilities with a focus on hierarchical design and test-driven development.
 
 ## Current State
-**Schema Generation Initiative (in progress)**
+**Import System Architecture Complete (ready for implementation)**
+
+### ✅ **ASDL Import System Architecture Finalized**
+Comprehensive import dependency management strategy documented in `doc/asdl_import_dependency_management.md`. Key achievements:
+
+**Core Philosophy**: Complete separation of design logic from physical implementation through explicit import mapping
+
+**Three-Layer Architecture**:
+- **Layer 1: PDK Primitives** - Raw SPICE device models with `spice_template`
+- **Layer 2: Unit Devices** - Standardized device tiles with fixed geometry, multiplier-only interface
+- **Layer 3: Design Logic** - Technology-independent, topology-focused circuit design
+
+**Deterministic Import Rules**:
+- **File-only imports**: `alias: library.filename` → `library/filename.asdl`
+- **Module references**: `alias.module_name` (two-step import-then-reference)
+- **Version enforcement**: Required `version` and `date` in all `file_info` sections
+- **Corner binding precedence**: Always applied last, after parameterization
+- **Template validation**: Clear rules for multi-line `spice_template` content
+
+**Design Decisions Resolved**:
+- Eliminated three-dot syntax ambiguity (`library.file.module`)
+- Enforced mutual exclusivity: `spice_template` XOR `instances`
+- Unified `Module` class replacing separate `DeviceModel`/`Module` split
+- Two-stage compilation: Import Elaboration → SPICE Generation
+
+### 🔍 **Codebase Analysis Completed**
+- **Parser**: Uses ruamel.yaml with location tracking, supports modules/models but no imports yet
+- **Data Structures**: Well-structured with ASDLFile, Module, DeviceModel - needs import extensions
+- **Parameter Resolution**: Basic framework exists in resolver.py but largely unimplemented
+- **No Import System**: Currently designs are self-contained in single files
+- **Example Pattern**: two_stage_ota.yml defines all device models inline
+
+### 📋 **Implementation Roadmap**
+**Phase 1 (MVP)**: Basic import resolution, file-based syntax, multiplier-only unit devices
+**Phase 2**: Enhanced versioning, meta-parameter unit devices, enhanced diagnostics
+**Phase 3**: Auto-generation tooling, elaboration caching, behavioral fallbacks (requires discussion)
+
+### ✅ **Schema Generation Initiative (completed)**
 
 ### ✅ Decisions
 - Single source of truth for schema: `src/asdl/data_structures.py`
