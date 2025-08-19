@@ -7,7 +7,7 @@ The metadata field provides extensible storage for annotations, tool-specific da
 
 import pytest
 from pathlib import Path
-from asdl.data_structures import (
+from src.asdl.data_structures import (
     ASDLFile, FileInfo, DeviceModel, PrimitiveType, 
     Port, PortDirection, SignalType, Module, Instance
 )
@@ -109,6 +109,7 @@ class TestMetadataField:
         """Test metadata field on Module."""
         module = Module(
             doc="Test amplifier module",
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})},  # Make it hierarchical
             metadata={
                 "circuit_type": "analog",
                 "performance": {
@@ -207,6 +208,7 @@ class TestMetadataField:
         
         module = Module(
             doc="Complex analog block",
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})},  # Make it hierarchical
             metadata=complex_metadata
         )
         

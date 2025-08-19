@@ -6,7 +6,7 @@ The internal_nets field provides a direct, simple way to declare internal nets o
 """
 
 import pytest
-from src.asdl.data_structures import Module, Port, PortDirection, SignalType
+from src.asdl.data_structures import Module, Port, PortDirection, SignalType, Instance
 
 
 class TestInternalNetsField:
@@ -16,7 +16,8 @@ class TestInternalNetsField:
         """Test Module with internal_nets as a list of strings."""
         module = Module(
             doc="Test module with internal nets",
-            internal_nets=["bias_voltage", "internal_node", "temp_signal"]
+            internal_nets=["bias_voltage", "internal_node", "temp_signal"],
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})}  # Make it hierarchical
         )
         
         assert module.internal_nets is not None
@@ -29,7 +30,8 @@ class TestInternalNetsField:
     def test_module_without_internal_nets(self):
         """Test Module without internal_nets (should be None)."""
         module = Module(
-            doc="Simple module without internal nets"
+            doc="Simple module without internal nets",
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})}  # Make it hierarchical
         )
         
         assert module.internal_nets is None
@@ -38,7 +40,8 @@ class TestInternalNetsField:
         """Test Module with empty internal_nets list."""
         module = Module(
             doc="Module with empty internal nets",
-            internal_nets=[]
+            internal_nets=[],
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})}  # Make it hierarchical
         )
         
         assert module.internal_nets == []
@@ -56,7 +59,8 @@ class TestInternalNetsField:
         module = Module(
             doc="Differential amplifier",
             ports=ports,
-            internal_nets=["bias_current", "intermediate_node", "compensation"]
+            internal_nets=["bias_current", "intermediate_node", "compensation"],
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})}  # Make it hierarchical
         )
         
         # Check ports exist
@@ -78,7 +82,8 @@ class TestInternalNetsField:
         
         module = Module(
             doc="Module with ordered internal nets",
-            internal_nets=ordered_nets
+            internal_nets=ordered_nets,
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})}  # Make it hierarchical
         )
         
         assert module.internal_nets is not None
@@ -102,7 +107,8 @@ class TestInternalNetsField:
         
         module = Module(
             doc="Operational amplifier with realistic internal nets",
-            internal_nets=realistic_nets
+            internal_nets=realistic_nets,
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})}  # Make it hierarchical
         )
         
         assert module.internal_nets is not None
@@ -118,7 +124,8 @@ class TestInternalNetsField:
         """Test that internal_nets contains only strings."""
         module = Module(
             doc="Test module",
-            internal_nets=["net1", "net2", "net3"]
+            internal_nets=["net1", "net2", "net3"],
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})}  # Make it hierarchical
         )
         assert module.internal_nets is not None
         # All elements should be strings
@@ -134,7 +141,8 @@ class TestInternalNetsField:
         
         module = Module(
             doc="Module with pattern-like internal net names",
-            internal_nets=pattern_nets
+            internal_nets=pattern_nets,
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})}  # Make it hierarchical
         )
         
         assert module.internal_nets is not None
@@ -148,6 +156,7 @@ class TestInternalNetsField:
         module = Module(
             doc="Complex module with internal nets and metadata",
             internal_nets=["bias_voltage", "internal_node"],
+            instances={"M1": Instance(model="nmos_unit", mappings={"D": "out"})},  # Make it hierarchical
             metadata={
                 "circuit_type": "analog",
                 "net_count": 2,

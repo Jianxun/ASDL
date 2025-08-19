@@ -189,18 +189,39 @@ class Instance(Locatable):
 @dataclass
 class Module(Locatable):
     """
-    Circuit module definition.
+    Unified module definition for both primitive and hierarchical circuits.
     
-    A Module is a template/definition that describes:
-    - Interface (ports)
-    - Internal structure (instances and connectivity)
-    - Parameters for customization
+    A Module can be either:
+    - Primitive: Has spice_template, renders as inline SPICE device
+    - Hierarchical: Has instances, renders as .subckt definition
     
-    Each Module becomes a .subckt definition in SPICE.
+    These are mutually exclusive - a module cannot have both spice_template and instances.
     """
     doc: Optional[str] = None  # schema: description="Module-level documentation"
     ports: Optional[Dict[str, Port]] = None  # schema: description="Port declarations keyed by port name"
     internal_nets: Optional[List[str]] = None  # schema: description="Internal nets local to this module"
     parameters: Optional[Dict[str, Any]] = None  # schema: description="Module parameters and default values"
-    instances: Optional[Dict[str, Instance]] = None  # schema: description="Map of instance id to Instance"
+    
+    # MUTUALLY EXCLUSIVE: Either primitive OR hierarchical
+    spice_template: Optional[str] = None  # schema: description="SPICE device template for primitive modules"
+    instances: Optional[Dict[str, Instance]] = None  # schema: description="Map of instance id to Instance for hierarchical modules"
+    
+    # Additional fields
+    pdk: Optional[str] = None  # schema: description="PDK name for primitive modules (drives .include generation)"
     metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
+    
+    def __post_init__(self):
+        """Validate mutual exclusion constraint and ensure module has implementation."""
+        if self.spice_template is not None and self.instances is not None:
+            raise ValueError("Module cannot have both spice_template and instances")
+        
+        if self.spice_template is None and self.instances is None:
+            raise ValueError("Module must have either spice_template or instances")
+    
+    def is_primitive(self) -> bool:
+        """Check if this is a primitive module (has spice_template)."""
+        return self.spice_template is not None
+    
+    def is_hierarchical(self) -> bool:
+        """Check if this is a hierarchical module (has instances)."""
+        return self.instances is not None
