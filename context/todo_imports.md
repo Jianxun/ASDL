@@ -6,15 +6,15 @@
 - ✅ **Unified Module Architecture**: Merged DeviceModel and Module into single class
 - ✅ **ASDLFile Simplification**: Removed models field, added imports field
 - ✅ **Import Foundation**: Added ImportDeclaration class for alias: library.filename[@version]
-- ✅ **Comprehensive Tests**: 21 tests passing across T0.1, T0.2, T0.3
+- ✅ **Comprehensive Tests**: 29 tests passing across T0.1, T0.2, T0.3, T0.4
 - ✅ **Breaking Changes**: Clean elimination of DeviceModel/Module redundancy
 
-**Next:** Parser simplification (T0.4) - remove models section parsing, add imports section parsing
+**Next:** Generator unification (T0.5) - update generator for unified module handling (primitive vs hierarchical)
 
 ## Phase 0: Data Structure Unification (Breaking Refactor) ✅ COMPLETED
 - [x] **Delete DeviceModel class entirely** - aggressive cleanup
 - [x] **Remove `models` section completely** - no backward compatibility  
-- [ ] **Rewrite parser** - single unified module parsing path only 🚧 IN PROGRESS
+- [x] **Rewrite parser** - single unified module parsing path only ✅ COMPLETED
 - [ ] **Rewrite generator** - unified module handling (primitive vs hierarchical)
 - [ ] **Update all existing ASDL files** - migrate `models` → `modules` with `spice_template`
 
@@ -47,8 +47,8 @@
 - [x] Update `Instance` class methods for unified architecture
 - [x] Remove `models` field from `ASDLFile`, add `imports` field
 - [x] Add mutual exclusion validation (`spice_template` XOR `instances`)
-- [ ] Remove `models` section parsing from `src/asdl/parser.py` 🚧 NEXT
-- [ ] Implement unified module parsing (handle both primitive and hierarchical)
+- [x] Remove `models` section parsing from `src/asdl/parser.py` ✅ COMPLETED
+- [x] Implement unified module parsing (handle both primitive and hierarchical) ✅ COMPLETED
 - [ ] Update `src/asdl/generator.py` for unified module handling:
   - [ ] Primitive modules → inline SPICE generation
   - [ ] Hierarchical modules → `.subckt` definition generation
@@ -86,7 +86,7 @@
 - [x] **T0.1**: Unit tests for unified Module class architecture (8 tests)
 - [x] **T0.2**: Unit tests for unified ASDLFile structure (6 tests)  
 - [x] **T0.3**: Unit tests for ImportDeclaration foundation (7 tests)
-- [ ] **T0.4**: Unit tests for parser simplification 🚧 IN PROGRESS
+- [x] **T0.4**: Unit tests for parser simplification ✅ COMPLETED
 - [ ] **T0.5**: Unit tests for SPICE generation unification
 - [ ] **T0.6**: Unit tests for core validation logic
 - [ ] **T0.7**: Integration tests for format migration validation

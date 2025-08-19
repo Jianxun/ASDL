@@ -17,7 +17,7 @@ from typing import Dict, Any, Optional, List, Tuple, Protocol, cast
 from pathlib import Path
 
 from .data_structures import (
-    ASDLFile, FileInfo, DeviceModel, PrimitiveType, 
+    ASDLFile, FileInfo, ImportDeclaration,
     Module, Port, PortDirection, SignalType, PortConstraints,
     Instance, Locatable
 )
@@ -151,11 +151,11 @@ class ASDLParser:
         yaml_data = cast(YAMLObject, data)
             
         file_info = self._parse_file_info(yaml_data, 'file_info', file_path)
-        models = self._parse_models(yaml_data.get('models', {}), diagnostics, file_path)
+        imports = self._parse_imports(yaml_data.get('imports', {}), diagnostics, file_path)
         modules = self._parse_modules(yaml_data.get('modules', {}), diagnostics, file_path)
         
         # Check for unknown top-level sections
-        allowed_keys = {'file_info', 'models', 'modules'}
+        allowed_keys = {'file_info', 'imports', 'modules'}
         if isinstance(data, dict):
             for key in data.keys():
                 if key not in allowed_keys:
@@ -171,7 +171,7 @@ class ASDLParser:
         
         asdl_file = ASDLFile(
             file_info=file_info,
-            models=models,
+            imports=imports,
             modules=modules
         )
         return asdl_file, diagnostics
@@ -216,28 +216,46 @@ class ASDLParser:
             metadata=data.get('metadata')
         )
     
-    def _parse_models(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Dict[str, DeviceModel]:
-        """Parse the models section."""
-        if not self._validate_section_is_dict(data, 'models', diagnostics, file_path):
-            return {}
+    def _parse_imports(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Optional[Dict[str, ImportDeclaration]]:
+        """Parse the imports section."""
+        if not data:
+            return None
+            
+        if not self._validate_section_is_dict(data, 'imports', diagnostics, file_path):
+            return None
 
-        models = {}
+        imports = {}
         yaml_data = cast(YAMLObject, data)
-        for model_alias, model_data in yaml_data.items():
-            loc = self._get_locatable_from_key(yaml_data, model_alias, file_path)
-            models[model_alias] = DeviceModel(
+        for alias, qualified_source in yaml_data.items():
+            loc = self._get_locatable_from_key(yaml_data, alias, file_path)
+            
+            # Parse qualified_source which can be library.filename or library.filename@version
+            version = None
+            if isinstance(qualified_source, str) and '@' in qualified_source:
+                qualified_source, version = qualified_source.split('@', 1)
+            
+            # Validate import format: alias: library.filename[@version]
+            if not isinstance(qualified_source, str) or '.' not in qualified_source:
+                diagnostics.append(Diagnostic(
+                    code="P106",
+                    title="Invalid Import Format",
+                    details=f"Import '{alias}' has invalid format. Expected 'library.filename[@version]'.",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc,
+                    suggestion="Use format 'alias: library.filename' or 'alias: library.filename@version'."
+                ))
+                continue
+                
+            imports[alias] = ImportDeclaration(
                 **loc.__dict__,
-                type=PrimitiveType(model_data.get('type')),
-                ports=model_data.get('ports'),
-                device_line=model_data.get('device_line'),
-                doc=model_data.get('doc'),
-                parameters=model_data.get('parameters'),
-                metadata=model_data.get('metadata')
+                alias=alias,
+                qualified_source=qualified_source,
+                version=version
             )
-        return models
+        return imports
     
     def _parse_modules(self, data: Any, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> Dict[str, Module]:
-        """Parse the modules section."""
+        """Parse the modules section with unified primitive/hierarchical architecture."""
         if not self._validate_section_is_dict(data, 'modules', diagnostics, file_path):
             return {}
 
@@ -245,13 +263,46 @@ class ASDLParser:
         yaml_data = cast(YAMLObject, data)
         for module_id, module_data in yaml_data.items():
             loc = self._get_locatable_from_key(yaml_data, module_id, file_path)
+            
+            # Parse all fields
+            spice_template = module_data.get('spice_template')
+            instances = self._parse_instances(module_data.get('instances'), diagnostics, file_path)
+            
+            # Validate mutual exclusion: spice_template XOR instances
+            has_spice_template = spice_template is not None
+            has_instances = instances is not None
+            
+            if has_spice_template and has_instances:
+                diagnostics.append(Diagnostic(
+                    code="P107",
+                    title="Module Type Conflict",
+                    details=f"Module '{module_id}' cannot have both 'spice_template' and 'instances'. Choose one: primitive (spice_template) or hierarchical (instances).",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc,
+                    suggestion="Remove either 'spice_template' (to make hierarchical) or 'instances' (to make primitive)."
+                ))
+                continue
+                
+            if not has_spice_template and not has_instances:
+                diagnostics.append(Diagnostic(
+                    code="P108",
+                    title="Incomplete Module Definition",
+                    details=f"Module '{module_id}' must have either 'spice_template' (primitive) or 'instances' (hierarchical).",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc,
+                    suggestion="Add either 'spice_template' for primitive modules or 'instances' for hierarchical modules."
+                ))
+                continue
+            
             modules[module_id] = Module(
                 **loc.__dict__,
                 doc=module_data.get('doc'),
                 ports=self._parse_ports(module_data.get('ports'), diagnostics, file_path),
                 internal_nets=module_data.get('internal_nets'),
                 parameters=module_data.get('parameters'),
-                instances=self._parse_instances(module_data.get('instances'), diagnostics, file_path),
+                spice_template=spice_template,
+                instances=instances,
+                pdk=module_data.get('pdk'),
                 metadata=module_data.get('metadata')
             )
         return modules

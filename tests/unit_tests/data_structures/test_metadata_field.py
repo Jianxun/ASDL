@@ -31,7 +31,6 @@ class TestMetadataField:
         
         asdl_file = ASDLFile(
             file_info=file_info,
-            models={},
             modules={},
             metadata={
                 "design_intent": "test circuit",
