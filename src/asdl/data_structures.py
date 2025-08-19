@@ -22,14 +22,15 @@ Metadata = Dict[str, Any]
 @dataclass
 class ASDLFile:
     """
-    Represents a single ASDL file with its modules and models.
+    Represents a single ASDL file with its unified modules and optional imports.
     
     Each ASDL file is like a library that can be included/imported by other files.
-    The full chip design will be composed of multiple ASDL files with dependencies.
+    The unified modules field contains both primitive and hierarchical modules.
+    The imports field enables dependency resolution across multiple files.
     """
     file_info: 'FileInfo'  # schema: description="Document metadata; does not affect netlisting"
-    models: Dict[str, 'DeviceModel']  # schema: description="Map of device model aliases to device templates"
-    modules: Dict[str, 'Module']  # schema: description="Map of hierarchical module definitions keyed by module name"
+    modules: Dict[str, 'Module']  # schema: description="Map of unified module definitions (both primitive and hierarchical)"
+    imports: Optional[Dict[str, 'ImportDeclaration']] = None  # schema: description="Map of import aliases to import declarations"
     metadata: Optional[Metadata] = None  # schema: description="Open extension bag; agents should preserve unknown keys"
 
 
@@ -77,6 +78,20 @@ class FileInfo(Locatable):
     author: Optional[str] = None  # schema: description="Author name or contact"
     date: Optional[str] = None  # schema: description="Date string"
     metadata: Optional[Dict[str, Any]] = None  # schema: description="Additional metadata for tools and annotations"
+
+
+@dataclass(kw_only=True)
+class ImportDeclaration(Locatable):
+    """
+    Represents a single import declaration: alias: library.filename[@version]
+    
+    This enables the import system's qualified name resolution where
+    library.filename maps to a file path, and alias.module_name references
+    modules within that imported file.
+    """
+    alias: str  # schema: description="Local alias for the imported file"
+    qualified_source: str  # schema: description="library.filename format for source resolution"
+    version: Optional[str] = None  # schema: description="Optional @version tag for version-specific imports"
 
 
 # ─────────────────────────────────────────
@@ -155,11 +170,11 @@ class Port(Locatable):
 @dataclass(kw_only=True)
 class Instance(Locatable):
     """
-    Instance of a DeviceModel or Module.
+    Instance of a unified Module.
     
-    An Instance represents the usage/instantiation of either:
-    - A DeviceModel (leaf device) -> generates device line in SPICE
-    - A Module (hierarchical) -> generates subcircuit call in SPICE
+    An Instance represents the usage/instantiation of a Module, which can be either:
+    - Primitive Module (has spice_template) -> generates inline SPICE device
+    - Hierarchical Module (has instances) -> generates subcircuit call in SPICE
     
     Mappings and parameters may contain patterns and expressions that will
     be resolved during the expansion and resolution phases.
@@ -171,19 +186,21 @@ class Instance(Locatable):
     - Tool-specific metadata: {"simulator": "spectre", "model_opts": {...}}
     - Future extensions: Any additional fields can be preserved here
     """
-    model: str  # schema: description="Reference to a DeviceModel or Module by key/name"
+    model: str  # schema: description="Reference to a Module by key/name"
     mappings: Dict[str, str]  # schema: description="Map from target's port names to net names"
     doc: Optional[str] = None  # schema: description="Instance-level documentation"
     parameters: Optional[Dict[str, Any]] = None  # schema: description="Parameter overrides for this instance"
     metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
     
-    def is_device_instance(self, asdl_file: 'ASDLFile') -> bool:
-        """Check if this instance references a DeviceModel."""
-        return self.model in asdl_file.models
+    def is_primitive_instance(self, asdl_file: 'ASDLFile') -> bool:
+        """Check if this instance references a primitive Module."""
+        return (self.model in asdl_file.modules and 
+                asdl_file.modules[self.model].is_primitive())
     
-    def is_module_instance(self, asdl_file: 'ASDLFile') -> bool:
-        """Check if this instance references a Module."""
-        return self.model in asdl_file.modules
+    def is_hierarchical_instance(self, asdl_file: 'ASDLFile') -> bool:
+        """Check if this instance references a hierarchical Module."""
+        return (self.model in asdl_file.modules and 
+                asdl_file.modules[self.model].is_hierarchical())
 
 
 @dataclass
