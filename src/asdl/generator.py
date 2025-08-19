@@ -5,26 +5,23 @@ Generates SPICE netlists from elaborated ASDL designs where patterns
 have been expanded and parameters have been resolved.
 """
 
-import warnings
-from typing import Dict, List, Any, Optional, Set
-from .data_structures import ASDLFile, Module, Instance, DeviceModel, PrimitiveType
+from typing import Dict, List, Any, Optional
+from .data_structures import ASDLFile, Module, Instance
 
 
 class SPICEGenerator:
     """
-    Hierarchical SPICE netlist generator for ASDL designs.
+    Unified SPICE netlist generator for ASDL designs.
     
-    Generates hierarchical SPICE netlists with proper subcircuit structure:
-    - Device models become .subckt definitions (primitives inside)
-    - Module definitions become .subckt definitions  
-    - Device instances become subcircuit calls (X_ prefix)
-    - Module instances become subcircuit calls (X_ prefix)
-    - Two-level port resolution: named mappings + model-defined order
+    Generates SPICE netlists with unified module architecture:
+    - Primitive modules (with spice_template) → inline SPICE generation
+    - Hierarchical modules (with instances) → .subckt definitions
+    - PDK includes generated automatically for primitive modules
     - ngspice compatible output format
     
     Pipeline order:
-    1. Model subcircuit definitions (.subckt for each device model)
-    2. Module subcircuit definitions (.subckt for each circuit module)
+    1. PDK include statements (.include for used PDKs)
+    2. Hierarchical module subcircuit definitions (.subckt for each circuit module)
     3. Main circuit instantiation (XMAIN top-level call)
     4. End statement (.end)
     """
@@ -38,7 +35,7 @@ class SPICEGenerator:
     
     def generate(self, asdl_file: ASDLFile) -> str:
         """
-        Generate complete SPICE netlist from ASDL design.
+        Generate complete SPICE netlist from ASDL design with unified architecture.
         
         Args:
             asdl_file: Fully elaborated ASDL design
@@ -46,8 +43,6 @@ class SPICEGenerator:
         Returns:
             Complete SPICE netlist as string
         """
-
-        
         lines = []
         
         # Add header comment
@@ -59,19 +54,24 @@ class SPICEGenerator:
         lines.append(f"* Revision: {asdl_file.file_info.revision}")
         lines.append("")
         
-        # Generate model subcircuit definitions first
-        if asdl_file.models:
-            lines.append("* Model subcircuit definitions")
-            for model_name, model in asdl_file.models.items():
-                model_subckt = self.generate_model_subcircuit(model_name, model)
-                lines.append(model_subckt)
-                lines.append("")
-        
-        # Generate subcircuit definitions for all modules
-        for module_name, module in asdl_file.modules.items():
-            subckt_def = self.generate_subckt(module, module_name, asdl_file)
-            lines.append(subckt_def)
+        # Generate PDK include statements for primitive modules
+        pdk_includes = self._generate_pdk_includes(asdl_file)
+        if pdk_includes:
+            lines.append("* PDK model includes")
+            lines.extend(pdk_includes)
             lines.append("")
+        
+        # Generate subcircuit definitions for hierarchical modules only
+        # (primitive modules are handled inline)
+        hierarchical_modules = {name: module for name, module in asdl_file.modules.items() 
+                               if module.instances is not None}
+        
+        if hierarchical_modules:
+            lines.append("* Hierarchical module subcircuit definitions")
+            for module_name, module in hierarchical_modules.items():
+                subckt_def = self.generate_subckt(module, module_name, asdl_file)
+                lines.append(subckt_def)
+                lines.append("")
         
         # Add main circuit instantiation if top_module is specified
         if asdl_file.file_info.top_module:
@@ -86,6 +86,26 @@ class SPICEGenerator:
         lines.append(".end")
         
         return "\n".join(lines)
+    
+    def _generate_pdk_includes(self, asdl_file: ASDLFile) -> List[str]:
+        """
+        Generate .include statements for PDK modules.
+        
+        Args:
+            asdl_file: ASDL design containing modules
+            
+        Returns:
+            List of .include statement strings
+        """
+        includes = []
+        used_pdks = set()
+        
+        for module in asdl_file.modules.values():
+            if module.pdk and module.pdk not in used_pdks:
+                includes.append(f'.include "{module.pdk}_fd_pr/models/ngspice/design.ngspice"')
+                used_pdks.add(module.pdk)
+                
+        return includes
     
     def generate_subckt(self, module: Module, module_name: str, 
                        asdl_file: ASDLFile) -> str:
@@ -136,7 +156,7 @@ class SPICEGenerator:
     def generate_instance(self, instance_id: str, instance: Instance, 
                          asdl_file: ASDLFile) -> str:
         """
-        Generate SPICE line for an instance.
+        Generate SPICE line for an instance with unified module architecture.
         
         Args:
             instance_id: Instance identifier
@@ -146,81 +166,74 @@ class SPICEGenerator:
         Returns:
             SPICE instance line as string
         """
-        if instance.is_device_instance(asdl_file):
-            return self._generate_device_line(instance_id, instance, asdl_file)
-        elif instance.is_module_instance(asdl_file):
+        # Check if instance model exists in modules
+        if instance.model not in asdl_file.modules:
+            raise ValueError(f"Unknown model reference: {instance.model}")
+            
+        module = asdl_file.modules[instance.model]
+        
+        # Determine if this is a primitive or hierarchical module
+        if module.spice_template is not None:
+            # Primitive module - generate inline SPICE using template
+            return self._generate_primitive_instance(instance_id, instance, module)
+        elif module.instances is not None:
+            # Hierarchical module - generate subcircuit call
             return self._generate_subckt_call(instance_id, instance, asdl_file)
         else:
-            raise ValueError(f"Unknown model reference: {instance.model}")
+            raise ValueError(f"Module {instance.model} has neither spice_template nor instances")
     
-    def _generate_device_line(self, instance_id: str, instance: Instance, 
-                             asdl_file: ASDLFile) -> str:
+    def _generate_primitive_instance(self, instance_id: str, instance: Instance, 
+                                   module: Module) -> str:
         """
-        Generate subcircuit call for a device instance.
+        Generate inline SPICE line for a primitive module instance.
         
-        Format: X_<name> <nodes> <model_name> <parameters>
-        Example: X_MN1 in out vss vss nmos_unit M=2
+        Uses the module's spice_template with parameter and port substitution.
+        
+        Args:
+            instance_id: Instance identifier
+            instance: Instance definition
+            module: Primitive module with spice_template
+            
+        Returns:
+            SPICE device line as string
         """
-        device_model = asdl_file.models[instance.model]
+        if not module.spice_template:
+            raise ValueError(f"Module {instance_id} has no spice_template for primitive generation")
         
-        # Build subcircuit call with X_ prefix
-        subckt_name = f"X_{instance_id}"
+        # Build substitution data for template
+        template_data = {}
         
-        # Get node connections in model-defined port order
-        node_list = []
-        for port_name in device_model.ports:
-            if port_name in instance.mappings:
-                node_list.append(instance.mappings[port_name])
-            else:
-                # Handle unconnected ports
-                node_list.append("UNCONNECTED")
+        # Add instance name substitution
+        template_data['name'] = instance_id
         
-        # Get instance parameters (only instance-specific parameters)
-        instance_params = instance.parameters if instance.parameters else {}
+        # Add port mappings from instance.mappings
+        if instance.mappings:
+            for port_name, net_name in instance.mappings.items():
+                template_data[port_name] = net_name
         
-        # Format subcircuit call: X_name nodes model_name params
-        parts = [subckt_name, " ".join(node_list), instance.model]
-        
-        # Add parameters if any
-        if instance_params:
-            param_str = self._format_named_parameters(instance_params)
-            parts.append(param_str)
-        
-        return " ".join(parts)
-    
-    def _merge_parameters(self, device_model: DeviceModel, instance: Instance) -> Dict[str, Any]:
-        """Merge model default parameters with instance parameters."""
-        all_params = {}
-        
-        # Add device model parameters (with defaults)
-        if device_model.parameters:
-            all_params.update(device_model.parameters)
-        
-        # Override with instance parameters
+        # Add parameter substitutions (merge module defaults with instance overrides)
+        merged_params = {}
+        if module.parameters:
+            merged_params.update(module.parameters)
         if instance.parameters:
-            all_params.update(instance.parameters)
+            merged_params.update(instance.parameters)
             
-        return all_params
+        for param_name, param_value in merged_params.items():
+            template_data[param_name] = param_value
+        
+        # Apply substitutions to the spice_template
+        try:
+            final_line = module.spice_template.format(**template_data)
+        except KeyError as e:
+            raise ValueError(f"Missing placeholder in spice_template for instance {instance_id}: {e}")
+        
+        return final_line
     
-    def _format_named_parameters(self, params: Dict[str, Any], model: Optional[DeviceModel] = None) -> str:
-        """Format parameters as param=value pairs using model-defined order."""
+    def _format_named_parameters(self, params: Dict[str, Any]) -> str:
+        """Format parameters as param=value pairs in alphabetical order."""
         param_parts = []
-        
-        if model and model.parameters:
-            # First, add parameters in model-defined order
-            for param_name in model.parameters.keys():
-                if param_name in params:
-                    param_parts.append(f"{param_name}={params[param_name]}")
-            
-            # Then add any instance-only parameters (alphabetically for consistency)
-            instance_only = set(params.keys()) - set(model.parameters.keys())
-            for param_name in sorted(instance_only):
-                param_parts.append(f"{param_name}={params[param_name]}")
-        else:
-            # Fallback to alphabetical order if no model parameter order available
-            for param_name in sorted(params.keys()):
-                param_parts.append(f"{param_name}={params[param_name]}")
-        
+        for param_name in sorted(params.keys()):
+            param_parts.append(f"{param_name}={params[param_name]}")
         return " ".join(param_parts)
     
     def _generate_subckt_call(self, instance_id: str, instance: Instance, 
@@ -302,82 +315,4 @@ class SPICEGenerator:
         else:
             return str(value)
 
-    def generate_model_subcircuit(self, model_name: str, model: DeviceModel) -> str:
-        """
-        Generate .subckt definition for a device model.
-        
-        Args:
-            model_name: Name of the model
-            model: DeviceModel definition
-            
-        Returns:
-            SPICE subcircuit definition as string
-        """
-        lines = []
-        
-        # Add model documentation
-        if model.doc:
-            lines.append(f"* {model.doc}")
-        
-        # Generate .subckt header with model-defined port order
-        port_list = model.ports
-        lines.append(f".subckt {model_name} {' '.join(port_list)}")
-        
-        # Add parameter declarations with default values
-        if model.parameters:
-            for param_name, param_value in model.parameters.items():
-                lines.append(f"{self.indent}.param {param_name}={param_value}")
-        
-        # Generate the internal device instance
-        device_instance = self._generate_model_device_instance(model)
-        lines.append(f"{self.indent}{device_instance}")
-        
-        # Close subcircuit
-        lines.append(".ends")
-        
-        return "\n".join(lines)
-
-    def _generate_model_device_instance(self, model: DeviceModel) -> str:
-        """
-        Generate the internal device instance for a model subcircuit.
-        
-        This creates the primitive device line that goes inside the model subcircuit.
-        Uses the device_line approach with parameter substitution.
-        
-        Args:
-            model: DeviceModel definition
-            
-        Returns:
-            SPICE device line as string
-        """
-        return self._generate_from_device_line(model)
-    
-    def _generate_from_device_line(self, model: DeviceModel) -> str:
-        """
-        Generate device line using the device_line approach.
-        
-        Substitutes port names and parameter names in the device line.
-        """
-        device_line = model.device_line.strip()
-        
-        # Build substitution data for both ports and parameters
-        template_data = {}
-        
-        # Add port mappings (identity mapping within subcircuit)
-        for port in model.ports:
-            template_data[port] = port
-            
-        # Add parameter mappings (parameter name -> {parameter_name} for SPICE substitution)
-        if model.parameters:
-            for param_name in model.parameters.keys():
-                template_data[param_name] = f"{{{param_name}}}"
-        
-        # Apply substitutions to the device line
-        try:
-            final_line = device_line.format(**template_data) 
-        except KeyError as e:
-            raise ValueError(f"Missing placeholder in device_line: {e}")
-        
-        return final_line
-    
  

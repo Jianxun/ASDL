@@ -6,16 +6,17 @@
 - ✅ **Unified Module Architecture**: Merged DeviceModel and Module into single class
 - ✅ **ASDLFile Simplification**: Removed models field, added imports field
 - ✅ **Import Foundation**: Added ImportDeclaration class for alias: library.filename[@version]
-- ✅ **Comprehensive Tests**: 29 tests passing across T0.1, T0.2, T0.3, T0.4
+- ✅ **Comprehensive Tests**: 37 tests passing across T0.1, T0.2, T0.3, T0.4, T0.5
 - ✅ **Breaking Changes**: Clean elimination of DeviceModel/Module redundancy
+- ✅ **Generator Unification**: Primitive modules generate inline SPICE, hierarchical generate .subckt definitions
 
-**Next:** Generator unification (T0.5) - update generator for unified module handling (primitive vs hierarchical)
+**Next:** Migration validation (T0.6-T0.8) - core validation logic, format migration, and regression prevention
 
 ## Phase 0: Data Structure Unification (Breaking Refactor) ✅ COMPLETED
 - [x] **Delete DeviceModel class entirely** - aggressive cleanup
 - [x] **Remove `models` section completely** - no backward compatibility  
 - [x] **Rewrite parser** - single unified module parsing path only ✅ COMPLETED
-- [ ] **Rewrite generator** - unified module handling (primitive vs hierarchical)
+- [x] **Rewrite generator** - unified module handling (primitive vs hierarchical) ✅ COMPLETED
 - [ ] **Update all existing ASDL files** - migrate `models` → `modules` with `spice_template`
 
 ## Phase 1: Core Import Infrastructure (MVP)
@@ -49,9 +50,9 @@
 - [x] Add mutual exclusion validation (`spice_template` XOR `instances`)
 - [x] Remove `models` section parsing from `src/asdl/parser.py` ✅ COMPLETED
 - [x] Implement unified module parsing (handle both primitive and hierarchical) ✅ COMPLETED
-- [ ] Update `src/asdl/generator.py` for unified module handling:
-  - [ ] Primitive modules → inline SPICE generation
-  - [ ] Hierarchical modules → `.subckt` definition generation
+- [x] Update `src/asdl/generator.py` for unified module handling: ✅ COMPLETED
+  - [x] Primitive modules → inline SPICE generation ✅ COMPLETED
+  - [x] Hierarchical modules → `.subckt` definition generation ✅ COMPLETED
 - [ ] Migrate existing ASDL files to new format
 
 ### Phase 1 Tasks
@@ -87,7 +88,7 @@
 - [x] **T0.2**: Unit tests for unified ASDLFile structure (6 tests)  
 - [x] **T0.3**: Unit tests for ImportDeclaration foundation (7 tests)
 - [x] **T0.4**: Unit tests for parser simplification ✅ COMPLETED
-- [ ] **T0.5**: Unit tests for SPICE generation unification
+- [x] **T0.5**: Unit tests for SPICE generation unification ✅ COMPLETED
 - [ ] **T0.6**: Unit tests for core validation logic
 - [ ] **T0.7**: Integration tests for format migration validation
 - [ ] **T0.8**: Integration tests for regression prevention
