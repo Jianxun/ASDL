@@ -1,0 +1,45 @@
+# gf180mcuD.asdl.yaml
+modules: 
+  nfet_3v3:
+    ports: [D, G, S, B]
+    parameters: M
+    spice_template: M1 {D} {G} {S} {B} nfet_03v3 L=0.28u W=0.22u nf=1 m={M}
+    pdk: gf180mcuD
+
+# gf180mcuD_std_tiles.asdl.yaml
+imports:
+  pdk: gf180mcuD
+modules:
+  nfet_tile:
+    ports: [D, G, S, B]
+    instances:
+      M1:
+        model: pdk.nfet_3v3
+        mappings: {D: D, G: G, S: S, B: B}
+        parameters:
+          M: 1
+
+# analoglib.asdl.yaml
+modules:
+  vdc:
+    ports: [plus, minus]
+    parameters:
+      DC: 0
+    spice_template: V1 {plus} {minus} DC={DC}
+
+
+# test.asdl.yaml
+imports:
+  std_tiles: gf180mcuD_std_tiles
+  # analoglib: analoglib # analoglib is always implicitly imported
+modules:
+  tb:
+    instances:
+      M1:
+        model: std_tiles.nfet_tile
+        mappings: {D: D, G: G, S: VSS, B: VSS}
+      VGS: 
+        model: analoglib.vdc
+        mappings: {plus: D, minus: VSS}
+        parameters:
+          DC: 1.8

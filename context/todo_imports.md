@@ -1,80 +1,90 @@
 # ASDL Import System Development Todos
 
+## Phase 0: Data Structure Unification (Breaking Refactor)
+- [ ] **Delete DeviceModel class entirely** - aggressive cleanup
+- [ ] **Remove `models` section completely** - no backward compatibility  
+- [ ] **Rewrite parser** - single unified module parsing path only
+- [ ] **Rewrite generator** - unified module handling (primitive vs hierarchical)
+- [ ] **Update all existing ASDL files** - migrate `models` → `modules` with `spice_template`
+
 ## Phase 1: Core Import Infrastructure (MVP)
+- [ ] Basic import syntax: `alias: library.filename`
+- [ ] Library registry with `asdl.lib.yaml` support
+- [ ] Single-level import resolution (no transitive imports)
+- [ ] Qualified module references: `alias.module_name`
+- [ ] Integration with existing elaboration pipeline
 
-### Parser & Data Structure Extensions
-- [ ] Add `imports` field to `ASDLFile` dataclass
-- [ ] Create `ImportDeclaration` dataclass for `local_name: qualified.source.name` mappings  
-- [ ] Extend YAML parser to recognize and validate `imports` section
-- [ ] Support both `library.module` and `library.file.module` import formats
-- [ ] Add import context tracking for resolution chains
-
-### Library Registry System
-- [ ] Create `LibraryRegistry` class for managing library discovery
-- [ ] Support `asdl.lib.yaml` configuration files for library path mappings
-- [ ] Implement path resolution algorithm for library locations
-- [ ] Handle library search order and precedence rules
-
-### Import Resolution Engine  
-- [ ] Build `ImportResolver` to resolve qualified names to actual file paths
-- [ ] Extract specific modules from multi-module ASDL files
-- [ ] Implement dependency chain resolution with circular import detection
-- [ ] Add proper error handling and diagnostics for import failures
-
-## Phase 2: Unit Device Abstraction
-
-### Enhanced Parameter System
-- [ ] Upgrade parameter resolver to handle multiplier-only instances
-- [ ] Support `m` parameter for device sizing in unit devices
-- [ ] Validate unit device constraints (only multiplier parameter allowed)
-- [ ] Enable parameter expression evaluation in import contexts
-
-### PDK Integration Support
-- [ ] Create analog standard cell library structure templates
-- [ ] Implement three-layer architecture validation (PDK → Unit Devices → Design Logic)
-- [ ] Support technology-independent design patterns
-- [ ] Add device model abstraction for different PDKs
+## Phase 2: Enhanced Import Features
+- [ ] Transitive import resolution with circular detection
+- [ ] Enhanced error diagnostics for import failures
+- [ ] PDK integration with `.include` generation
+- [ ] Core primitive vs hierarchical validation
 
 ## Phase 3: Advanced Features
+- [ ] Parameterized imports with variable substitution
+- [ ] Version constraint support
+- [ ] Optional practice guideline linting (3-layer architecture suggestions)
+- [ ] Cross-technology design validation
 
-### Parameterized Imports
-- [ ] Add parameter substitution in import paths using `${variable}` syntax
-- [ ] Support design exploration through parameterized device variants
-- [ ] Enable technology sweeps and cross-PDK validation
-- [ ] Implement model fidelity progression (behavioral → schematic → extracted)
+## Detailed Task Breakdown
 
-### Integration & Testing
-- [ ] Integrate import resolution with existing SPICE generation pipeline
-- [ ] Update generator to handle imported device models and modules
-- [ ] Create comprehensive test suite covering all import scenarios
-- [ ] Add validation for import dependency management and conflicts
+### Phase 0 Tasks
+- [ ] Remove `DeviceModel` class from `src/asdl/data_structures.py`
+- [ ] Add `spice_template` field to unified `Module` class
+- [ ] Add `ImportDeclaration` class to data structures
+- [ ] Remove `models` section parsing from `src/asdl/parser.py`
+- [ ] Implement unified module parsing (handle both primitive and hierarchical)
+- [ ] Add mutual exclusion validation (`spice_template` XOR `instances`)
+- [ ] Update `src/asdl/generator.py` for unified module handling:
+  - [ ] Primitive modules → inline SPICE generation
+  - [ ] Hierarchical modules → `.subckt` definition generation
+- [ ] Migrate existing ASDL files to new format
 
-## Implementation Notes
+### Phase 1 Tasks
+- [ ] Create `src/asdl/library_registry.py`:
+  - [ ] `LibraryRegistry` class
+  - [ ] `asdl.lib.yaml` configuration support
+  - [ ] `library.filename` → file path resolution
+- [ ] Create `src/asdl/import_resolver.py`:
+  - [ ] `ImportResolver` class
+  - [ ] Basic import resolution and merging
+  - [ ] Namespace management for imported modules
+- [ ] Add `imports` section parsing to parser
+- [ ] Validate `alias: library.filename[@version]` format
+- [ ] Update `src/asdl/elaborator.py`:
+  - [ ] Two-stage elaboration (imports first, then patterns)
+  - [ ] Qualified name resolution (`alias.module_name`)
 
-### Key Files to Modify
-- `src/asdl/data_structures.py` - Add import data structures
-- `src/asdl/parser.py` - Extend YAML parsing for imports
-- `src/asdl/resolver.py` - Enhance parameter resolution for imports  
-- `src/asdl/elaborator.py` - Integrate import resolution into elaboration
-- `src/asdl/generator.py` - Handle imported components in SPICE generation
+### Phase 2 Tasks
+- [ ] Add circular dependency detection to import resolver
+- [ ] Implement transitive import resolution
+- [ ] Add PDK `.include` statement generation
+- [ ] Enhanced diagnostic messages for import failures
+- [ ] Core validation for primitive vs hierarchical modules
 
-### Design Principles
-- Maintain backward compatibility with existing ASDL files
-- Build incrementally starting with simple library.module imports
-- Defer complex workspace-level management to later phases
-- Focus on three core dependency types: analog standard cells, design cells, external SPICE
+### Phase 3 Tasks
+- [ ] Create `src/asdl/linting.py` for optional practice guidelines
+- [ ] Implement parameterized import syntax (`${variable}` substitution)
+- [ ] Add version constraint parsing and validation
+- [ ] Cross-technology design validation tools
 
-### Test Strategy
-- Unit tests for each import resolution component
-- Integration tests with multi-file designs
-- Cross-technology validation scenarios
-- Error handling and diagnostic message quality
+## Testing Tasks
+- [ ] Unit tests for unified module parsing
+- [ ] Unit tests for import syntax validation
+- [ ] Unit tests for library registry path resolution
+- [ ] Unit tests for import resolution algorithm
+- [ ] Integration tests for primitive vs hierarchical SPICE generation
+- [ ] Integration tests for multi-file designs with imports
+- [ ] Integration tests for qualified module name resolution
 
-## Open Questions
-1. **Corner Management**: How should testbench-level corner control integrate with import system?
-2. **Namespace Resolution**: Specific rules for local vs qualified imports within libraries?
-3. **SPICE Generation**: How do imports connect to PDK integration and corner-aware netlist generation?
-4. **Library Versioning**: Should we support versioned imports for library management?
+## Documentation Tasks
+- [ ] Update user documentation for new unified module syntax
+- [ ] Create migration guide from old `models` to new `modules` format
+- [ ] Document import system usage and best practices
+- [ ] Document 3-layer architecture practice guidelines
 
-## Session Progress Tracking
-- **Session 2025-08-18**: Analyzed codebase, reviewed import strategy document, created development plan
+## Breaking Changes Migration
+- [ ] Identify all existing ASDL files using `models` section
+- [ ] Create automated migration scripts for format conversion
+- [ ] Update example files and tutorials
+- [ ] Update test fixtures to new format
