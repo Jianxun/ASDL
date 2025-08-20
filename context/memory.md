@@ -107,4 +107,49 @@ Comprehensive import dependency management strategy documented in `doc/asdl_impo
 - **Parser**: Dual syntax validation with appropriate warnings for conflicting field names
 - **Integration**: Full compatibility with existing unified module architecture
 
+## Debugging and Generator Fixes (2025-08-20)
+**Status**: ✅ **COMPLETED** - Critical debugging infrastructure and generator issues resolved
+
+**Core Fixes Applied**:
+1. ✅ **Exception Handling**: Removed generic E999 wrapper from elaborator, now shows full stack traces with module context for effective debugging
+2. ✅ **Elaborator Bug #1**: Fixed `replace()` call that incorrectly converted `instances=None` to `instances={}` for primitive modules
+3. ✅ **Elaborator Bug #2**: Fixed `_expand_instances()` method that converted `instances=None` to `instances={}` during elaboration
+4. ✅ **Legacy Field Updates**: Updated `models` → `modules` references in validator and expander (unified module architecture)
+5. ✅ **Generator LVS Fix**: Removed `.param` line generation from hierarchical modules per parameter resolving system design
+
+**Technical Details**:
+- **Root Cause**: Multiple bugs caused primitive modules to be misclassified as hierarchical, leading to LVS-incompatible parameterized subcircuits
+- **Fix Strategy**: Preserved `instances=None` semantic throughout pipeline for primitive modules vs `instances={}` for hierarchical
+- **Validation**: Module classification now correct - primitives vs hierarchical properly distinguished
+- **LVS Compatibility**: Hierarchical modules generate fixed subcircuits without `.param` declarations
+
+**Current Pipeline Status**:
+- ✅ **Parser**: Handles unified module architecture correctly  
+- ✅ **Elaborator**: Preserves module semantics during pattern expansion
+- ✅ **Validator**: Parameter override validation (V301-V303) implemented and integrated
+- ✅ **Generator**: LVS-compatible SPICE generation for hierarchical modules
+- ✅ **Template Variables**: Variable resolution in SPICE template generation
+- ✅ **Validation Integration**: Parameter override validation added to CLI pipeline
+
+**Generated SPICE Quality**: Fixed subcircuits without `.param` lines (LVS-compatible) ✅
+
+## Validator Pipeline Fixes (2025-08-20)
+**Status**: ✅ **COMPLETED** - Critical validator bugs resolved and validation pipeline complete
+
+**Core Fixes Applied**:
+1. ✅ **Unused Component Detection**: Fixed duplicate condition bug in `validate_unused_components()` that caused false warnings
+2. ✅ **Parameter Override Validation**: Added missing `validate_file_parameter_overrides()` to netlist CLI validation pipeline
+3. ✅ **Legacy Models References**: Systematic identification of obsolete `models` field usage across codebase
+
+**Technical Details**:
+- **Bug #1**: Validator incorrectly flagged all modules as unused due to duplicate conditional logic in unified architecture
+- **Bug #2**: Parameter override validation existed but wasn't called from CLI, allowing forbidden hierarchical parameter overrides
+- **Fix Quality**: `unified_architecture_demo.asdl` now correctly shows 3 V301 errors for hierarchical parameter overrides
+
+**Validation Pipeline Now Complete**:
+- ✅ **Net Declaration Validation**: Undeclared nets (V003)
+- ✅ **Port Mapping Validation**: Invalid port mappings (V001, V002)  
+- ✅ **Unused Component Detection**: Unused modules (V005)
+- ✅ **Parameter Override Validation**: Hierarchical overrides forbidden (V301-V303)
+
 **Ready for Import System Phase 1 Implementation**

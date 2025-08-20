@@ -64,34 +64,26 @@ class ASDLValidator:
     
     def validate_unused_components(self, asdl_file: ASDLFile) -> List[Diagnostic]:
         """
-        Validate and identify unused models and modules.
+        Validate and identify unused modules.
         
         Args:
             asdl_file: Complete ASDL design to validate
             
         Returns:
-            List of diagnostics (warnings for unused components)
+            List of diagnostics (warnings for unused modules)
         """
         diagnostics = []
         
-        # Track what's used anywhere in the design
-        used_models = set()
+        # Track what modules are used anywhere in the design
         used_modules = set()
         
         # Walk through every module to see what it instantiates
         for module_name, module in asdl_file.modules.items():
             if module.instances:
                 for instance in module.instances.values():
-                    if instance.model in asdl_file.models:
-                        # This is a device instance
-                        used_models.add(instance.model)
-                    elif instance.model in asdl_file.modules:
-                        # This is a module instance  
+                    if instance.model in asdl_file.modules:
+                        # This instance references a module defined in this file
                         used_modules.add(instance.model)
-        
-        # Identify unused models
-        defined_models = set(asdl_file.models.keys())
-        unused_models = defined_models - used_models
         
         # Identify unused modules (exclude top module from unused warnings)
         defined_modules = set(asdl_file.modules.keys())
@@ -100,18 +92,6 @@ class ASDLValidator:
         # Remove top module from unused warnings since it's the entry point
         if asdl_file.file_info.top_module:
             unused_modules.discard(asdl_file.file_info.top_module)
-        
-        # Generate warning for unused models
-        if unused_models:
-            models_list = ", ".join(f"'{model}'" for model in sorted(unused_models))
-            diagnostic = Diagnostic(
-                code="V004",
-                title="Unused Models",
-                details=f"Unused models detected: {models_list}. "
-                       f"These models are defined but never instantiated.",
-                severity=DiagnosticSeverity.WARNING
-            )
-            diagnostics.append(diagnostic)
         
         # Generate warning for unused modules  
         if unused_modules:

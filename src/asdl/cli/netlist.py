@@ -56,6 +56,7 @@ def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose:
                                 target_mod = elaborated_file.modules[inst.model]
                                 diagnostics.extend(validator.validate_port_mappings(inst_id, inst, target_mod))
                 diagnostics.extend(validator.validate_unused_components(elaborated_file))
+                diagnostics.extend(validator.validate_file_parameter_overrides(elaborated_file))
 
                 if verbose:
                     click.echo("[generate] writing SPICE netlist…")
@@ -84,9 +85,5 @@ def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose:
         exit_code = 2
         msg = {"ok": False, "stage": "netlist", "diagnostics": [{"code": "CLI", "severity": "ERROR", "title": "CLI error", "message": str(e)}]}
         click.echo(json.dumps(msg, indent=2) if json_output else f"CLI error: {e}")
-    except Exception as e:
-        exit_code = 3
-        msg = {"ok": False, "stage": "netlist", "diagnostics": [{"code": "INTERNAL", "severity": "ERROR", "title": "Internal error", "message": str(e)}]}
-        click.echo(json.dumps(msg, indent=2) if json_output else f"Unexpected error: {e}")
 
     sys.exit(exit_code)
