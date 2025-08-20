@@ -294,12 +294,21 @@ class ASDLParser:
                 ))
                 continue
             
+            # Resolve parameters and variables with dual syntax support
+            parameters = self._resolve_parameters_field(
+                module_data, f"Module '{module_id}'", diagnostics, loc
+            )
+            variables = self._resolve_variables_field(
+                module_data, f"Module '{module_id}'", diagnostics, loc
+            )
+            
             modules[module_id] = Module(
                 **loc.__dict__,
                 doc=module_data.get('doc'),
                 ports=self._parse_ports(module_data.get('ports'), diagnostics, file_path),
                 internal_nets=module_data.get('internal_nets'),
-                parameters=module_data.get('parameters'),
+                parameters=parameters,
+                variables=variables,
                 spice_template=spice_template,
                 instances=instances,
                 pdk=module_data.get('pdk'),
@@ -384,15 +393,94 @@ class ASDLParser:
                 ))
                 continue
 
+            # Resolve parameters with dual syntax support
+            parameters = self._resolve_parameters_field(
+                instance_data, f"Instance '{instance_name}'", diagnostics, loc
+            )
+            
             instances[instance_name] = Instance(
                 **loc.__dict__,
                 model=model_val,
                 mappings=instance_data.get('mappings'),
                 doc=instance_data.get('doc'),
-                parameters=instance_data.get('parameters'),
+                parameters=parameters,
                 metadata=instance_data.get('metadata')
             )
         return instances
+
+    def _resolve_parameters_field(self, data: Dict[str, Any], context: str, diagnostics: List[Diagnostic], loc: Locatable) -> Optional[Dict[str, Any]]:
+        """
+        Resolve parameters field with dual syntax support.
+        
+        Supports both 'parameters' (canonical) and 'params' (abbreviated).
+        Generates warning if both are present.
+        
+        Args:
+            data: Dictionary containing module/instance data
+            context: Context string for error messages (e.g., "Module 'test_mod'")
+            diagnostics: List to append warnings to
+            loc: Location information for diagnostics
+            
+        Returns:
+            Resolved parameters dictionary or None if neither field present
+        """
+        parameters = data.get('parameters')
+        params = data.get('params')
+        
+        if parameters is not None and params is not None:
+            # Both forms present - generate warning and prefer canonical
+            diagnostics.append(Diagnostic(
+                code="P301",
+                title="Dual Parameter Syntax",
+                details=f"{context} contains both 'parameters' and 'params' fields. Using 'parameters' and ignoring 'params'.",
+                severity=DiagnosticSeverity.WARNING,
+                location=loc,
+                suggestion="Use either 'parameters' (canonical) or 'params' (abbreviated), but not both."
+            ))
+            return parameters
+        elif parameters is not None:
+            return parameters
+        elif params is not None:
+            return params
+        else:
+            return None
+
+    def _resolve_variables_field(self, data: Dict[str, Any], context: str, diagnostics: List[Diagnostic], loc: Locatable) -> Optional[Dict[str, Any]]:
+        """
+        Resolve variables field with dual syntax support.
+        
+        Supports both 'variables' (canonical) and 'vars' (abbreviated).
+        Generates warning if both are present.
+        
+        Args:
+            data: Dictionary containing module data  
+            context: Context string for error messages (e.g., "Module 'test_mod'")
+            diagnostics: List to append warnings to
+            loc: Location information for diagnostics
+            
+        Returns:
+            Resolved variables dictionary or None if neither field present
+        """
+        variables = data.get('variables')
+        vars_abbrev = data.get('vars')
+        
+        if variables is not None and vars_abbrev is not None:
+            # Both forms present - generate warning and prefer canonical
+            diagnostics.append(Diagnostic(
+                code="P302",
+                title="Dual Variables Syntax",
+                details=f"{context} contains both 'variables' and 'vars' fields. Using 'variables' and ignoring 'vars'.",
+                severity=DiagnosticSeverity.WARNING,
+                location=loc,
+                suggestion="Use either 'variables' (canonical) or 'vars' (abbreviated), but not both."
+            ))
+            return variables
+        elif variables is not None:
+            return variables
+        elif vars_abbrev is not None:
+            return vars_abbrev
+        else:
+            return None
 
     def _validate_section_is_dict(self, data: Any, section_name: str, diagnostics: List[Diagnostic], file_path: Optional[Path]) -> bool:
         """Validates that a section's data is a dictionary."""
