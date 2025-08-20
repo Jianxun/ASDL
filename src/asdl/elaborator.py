@@ -22,44 +22,44 @@ class Elaborator:
         """
         diagnostics: List[Diagnostic] = []
 
-        try:
-            elaborated_file = replace(asdl_file, modules={})
-            for name, module in asdl_file.modules.items():
-                elaborated_module, module_diagnostics = self._elaborate_module(module)
+        elaborated_file = replace(asdl_file, modules={})
+        for name, module in asdl_file.modules.items():
+            try:
+                elaborated_module, module_diagnostics = self._elaborate_module(module, name)
                 diagnostics.extend(module_diagnostics)
                 elaborated_file.modules[name] = elaborated_module
+            except Exception as e:
+                raise ValueError(f"Error processing module '{name}': {e}") from e
 
-            return elaborated_file, diagnostics
+        return elaborated_file, diagnostics
 
-        except Exception as e:
-            diagnostics.append(
-                self._create_diagnostic(
-                    "E999", "Internal Elaboration Error", f"An unexpected error occurred: {e}"
-                )
-            )
-            return None, diagnostics
-
-    def _elaborate_module(self, module: Module) -> Tuple[Module, List[Diagnostic]]:
+    def _elaborate_module(self, module: Module, module_name: str) -> Tuple[Module, List[Diagnostic]]:
         """
         Expand patterns within a single module.
         """
         diagnostics: List[Diagnostic] = []
         # Create a deep copy to avoid modifying the original during iteration
-        module_copy = replace(
-            module,
-            ports={name: replace(port) for name, port in (module.ports or {}).items()},
-            instances={
-                name: replace(inst) for name, inst in (module.instances or {}).items()
-            },
-        )
+        replace_args = {
+            'ports': {name: replace(port) for name, port in (module.ports or {}).items()},
+        }
+        
+        # Only set instances if the module actually has instances (preserve None for primitives)
+        if module.instances is not None:
+            replace_args['instances'] = {
+                name: replace(inst) for name, inst in module.instances.items()
+            }
+        
+        module_copy = replace(module, **replace_args)
 
         expanded_ports, port_diagnostics = self._expand_ports(module_copy.ports)
         diagnostics.extend(port_diagnostics)
         module_copy.ports = expanded_ports
 
-        expanded_instances, instance_diagnostics = self._expand_instances(module_copy.instances)
-        diagnostics.extend(instance_diagnostics)
-        module_copy.instances = expanded_instances
+        # Only expand instances if the module actually has instances (preserve None for primitives)
+        if module_copy.instances is not None:
+            expanded_instances, instance_diagnostics = self._expand_instances(module_copy.instances)
+            diagnostics.extend(instance_diagnostics)
+            module_copy.instances = expanded_instances
 
         return module_copy, diagnostics
 

@@ -44,7 +44,6 @@ class PatternExpander:
         # Models don't contain patterns, so they're passed through unchanged
         return ASDLFile(
             file_info=asdl_file.file_info,
-            models=asdl_file.models,  # Models unchanged
             modules=expanded_modules,  # Modules with expanded patterns
             metadata=asdl_file.metadata
         )

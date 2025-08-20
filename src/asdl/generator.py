@@ -66,6 +66,7 @@ class SPICEGenerator:
         hierarchical_modules = {name: module for name, module in asdl_file.modules.items() 
                                if module.instances is not None}
         
+        
         if hierarchical_modules:
             lines.append("* Hierarchical module subcircuit definitions")
             for module_name, module in hierarchical_modules.items():
@@ -130,10 +131,8 @@ class SPICEGenerator:
         port_list = self._get_port_list(module)
         lines.append(f".subckt {module_name} {' '.join(port_list)}")
         
-        # Add parameter declarations with default values
-        if module.parameters:
-            for param_name, param_value in module.parameters.items():
-                lines.append(f"{self.indent}.param {param_name}={param_value}")
+        # NOTE: No .param declarations for hierarchical modules per parameter resolving system design
+        # Parameters should be resolved at compile time to concrete values for LVS compatibility
         
 
         
