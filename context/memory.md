@@ -178,4 +178,15 @@ Comprehensive import dependency management strategy documented in `doc/asdl_impo
 
 **Testing Quality**: `unified_architecture_demo.asdl` correctly shows 6 validation errors with precise locations
 
-**Ready for Import System Phase 1 Implementation**
+## Current Critical Issue (2025-08-20)
+**Status**: 🔴 **CRITICAL BUG IDENTIFIED** - Variable resolution missing in elaborator
+
+**Problem**: Variable references in instance parameters are not being resolved during elaboration
+- **Example**: `{M: nmos_M}` generates literal `m=nmos_M` instead of `m=1` in SPICE  
+- **Impact**: Breaks SPICE simulation - variable names are not valid parameter values
+- **Root Cause**: Elaborator only handles pattern expansion, not variable resolution
+- **Location**: `src/asdl/elaborator.py` needs enhancement
+
+**Current Status**: Validation pipeline complete, but elaborator requires variable resolution implementation before system is fully functional.
+
+**Next Priority**: Implement variable resolution in elaborator before proceeding with import system implementation
