@@ -1,6 +1,6 @@
 # ASDL Import System Development Todos
 
-## 🎯 Current Status: Phase 0 Data Structures ✅ COMPLETED
+## 🎯 Current Status: Phase 0 Data Structures ✅ COMPLETED → Parameter System Enhancement Required
 
 **Achieved:**
 - ✅ **Unified Module Architecture**: Merged DeviceModel and Module into single class
@@ -10,7 +10,10 @@
 - ✅ **Breaking Changes**: Clean elimination of DeviceModel/Module redundancy
 - ✅ **Generator Unification**: Primitive modules generate inline SPICE, hierarchical generate .subckt definitions
 
-**Next:** Migration validation (T0.6-T0.8) - core validation logic, format migration, and regression prevention
+**🚧 BLOCKED: Parameter System Enhancement Required First**
+**Decision (2025-08-20)**: Import system implementation requires complete parameter resolving system as foundation.
+
+**Next Phase**: Parameter System Enhancement → Import System Phase 1
 
 ## Phase 0: Data Structure Unification (Breaking Refactor) ✅ COMPLETED
 - [x] **Delete DeviceModel class entirely** - aggressive cleanup

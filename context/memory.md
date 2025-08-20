@@ -77,6 +77,20 @@ Comprehensive import dependency management strategy documented in `doc/asdl_impo
 - **YAML Pattern Parsing**: `ruamel.yaml` has issues with inline dictionary mappings containing `<p,n>` patterns. Use multi-line YAML format as workaround.
 
 ## Current Focus Areas
-- Import system implementation (Phase 1 pending)
+- **Parameter resolving system enhancement** (prerequisite for import system)
+- Import system implementation (Phase 1 pending after parameter system)
 - CLI testing and refinement
 - Documentation and user experience improvements
+
+## Implementation Priority Decision (2025-08-20)
+**Decision**: Implement parameter resolving system before import system implementation
+
+**Rationale**:
+- Parameter system provides foundation data structures needed by import resolver
+- Import resolution requires parameter/variable handling for template substitution
+- Parameter override validation (primitives-only rule) applies to both local and imported modules
+- Lower complexity implementation allows faster iteration and better testing
+
+**Sequence**:
+1. **Parameter System Enhancement** (1-2 days): Add `variables` field, parser support, override validation
+2. **Import System Implementation** (3-5 days): Phase 1 with complete parameter foundation
