@@ -221,6 +221,11 @@ class SPICEGenerator:
         for param_name, param_value in merged_params.items():
             template_data[param_name] = param_value
         
+        # Add variable substitutions (variables shadow parameters with same names)
+        if module.variables:
+            for var_name, var_value in module.variables.items():
+                template_data[var_name] = var_value  # Variables override parameters
+        
         # Apply substitutions to the spice_template
         try:
             final_line = module.spice_template.format(**template_data)

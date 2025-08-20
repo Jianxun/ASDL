@@ -178,3 +178,118 @@ class ASDLValidator:
             diagnostics.append(diagnostic)
         
         return diagnostics 
+    
+    def validate_parameter_overrides(self, instance_id: str, instance: Instance, module: Module) -> List[Diagnostic]:
+        """
+        Validate parameter override rules for a specific instance.
+        
+        Rules:
+        - Parameter overrides only allowed for primitive modules (spice_template present)
+        - Variable overrides never allowed  
+        - Hierarchical modules (instances present) cannot have parameter overrides
+        - Only existing module parameters can be overridden
+        
+        Args:
+            instance_id: Name of the instance for error reporting
+            instance: Instance with parameter overrides to validate
+            module: Target module to validate against
+            
+        Returns:
+            List of diagnostics (errors for rule violations)
+        """
+        diagnostics = []
+        
+        # No parameter overrides attempted - always valid
+        if not instance.parameters:
+            return diagnostics
+        
+        # Check if module is primitive (has spice_template) or hierarchical (has instances)
+        is_primitive = bool(module.spice_template)
+        is_hierarchical = bool(module.instances)
+        
+        # Rule 1: Parameter overrides only allowed for primitive modules
+        if is_hierarchical:
+            override_params = list(instance.parameters.keys())
+            diagnostic = Diagnostic(
+                code="V301",
+                title="Invalid Parameter Override",
+                details=f"Instance '{instance_id}' attempts to override parameters {override_params} "
+                       f"on hierarchical module '{instance.model}'. Parameter overrides are only "
+                       f"allowed for primitive modules (those with spice_template).",
+                severity=DiagnosticSeverity.ERROR
+            )
+            diagnostics.append(diagnostic)
+            return diagnostics  # Don't check further if it's hierarchical
+        
+        # Get module's defined parameters and variables for validation
+        module_parameters = set(module.parameters.keys()) if module.parameters else set()
+        module_variables = set(module.variables.keys()) if module.variables else set()
+        
+        # Rule 2: Variable overrides never allowed
+        attempted_variable_overrides = set(instance.parameters.keys()) & module_variables
+        for var_name in sorted(attempted_variable_overrides):
+            diagnostic = Diagnostic(
+                code="V302", 
+                title="Invalid Variable Override",
+                details=f"Instance '{instance_id}' attempts to override variable '{var_name}' "
+                       f"on module '{instance.model}'. Variables cannot be overridden in instances.",
+                severity=DiagnosticSeverity.ERROR
+            )
+            diagnostics.append(diagnostic)
+        
+        # Rule 3: Only existing module parameters can be overridden
+        attempted_parameter_overrides = set(instance.parameters.keys()) - module_variables  # Exclude variables (already handled)
+        non_existent_parameters = attempted_parameter_overrides - module_parameters
+        for param_name in sorted(non_existent_parameters):
+            if module_parameters:
+                available_params = ", ".join(f"'{param}'" for param in sorted(module_parameters))
+                details = (f"Instance '{instance_id}' attempts to override non-existent parameter '{param_name}' "
+                          f"on module '{instance.model}'. Available parameters: {available_params}.")
+            else:
+                details = (f"Instance '{instance_id}' attempts to override parameter '{param_name}' "
+                          f"on module '{instance.model}', but module defines no parameters.")
+            
+            diagnostic = Diagnostic(
+                code="V303",
+                title="Invalid Parameter Override",
+                details=details,
+                severity=DiagnosticSeverity.ERROR
+            )
+            diagnostics.append(diagnostic)
+        
+        return diagnostics
+    
+    def validate_file_parameter_overrides(self, asdl_file: ASDLFile) -> List[Diagnostic]:
+        """
+        Validate parameter override rules across an entire ASDL file.
+        
+        Args:
+            asdl_file: Complete ASDL design to validate
+            
+        Returns:
+            List of diagnostics for all parameter override violations
+        """
+        all_diagnostics = []
+        
+        # Check parameter overrides in all modules
+        for module_name, module in asdl_file.modules.items():
+            if not module.instances:
+                continue
+                
+            for instance_id, instance in module.instances.items():
+                # Find the target module for this instance
+                target_module = None
+                
+                # Check if it's a module reference
+                if instance.model in asdl_file.modules:
+                    target_module = asdl_file.modules[instance.model]
+                # Note: For models (device references), parameter overrides are handled differently
+                # and are generally allowed since models represent primitive devices
+                
+                if target_module:
+                    instance_diagnostics = self.validate_parameter_overrides(
+                        instance_id, instance, target_module
+                    )
+                    all_diagnostics.extend(instance_diagnostics)
+        
+        return all_diagnostics

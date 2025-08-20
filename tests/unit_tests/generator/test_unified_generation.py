@@ -416,3 +416,182 @@ class TestUnifiedGeneration:
         # Should not have any includes or subcircuits
         assert ".include" not in spice_output
         assert ".subckt" not in spice_output
+
+
+class TestVariablesInTemplateGeneration:
+    """Test P1.4 variables support in template generation (TDD)."""
+    
+    def test_template_with_both_parameters_and_variables(self):
+        """
+        P1.4.1: Template Generation with Parameters and Variables
+        TESTS: Template substitution uses both parameters and variables fields
+        VALIDATES: Both field types available for template data
+        ENSURES: Enhanced template capability preserved in generation
+        """
+        transistor = Module(
+            ports={
+                "D": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+                "G": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
+                "S": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+                "B": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE)
+            },
+            parameters={"L": "0.28u", "W": "1u", "M": 1},
+            variables={"gm": "1e-3", "vth": "0.7", "temp": "27"},
+            spice_template="MN{name} {D} {G} {S} {B} nfet_03v3 L={L} W={W} m={M} gm={gm} vth={vth} temp={temp}"
+        )
+        
+        test_circuit = Module(
+            instances={
+                "M1": Instance(
+                    model="transistor",
+                    mappings={"D": "drain", "G": "gate", "S": "source", "B": "bulk"},
+                    parameters={"W": "2u", "M": 4}  # Override parameters only
+                )
+            }
+        )
+        
+        asdl_file = ASDLFile(
+            file_info=FileInfo(top_module="test_circuit"),
+            modules={
+                "transistor": transistor,
+                "test_circuit": test_circuit
+            }
+        )
+        
+        generator = SPICEGenerator()
+        spice_output = generator.generate(asdl_file)
+        
+        # Check that both parameters and variables are substituted
+        assert "L=0.28u" in spice_output       # parameter default
+        assert "W=2u" in spice_output          # parameter overridden
+        assert "m=4" in spice_output           # parameter overridden
+        assert "gm=1e-3" in spice_output       # variable value
+        assert "vth=0.7" in spice_output       # variable value
+        assert "temp=27" in spice_output       # variable value
+    
+    def test_variable_shadowing_of_parameters(self):
+        """
+        P1.4.2: Variable Shadowing of Parameters
+        TESTS: Variables take priority over parameters with same names
+        VALIDATES: Variable shadowing behavior as designed
+        ENSURES: Correct precedence: variables > instance params > module params
+        """
+        device = Module(
+            ports={
+                "n1": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+                "n2": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE)
+            },
+            parameters={"value": "1k", "temp": "25"},  # Default parameter values
+            variables={"temp": "75"},  # Variable shadows parameter 'temp'
+            spice_template="R{name} {n1} {n2} {value} temp={temp}"
+        )
+        
+        test_circuit = Module(
+            instances={
+                "R1": Instance(
+                    model="device",
+                    mappings={"n1": "in", "n2": "out"},
+                    parameters={"value": "2k", "temp": "50"}  # Try to override both
+                    # 'value' should be overridden to '2k'
+                    # 'temp' should remain '75' from variable (shadowing)
+                )
+            }
+        )
+        
+        asdl_file = ASDLFile(
+            file_info=FileInfo(top_module="test_circuit"),
+            modules={
+                "device": device,
+                "test_circuit": test_circuit
+            }
+        )
+        
+        generator = SPICEGenerator()
+        spice_output = generator.generate(asdl_file)
+        
+        # Variable 'temp' should shadow parameter override
+        assert "RR1 in out 2k temp=75" in spice_output
+        # NOT: "temp=50" (instance override blocked by variable shadowing)
+        # NOT: "temp=25" (module parameter shadowed by variable)
+    
+    def test_template_with_variables_only(self):
+        """
+        P1.4.3: Template with Variables Only
+        TESTS: Template generation works with variables field only
+        VALIDATES: Variables-only module template substitution
+        ENSURES: Variables field sufficient for template generation
+        """
+        voltage_source = Module(
+            ports={
+                "plus": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+                "minus": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE)
+            },
+            # No parameters field
+            variables={"voltage": "1.8", "rise_time": "10n", "fall_time": "10n"},
+            spice_template="V{name} {plus} {minus} DC {voltage} rise={rise_time} fall={fall_time}"
+        )
+        
+        test_circuit = Module(
+            instances={
+                "VDD": Instance(
+                    model="voltage_source",
+                    mappings={"plus": "vdd", "minus": "gnd"}
+                    # No parameter overrides
+                )
+            }
+        )
+        
+        asdl_file = ASDLFile(
+            file_info=FileInfo(top_module="test_circuit"),
+            modules={
+                "voltage_source": voltage_source,
+                "test_circuit": test_circuit
+            }
+        )
+        
+        generator = SPICEGenerator()
+        spice_output = generator.generate(asdl_file)
+        
+        # All variables should be substituted
+        assert "VVDD vdd gnd DC 1.8 rise=10n fall=10n" in spice_output
+    
+    def test_template_with_parameters_only_unchanged(self):
+        """
+        P1.4.4: Template with Parameters Only (Regression Test)
+        TESTS: Existing parameter-only templates continue to work
+        VALIDATES: Backward compatibility maintained
+        ENSURES: No regression in existing functionality
+        """
+        capacitor = Module(
+            ports={
+                "n1": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+                "n2": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE)
+            },
+            parameters={"C": "1p", "IC": "0"},
+            # No variables field
+            spice_template="C{name} {n1} {n2} {C} IC={IC}"
+        )
+        
+        test_circuit = Module(
+            instances={
+                "C1": Instance(
+                    model="capacitor",
+                    mappings={"n1": "node1", "n2": "node2"},
+                    parameters={"C": "10p"}  # Override capacitance
+                )
+            }
+        )
+        
+        asdl_file = ASDLFile(
+            file_info=FileInfo(top_module="test_circuit"),
+            modules={
+                "capacitor": capacitor,
+                "test_circuit": test_circuit
+            }
+        )
+        
+        generator = SPICEGenerator()
+        spice_output = generator.generate(asdl_file)
+        
+        # Should work exactly as before
+        assert "CC1 node1 node2 10p IC=0" in spice_output
