@@ -218,6 +218,7 @@ class Module(Locatable):
     ports: Optional[Dict[str, Port]] = None  # schema: description="Port declarations keyed by port name"
     internal_nets: Optional[List[str]] = None  # schema: description="Internal nets local to this module"
     parameters: Optional[Dict[str, Any]] = None  # schema: description="Module parameters and default values"
+    variables: Optional[Dict[str, Any]] = None  # schema: description="Module variables for computed values (cannot be overridden in instances)"
     
     # MUTUALLY EXCLUSIVE: Either primitive OR hierarchical
     spice_template: Optional[str] = None  # schema: description="SPICE device template for primitive modules"

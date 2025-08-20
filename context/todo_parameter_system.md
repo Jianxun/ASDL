@@ -8,40 +8,49 @@
 
 ## Phase P1: Core Parameter System Enhancement (1-2 days)
 
-### P1.1: Data Structure Updates
+### P1.1: Data Structure Updates (TDD)
+- [ ] **Write tests for `variables` field behavior**
+  - [ ] Test Module creation with variables field
+  - [ ] Test schema generation includes variables field
+  - [ ] Test validation that variables cannot be overridden in instances
 - [ ] **Add `variables` field to Module dataclass**
   - [ ] `variables: Optional[Dict[str, Any]] = None`  
   - [ ] Update schema generation to include variables field
   - [ ] Add validation that variables cannot be overridden in instances
 
-### P1.2: Parser Extensions
+### P1.2: Parser Extensions (TDD)
+- [ ] **Write tests for dual syntax support**
+  - [ ] Test parsing `parameters` OR `params` → store as `parameters`
+  - [ ] Test parsing `variables` OR `vars` → store as `variables`
+  - [ ] Test validation warnings for using both forms in same module
 - [ ] **Support canonical and abbreviated field names**
   - [ ] Parse `parameters` OR `params` → store as `parameters`
   - [ ] Parse `variables` OR `vars` → store as `variables` 
   - [ ] Add validation warnings for using both forms in same module
-  - [ ] Update parser tests for dual syntax support
 
-### P1.3: Parameter Override Validation
+### P1.3: Parameter Override Validation (TDD)
+- [ ] **Write tests for parameter override validation**
+  - [ ] Test parameter overrides only allowed for primitive modules (`spice_template` present)
+  - [ ] Test error for parameter overrides on hierarchical modules (`instances` present)
+  - [ ] Test error for any variable override attempts
 - [ ] **Implement primitives-only parameter override rule**
   - [ ] Validate parameter overrides only allowed for primitive modules (`spice_template` present)
   - [ ] Generate error for parameter overrides on hierarchical modules (`instances` present)
   - [ ] Generate error for any variable override attempts
-  - [ ] Add comprehensive validation tests
 
-### P1.4: Template Generation Enhancement
+### P1.4: Template Generation Enhancement (TDD)
+- [ ] **Write tests for template substitution with variables**
+  - [ ] Test support for both parameters and variables in template data
+  - [ ] Test variable shadowing of parameters (variables have priority)
+  - [ ] Test enhanced template data in generator
 - [ ] **Update SPICE template substitution**
   - [ ] Support both parameters and variables in template data
   - [ ] Implement variable shadowing of parameters (variables have priority)
   - [ ] Update generator to use enhanced template data
-  - [ ] Add tests for template substitution with both field types
 
-### P1.5: Testing & Validation
-- [ ] **Comprehensive parameter system tests**
-  - [ ] Unit tests for parser dual syntax support
-  - [ ] Unit tests for parameter override validation rules
-  - [ ] Unit tests for template generation with variables
-  - [ ] Integration tests for primitive vs hierarchical parameter handling
-  - [ ] Regression tests ensuring existing functionality unchanged
+### P1.5: Integration & Regression Testing
+- [ ] **Integration tests for primitive vs hierarchical parameter handling**
+- [ ] **Regression tests ensuring existing functionality unchanged**
 
 ## Phase P2: Advanced Parameter Features (Future)
 - [ ] **Parameter hijacking for simulation** (as described in parameter design doc)
