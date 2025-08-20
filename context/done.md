@@ -14,5 +14,3 @@ _This file archives major completed tasks so they don't clutter active todo list
 - Elaborator implementation & pattern expansion ✅
 - SPICEGenerator modernization and full test suite ✅
 - Integration test framework with NgSpice validation ✅
-
-(See `context/todo_legacy_archive.md` for the granular historical record.) 

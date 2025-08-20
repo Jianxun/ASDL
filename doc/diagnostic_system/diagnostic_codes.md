@@ -28,6 +28,9 @@ Diagnostic codes are structured to be easily identifiable and searchable.
 | **P102**   | Missing Required Section  | ✅ Implemented       | ✅ Covered    |
 | **P103**   | Invalid Section Type      | ❌ Not Implemented   | ❌ Not Covered|
 | **P104**   | Missing Required Field    | ❌ Not Implemented   | ❌ Not Covered|
+| **P106**   | Invalid Import Format     | ✅ Implemented       | ✅ Covered    |
+| **P107**   | Module Type Conflict      | ✅ Implemented       | ✅ Covered    |
+| **P108**   | Incomplete Module Definition | ✅ Implemented    | ✅ Covered    |
 | **P200**   | Unknown Top-Level Section | ✅ Implemented       | ✅ Covered    |
 | **P201**   | Unknown Field             | ❌ Not Implemented   | ❌ Not Covered|
 
@@ -93,6 +96,48 @@ Diagnostic codes are structured to be easily identifiable and searchable.
     ...
   ```
 - **Suggestion**: Add the missing mandatory field to the file.
+
+### P106: Invalid Import Format
+- **Type**: `Error`
+- **Component**: `Parser`
+- **Title**: `Invalid Import Format`
+- **Details**: Import declarations must follow the format `alias: library.filename` or `alias: library.filename@version`. The import source must contain at least one dot to separate library and filename.
+- **Example (Incorrect)**:
+  ```yaml
+  imports:
+    bad_import: "justfilename"  # Missing library.filename format
+  ```
+- **Suggestion**: Use format 'alias: library.filename' or 'alias: library.filename@version'.
+
+### P107: Module Type Conflict
+- **Type**: `Error`
+- **Component**: `Parser`
+- **Title**: `Module Type Conflict`
+- **Details**: A module cannot have both 'spice_template' and 'instances' fields. These fields define mutually exclusive module types: primitive (spice_template) or hierarchical (instances).
+- **Example (Incorrect)**:
+  ```yaml
+  modules:
+    conflicted_module:
+      spice_template: "M {D} {G} {S} {B} nch"
+      instances:  # This conflicts with spice_template
+        M1: ...
+  ```
+- **Suggestion**: Remove either 'spice_template' (to make hierarchical) or 'instances' (to make primitive).
+
+### P108: Incomplete Module Definition
+- **Type**: `Error`
+- **Component**: `Parser`
+- **Title**: `Incomplete Module Definition`
+- **Details**: Every module must be either a primitive module (with 'spice_template') or a hierarchical module (with 'instances'). A module without either field is incomplete.
+- **Example (Incorrect)**:
+  ```yaml
+  modules:
+    incomplete_module:
+      ports:
+        in: { direction: input }
+      # Missing either spice_template or instances
+  ```
+- **Suggestion**: Add either 'spice_template' for primitive modules or 'instances' for hierarchical modules.
 
 ---
 

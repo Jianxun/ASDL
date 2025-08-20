@@ -22,11 +22,10 @@ All serialization and file I/O logic will be removed from the data classes and m
 @dataclass
 class ASDLFile:
     """
-    Represents a single ASDL file with its modules and models.
+    Represents a single ASDL file with its modules.
     (This class will contain no serialization methods).
     """
     file_info: 'FileInfo'
-    models: Dict[str, 'DeviceModel']
     modules: Dict[str, 'Module']
 ```
 
@@ -45,46 +44,36 @@ def save_asdl_to_yaml_file(asdl_file: ASDLFile, filepath: str):
     # ... logic to serialize and write to a file ...
 ```
 
-## 2. Primitive Device Modeling
+## 2. Unified Module Architecture
 
 ### Decision
 
-The `DeviceModel` will be simplified to remove legacy fields. The ambiguous `DeviceType` enum will be replaced with a new, clearer `PrimitiveType` enum that classifies primitives based on their origin.
+The architecture has been unified to use only `Module` objects. Primitive devices are now represented as modules with a `primitive_type` field, eliminating the separate `DeviceModel` class.
 
 ### Rationale
 
--   **Simplification:** As we are in a prototyping phase, supporting legacy baggage (`model`, `params` fields) adds unnecessary complexity. We will standardize on the more robust `device_line` approach.
--   **Clarity and Unambiguity:** The original `DeviceType` enum mixed physical device types (e.g., NMOS) with abstract concepts (e.g., AMPLIFIER) and simulation primitives (e.g., VOLTAGE_SOURCE). The new `PrimitiveType` provides a simple, unambiguous classification: is the primitive defined by an external PDK library or is it a built-in SPICE device? This distinction is fundamental and robust.
+-   **Simplification:** A single `Module` class can represent both hierarchical modules and primitive devices, reducing complexity.
+-   **Consistency:** All components in the design hierarchy use the same data structure, making tools and algorithms more uniform.
+-   **Clarity:** The distinction between primitives and hierarchical modules is made through the `primitive_type` field rather than separate classes.
 
-### Proposed Structure
+### Current Structure
 
-The new **`PrimitiveType` enum** will be:
-
-```python
-class PrimitiveType(Enum):
-    """Classifies the origin of the primitive model."""
-
-    # A physical device model defined by an external PDK library.
-    PDK_DEVICE = "pdk_device"
-    
-    # A primitive that is natively understood by the SPICE simulator.
-    SPICE_DEVICE = "spice_device"
-```
-
-The **simplified `DeviceModel`** will be:
+Primitive modules are distinguished by the presence of a `primitive_type` field:
 
 ```python
 @dataclass
-class DeviceModel:
+class Module:
     """
-    Template for a primitive component, which can be a physical PDK device
-    or a built-in SPICE primitive.
+    Unified representation for both hierarchical modules and primitive devices.
     """
-    type: PrimitiveType                        # Classifies the origin of the model
-    ports: List[str]                         # Defines terminal order, e.g., ['D', 'G', 'S', 'B']
-    device_line: str                         # Raw SPICE line with {placeholders}, e.g., "MN {D} {G} {S} {B} nch W={W}"
-    doc: Optional[str] = None                # Optional documentation
-    parameters: Optional[Dict[str, str]] = None  # Default values for parameters used in device_line
+    ports: Optional[Dict[str, Port]] = None
+    internal_nets: Optional[List[str]] = None
+    parameters: Optional[Dict[str, Any]] = None
+    variables: Optional[Dict[str, Any]] = None
+    instances: Optional[Dict[str, Instance]] = None
+    primitive_type: Optional[str] = None  # Present only for primitive modules
+    device_line: Optional[str] = None     # SPICE template for primitives
+    metadata: Optional[Dict[str, Any]] = None
 ```
 
 ## 3. Internal Net Declaration
@@ -137,7 +126,6 @@ Metadata = Dict[str, Any]
 This `metadata: Optional[Metadata]` field will be added to the following data classes:
 - `ASDLFile`
 - `FileInfo`
-- `DeviceModel`
 - `Port`
 - `Module`
 - `Instance` (replacing `intent`) 

@@ -10,7 +10,7 @@ The goal is to create a new ASDL linter that can check for semantic and structur
 
 The initial idea was a classic three-stage compiler architecture:
 
-1.  **Front-End (Shared):** `parser.py` and `expander.py` would parse and expand the ASDL source into an `ASDLFile` object (our Intermediate Representation or IR).
+1.  **Front-End (Shared):** `parser.py` and `elaborator.py` would parse and elaborate the ASDL source into an `ASDLFile` object (our Intermediate Representation or IR).
 2.  **Middle-End (Shared):** A new `validator.py` module would run all semantic checks on the expanded `ASDLFile`.
 3.  **Back-End (Specific):** The `linter` would report the validator's findings, while the `compiler` (`generator.py`) would use the validated `ASDLFile` to produce SPICE.
 
@@ -20,7 +20,7 @@ This led to the following architectural diagram:
 graph TD;
     subgraph "Front-End (Shared)"
         direction LR
-        A["ASDL YAML"] --> B["Parser & Expander"];
+        A["ASDL YAML"] --> B["Parser & Elaborator"];
         B --> C["ASDLFile (IR)"];
     end
 
@@ -46,25 +46,25 @@ graph TD;
     style H fill:#ddffdd,stroke:#333;
 ```
 
-## The Refinement: Handling Errors During Expansion
+## The Refinement: Handling Errors During Elaboration
 
-A key insight was raised: **What about errors that occur during the expansion phase itself?** For example, if a pattern has mismatched item counts (`G_<p,n>: in_p`). Under the initial proposal, the expander would likely crash with an exception, which is poor behavior for a linter that should report as many errors as possible in one go.
+A key insight was raised: **What about errors that occur during the elaboration phase itself?** For example, if a pattern has mismatched item counts (`G_<p,n>: in_p`) or unresolved parameters. Under the initial proposal, the elaborator would likely crash with an exception, which is poor behavior for a linter that should report as many errors as possible in one go.
 
 This led to a more sophisticated and robust architecture.
 
 ## Final Architecture: Multi-Stage Validation Pipeline
 
-The final design treats validation as a continuous process that occurs throughout the analysis pipeline. Both the expander and a dedicated validator will generate diagnostic messages.
+The final design treats validation as a continuous process that occurs throughout the analysis pipeline. Both the elaborator and a dedicated validator will generate diagnostic messages. This design fully supports the unified module architecture where both primitive and hierarchical modules are processed through the same pipeline.
 
 1.  **Front-End (Parsing):** The `parser` produces a raw `ASDLFile` object from the source YAML.
 
 2.  **Middle-End (Analysis Pipeline):**
-    *   **Stage 1: The Expander (`expander.py`)**: This stage now acts as the first analysis step. It attempts to expand patterns. Instead of raising exceptions on errors, it **logs them as diagnostic messages** and continues processing where possible. It outputs both the (potentially partially) expanded `ASDLFile` and a list of diagnostics.
-    *   **Stage 2: The Validator (`validator.py`)**: This stage takes the expanded `ASDLFile` and the list of diagnostics from the previous stage. It runs its own semantic checks (e.g., unused components, net validation) on the successfully expanded parts of the design and **appends its findings** to the diagnostic list.
+    *   **Stage 1: The Elaborator (`elaborator.py`)**: This stage now acts as the first analysis step. It performs pattern expansion, parameter/variable resolution, and handles both primitive and hierarchical modules in the unified architecture. Instead of raising exceptions on errors, it **logs them as diagnostic messages** and continues processing where possible. It outputs both the (potentially partially) elaborated `ASDLFile` and a list of diagnostics.
+    *   **Stage 2: The Validator (`validator.py`)**: This stage takes the elaborated `ASDLFile` and the list of diagnostics from the previous stage. It runs its own semantic checks (e.g., unused components, net validation) on the successfully elaborated parts of the design and **appends its findings** to the diagnostic list.
 
 3.  **Back-End (Tool-Specific Consumers):**
     *   **Linter:** Runs the full analysis pipeline and then simply formats and prints the complete, combined list of diagnostics.
-    *   **Compiler:** Runs the same analysis pipeline. It then inspects the list of diagnostics. If any fatal errors are present, it aborts. Otherwise, it proceeds to the `SPICEGenerator` to create the netlist.
+    *   **Compiler:** Runs the same analysis pipeline. It then inspects the list of diagnostics. If any fatal errors are present, it aborts. Otherwise, it proceeds to the `SPICEGenerator` to create the netlist. The unified module architecture ensures consistent processing for both primitive and hierarchical modules throughout this pipeline.
 
 This refined architecture is visualized below:
 
@@ -75,9 +75,9 @@ graph TD;
 
     subgraph "Analysis Pipeline (Middle-End)"
         direction TB
-        C --> D["Expander"];
-        D --> E{"Expanded ASDLFile<br/>(partially if errors)"};
-        D -- "Produces" --> F["Expansion Diagnostics<br/>(e.g., mismatched patterns)"];
+        C --> D["Elaborator"];
+        D --> E{"Elaborated ASDLFile<br/>(partially if errors)"};
+        D -- "Produces" --> F["Elaboration Diagnostics<br/>(e.g., mismatched patterns, unresolved parameters)"];
         
         E --> G["Validator"];
         G -- "Takes" --> F;
