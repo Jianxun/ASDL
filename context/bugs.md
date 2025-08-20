@@ -127,13 +127,49 @@ model = asdl_file.models["nmos_test"]   # AttributeError
 
 **Fix Applied**: Added `validate_file_parameter_overrides(elaborated_file)` to the validation pipeline in netlist CLI.
 
+### Missing Module Parameter Field Validation ✅ FIXED
+**File**: `src/asdl/validator.py` (new validation rule)  
+**Severity**: High  
+**Status**: **RESOLVED**  
+**Fixed Date**: 2025-08-20
+
+**Problem**: Validator was missing a critical rule from the parameter resolving system - hierarchical modules were allowed to declare `parameters` fields when they should only use `variables`.
+
+**Impact**: 
+- Hierarchical modules could incorrectly declare external interfaces via `parameters`
+- Violated the core design principle that hierarchical modules should only have internal `variables`
+- Could lead to confusion about module boundaries and design intent
+
+**Example**: `inverter`, `rc_filter`, and `two_stage_buffer` hierarchical modules were declaring `parameters` fields without validation errors.
+
+**Fix Applied**: Added `validate_module_parameter_fields()` method with V304 error code and integrated into CLI validation pipeline.
+
+### Missing Location Information in Diagnostics ✅ FIXED
+**File**: `src/asdl/validator.py` (all Diagnostic calls)  
+**Severity**: Medium  
+**Status**: **RESOLVED**  
+**Fixed Date**: 2025-08-20
+
+**Problem**: Validation errors lacked location information, making it difficult for users to find and fix issues.
+
+**Impact**: 
+- Poor user experience - users had to manually search for validation errors
+- No IDE integration for click-to-navigate
+- Reduced productivity when fixing validation issues
+
+**Fix Applied**: Added `location=instance` and `location=module` parameters to all Diagnostic constructors in validator methods.
+
+**Result**: Error messages now show precise locations like `at unified_architecture_demo.asdl:148:7`.
+
 ## Resolution Priority
 
 1. ✅ **COMPLETED**: Fix validator logic bug (#1) - breaks core functionality
 2. ✅ **COMPLETED**: Fix missing parameter override validation - violates design rules
-3. **High**: Fix test failures (#2) - breaks development workflow  
-4. **Medium**: Clean up YAML files (#3) and serialization (#4)
-5. **Low**: Update documentation (#5)
+3. ✅ **COMPLETED**: Fix missing module parameter field validation (V304) - violates design rules
+4. ✅ **COMPLETED**: Fix missing location information in diagnostics - poor UX
+5. **High**: Fix test failures (#2) - breaks development workflow  
+6. **Medium**: Clean up YAML files (#3) and serialization (#4)
+7. **Low**: Update documentation (#5)
 
 ## Notes
 

@@ -196,7 +196,8 @@ class ASDLValidator:
                 details=f"Instance '{instance_id}' attempts to override parameters {override_params} "
                        f"on hierarchical module '{instance.model}'. Parameter overrides are only "
                        f"allowed for primitive modules (those with spice_template).",
-                severity=DiagnosticSeverity.ERROR
+                severity=DiagnosticSeverity.ERROR,
+                location=instance
             )
             diagnostics.append(diagnostic)
             return diagnostics  # Don't check further if it's hierarchical
@@ -213,7 +214,8 @@ class ASDLValidator:
                 title="Invalid Variable Override",
                 details=f"Instance '{instance_id}' attempts to override variable '{var_name}' "
                        f"on module '{instance.model}'. Variables cannot be overridden in instances.",
-                severity=DiagnosticSeverity.ERROR
+                severity=DiagnosticSeverity.ERROR,
+                location=instance
             )
             diagnostics.append(diagnostic)
         
@@ -233,7 +235,8 @@ class ASDLValidator:
                 code="V303",
                 title="Invalid Parameter Override",
                 details=details,
-                severity=DiagnosticSeverity.ERROR
+                severity=DiagnosticSeverity.ERROR,
+                location=instance
             )
             diagnostics.append(diagnostic)
         
@@ -273,3 +276,39 @@ class ASDLValidator:
                     all_diagnostics.extend(instance_diagnostics)
         
         return all_diagnostics
+    
+    def validate_module_parameter_fields(self, asdl_file: ASDLFile) -> List[Diagnostic]:
+        """
+        Validate that hierarchical modules don't declare parameters fields.
+        
+        According to the parameter resolving system:
+        - Primitive modules (with spice_template) can declare parameters
+        - Hierarchical modules (with instances) should only use variables
+        
+        Args:
+            asdl_file: Complete ASDL design to validate
+            
+        Returns:
+            List of diagnostics for module parameter field violations
+        """
+        diagnostics = []
+        
+        for module_name, module in asdl_file.modules.items():
+            is_hierarchical = bool(module.instances)
+            has_parameters = bool(module.parameters)
+            
+            # Rule: Hierarchical modules must not declare parameters fields
+            if is_hierarchical and has_parameters:
+                param_names = list(module.parameters.keys())
+                diagnostic = Diagnostic(
+                    code="V304",
+                    title="Invalid Module Parameter Declaration",
+                    details=f"Hierarchical module '{module_name}' declares parameters {param_names}. "
+                           f"Hierarchical modules should only use 'variables' for internal implementation details. "
+                           f"Use 'variables' instead of 'parameters' or convert to primitive module with spice_template.",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=module
+                )
+                diagnostics.append(diagnostic)
+        
+        return diagnostics

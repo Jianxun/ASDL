@@ -151,5 +151,31 @@ Comprehensive import dependency management strategy documented in `doc/asdl_impo
 - ✅ **Port Mapping Validation**: Invalid port mappings (V001, V002)  
 - ✅ **Unused Component Detection**: Unused modules (V005)
 - ✅ **Parameter Override Validation**: Hierarchical overrides forbidden (V301-V303)
+- ✅ **Module Parameter Field Validation**: Hierarchical modules declaring parameters forbidden (V304)
+- ✅ **Location Information**: All diagnostics include precise file:line:column locations
+
+## Validation System Enhancement (2025-08-20)
+**Status**: ✅ **COMPLETED** - Comprehensive validation rule coverage and user experience improvements
+
+**New Validation Rules Added**:
+1. ✅ **V304 Module Parameter Field Validation**: Prevents hierarchical modules from declaring `parameters` fields
+   - **Rule**: Hierarchical modules (with `instances`) must only use `variables`, not `parameters`
+   - **Rationale**: Enforces parameter resolving system design - hierarchical modules should only have internal implementation details
+   - **Implementation**: `validate_module_parameter_fields()` method integrated into CLI pipeline
+
+**User Experience Improvements**:
+2. ✅ **Location Information in Diagnostics**: All validation errors now include precise source locations
+   - **Format**: `at unified_architecture_demo.asdl:148:7` (file:line:column)
+   - **Benefits**: Quick navigation, IDE integration, improved productivity
+   - **Implementation**: Added `location=instance/module` to all Diagnostic constructors
+
+**Validation Coverage Now Complete**:
+- **V001-V002**: Port mapping validation
+- **V003**: Net declaration validation  
+- **V005**: Unused component detection
+- **V301-V303**: Parameter override validation (instances)
+- **V304**: Module parameter field validation (NEW)
+
+**Testing Quality**: `unified_architecture_demo.asdl` correctly shows 6 validation errors with precise locations
 
 **Ready for Import System Phase 1 Implementation**
