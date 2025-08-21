@@ -1,0 +1,169 @@
+file_info:
+  top_module: "two_stage_buffer"
+  doc: "Demonstration of unified ASDL architecture with primitive and hierarchical modules"
+  author: "ASDL Unified Architecture Demo"
+  date: "2024-03-15"
+  revision: "1.0"
+
+modules:
+  # ====================================
+  # PRIMITIVE MODULES (with spice_template)
+  # ====================================
+  
+  # PDK primitive transistors
+  nfet_03v3:
+    doc: "GF180MCU NMOS transistor - 3.3V rated"
+    ports:
+      D: {dir: in_out, type: voltage}
+      G: {dir: in, type: voltage}
+      S: {dir: in_out, type: voltage}
+      B: {dir: in_out, type: voltage}
+    parameters: 
+      L: "0.28u"
+      W: "3u"
+      M: 1
+    spice_template: "X{name} {D} {G} {S} {B} nfet_03v3 L={L} W={W} m={M}"
+    pdk: "gf180mcu"
+    
+  pfet_03v3:
+    doc: "GF180MCU PMOS transistor - 3.3V rated"
+    ports:
+      D: {dir: in_out, type: voltage}
+      G: {dir: in, type: voltage}
+      S: {dir: in_out, type: voltage}
+      B: {dir: in_out, type: voltage}
+    parameters:
+      L: "0.28u" 
+      W: "6u"
+      M: 1
+    spice_template: "X{name} {D} {G} {S} {B} pfet_03v3 L={L} W={W} m={M}"
+    pdk: "gf180mcu"
+    
+  # SPICE built-in primitives
+  resistor:
+    doc: "Basic resistor primitive"
+    ports:
+      n1: {dir: in_out, type: voltage}
+      n2: {dir: in_out, type: voltage}
+    parameters:
+      R: "1k"
+      TC1: "0"
+      TC2: "0"
+    spice_template: "R{name} {n1} {n2} {R} TC1={TC1} TC2={TC2}"
+    
+  capacitor:
+    doc: "Basic capacitor primitive"
+    ports:
+      n1: {dir: in_out, type: voltage}
+      n2: {dir: in_out, type: voltage}
+    parameters:
+      C: "1p"
+    spice_template: "C{name} {n1} {n2} {C}"
+  
+  # ====================================
+  # HIERARCHICAL MODULES (with instances)
+  # ====================================
+  
+  # Basic inverter using primitive transistors
+  inverter:
+    doc: "CMOS inverter using PDK primitives"
+    ports:
+      in: {dir: in, type: voltage}
+      out: {dir: out, type: voltage}
+      vdd: {dir: in, type: voltage}
+      vss: {dir: in, type: voltage}
+    variables:
+      nmos_M: 1
+      pmos_M: 2
+    instances:
+      MN:
+        model: nfet_03v3
+        mappings: {D: out, G: in, S: vss, B: vss}
+        parameters: {M: nmos_M, W: 3u}
+      MP:
+        model: pfet_03v3
+        mappings: {D: out, G: in, S: vdd, B: vdd}
+        parameters: {M: pmos_M, W: 6u}
+        
+  # RC low-pass filter using SPICE primitives
+  rc_filter:
+    doc: "Simple RC low-pass filter"
+    ports:
+      in: {dir: in, type: voltage}
+      out: {dir: out, type: voltage}
+      gnd: {dir: in, type: voltage}
+    parameters:
+      R_val: "10k"
+      C_val: "100p"
+    instances:
+      R1:
+        model: resistor
+        mappings: {n1: in, n2: out}
+        parameters: {R: "{R_val}"}
+      C1:
+        model: capacitor
+        mappings: {n1: out, n2: gnd}
+        parameters: {C: "{C_val}"}
+        
+  # Current mirror using transistor primitives
+  current_mirror:
+    doc: "NMOS current mirror with 1:2:4 current ratios"
+    ports:
+      iref: {dir: in_out, type: voltage}
+      iout1: {dir: out, type: voltage}
+      iout2: {dir: out, type: voltage}
+      vss: {dir: in, type: voltage}
+    instances:
+      M_REF:
+        model: nfet_03v3
+        mappings: {D: iref, G: iref, S: vss, B: vss}
+        parameters: {M: 1}
+      M_OUT1:
+        model: nfet_03v3
+        mappings: {D: iout1, G: iref, S: vss, B: vss}
+        parameters: {M: 2}  # 2x current
+      M_OUT2:
+        model: nfet_03v3
+        mappings: {D: iout2, G: iref, S: vss, B: vss}
+        parameters: {M: 4}  # 4x current
+        
+  # Top-level: Two-stage buffer combining hierarchical modules
+  two_stage_buffer:
+    doc: "Two-stage buffer with RC filter - demonstrates mixed hierarchy"
+    ports:
+      in: {dir: in, type: voltage}
+      out: {dir: out, type: voltage}
+      vdd: {dir: in, type: voltage}
+      vss: {dir: in, type: voltage}
+    internal_nets: ["stage1_out", "filtered_out"]
+    parameters:
+      inv1_nmos_M: 1
+      inv1_pmos_M: 2
+      inv2_nmos_M: 2
+      inv2_pmos_M: 4
+      filter_R: "5k"
+      filter_C: "50p"
+    instances:
+      # First inverter stage
+      INV1:
+        model: inverter
+        mappings: {in: in, out: stage1_out, vdd: vdd, vss: vss}
+        parameters: {nmos_M: "{inv1_nmos_M}", pmos_M: "{inv1_pmos_M}"}
+        
+      # RC filter between stages
+      FILTER:
+        model: rc_filter
+        mappings: {in: stage1_out, out: filtered_out, gnd: vss}
+        parameters: {R_val: "{filter_R}", C_val: "{filter_C}"}
+        
+      # Second inverter stage (larger for drive strength)
+      INV2:
+        model: inverter
+        mappings: {in: filtered_out, out: out, vdd: vdd, vss: vss}
+        parameters: {nmos_M: "{inv2_nmos_M}", pmos_M: "{inv2_pmos_M}"}
+        
+      # Current mirror for demonstration (not connected to signal path)
+      CM1:
+        model: current_mirror
+        mappings: {iref: vss, iout1: vss, iout2: vss, vss: vss}
+        doc: "Demonstration current mirror - would connect to bias circuitry"

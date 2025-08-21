@@ -1,0 +1,17 @@
+* SPICE netlist generated from ASDL
+* Design: Simple example of unified ASDL architecture - primitive and hierarchical modules
+* Top module: simple_inverter
+* Author: ASDL Demo
+* Date: 2024-03-15
+* Revision: None
+
+* Hierarchical module subcircuit definitions
+.subckt simple_inverter in out vdd vss
+  MNN1 out in vss nmos W=1u L=0.18u
+  MPP1 out in vdd pmos W=2u L=0.18u
+.ends
+
+* Main circuit instantiation
+XMAIN in out vdd vss simple_inverter
+
+.end

@@ -5,8 +5,10 @@ Generates SPICE netlists from elaborated ASDL designs where patterns
 have been expanded and parameters have been resolved.
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
+import re
 from .data_structures import ASDLFile, Module, Instance
+from .diagnostics import Diagnostic, DiagnosticSeverity
 
 
 class SPICEGenerator:
@@ -33,7 +35,7 @@ class SPICEGenerator:
         self.comment_style = "*"  # SPICE comment character
         self.indent = "  "        # Indentation for readability
     
-    def generate(self, asdl_file: ASDLFile) -> str:
+    def generate(self, asdl_file: ASDLFile) -> Tuple[str, List[Diagnostic]]:
         """
         Generate complete SPICE netlist from ASDL design with unified architecture.
         
@@ -41,9 +43,10 @@ class SPICEGenerator:
             asdl_file: Fully elaborated ASDL design
             
         Returns:
-            Complete SPICE netlist as string
+            Tuple of (complete SPICE netlist as string, list of diagnostics)
         """
         lines = []
+        diagnostics: List[Diagnostic] = []
         
         # Add header comment
         lines.append(f"* SPICE netlist generated from ASDL")
@@ -86,7 +89,12 @@ class SPICEGenerator:
         lines.append("")
         lines.append(".end")
         
-        return "\n".join(lines)
+        # Check for unresolved placeholders in the final SPICE output
+        final_spice = "\n".join(lines)
+        placeholder_diagnostics = self._check_unresolved_placeholders(final_spice, asdl_file)
+        diagnostics.extend(placeholder_diagnostics)
+        
+        return final_spice, diagnostics
     
     def _generate_pdk_includes(self, asdl_file: ASDLFile) -> List[str]:
         """
@@ -318,5 +326,48 @@ class SPICEGenerator:
             return str(value)
         else:
             return str(value)
+
+    def _check_unresolved_placeholders(self, spice_output: str, asdl_file: ASDLFile) -> List[Diagnostic]:
+        """
+        Check for unresolved template placeholders in the generated SPICE output.
+        
+        Detects patterns like {R_val}, {C_val}, etc. that weren't resolved during
+        template substitution, which would cause SPICE simulation failures.
+        
+        Args:
+            spice_output: Generated SPICE netlist content
+            asdl_file: Original ASDL file for context
+            
+        Returns:
+            List of G001 diagnostics for unresolved placeholders
+        """
+        diagnostics: List[Diagnostic] = []
+        
+        # Pattern to match unresolved placeholders: {any_text}
+        placeholder_pattern = re.compile(r'\{([^}]+)\}')
+        
+        # Find all unresolved placeholders
+        matches = placeholder_pattern.findall(spice_output)
+        
+        if matches:
+            # Get unique placeholder names
+            unique_placeholders = sorted(set(matches))
+            
+            # Create diagnostic for unresolved placeholders
+            placeholder_list = ", ".join(f"'{{{name}}}'" for name in unique_placeholders)
+            
+            diagnostic = Diagnostic(
+                code="G001",
+                title="Unresolved Template Placeholder",
+                details=f"Generated SPICE contains unresolved placeholders: {placeholder_list}. "
+                       f"These indicate missing parameter or variable definitions that would "
+                       f"cause SPICE simulation to fail. Check module parameters, variables, "
+                       f"and template substitutions.",
+                severity=DiagnosticSeverity.ERROR,
+                location=None,  # Could enhance with line tracking in future
+            )
+            diagnostics.append(diagnostic)
+        
+        return diagnostics
 
  

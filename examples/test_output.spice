@@ -1,0 +1,43 @@
+* SPICE netlist generated from ASDL
+* Design: Demonstration of unified ASDL architecture with primitive and hierarchical modules
+* Top module: two_stage_buffer
+* Author: ASDL Unified Architecture Demo
+* Date: 2024-03-15
+* Revision: 1.0
+
+* PDK model includes
+.include "gf180mcu_fd_pr/models/ngspice/design.ngspice"
+
+* Hierarchical module subcircuit definitions
+* CMOS inverter using PDK primitives
+.subckt inverter in out vdd vss
+  XMN out in vss vss nfet_03v3 L=0.28u W=3u m={nmos_M}
+  XMP out in vdd vdd pfet_03v3 L=0.28u W=6u m={pmos_M}
+.ends
+
+* Simple RC low-pass filter
+.subckt rc_filter in out gnd
+  RR1 in out {R_val} TC1=0 TC2=0
+  CC1 out gnd {C_val}
+.ends
+
+* NMOS current mirror with 1:2:4 current ratios
+.subckt current_mirror iref iout1 iout2 vss
+  XM_REF iref iref vss vss nfet_03v3 L=0.28u W=3u m=1
+  XM_OUT1 iout1 iref vss vss nfet_03v3 L=0.28u W=3u m=2
+  XM_OUT2 iout2 iref vss vss nfet_03v3 L=0.28u W=3u m=4
+.ends
+
+* Two-stage buffer with RC filter - demonstrates mixed hierarchy
+.subckt two_stage_buffer in out vdd vss
+  X_INV1 in stage1_out vdd vss inverter nmos_M={inv1_nmos_M} pmos_M={inv1_pmos_M}
+  X_FILTER stage1_out filtered_out vss rc_filter C_val={filter_C} R_val={filter_R}
+  X_INV2 filtered_out out vdd vss inverter nmos_M={inv2_nmos_M} pmos_M={inv2_pmos_M}
+  * Demonstration current mirror - would connect to bias circuitry
+  X_CM1 vss vss vss vss current_mirror
+.ends
+
+* Main circuit instantiation
+XMAIN in out vdd vss two_stage_buffer
+
+.end

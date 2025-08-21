@@ -25,7 +25,7 @@ class TestPipelineStructure:
             pytest.skip(f"Parser failed with diagnostics: {diagnostics}")
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         lines = spice_output.split('\n')
         non_empty_lines = [line for line in lines if line.strip() and not line.strip().startswith('*')]
@@ -81,7 +81,7 @@ class TestPipelineStructure:
             pytest.skip(f"Parser failed with diagnostics: {diagnostics}")
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Find positions of different subcircuit types
         nmos_pos = spice_output.find('.subckt nmos_unit')
@@ -105,7 +105,7 @@ class TestPipelineStructure:
             pytest.skip(f"Parser failed with diagnostics: {diagnostics}")
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Verify hierarchical calls reference the correct subcircuits
         assert 'X_MP in out vdd vdd pmos_unit M=2' in spice_output
@@ -129,7 +129,7 @@ class TestPipelineStructure:
             pytest.skip(f"Parser failed with diagnostics: {diagnostics}")
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Check for ngspice compatibility features
         lines = spice_output.split('\n')
@@ -163,7 +163,7 @@ class TestPipelineStructure:
             pytest.skip(f"Parser failed with diagnostics: {diagnostics}")
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Model parameters should be in model subcircuits with actual PDK device names
         assert 'MN D G S B nfet_03v3 L=0.5u W=4u nf=2' in spice_output

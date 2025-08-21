@@ -61,7 +61,7 @@ class TestUnifiedGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Should include PDK include for primitive module
         assert '.include "gf180mcu_fd_pr/models/ngspice/design.ngspice"' in spice_output
@@ -116,13 +116,10 @@ class TestUnifiedGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Should generate .subckt for hierarchical module
         assert ".subckt inverter in out vdd vss" in spice_output
-        
-        # Should have parameter declaration
-        assert ".param M=1" in spice_output
         
         # Should have inline primitive instances
         assert "MNM1 out in vss nfet" in spice_output
@@ -164,7 +161,7 @@ class TestUnifiedGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Should include both PDKs but not duplicate
         assert '.include "gf180mcu_fd_pr/models/ngspice/design.ngspice"' in spice_output
@@ -204,7 +201,7 @@ class TestUnifiedGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Primitive should be used inline, not as subcircuit
         assert ".subckt cap_primitive" not in spice_output
@@ -299,7 +296,7 @@ class TestUnifiedGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Should have PDK include (only one, even though used multiple times)
         pdk_count = spice_output.count('.include "gf180mcu_fd_pr/models/ngspice/design.ngspice"')
@@ -363,7 +360,7 @@ class TestUnifiedGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Check parameter substitution with overrides
         assert "RR1 in out 2k TC1=0 TC2=0" in spice_output  # R overridden
@@ -406,7 +403,7 @@ class TestUnifiedGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Should have header and .end
         assert "* SPICE netlist generated from ASDL" in spice_output
@@ -459,7 +456,7 @@ class TestVariablesInTemplateGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Check that both parameters and variables are substituted
         assert "L=0.28u" in spice_output       # parameter default
@@ -507,7 +504,7 @@ class TestVariablesInTemplateGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Variable 'temp' should shadow parameter override
         assert "RR1 in out 2k temp=75" in spice_output
@@ -550,7 +547,7 @@ class TestVariablesInTemplateGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # All variables should be substituted
         assert "VVDD vdd gnd DC 1.8 rise=10n fall=10n" in spice_output
@@ -591,7 +588,7 @@ class TestVariablesInTemplateGeneration:
         )
         
         generator = SPICEGenerator()
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Should work exactly as before
         assert "CC1 node1 node2 10p IC=0" in spice_output

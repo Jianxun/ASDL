@@ -38,7 +38,7 @@ def test_pyspice_parses_inverter_netlist(inverter_asdl):
     
     # Generate SPICE from the real inverter ASDL
     generator = SPICEGenerator()
-    spice_output = generator.generate(asdl_file)
+    spice_output, diagnostics = generator.generate(asdl_file)
     
     print("Generated SPICE:")
     print(spice_output)
@@ -101,7 +101,7 @@ def test_pyspice_validates_nmos_instance(inverter_asdl):
     
     # Generate SPICE from the real inverter ASDL
     generator = SPICEGenerator()
-    spice_output = generator.generate(asdl_file)
+    spice_output, diagnostics = generator.generate(asdl_file)
     
     # Extract the NMOS line from the generated SPICE (now inside nmos_unit subcircuit)
     lines = spice_output.split('\n')
@@ -142,7 +142,7 @@ def test_pyspice_validates_pmos_instance(inverter_asdl):
     
     # Generate SPICE from the real inverter ASDL
     generator = SPICEGenerator()
-    spice_output = generator.generate(asdl_file)
+    spice_output, diagnostics = generator.generate(asdl_file)
     
     # Extract the PMOS line from the generated SPICE (now inside pmos_unit subcircuit)
     lines = spice_output.split('\n')
@@ -183,7 +183,7 @@ def test_pyspice_validates_subcircuit_ports(inverter_asdl):
     
     # Generate SPICE from the real inverter ASDL
     generator = SPICEGenerator()
-    spice_output = generator.generate(asdl_file)
+    spice_output, diagnostics = generator.generate(asdl_file)
 
     # Parse with PySpice to ensure it's syntactically valid
     if not PYSPICE_AVAILABLE:

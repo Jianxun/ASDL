@@ -316,7 +316,7 @@ class TestSPICEGeneratorBasics:
         )
         
         # Generate SPICE netlist
-        spice_output = generator.generate(asdl_file)
+        spice_output, diagnostics = generator.generate(asdl_file)
         
         # Parse with PySpice - should not raise an exception
         circuit = parse_spice_netlist(spice_output)

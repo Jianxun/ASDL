@@ -62,7 +62,8 @@ def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose:
                 if verbose:
                     click.echo("[generate] writing SPICE netlist…")
                 generator = SPICEGenerator()
-                netlist_str = generator.generate(elaborated_file)
+                netlist_str, generator_diags = generator.generate(elaborated_file)
+                diagnostics.extend(generator_diags)
                 artifact_path = output if output else input.with_suffix(".spice")
                 artifact_path.parent.mkdir(parents=True, exist_ok=True)
                 artifact_path.write_text(netlist_str, encoding="utf-8")
