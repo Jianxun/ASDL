@@ -39,34 +39,6 @@ file_info:
         assert file_info.start_line == 3
         assert file_info.start_col == 1
 
-    def test_device_model_location(self):
-        """Test line/col tracking for DeviceModel objects."""
-        yaml_content = """
-file_info:
-  top_module: "test"
-models:
-  # nmos comment
-  nmos_test:
-    type: pdk_device
-    ports: ["D", "G", "S", "B"]
-  # pmos comment
-  pmos_test:
-    type: spice_device
-    device_line: "M D G S B pfet"
-"""
-        parser = ASDLParser()
-        asdl_file, _ = parser.parse_string(yaml_content)
-        assert asdl_file is not None
-
-        assert "nmos_test" in asdl_file.models
-        nmos = asdl_file.models["nmos_test"]
-        assert nmos.start_line == 6
-        assert nmos.start_col == 3
-
-        assert "pmos_test" in asdl_file.models
-        pmos = asdl_file.models["pmos_test"]
-        assert pmos.start_line == 10
-        assert pmos.start_col == 3
 
     def test_module_location(self):
         """Test line/col tracking for Module objects."""
@@ -83,8 +55,10 @@ modules:
       out:
         dir: out
         type: voltage
+    spice_template: "X_inverter in out inverter_model"
   buffer:
     doc: "A simple buffer."
+    spice_template: "X_buffer in out buffer_model"
 """
         parser = ASDLParser()
         asdl_file, _ = parser.parse_string(yaml_content)
@@ -97,7 +71,7 @@ modules:
 
         assert "buffer" in asdl_file.modules
         buffer = asdl_file.modules["buffer"]
-        assert buffer.start_line == 14
+        assert buffer.start_line == 15
         assert buffer.start_col == 3
 
     def test_port_location(self):
@@ -115,6 +89,7 @@ modules:
       out:
         dir: out
         type: voltage
+    spice_template: "X_inverter in out inverter_model"
 """
         parser = ASDLParser()
         asdl_file, _ = parser.parse_string(yaml_content)

@@ -27,7 +27,6 @@ class TestBasicParsing:
         """Test that the parser can create a basic ASDLFile object from a valid YAML string."""
         yaml_content = """file_info:
   top_module: "test_module"
-models: {}
 modules: {}
 """
         parser = ASDLParser()
@@ -48,7 +47,6 @@ modules: {}
         assert asdl_file.file_info.end_col == 10
         assert asdl_file.file_info.file_path is None # Should be None when parsing from string
 
-        assert asdl_file.models == {}
         assert asdl_file.modules == {}
 
     def test_parse_file_success(self):
@@ -57,7 +55,6 @@ modules: {}
 file_info:
   top_module: "file_test"
   doc: "Test file parsing"
-models: {}
 modules: {}
 """
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as tmp_file:

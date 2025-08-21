@@ -302,6 +302,16 @@ class ASDLParser:
                 module_data, f"Module '{module_id}'", diagnostics, loc
             )
             
+            # Check for unknown fields in module
+            self._validate_unknown_fields(
+                module_data, 
+                f"Module '{module_id}'",
+                ['doc', 'ports', 'internal_nets', 'parameters', 'params', 'variables', 'vars', 
+                 'spice_template', 'instances', 'pdk', 'metadata'],
+                diagnostics, 
+                loc
+            )
+            
             modules[module_id] = Module(
                 **loc.__dict__,
                 doc=module_data.get('doc'),
@@ -347,6 +357,15 @@ class ASDLParser:
                     location=loc
                 ))
                 continue
+
+            # Check for unknown fields in port
+            self._validate_unknown_fields(
+                port_data,
+                f"Port '{port_name}'",
+                ['dir', 'type', 'constraints', 'metadata'],
+                diagnostics,
+                loc
+            )
 
             try:
                 ports[port_name] = Port(
@@ -396,6 +415,15 @@ class ASDLParser:
             # Resolve parameters with dual syntax support
             parameters = self._resolve_parameters_field(
                 instance_data, f"Instance '{instance_name}'", diagnostics, loc
+            )
+            
+            # Check for unknown fields in instance
+            self._validate_unknown_fields(
+                instance_data,
+                f"Instance '{instance_name}'",
+                ['model', 'mappings', 'doc', 'parameters', 'params', 'metadata'],
+                diagnostics,
+                loc
             )
             
             instances[instance_name] = Instance(
@@ -495,3 +523,28 @@ class ASDLParser:
             ))
             return False
         return True 
+
+    def _validate_unknown_fields(self, data: Dict[str, Any], context: str, allowed_fields: List[str], diagnostics: List[Diagnostic], loc: Locatable) -> None:
+        """
+        Validate that no unknown fields are present in the data.
+        
+        Args:
+            data: Dictionary containing the fields to validate
+            context: Context string for error messages (e.g., "Module 'test_mod'")
+            allowed_fields: List of recognized field names
+            diagnostics: List to append warnings to
+            loc: Location information for diagnostics
+        """
+        if not isinstance(data, dict):
+            return
+            
+        for field_name in data.keys():
+            if field_name not in allowed_fields:
+                diagnostics.append(Diagnostic(
+                    code="P201",
+                    title="Unknown Field",
+                    details=f"{context} contains unknown field '{field_name}' which is not a recognized field.",
+                    severity=DiagnosticSeverity.WARNING,
+                    location=loc,
+                    suggestion=f"Remove the '{field_name}' field or check for typos. Recognized fields are: {', '.join(sorted(allowed_fields))}."
+                ))
