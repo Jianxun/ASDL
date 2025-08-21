@@ -17,8 +17,10 @@ from dataclasses import is_dataclass, fields
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, get_args, get_origin, get_type_hints
 
-from . import data_structures as ds
-from . import __version__ as ASDL_VERSION
+from . import structures as ds
+
+# Version constant to avoid circular import
+ASDL_VERSION = "0.1.0"
 
 
 def _is_optional(annot: Any) -> bool:
