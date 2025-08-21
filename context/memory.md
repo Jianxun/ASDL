@@ -250,8 +250,77 @@ Successfully updated failing tests for unified module architecture:
 
 **Current Pipeline Status**:
 - ✅ **Parser**: Comprehensive diagnostic coverage with hardened error handling (READY FOR REFACTORING - 550+ lines)
-- ✅ **Data Structures**: Clean package organization with related components grouped
+- ✅ **Data Structures**: Clean package organization with related components grouped, DeviceModel removed as obsolete
 - ✅ **Elaborator**: Clean package with pattern expansion AND variable resolution
 - ✅ **Validator**: Parameter override validation (V301-V304) implemented and integrated
 - ✅ **Generator**: LVS-compatible SPICE generation with resolved variables
 - ✅ **Variable Resolution**: Direct reference resolution working in production
+
+## Parser Refactor and XCCSS Diagnostic System Design (2025-08-21)
+**Status**: 📖 **DESIGN COMPLETED** - Comprehensive diagnostic system redesign with documentation
+
+### ✅ **XCCSS Diagnostic System Design Finalized**
+Complete redesign of diagnostic system from legacy `PXXX` to structured `XCCSS` format:
+
+**XCCSS Format**: `XCCSS` where:
+- **X**: Component prefix (P=Parser, E=Elaborator, V=Validator, G=Generator, I=Importer, S=Schema)
+- **CC**: Category code (01=Syntax, 02=Schema, 03=Semantic, 04=Reference, 05=Type, 06=Style, 07=Extension, 08=Performance)
+- **SS**: Specific error code within category (01-99)
+
+**Architecture Decision**: **Distributed Implementation with Central Validation**
+- Each component defines its own diagnostics in `{component}/diagnostics.py`
+- Central registry provides conflict validation and tooling support
+- Template-based message generation with named parameters
+- Auto-severity detection from category codes
+
+**Documentation Completed**:
+- ✅ **`doc/diagnostic_system/xccss_design_decisions.md`** - Design rationale and architecture decisions
+- ✅ **`doc/diagnostic_system/xccss_architecture.md`** - Technical implementation details and integration patterns
+- ✅ **`doc/diagnostic_system/xccss_migration_plan.md`** - 5-phase implementation plan (7 weeks, detailed tasks)
+- ✅ **`doc/diagnostic_system/README.md`** - Complete system overview and developer guide
+- ✅ **Updated existing documentation** - Added migration notices and XCCSS previews
+
+### 🎯 **Parser Refactor Plan Designed**
+Comprehensive plan to split monolithic 550-line `parser.py` into modular architecture:
+
+**Target Structure**:
+```
+src/asdl/parser/
+├── __init__.py              # Public API
+├── core/                    # Foundation
+│   ├── yaml_loader.py      # YAML + location tracking
+│   ├── diagnostic_builder.py # Structured diagnostics  
+│   └── validation_mixin.py  # Reusable validation
+├── sections/                # Section-specific parsers
+│   ├── file_info_parser.py # FileInfo section
+│   ├── import_parser.py    # Import declarations
+│   ├── module_parser.py    # Module orchestration  
+│   ├── port_parser.py      # Port definitions
+│   └── instance_parser.py  # Instance definitions
+├── resolvers/               # Field resolution
+│   ├── dual_syntax_resolver.py # params/parameters, vars/variables
+│   └── metadata_resolver.py    # Universal metadata
+└── asdl_parser.py          # Main coordinating class
+```
+
+**Key Features**:
+- **Modular Architecture**: Single responsibility per component
+- **Enhanced Diagnostics**: XCCSS format with rich metadata
+- **Language Server Ready**: Structured for IDE integration
+- **Testable Components**: Individual parsers easily unit tested
+- **Backward Compatible**: Preserves existing public API
+
+### 📋 **Implementation Readiness**
+**READY FOR IMPLEMENTATION**: Both parser refactor and XCCSS diagnostic system
+- Design decisions documented and validated
+- Architecture patterns established
+- Migration strategy with clear phases
+- Tool integration patterns defined
+- Automated documentation generation planned
+
+**Next Steps**: 
+1. **Phase 1**: Foundation infrastructure (diagnostic system, registry, validation)
+2. **Phase 2**: Parser migration to XCCSS and modular architecture
+3. **Phase 3**: Component migration (Elaborator, Validator, Generator)
+4. **Phase 4**: Tool updates and automated documentation
+5. **Phase 5**: Legacy cleanup and finalization

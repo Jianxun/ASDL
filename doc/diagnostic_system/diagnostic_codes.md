@@ -4,7 +4,11 @@ This document serves as the single source of truth for all diagnostic codes used
 
 ## Code Structure
 
+> ⚠️ **Migration Notice**: This document describes the current (legacy) diagnostic system. A new XCCSS format is planned for implementation. See [XCCSS Design Documentation](xccss_design_decisions.md) for details about the future system.
+
 Diagnostic codes are structured to be easily identifiable and searchable.
+
+### Current System (Legacy)
 
 - **Prefix**: A letter indicating the component where the diagnostic originates.
   - `P`: Parser
@@ -15,6 +19,15 @@ Diagnostic codes are structured to be easily identifiable and searchable.
 - **Number**: A three-digit number identifying the specific diagnostic.
   - **100-199**: Errors (prevent successful compilation)
   - **200-299**: Warnings (indicate potential issues but do not stop compilation)
+
+### Planned XCCSS System
+
+The future diagnostic system will use a structured `XCCSS` format:
+- **X**: Component prefix (P, E, V, G, I, S)
+- **CC**: Category code (01-08: Syntax, Schema, Semantic, Reference, Type, Style, Extension, Performance)
+- **SS**: Specific error code within category (01-99)
+
+**Migration Timeline**: See [XCCSS Migration Plan](xccss_migration_plan.md) for implementation schedule.
 
 ---
 

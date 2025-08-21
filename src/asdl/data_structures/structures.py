@@ -94,35 +94,6 @@ class ImportDeclaration(Locatable):
     version: Optional[str] = None  # schema: description="Optional @version tag for version-specific imports"
 
 
-# ─────────────────────────────────────────
-# Device Models (PDK Primitives)
-# ─────────────────────────────────────────
-
-class PrimitiveType(Enum):
-    """
-    Classifies the origin of the primitive model.
-    
-    This enum provides a simple, unambiguous classification:
-    - PDK_DEVICE: Physical device model from external PDK library
-    - SPICE_DEVICE: Primitive natively understood by SPICE simulator
-    """
-    PDK_DEVICE = "pdk_device"
-    SPICE_DEVICE = "spice_device"
-
-
-@dataclass(kw_only=True)
-class DeviceModel(Locatable):
-    """
-    Template for a primitive component, which can be a physical PDK device
-    or a built-in SPICE primitive.
-    """
-    type: PrimitiveType  # schema: description="Origin of primitive; determines SPICE interpretation"
-    ports: List[str]  # schema: description="Ordered list of port names; order must match device_line"
-    device_line: str  # schema: description="SPICE device template or model identifier"
-    doc: Optional[str] = None  # schema: description="Documentation for this model"
-    parameters: Optional[Dict[str, str]] = None  # schema: description="Default parameter values or expressions"
-    metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
-
 
 # ─────────────────────────────────────────
 # Module Structure  
