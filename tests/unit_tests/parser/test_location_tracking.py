@@ -13,7 +13,6 @@ sys.path.insert(0, str(project_root / "src"))
 
 from asdl.parser import ASDLParser
 from asdl.data_structures import (
-    DeviceModel,
     Module,
     Port,
     Instance,

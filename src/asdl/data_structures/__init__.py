@@ -32,9 +32,6 @@ from .structures import (
     # Instance system
     Instance,
     
-    # Legacy compatibility (deprecated)
-    DeviceModel,
-    PrimitiveType,
 )
 
 # Import schema generation
@@ -67,9 +64,6 @@ __all__ = [
     # Instance system
     "Instance",
     
-    # Legacy compatibility (deprecated)
-    "DeviceModel",
-    "PrimitiveType",
     
     # Schema generation
     "build_json_schema",

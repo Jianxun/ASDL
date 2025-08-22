@@ -7,8 +7,6 @@ A Python library for parsing ASDL YAML files and generating SPICE netlists.
 from .data_structures import (
     ASDLFile,
     FileInfo, 
-    DeviceModel,
-    PrimitiveType,
     Module,
     Port,
     PortDirection,
@@ -27,8 +25,6 @@ __all__ = [
     # Data structures
     "ASDLFile",
     "FileInfo",
-    "DeviceModel", 
-    "PrimitiveType",
     "Module",
     "Port",
     "PortDirection", 

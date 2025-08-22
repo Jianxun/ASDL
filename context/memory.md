@@ -324,3 +324,72 @@ src/asdl/parser/
 3. **Phase 3**: Component migration (Elaborator, Validator, Generator)
 4. **Phase 4**: Tool updates and automated documentation
 5. **Phase 5**: Legacy cleanup and finalization
+
+## Parser Refactor Strategy (2025-08-22)
+**Status**: 📋 **DESIGN COMPLETED** - Ready for implementation in next session
+
+### ✅ **Comprehensive Error Code Analysis**
+Complete parser error code strategy documented in `doc/parser/parser_error_codes.md`:
+- **Current Coverage**: 8/15 MVP critical codes implemented, 7 missing
+- **Total System**: 71 parser diagnostic codes identified (15 MVP + 56 hardening)
+- **Critical Gaps**: Duplicate detection (silent data corruption) and enum validation (runtime crashes)
+
+**MVP Critical Missing Codes**:
+- **P0232**: Duplicate Module Name (HIGH - silent data loss)
+- **P0242**: Duplicate Port Name (HIGH - undefined behavior)  
+- **P0251**: Duplicate Instance Name (HIGH - instance conflicts)
+- **P0221**: Duplicate Import Alias (HIGH - wrong references)
+- **P0501**: Invalid Port Direction Enum (MEDIUM - runtime crashes)
+- **P0502**: Invalid Port Type Enum (MEDIUM - runtime crashes)
+
+### ✅ **Modular Architecture Design**
+Complete modularization plan documented in `doc/parser/parser_refactor_plan.md`:
+
+**Priority Decision**: Modularization first, then MVP validation additions
+- **Rationale**: Establish maintainable foundation before adding business logic
+- **Constraint**: Zero business logic changes during refactor
+- **Goal**: Transform 550-line monolith into focused 50-100 line components
+
+**Target Architecture**:
+```
+src/asdl/parser/
+├── __init__.py              # Public API (unchanged)
+├── asdl_parser.py          # Main orchestrator
+├── core/                   # Foundation utilities
+│   ├── yaml_loader.py      # YAML + location tracking
+│   └── locatable_builder.py # Location extraction
+├── sections/               # Section-specific parsers
+│   ├── file_info_parser.py # FileInfo section
+│   ├── import_parser.py    # Import declarations + P106 validation
+│   ├── module_parser.py    # Module orchestration + P107/P108
+│   ├── port_parser.py      # Port parsing + P104/P105/P201
+│   └── instance_parser.py  # Instance parsing + P104/P201
+└── resolvers/              # Field resolution logic
+    ├── dual_syntax_resolver.py # params/parameters + P301/P302
+    └── field_validator.py     # Unknown fields + P103/P201
+```
+
+**Implementation Strategy**:
+1. **Phase 1**: Core utilities extraction (~4 hours)
+2. **Phase 2**: Resolvers extraction (~3 hours)
+3. **Phase 3**: Section parsers extraction (~8 hours)
+4. **Phase 4**: Main orchestrator integration (~3 hours)
+5. **Phase 5**: Comprehensive testing (~4 hours)
+
+**Success Criteria**:
+- Zero API changes
+- All existing tests pass without modification
+- No performance regression
+- Clean modular architecture with dependency injection
+
+### 📋 **Ready for Next Session**
+**Implementation Plan**: Start with parser modularization
+1. Establish modular foundation (preserve all existing behavior)
+2. Add MVP validation codes to modular components
+3. Implement XCCSS diagnostic system integration
+
+**Benefits After Modularization**:
+- **Maintainability**: Single responsibility components
+- **Parallel Development**: Multiple developers can work efficiently
+- **Easy Enhancement**: Foundation ready for MVP validation additions
+- **Test Coverage**: Each component unit testable
