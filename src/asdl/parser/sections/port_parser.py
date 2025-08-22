@@ -27,7 +27,7 @@ class PortParser:
         Parse ports section.
         
         Exact implementation from _parse_ports() method.
-        Preserves P104 required field validation (dir, type).
+        Preserves P104 required field validation (dir only, type is optional).
         Preserves P105 port parsing error handling.
         Preserves P201 unknown field validation.
         Preserves enum conversion logic.
@@ -60,16 +60,7 @@ class PortParser:
                 ))
                 continue
     
-            type_val = port_data.get('type')
-            if not type_val:
-                diagnostics.append(Diagnostic(
-                    code="P104", 
-                    title="Missing Required Field", 
-                    details=f"Port '{port_name}' is missing the required 'type' field.", 
-                    severity=DiagnosticSeverity.ERROR,
-                    location=loc
-                ))
-                continue
+            type_val = port_data.get('type')  # Optional field
 
             # Check for unknown fields in port
             self.field_validator.validate_unknown_fields(
@@ -84,7 +75,7 @@ class PortParser:
                 ports[port_name] = Port(
                     **loc.__dict__,
                     dir=PortDirection(dir_val.lower()),
-                    type=SignalType(type_val.lower()),
+                    type=SignalType(type_val.lower()) if type_val else None,
                     constraints=self._parse_constraints(port_data.get('constraints')),
                     metadata=port_data.get('metadata')
                 )

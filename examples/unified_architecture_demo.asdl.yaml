@@ -1,0 +1,169 @@
+file_info:
+  top_module: "two_stage_buffer"
+  doc: "Demonstration of unified ASDL architecture with primitive and hierarchical modules"
+  author: "ASDL Unified Architecture Demo"
+  date: "2024-03-15"
+  revision: "1.0"
+
+modules:
+  # ====================================
+  # PRIMITIVE MODULES (with spice_template)
+  # ====================================
+  
+  # PDK primitive transistors
+  nfet_03v3:
+    doc: "GF180MCU NMOS transistor - 3.3V rated"
+    ports:
+      D: {dir: in_out}
+      G: {dir: in}
+      S: {dir: in_out}
+      B: {dir: in_out}
+    parameters: 
+      L: "0.28u"
+      W: "3u"
+      M: 1
+    spice_template: "X{name} {D} {G} {S} {B} nfet_03v3 L={L} W={W} m={M}"
+    pdk: "gf180mcu"
+    
+  pfet_03v3:
+    doc: "GF180MCU PMOS transistor - 3.3V rated"
+    ports:
+      D: {dir: in_out}
+      G: {dir: in}
+      S: {dir: in_out}
+      B: {dir: in_out}
+    parameters:
+      L: "0.28u" 
+      W: "6u"
+      M: 1
+    spice_template: "X{name} {D} {G} {S} {B} pfet_03v3 L={L} W={W} m={M}"
+    pdk: "gf180mcu"
+    
+  # SPICE built-in primitives
+  resistor:
+    doc: "Basic resistor primitive"
+    ports:
+      n1: {dir: in_out}
+      n2: {dir: in_out}
+    parameters:
+      R: "1k"
+      TC1: "0"
+      TC2: "0"
+    spice_template: "R{name} {n1} {n2} {R} TC1={TC1} TC2={TC2}"
+    
+  capacitor:
+    doc: "Basic capacitor primitive"
+    ports:
+      n1: {dir: in_out}
+      n2: {dir: in_out}
+    parameters:
+      C: "1p"
+    spice_template: "C{name} {n1} {n2} {C}"
+  
+  # ====================================
+  # HIERARCHICAL MODULES (with instances)
+  # ====================================
+  
+  # Basic inverter using primitive transistors
+  inverter:
+    doc: "CMOS inverter using PDK primitives"
+    ports:
+      in: {dir: in}
+      out: {dir: out}
+      vdd: {dir: in}
+      vss: {dir: in}
+    variables:
+      nmos_M: 1
+      pmos_M: 2
+      nmos_W: "3u"
+      pmos_W: "6u"
+    instances:
+      MN:
+        model: nfet_03v3
+        mappings: {D: out, G: in, S: vss, B: vss}
+        parameters: {M: nmos_M, W: nmos_W}
+      MP:
+        model: pfet_03v3
+        mappings: {D: out, G: in, S: vdd, B: vdd}
+        parameters: {M: pmos_M, W: pmos_W}
+        
+  # Configured RC filter for buffer
+  buffer_rc_filter:
+    doc: "RC filter configured for buffer application"
+    ports:
+      in: {dir: in}
+      out: {dir: out}
+      gnd: {dir: in}
+    variables:
+      R_val: "5k"
+      C_val: "50p"
+    instances:
+      R1:
+        model: resistor
+        mappings: {n1: in, n2: out}
+        parameters: {R: R_val}
+      C1:
+        model: capacitor
+        mappings: {n1: out, n2: gnd}
+        parameters: {C: C_val}
+        
+  # Current mirror using transistor primitives
+  current_mirror:
+    doc: "NMOS current mirror with 1:2:4 current ratios"
+    ports:
+      iref: {dir: in_out}
+      iout1: {dir: out}
+      iout2: {dir: out}
+      vss: {dir: in}
+    instances:
+      M_REF:
+        model: nfet_03v3
+        mappings: {D: iref, G: iref, S: vss, B: vss}
+        parameters: {M: 1}
+      M_OUT1:
+        model: nfet_03v3
+        mappings: {D: iout1, G: iref, S: vss, B: vss}
+        parameters: {M: 2}  # 2x current
+      M_OUT2:
+        model: nfet_03v3
+        mappings: {D: iout2, G: iref, S: vss, B: vss}
+        parameters: {M: 4}  # 4x current
+        
+  # Top-level: Two-stage buffer combining hierarchical modules
+  two_stage_buffer:
+    doc: "Two-stage buffer with RC filter - demonstrates mixed hierarchy"
+    ports:
+      in: {dir: in}
+      out: {dir: out}
+      vdd: {dir: in}
+      vss: {dir: in}
+    internal_nets: ["stage1_out", "filtered_out"]
+    variables:
+      # Variables for demonstration purposes
+      demo_var: "two_stage_buffer"
+    instances:
+      # First inverter stage
+      INV1:
+        model: inverter
+        mappings: {in: in, out: stage1_out, vdd: vdd, vss: vss}
+        
+      # RC filter between stages
+      FILTER:
+        model: buffer_rc_filter
+        mappings: {in: stage1_out, out: filtered_out, gnd: vss}
+        
+      # Second stage with parallel inverters for higher drive strength
+      INV2A:
+        model: inverter
+        mappings: {in: filtered_out, out: out, vdd: vdd, vss: vss}
+        doc: "First parallel inverter for drive strength"
+      INV2B:
+        model: inverter
+        mappings: {in: filtered_out, out: out, vdd: vdd, vss: vss}
+        doc: "Second parallel inverter for drive strength"
+        
+      # Current mirror for demonstration (not connected to signal path)
+      CM1:
+        model: current_mirror
+        mappings: {iref: vss, iout1: vss, iout2: vss, vss: vss}
+        doc: "Demonstration current mirror - would connect to bias circuitry"

@@ -133,7 +133,7 @@ class Port(Locatable):
     during the pattern expansion phase.
     """
     dir: PortDirection  # schema: description="Port direction classification"
-    type: SignalType  # schema: description="Port signal type classification"
+    type: Optional[SignalType] = None  # schema: description="Optional port signal type classification"
     constraints: Optional[PortConstraints] = None  # schema: description="Optional constraint object"
     metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
 
