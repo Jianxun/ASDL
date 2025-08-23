@@ -12,7 +12,7 @@ from ..data_structures import ASDLFile, Locatable
 from ..diagnostics import Diagnostic, DiagnosticSeverity
 from .core import YAMLLoader, LocatableBuilder
 from .resolvers import DualSyntaxResolver, FieldValidator
-from .sections import FileInfoParser, ImportParser, PortParser, InstanceParser, ModuleParser
+from .sections import FileInfoParser, ImportParser, ModelAliasParser, PortParser, InstanceParser, ModuleParser
 
 
 class ASDLParser:
@@ -43,6 +43,7 @@ class ASDLParser:
         # Create section parsers with dependencies
         self.file_info_parser = FileInfoParser(self.locatable_builder)
         self.import_parser = ImportParser(self.locatable_builder, self.field_validator)
+        self.model_alias_parser = ModelAliasParser(self.locatable_builder, self.field_validator)
         self.port_parser = PortParser(self.locatable_builder, self.field_validator)
         self.instance_parser = InstanceParser(self.locatable_builder, self.field_validator, self.dual_syntax_resolver)
         self.module_parser = ModuleParser(self.port_parser, self.instance_parser,
@@ -121,11 +122,12 @@ class ASDLParser:
         # 3. Section parsing with new parsers
         yaml_data = cast(YAMLObject, data)
         file_info = self.file_info_parser.parse(yaml_data, 'file_info', file_path)
-        imports = self.import_parser.parse(yaml_data.get('imports', {}), diagnostics, file_path)  
+        imports = self.import_parser.parse(yaml_data.get('imports', {}), diagnostics, file_path)
+        model_alias = self.model_alias_parser.parse(yaml_data.get('model_alias', {}), diagnostics, file_path)
         modules = self.module_parser.parse(yaml_data.get('modules', {}), diagnostics, file_path)
         
         # 4. Unknown top-level section validation (preserve P200 logic)
-        allowed_keys = {'file_info', 'imports', 'modules'}
+        allowed_keys = {'file_info', 'imports', 'model_alias', 'modules'}
         if isinstance(data, dict):
             for key in data.keys():
                 if key not in allowed_keys:
@@ -143,6 +145,7 @@ class ASDLParser:
         asdl_file = ASDLFile(
             file_info=file_info,
             imports=imports,
+            model_alias=model_alias,
             modules=modules
         )
         return asdl_file, diagnostics

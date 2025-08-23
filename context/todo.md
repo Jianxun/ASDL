@@ -3,8 +3,8 @@
 The original combined todo list has been split for clarity. Please refer to the new focused files:
 
 ## Active Development (Priority Order)
-- `context/todo_parameter_system.md` – **🔥 HIGH PRIORITY** - Parameter resolving system enhancement (blocks import system)
-- `context/todo_imports.md` – Import system development roadmap (blocked pending parameter system)
+- `context/todo_imports.md` – **🚀 PHASE 1.2 READY** - Import system as elaborator phase (P0503, E0441-E0445)
+- `context/todo_parameter_system.md` – **✅ COMPLETED** - Parameter resolving system enhancement
 - `context/todo_compiler.md` – Compiler / CLI pipeline tasks
 - `context/todo_cli.md` – CLI implementation and testing tasks
 - `context/todo_visualizer.md` – Front-end visualizer work
