@@ -8,8 +8,14 @@ resolution, and model_alias processing.
 
 from .path_resolver import PathResolver
 from .file_loader import FileLoader
+from .module_resolver import ModuleResolver
+from .alias_resolver import AliasResolver
+from .diagnostics import ImportDiagnostics
 
 __all__ = [
     'PathResolver',
-    'FileLoader'
+    'FileLoader',
+    'ModuleResolver',
+    'AliasResolver',
+    'ImportDiagnostics'
 ]
