@@ -17,8 +17,6 @@ from .structures import (
     Locatable,
     Metadata,
     
-    # Import system
-    ImportDeclaration,
     
     # Module system  
     Module,
@@ -49,8 +47,6 @@ __all__ = [
     "Locatable", 
     "Metadata",
     
-    # Import system
-    "ImportDeclaration",
     
     # Module system
     "Module",

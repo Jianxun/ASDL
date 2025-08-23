@@ -27,10 +27,12 @@ class ASDLFile:
     Each ASDL file is like a library that can be included/imported by other files.
     The unified modules field contains both primitive and hierarchical modules.
     The imports field enables dependency resolution across multiple files.
+    The model_alias field provides local shorthand for imported module references.
     """
     file_info: 'FileInfo'  # schema: description="Document metadata; does not affect netlisting"
     modules: Dict[str, 'Module']  # schema: description="Map of unified module definitions (both primitive and hierarchical)"
-    imports: Optional[Dict[str, 'ImportDeclaration']] = None  # schema: description="Map of import aliases to import declarations"
+    imports: Optional[Dict[str, str]] = None  # schema: description="Map of file aliases to .asdl file paths for dependency resolution"
+    model_alias: Optional[Dict[str, str]] = None  # schema: description="Local module aliases mapping to imported module references (alias.module_name format)"
     metadata: Optional[Metadata] = None  # schema: description="Open extension bag; agents should preserve unknown keys"
 
 
@@ -80,18 +82,6 @@ class FileInfo(Locatable):
     metadata: Optional[Dict[str, Any]] = None  # schema: description="Additional metadata for tools and annotations"
 
 
-@dataclass(kw_only=True)
-class ImportDeclaration(Locatable):
-    """
-    Represents a single import declaration: alias: library.filename[@version]
-    
-    This enables the import system's qualified name resolution where
-    library.filename maps to a file path, and alias.module_name references
-    modules within that imported file.
-    """
-    alias: str  # schema: description="Local alias for the imported file"
-    qualified_source: str  # schema: description="library.filename format for source resolution"
-    version: Optional[str] = None  # schema: description="Optional @version tag for version-specific imports"
 
 
 

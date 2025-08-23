@@ -1,109 +1,144 @@
-# ASDL Import System Development Todos
+# ASDL Import System Development Todos (MVP Implementation)
 
-## 🎯 Current Status: Phase 0 Data Structures ✅ COMPLETED → Phase 1 READY TO START
+## 🎯 Current Status: Phase 1.1 Implementation → In Progress
 
-**Achieved:**
-- ✅ **Unified Module Architecture**: Merged DeviceModel and Module into single class
-- ✅ **ASDLFile Simplification**: Removed models field, added imports field
-- ✅ **Import Foundation**: Added ImportDeclaration class for alias: library.filename[@version]
-- ✅ **Comprehensive Tests**: 37 tests passing across T0.1, T0.2, T0.3, T0.4, T0.5
-- ✅ **Breaking Changes**: Clean elimination of DeviceModel/Module redundancy
-- ✅ **Generator Unification**: Primitive modules generate inline SPICE, hierarchical generate .subckt definitions
+**Architecture Complete (2025-08-23):**
+- ✅ **Simplified Import Syntax**: Direct file paths `library_dir/file_name.asdl`
+- ✅ **model_alias Section**: Local module aliasing for technology portability
+- ✅ **ASDL_PATH Resolution**: Unix-like path-based file discovery
+- ✅ **Tool Separation**: ASDL handles imports, ams-compose handles versioning
+- ✅ **Unit Device Strategy**: Primitive modules for LVS compatibility
+- ✅ **Modular Structure**: Import system under `src/asdl/import/` following parser pattern
+- ✅ **MVP Error Codes**: 6 critical diagnostic codes defined (I0501, I0502, I0511, I0521, I0523, I0524)
 
-**✅ UNBLOCKED: Parameter System Enhancement Complete (2025-08-20)**
-**Decision**: Parameter resolving system successfully implemented with full TDD coverage. Import system Phase 1 ready to proceed.
+**MVP Design Decisions (Breaking Changes Allowed):**
+- **Removed**: Complex library registry with `asdl.lib.yaml`
+- **Removed**: `qualified.source.name` import syntax
+- **Removed**: ImportDeclaration class complexity
+- **Added**: `model_alias` section for local module shorthand
+- **Added**: ASDL_PATH environment variable resolution
+- **Simplified**: Direct file path imports as simple strings
+- **Scoped**: MVP-focused, no backward compatibility constraints
 
-**Next Phase**: Import System Phase 1 MVP Implementation
+**Phase 1.1 Implementation Started**: Data structure simplification for MVP
 
-## Phase 0: Data Structure Unification (Breaking Refactor) ✅ COMPLETED
-- [x] **Delete DeviceModel class entirely** - aggressive cleanup
-- [x] **Remove `models` section completely** - no backward compatibility  
-- [x] **Rewrite parser** - single unified module parsing path only ✅ COMPLETED
-- [x] **Rewrite generator** - unified module handling (primitive vs hierarchical) ✅ COMPLETED
-- [ ] **Update all existing ASDL files** - migrate `models` → `modules` with `spice_template`
+## New Architecture Summary
 
-## Phase 1: Core Import Infrastructure (MVP)
-- [ ] Basic import syntax: `alias: library.filename`
-- [ ] Library registry with `asdl.lib.yaml` support
-- [ ] Single-level import resolution (no transitive imports)
-- [ ] Qualified module references: `alias.module_name`
-- [ ] Integration with existing elaboration pipeline
+### **Data Structure Requirements**
+```python
+@dataclass  
+class ASDLFile:
+    file_info: FileInfo
+    imports: Optional[Dict[str, str]] = None      # file_alias: path/to/file.asdl
+    model_alias: Optional[Dict[str, str]] = None  # local_name: file_alias.module_name
+    modules: Dict[str, Module]
+```
 
-## Phase 2: Enhanced Import Features
-- [ ] Transitive import resolution with circular detection
-- [ ] Enhanced error diagnostics for import failures
-- [ ] PDK integration with `.include` generation
-- [ ] Core primitive vs hierarchical validation
+### **Import Resolution Flow**
+1. **File Discovery**: ASDL_PATH resolution (CLI → config → env → defaults)
+2. **Import Loading**: Load .asdl files and extract modules
+3. **Alias Resolution**: Map local aliases to qualified module names
+4. **Module Resolution**: Three-step lookup (local → alias → imports)
 
-## Phase 3: Advanced Features
-- [ ] Parameterized imports with variable substitution
-- [ ] Version constraint support
-- [ ] Optional practice guideline linting (3-layer architecture suggestions)
-- [ ] Cross-technology design validation
+### **Phase 1 MVP Scope**
+- Direct file path imports (`alias: path/file.asdl`)
+- `model_alias` section parsing and resolution
+- ASDL_PATH-based file discovery
+- MVP error codes: I0501, I0502, I0511, I0521, I0523, I0524
+- Modular structure under `src/asdl/import/` following parser pattern
+- Integration with existing elaboration pipeline
 
-## Detailed Task Breakdown
+## Implementation Components
 
-### Phase 0 Tasks ✅ COMPLETED (Data Structures)
-- [x] Remove `DeviceModel` class from `src/asdl/data_structures.py`
-- [x] Add `spice_template` field to unified `Module` class
-- [x] Add `ImportDeclaration` class to data structures
-- [x] Add `pdk` field to Module for .include generation
-- [x] Update `Instance` class methods for unified architecture
-- [x] Remove `models` field from `ASDLFile`, add `imports` field
-- [x] Add mutual exclusion validation (`spice_template` XOR `instances`)
-- [x] Remove `models` section parsing from `src/asdl/parser.py` ✅ COMPLETED
-- [x] Implement unified module parsing (handle both primitive and hierarchical) ✅ COMPLETED
-- [x] Update `src/asdl/generator.py` for unified module handling: ✅ COMPLETED
-  - [x] Primitive modules → inline SPICE generation ✅ COMPLETED
-  - [x] Hierarchical modules → `.subckt` definition generation ✅ COMPLETED
-- [ ] Migrate existing ASDL files to new format
+### **Phase 1: Core Import Infrastructure**
 
-### Phase 1 Tasks
-- [ ] Create `src/asdl/library_registry.py`:
-  - [ ] `LibraryRegistry` class
-  - [ ] `asdl.lib.yaml` configuration support
-  - [ ] `library.filename` → file path resolution
-- [ ] Create `src/asdl/import_resolver.py`:
-  - [ ] `ImportResolver` class
-  - [ ] Basic import resolution and merging
-  - [ ] Namespace management for imported modules
-- [ ] Add `imports` section parsing to parser
-- [ ] Validate `alias: library.filename[@version]` format
-- [ ] Update `src/asdl/elaborator.py`:
-  - [ ] Two-stage elaboration (imports first, then patterns)
-  - [ ] Qualified name resolution (`alias.module_name`)
+#### **1.1 Data Structure Updates (MVP - Breaking Changes OK)**
+- [ ] Add `model_alias` field to `ASDLFile` dataclass
+- [ ] Simplify `imports` field from ImportDeclaration to simple Dict[str, str]
+- [ ] Remove ImportDeclaration class entirely (breaking change)
+- [ ] Update import-related tests for new simplified structure
+- [ ] Verify schema generation works with updated structure
 
-### Phase 2 Tasks
-- [ ] Add circular dependency detection to import resolver
-- [ ] Implement transitive import resolution
-- [ ] Add PDK `.include` statement generation
-- [ ] Enhanced diagnostic messages for import failures
-- [ ] Core validation for primitive vs hierarchical modules
+#### **1.2 Modular Import System Structure**
+- [ ] Create `src/asdl/import/` directory with modular structure:
+  - [ ] `__init__.py` - Public API exports
+  - [ ] `core/path_resolver.py` - ASDL_PATH resolution logic
+  - [ ] `core/file_cache.py` - File caching and circular dependency detection
+  - [ ] `resolvers/module_resolver.py` - Three-step module lookup
+  - [ ] `resolvers/alias_resolver.py` - model_alias resolution
+  - [ ] `import_loader.py` - Main orchestrator class
+  - [ ] `model_alias_parser.py` - Parser for model_alias section
+  - [ ] `diagnostics.py` - MVP error codes (I0501, I0502, I0511, I0521, I0523, I0524)
 
-### Phase 3 Tasks
-- [ ] Create `src/asdl/linting.py` for optional practice guidelines
-- [ ] Implement parameterized import syntax (`${variable}` substitution)
-- [ ] Add version constraint parsing and validation
-- [ ] Cross-technology design validation tools
+#### **1.3 Parser Integration**
+- [ ] Update `src/asdl/parser/sections/import_parser.py` for simple file paths
+- [ ] Add model_alias parser following existing section parser patterns
+- [ ] Update main parser to use new import structure
 
-## Testing Tasks ✅ COMPLETED (Phase 0)
-- [x] **T0.1**: Unit tests for unified Module class architecture (8 tests)
-- [x] **T0.2**: Unit tests for unified ASDLFile structure (6 tests)  
-- [x] **T0.3**: Unit tests for ImportDeclaration foundation (7 tests)
-- [x] **T0.4**: Unit tests for parser simplification ✅ COMPLETED
-- [x] **T0.5**: Unit tests for SPICE generation unification ✅ COMPLETED
-- [ ] **T0.6**: Unit tests for core validation logic
-- [ ] **T0.7**: Integration tests for format migration validation
-- [ ] **T0.8**: Integration tests for regression prevention
+#### **1.4 Data Structure & Elaborator Updates**
+- [ ] Add `model_alias` field to `ASDLFile` dataclass
+- [ ] Update `src/asdl/elaborator/elaborator.py` for two-stage processing
+- [ ] Update schema generation to include model_alias field
+
+#### **1.5 CLI & Testing**
+- [ ] Update CLI to support `--search-path` arguments  
+- [ ] Add unit tests for import system modules (TDD approach)
+- [ ] Add integration tests for end-to-end import workflows
+- [ ] Add configuration support for search paths in `asdl.config.yaml`
+
+### **Backlog: Enhanced Features** 
+- [ ] **Phase 2 - Hardening**: Enhanced error codes (I0503, I0504, I0512-I0514, I0522)
+- [ ] **Phase 2 - Quality**: Warnings for unused imports, redundant aliases (I0601-I0604)  
+- [ ] **Phase 2 - Features**: Transitive imports, enhanced diagnostics
+- [ ] **Phase 3 - Advanced**: Import caching, dependency visualization, cross-technology validation
+
+## Testing Strategy
+
+### **MVP Testing (TDD Approach)**
+- [ ] **T1.1**: File resolution with ASDL_PATH (4 tests)
+- [ ] **T1.2**: model_alias parsing and validation (3 tests)  
+- [ ] **T1.3**: Module resolution three-step lookup (6 tests)
+- [ ] **T1.4**: MVP error handling (6 tests for I0501, I0502, I0511, I0521, I0523, I0524)
+- [ ] **T1.5**: End-to-end import workflow (3 tests)
+- [ ] **T1.6**: CLI integration with search paths (2 tests)
+
+### **Backlog Testing**
+- [ ] Import loading with caching and circular dependency detection  
+- [ ] Enhanced error handling and diagnostics
+- [ ] Performance testing for large import graphs
+
+## Success Criteria
+
+### **MVP Definition of Done**
+1. **Direct File Imports**: `alias: path/file.asdl` syntax working
+2. **model_alias Support**: Local module aliasing functional  
+3. **ASDL_PATH Resolution**: File discovery through search paths
+4. **Module Resolution**: Three-step lookup (local → alias → imports)
+5. **MVP Error Handling**: 6 critical error codes implemented (I0501, I0502, I0511, I0521, I0523, I0524)
+6. **Modular Structure**: Clean separation under `src/asdl/import/` following parser pattern
+7. **Integration**: Works with existing elaboration pipeline
+8. **Testing**: All MVP unit and integration tests passing (24 total tests)
+
+### **MVP Constraints (No Backward Compatibility)**
+- ✅ **Breaking changes allowed** for cleaner architecture
+- ✅ **Focus on MVP functionality** over legacy support
+- [ ] Existing module/instance syntax preserved (core functionality)
 
 ## Documentation Tasks
-- [ ] Update user documentation for new unified module syntax
-- [ ] Create migration guide from old `models` to new `modules` format
-- [ ] Document import system usage and best practices
-- [ ] Document 3-layer architecture practice guidelines
+- [ ] Update user guide with import system usage
+- [ ] Create import system tutorial with examples
+- [ ] Document ASDL_PATH configuration and best practices
+- [ ] Update API documentation for new classes
 
-## Breaking Changes Migration
-- [ ] Identify all existing ASDL files using `models` section
-- [ ] Create automated migration scripts for format conversion
-- [ ] Update example files and tutorials
-- [ ] Update test fixtures to new format
+## Notes
+- **No Library Registry**: Simplified to direct file paths
+- **No Versioning**: Delegated to external tools (ams-compose)
+- **LVS Focus**: Unit devices as primitives maintains compatibility
+- **Path-Based**: Familiar Unix-like resolution for developers
+- **MVP-Focused**: 6 critical error codes for core functionality, hardening moved to backlog
+- **Modular Design**: Following established parser structure pattern
+
+## Context References
+- `doc/import_system/asdl_import_dependency_management.md` - Complete architecture specification
+- `context/memory.md` - Updated with new architectural decisions
+- Previous Phase 0 data structure work already completed and compatible
