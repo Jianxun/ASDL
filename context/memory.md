@@ -47,6 +47,7 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - **CLI Integration**: Add --search-path arguments and import resolution support
 - **Integration Testing**: End-to-end pipeline validation with real circuit examples
 - **Documentation**: Import system usage guide and best practices
+  - See also: context/import_implementations.md for a distilled implementation snapshot
 
 ## Recent Design Evolution
 
