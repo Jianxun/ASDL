@@ -1,10 +1,12 @@
 from typing import List, Tuple, Dict, Any, Optional
+from pathlib import Path
 from dataclasses import replace
 
 from ..data_structures import ASDLFile, Module, Port, Locatable, Instance
 from ..diagnostics import Diagnostic, DiagnosticSeverity
 from .pattern_expander import PatternExpander
 from .variable_resolver import VariableResolver
+from .import_ import ImportResolver
 
 
 class Elaborator:
@@ -18,6 +20,7 @@ class Elaborator:
     def __init__(self):
         self.pattern_expander = PatternExpander()
         self.variable_resolver = VariableResolver()
+        self._import_resolver = ImportResolver()
 
     def elaborate(
         self, asdl_file: ASDLFile
@@ -36,6 +39,40 @@ class Elaborator:
             except Exception as e:
                 raise ValueError(f"Error processing module '{name}': {e}") from e
 
+        return elaborated_file, diagnostics
+
+    def elaborate_with_imports(
+        self,
+        main_file_path: Path,
+        search_paths: Optional[List[Path]] = None,
+        top: Optional[str] = None,
+    ) -> Tuple[Optional[ASDLFile], List[Diagnostic]]:
+        """
+        Phase 0 skeleton orchestrator: resolve imports, then run pattern and variable phases.
+
+        Args:
+            main_file_path: Path to the main .asdl file
+            search_paths: Optional list of search roots used for import resolution
+            top: Optional override for top module name
+
+        Returns:
+            Tuple of (elaborated_file, diagnostics)
+        """
+        # Phase 0: Import resolution (includes parsing of main file)
+        flattened_file, diagnostics = self._import_resolver.resolve_imports(
+            main_file_path, search_paths
+        )
+
+        if flattened_file is None:
+            return None, diagnostics
+
+        # Apply top module override if provided
+        if top:
+            flattened_file.file_info.top_module = top
+
+        # Phase 1 & 2: Pattern expansion and variable resolution (existing flow)
+        elaborated_file, elab_diags = self.elaborate(flattened_file)
+        diagnostics.extend(elab_diags)
         return elaborated_file, diagnostics
 
     def _elaborate_module(self, module: Module, module_name: str) -> Tuple[Module, List[Diagnostic]]:

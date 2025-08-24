@@ -243,10 +243,34 @@ class ImportResolver:
         Returns:
             Flattened ASDLFile with all modules combined
         """
-        # Start with main file modules
-        all_modules = dict(main_file.modules) if main_file.modules else {}
+        # Helper to rewrite instance model references
+        def _rewrite_module_instance_models(module, file_model_alias):
+            # Make a shallow copy with new instances mapping if present
+            if module.instances is None:
+                return module
+            new_instances = {}
+            for inst_id, inst in module.instances.items():
+                model_name = inst.model
+                # 1) Strip qualified import alias (e.g., op.mod -> mod)
+                if isinstance(model_name, str) and '.' in model_name:
+                    model_name = model_name.split('.', 1)[1]
+                # 2) Apply file-local model_alias mapping (e.g., nmos -> prim.nfet_03v3 -> nfet_03v3)
+                if file_model_alias and model_name in file_model_alias:
+                    qualified_ref = file_model_alias[model_name]
+                    if '.' in qualified_ref:
+                        model_name = qualified_ref.split('.', 1)[1]
+                    else:
+                        model_name = qualified_ref
+                new_instances[inst_id] = replace(inst, model=model_name)
+            return replace(module, instances=new_instances)
+
+        # Start with main file modules (apply stripping of qualified refs and local model_alias if any)
+        all_modules = {}
+        if main_file.modules:
+            for name, module in main_file.modules.items():
+                all_modules[name] = _rewrite_module_instance_models(module, main_file.model_alias)
         
-        # Add modules from all imported files
+        # Add modules from all imported files, applying their own model_alias rewriting
         for imported_file in loaded_files.values():
             if imported_file.modules:
                 for module_name, module in imported_file.modules.items():
@@ -255,7 +279,7 @@ class ImportResolver:
                         # For now, imported modules override local ones
                         # In future, this could generate a warning
                         pass
-                    all_modules[module_name] = module
+                    all_modules[module_name] = _rewrite_module_instance_models(module, imported_file.model_alias)
         
         # Create flattened file preserving original metadata
         flattened_file = replace(
