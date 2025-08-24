@@ -11,11 +11,13 @@ from .file_loader import FileLoader
 from .module_resolver import ModuleResolver
 from .alias_resolver import AliasResolver
 from .diagnostics import ImportDiagnostics
+from .import_resolver import ImportResolver
 
 __all__ = [
     'PathResolver',
     'FileLoader',
     'ModuleResolver',
     'AliasResolver',
-    'ImportDiagnostics'
+    'ImportDiagnostics',
+    'ImportResolver'
 ]
