@@ -14,6 +14,11 @@ from ..diagnostics import Diagnostic, DiagnosticSeverity
 
 # Diagnostic definitions for the Generator component
 GENERATOR_DIAGNOSTICS: Dict[str, Tuple[str, str]] = {
+    # Syntax/Configuration errors (G01xx)
+    "G0102": (
+        "Top Module Not Found",
+        "Top module '{top_module}' not found; available modules: {available}.",
+    ),
     # Semantic errors (G03xx)
     "G0301": (
         "Cannot Generate SPICE",

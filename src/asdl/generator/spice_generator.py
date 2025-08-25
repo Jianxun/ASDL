@@ -89,6 +89,19 @@ class SPICEGenerator:
                 top_module = asdl_file.modules[top_module_name]
                 lines.append(f"* Main circuit instantiation")
                 lines.append(f"XMAIN {self._get_top_level_nets(top_module)} {top_module_name}")
+            else:
+                # Emit diagnostic G0102 and add helpful header comment
+                available = sorted(asdl_file.modules.keys())
+                self._pending_diagnostics.append(
+                    create_generator_diagnostic(
+                        "G0102",
+                        top_module=top_module_name,
+                        available=str(available),
+                    )
+                )
+                lines.append(
+                    f"* ERROR G0102: top module '{top_module_name}' not found; available: {available}"
+                )
         
         # End SPICE netlist (ngspice compatibility)
         lines.append("")
