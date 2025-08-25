@@ -24,6 +24,11 @@ GENERATOR_DIAGNOSTICS: Dict[str, Tuple[str, str]] = {
         "Unconnected Port in Subcircuit Call",
         "Instance '{instance_id}' of '{model}' missing mappings for: {missing}.",
     ),
+    # Style/quality warnings (G06xx)
+    "G0601": (
+        "Variable Shadows Parameter",
+        "Variable '{param}' shadows parameter on instance '{instance_id}' of '{model}'. Using variable value.",
+    ),
     # Semantic errors (G03xx)
     "G0301": (
         "Cannot Generate SPICE",

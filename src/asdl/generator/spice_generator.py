@@ -295,13 +295,24 @@ class SPICEGenerator:
             merged_params.update(module.parameters)
         if instance.parameters:
             merged_params.update(instance.parameters)
-            
+
         for param_name, param_value in merged_params.items():
             template_data[param_name] = param_value
         
         # Add variable substitutions (variables shadow parameters with same names)
         if module.variables:
             for var_name, var_value in module.variables.items():
+                # If a parameter with the same name exists (from module or instance), this is a shadow
+                if var_name in template_data:
+                    # Emit warning diagnostic about shadowing
+                    self._pending_diagnostics.append(
+                        create_generator_diagnostic(
+                            "G0601",
+                            param=var_name,
+                            instance_id=instance_id,
+                            model=instance.model,
+                        )
+                    )
                 template_data[var_name] = var_value  # Variables override parameters
         
         # Apply substitutions to the spice_template using safe formatting.

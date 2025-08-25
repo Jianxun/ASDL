@@ -68,9 +68,13 @@ def test_variable_shadowing_of_parameters():
     )
 
     generator = SPICEGenerator()
-    spice_output, _ = generator.generate(asdl_file)
+    spice_output, diagnostics = generator.generate(asdl_file)
 
+    # Variable 'temp' should shadow parameter override
     assert "RR1 in out 2k temp=75" in spice_output
+
+    # Should emit a WARNING diagnostic about shadowing
+    assert any(d.code == "G0601" and "temp" in d.details for d in diagnostics)
 
 
 def test_template_with_variables_only():
