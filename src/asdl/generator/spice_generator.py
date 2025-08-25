@@ -119,6 +119,12 @@ class SPICEGenerator:
                 lines.append(
                     f"* ERROR G0102: top module '{top_module_name}' not found; available: {available}"
                 )
+        else:
+            # No top specified, emit informational I0701
+            self._pending_diagnostics.append(
+                create_generator_diagnostic("I0701")
+            )
+            lines.append("* INFO I0701: no top module specified; skipping main instantiation")
         
         # End SPICE netlist (ngspice compatibility)
         lines.append("")
@@ -194,6 +200,24 @@ class SPICEGenerator:
                         create_generator_diagnostic("G0401", model=instance.model)
                     )
                     lines.append(f"{self.indent}* ERROR G0401: unknown model '{instance.model}'")
+                    continue
+                # Validate all required port mappings exist
+                child_module = asdl_file.modules[instance.model]
+                required_ports = self._get_port_list(child_module)
+                missing_ports = [p for p in required_ports if p not in (instance.mappings or {})]
+                if missing_ports:
+                    self._pending_diagnostics.append(
+                        create_generator_diagnostic(
+                            "G0201",
+                            instance_id=instance_id,
+                            model=instance.model,
+                            missing=str(missing_ports),
+                        )
+                    )
+                    lines.append(
+                        f"{self.indent}* ERROR G0201: instance '{instance_id}' of '{instance.model}' missing mappings for: {missing_ports}"
+                    )
+                    # Skip emitting this instance
                     continue
                 instance_line = self.generate_instance(
                     instance_id, instance, asdl_file

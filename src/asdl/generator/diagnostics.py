@@ -19,6 +19,11 @@ GENERATOR_DIAGNOSTICS: Dict[str, Tuple[str, str]] = {
         "Top Module Not Found",
         "Top module '{top_module}' not found; available modules: {available}.",
     ),
+    # Schema/connection errors (G02xx)
+    "G0201": (
+        "Unconnected Port in Subcircuit Call",
+        "Instance '{instance_id}' of '{model}' missing mappings for: {missing}.",
+    ),
     # Semantic errors (G03xx)
     "G0301": (
         "Cannot Generate SPICE",
@@ -45,6 +50,11 @@ GENERATOR_DIAGNOSTICS: Dict[str, Tuple[str, str]] = {
     "G0502": (
         "Template Processing Error",
         "Error processing SPICE template: {error}.",
+    ),
+    # Informational (custom prefix kept as planned for tests)
+    "I0701": (
+        "Missing Top Module",
+        "No top module specified; skipping main instantiation.",
     ),
 }
 
