@@ -37,11 +37,18 @@ This file distills the working context for the ASDL import system to avoid re-re
 - Flattened output preserves main file metadata; modules are combined; instance model names normalized for downstream passes.
 
 ## Known Gaps (Next Phase Targets)
-- Enforce E0443/E0444 for unresolved/invalid instance models post-flatten.
-- Warnings for unused imports and unused model_alias entries.
 - Prune unreachable modules based on top_module/--top; deterministic module order.
-- Improve file-not-found diagnostics with explicit probe paths.
 - Optional config file support to merge search paths (CLI -> config -> env -> defaults).
+
+## Recent Changes (2025-08-25)
+- Implemented post-load validation for instance model references:
+  - E0443: Module Not Found in Import
+  - E0444: Import Alias Not Found
+- Added quality warnings:
+  - I0601: Unused Import Alias
+  - I0602: Unused Model Alias
+- Enhanced E0441 details to include explicit probe paths searched.
+- CLI (`asdl netlist`) now skips generation when any ERROR diagnostics exist so errors are surfaced instead of runtime exceptions.
 
 ## Example Fixture
 - examples/imports/toy/: primitives.asdl, opamp.asdl, top.asdl (netlists to top.spice).

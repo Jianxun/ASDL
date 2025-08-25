@@ -79,6 +79,17 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
   - Applies `model_alias` to bind to local module names before downstream phases
 - Added toy example under `examples/imports/toy` and verified end-to-end netlisting to `examples/imports/toy/top.spice`
 
+### **Phase 1.2.6 (2025-08-25)**
+- Implemented post-load validation for qualified instance references:
+  - **E0444** Unknown import alias
+  - **E0443** Module not found in imported file
+- Added quality warnings:
+  - **I0601** Unused import alias
+  - **I0602** Unused model alias
+- Enhanced **E0441** details to include explicit probe paths.
+- Updated CLI `netlist` to skip generation when any ERROR diagnostics exist (prevents runtime exceptions and surfaces diagnostics).
+- Added unit tests for E0443/E0444 and probe paths; scaffolded CLI integration test for toy example.
+
 ## Previous Evolution (2025-08-23)
 
 ### **Phase 1.1 Completed - Data Structure Simplification**
