@@ -51,14 +51,16 @@ def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose:
             diagnostics.extend(validator.validate_file_parameter_overrides(elaborated_file))
             diagnostics.extend(validator.validate_module_parameter_fields(elaborated_file))
             
-            if verbose:
-                click.echo("[generate] writing SPICE netlist…")
-            generator = SPICEGenerator()
-            netlist_str, generator_diags = generator.generate(elaborated_file)
-            diagnostics.extend(generator_diags)
-            artifact_path = output if output else input.with_suffix(".spice")
-            artifact_path.parent.mkdir(parents=True, exist_ok=True)
-            artifact_path.write_text(netlist_str, encoding="utf-8")
+            # If there are any prior ERROR diagnostics, skip generation
+            if not has_error(diagnostics):
+                if verbose:
+                    click.echo("[generate] writing SPICE netlist…")
+                generator = SPICEGenerator()
+                netlist_str, generator_diags = generator.generate(elaborated_file)
+                diagnostics.extend(generator_diags)
+                artifact_path = output if output else input.with_suffix(".spice")
+                artifact_path.parent.mkdir(parents=True, exist_ok=True)
+                artifact_path.write_text(netlist_str, encoding="utf-8")
 
         exit_code = 1 if has_error(diagnostics) else exit_code
 

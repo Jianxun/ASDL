@@ -84,14 +84,14 @@ class ImportResolver:
             search_paths = self.path_resolver.get_search_paths()
         
         # Step 3: Load all import dependencies
-        loaded_files, load_diagnostics = self._load_all_dependencies(
+        loaded_files, alias_resolution_map, load_diagnostics = self._load_all_dependencies(
             main_file, search_paths, main_file_path
         )
         all_diagnostics.extend(load_diagnostics)
         
         # Step 4: Validate import references and aliases
         validation_diagnostics = self._validate_imports_and_aliases(
-            main_file, loaded_files
+            main_file, main_file_path, loaded_files, alias_resolution_map
         )
         all_diagnostics.extend(validation_diagnostics)
         
@@ -105,7 +105,7 @@ class ImportResolver:
         main_file: ASDLFile,
         search_paths: List[Path],
         main_file_path: Path
-    ) -> Tuple[Dict[Path, ASDLFile], List[Diagnostic]]:
+    ) -> Tuple[Dict[Path, ASDLFile], Dict[Path, Dict[str, Optional[Path]]], List[Diagnostic]]:
         """
         Load all import dependencies recursively with circular detection.
         
@@ -121,15 +121,17 @@ class ImportResolver:
             Tuple of (loaded_files_dict, diagnostics_list)
         """
         loaded_files: Dict[Path, ASDLFile] = {}
+        # Map of file path -> (import alias -> resolved path or None if not found)
+        alias_resolution_map: Dict[Path, Dict[str, Optional[Path]]] = {}
         all_diagnostics = []
         
         # Use recursive helper for proper circular detection
         self._load_file_recursive(
-            main_file, main_file_path, search_paths, 
-            loaded_files, all_diagnostics, []
+            main_file, main_file_path, search_paths,
+            loaded_files, alias_resolution_map, all_diagnostics, []
         )
         
-        return loaded_files, all_diagnostics
+        return loaded_files, alias_resolution_map, all_diagnostics
     
     def _load_file_recursive(
         self,
@@ -137,6 +139,7 @@ class ImportResolver:
         current_path: Path,
         search_paths: List[Path],
         loaded_files: Dict[Path, ASDLFile],
+        alias_resolution_map: Dict[Path, Dict[str, Optional[Path]]],
         all_diagnostics: List[Diagnostic],
         loading_stack: List[Path]
     ) -> None:
@@ -154,12 +157,17 @@ class ImportResolver:
         # Process imports in current file
         if not current_file.imports:
             return
+        # Initialize alias map for this file
+        if current_path not in alias_resolution_map:
+            alias_resolution_map[current_path] = {}
             
         for import_alias, import_path in current_file.imports.items():
             # Resolve import path
             resolved_path = self.path_resolver.resolve_file_path(
                 import_path, search_paths
             )
+            # Record resolution result (could be None)
+            alias_resolution_map[current_path][import_alias] = resolved_path
             
             if resolved_path is None:
                 # File not found
@@ -192,13 +200,15 @@ class ImportResolver:
                 # Recursively process imports in loaded file
                 self._load_file_recursive(
                     loaded_file, resolved_path, search_paths,
-                    loaded_files, all_diagnostics, loading_stack + [current_path]
+                    loaded_files, alias_resolution_map, all_diagnostics, loading_stack + [current_path]
                 )
     
     def _validate_imports_and_aliases(
         self,
         main_file: ASDLFile,
-        loaded_files: Dict[Path, ASDLFile]
+        main_file_path: Path,
+        loaded_files: Dict[Path, ASDLFile],
+        alias_resolution_map: Dict[Path, Dict[str, Optional[Path]]]
     ) -> List[Diagnostic]:
         """
         Validate import references and model aliases.
@@ -218,11 +228,70 @@ class ImportResolver:
         )
         diagnostics.extend(alias_diagnostics)
         
-        # TODO: Add more validation as needed
-        # - Validate module references in instances
-        # - Check for conflicting module names across files
-        # - Validate port mapping compatibility
+        # Validate qualified module references in instances (E0443/E0444)
+        diagnostics.extend(self._validate_instance_model_references(
+            main_file, main_file_path, loaded_files, alias_resolution_map
+        ))
         
+        return diagnostics
+
+    def _validate_instance_model_references(
+        self,
+        main_file: ASDLFile,
+        main_file_path: Path,
+        loaded_files: Dict[Path, ASDLFile],
+        alias_resolution_map: Dict[Path, Dict[str, Optional[Path]]]
+    ) -> List[Diagnostic]:
+        """
+        Validate instance model references that use qualified import alias syntax.
+        Emits E0444 when the import alias is unknown and E0443 when the module
+        is not found in the imported file.
+        """
+        diagnostics: List[Diagnostic] = []
+
+        # Build iterable of (file_path, asdl_file) to validate: main + all imported
+        files_to_scan: List[Tuple[Path, ASDLFile]] = [(main_file_path, main_file)]
+        files_to_scan.extend(list(loaded_files.items()))
+
+        for file_path, asdl_file in files_to_scan:
+            if not asdl_file.modules:
+                continue
+            imports_for_file: Dict[str, str] = asdl_file.imports or {}
+            available_imports = list(imports_for_file.keys())
+            alias_map_for_file = alias_resolution_map.get(file_path, {})
+
+            for module in asdl_file.modules.values():
+                instances = getattr(module, "instances", None)
+                if not instances:
+                    continue
+                for inst in instances.values():
+                    model_ref = getattr(inst, "model", None)
+                    if not isinstance(model_ref, str) or '.' not in model_ref:
+                        continue
+                    # Qualified reference "alias.module"
+                    alias, module_name = model_ref.split('.', 1)
+                    if alias not in imports_for_file:
+                        diagnostics.append(
+                            self.diagnostics.create_import_alias_not_found_error(
+                                alias, model_ref, available_imports
+                            )
+                        )
+                        continue
+                    # Resolve alias to file path used during loading
+                    resolved_path = alias_map_for_file.get(alias)
+                    imported_file = loaded_files.get(resolved_path) if resolved_path else None
+                    available_modules: List[str] = []
+                    if imported_file and imported_file.modules:
+                        available_modules = list(imported_file.modules.keys())
+                    if imported_file is None or module_name not in (imported_file.modules or {}):
+                        # Use resolved path if available, else fallback to raw path string
+                        import_file_path = resolved_path if resolved_path else Path(imports_for_file[alias])
+                        diagnostics.append(
+                            self.diagnostics.create_module_not_found_error(
+                                module_name, alias, import_file_path, available_modules
+                            )
+                        )
+
         return diagnostics
     
     def _flatten_modules(

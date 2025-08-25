@@ -266,6 +266,8 @@ modules:
             file_not_found_errors = [d for d in diagnostics if d.code == "E0441"]
             assert len(file_not_found_errors) >= 1
             assert any("nonexistent_file.asdl" in d.details for d in file_not_found_errors)
+
+            # Additional validation-specific errors may be present depending on loaded context
     
     def test_circular_import_detection(self):
         """
@@ -370,3 +372,51 @@ modules:
             # Should have found and loaded the shared component
             assert "shared_component" in result.modules
             assert result.modules["shared_component"].spice_template == "shared template"
+
+    def test_qualified_reference_errors_E0443_E0444(self):
+        """
+        T1.8.7: Qualified Reference Validation
+        TESTS: Emit E0444 when alias unknown, E0443 when module missing in imported file
+        VALIDATES: Post-load validation of instance model references
+        """
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            # Main file references two qualified models: one with unknown alias, one with valid alias but missing module
+            main_file_path = temp_path / "main.asdl"
+            main_file_path.write_text(
+                """
+file_info:
+  top_module: main
+imports:
+  lib1: devices.asdl
+modules:
+  top:
+    instances:
+      I_BAD_ALIAS: {model: missing_alias.some_mod}
+      I_BAD_MODULE: {model: lib1.unknown_mod}
+"""
+            )
+            # devices.asdl exists but does not define unknown_mod
+            devices_path = temp_path / "devices.asdl"
+            devices_path.write_text(
+                """
+file_info:
+  top_module: devices
+modules:
+  known_mod:
+    spice_template: "X{name} {A} {B} known"
+"""
+            )
+
+            result, diagnostics = self.resolver.resolve_imports(
+                main_file_path, search_paths=[temp_path]
+            )
+            assert result is not None
+            # Expect E0444 for unknown alias 'missing_alias'
+            e0444_alias = [d for d in diagnostics if d.code == "E0444" and "Import Alias Not Found" in d.title]
+            assert len(e0444_alias) >= 1
+            assert any("missing_alias" in d.details for d in e0444_alias)
+            # Expect E0443 for module not found in import 'lib1'
+            e0443 = [d for d in diagnostics if d.code == "E0443"]
+            assert len(e0443) >= 1
+            assert any("unknown_mod" in d.details and "lib1" in d.details for d in e0443)
