@@ -369,7 +369,7 @@ class TestUnifiedGeneration:
     def test_error_handling_for_invalid_modules(self):
         """
         TESTS: Generator handles invalid module references gracefully
-        VALIDATES: Clear error messages for missing models
+        VALIDATES: Diagnostic G0401 for missing models
         ENSURES: Robust error handling in unified architecture
         """
         test_module = Module(
@@ -387,9 +387,10 @@ class TestUnifiedGeneration:
         )
         
         generator = SPICEGenerator()
-        
-        with pytest.raises(ValueError, match="Unknown model reference: nonexistent_module"):
-            generator.generate(asdl_file)
+        subckt = generator.generate_subckt(test_module, "test", asdl_file)
+        output, diags = generator.generate(asdl_file)
+        assert any(d.code == "G0401" for d in diags)
+        assert "G0401" in subckt
     
     def test_empty_design_generation(self):
         """
