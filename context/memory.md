@@ -93,9 +93,10 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 
 ### **Generator Refactor & XCCSS Migration (2025-08-25)**
 - Refactored monolithic `src/asdl/generator.py` into package `src/asdl/generator/` with `spice_generator.py` and `diagnostics.py`.
-- Adopted XCCSS diagnostics for generator; implemented `G0305` (unresolved placeholders) and defined `G0401` (unknown model reference). Added per-code unit tests under `tests/unit_tests/generator/`.
-- Consolidated misplaced root test into unit tests; moved pipeline structure tests to `tests/integration/generator/`.
-- Rewrote unit tests to target public behavior of unified generator (no legacy `DeviceModel`).
+- Adopted XCCSS diagnostics for generator; implemented per-code tests under `tests/unit_tests/generator/`.
+- Diagnostics implemented: `G0102` (top not found), `G0201` (unconnected port), `G0301` (invalid module), `G0305` (unresolved placeholders), `G0401` (unknown model), `G0601` (variable shadows parameter - WARNING), `G0701` (no top specified - INFO).
+- Consolidated pipeline structure tests under `tests/integration/generator/`; split verbose unified tests into focused suites: primitives, hierarchical, variables, empty design.
+- Added `doc/test/unit_test_strategy.md` documenting the project-wide unit test strategy from this refactor.
 - Added `context/todo_generator.md` to track PDK include path redesign.
 
 ### **Generator Diagnostics Roadmap (Unit Test Focus)**

@@ -1,4 +1,4 @@
-# Ready for Next Session: Phase 1.2.5 Elaborator Integration
+# Ready for Next Session: Phase 1.2.5 Elaborator Integration + Generator Follow-ups
 
 ## ✅ Phase 1.2 Import System MVP - COMPLETE
 
@@ -65,5 +65,10 @@ class Elaborator:
 ### **Context Files Updated**
 - `context/memory.md` - Reflects completed Phase 1.2.4
 - `context/todo_imports.md` - Shows completion status and next steps
+
+## Generator Follow-ups (Next Session Candidates)
+- [ ] PDK include path resolver redesign (configurable per PDK, deduped) – see `context/todo_generator.md`
+- [ ] Add explicit unit test for `G0701` informational diagnostic
+- [ ] Consider top-level net mapping strategy beyond port-name passthrough
 
 **Ready to continue with elaborator integration in new session!**

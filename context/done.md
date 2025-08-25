@@ -13,4 +13,6 @@ _This file archives major completed tasks so they don't clutter active todo list
 - Data-structure cleanup & legacy removal ✅
 - Elaborator implementation & pattern expansion ✅
 - SPICEGenerator modernization and full test suite ✅
+  - Diagnostics implemented: G0102, G0201, G0301, G0305, G0401, G0601 (warn), G0701 (info) ✅
+  - Unit tests refactored into focused files; integration tests updated ✅
 - Integration test framework with NgSpice validation ✅
