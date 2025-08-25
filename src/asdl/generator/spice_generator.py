@@ -69,6 +69,23 @@ class SPICEGenerator:
             lines.extend(pdk_includes)
             lines.append("")
         
+        # Detect invalid modules (neither primitive nor hierarchical)
+        invalid_modules = [
+            (name, module)
+            for name, module in asdl_file.modules.items()
+            if module.spice_template is None and module.instances is None
+        ]
+        for module_name, _module in invalid_modules:
+            # Emit diagnostic and add helpful comment; skip generation for that module
+            self._pending_diagnostics.append(
+                create_generator_diagnostic("G0301", module=module_name)
+            )
+            lines.append(
+                f"* ERROR G0301: module '{module_name}' has neither spice_template nor instances"
+            )
+        if invalid_modules:
+            lines.append("")
+
         # Generate subcircuit definitions for hierarchical modules only
         # (primitive modules are handled inline)
         hierarchical_modules = {name: module for name, module in asdl_file.modules.items() 
