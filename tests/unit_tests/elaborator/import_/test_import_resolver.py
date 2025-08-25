@@ -373,6 +373,44 @@ modules:
             assert "shared_component" in result.modules
             assert result.modules["shared_component"].spice_template == "shared template"
 
+    def test_missing_import_includes_probe_paths_in_e0441(self):
+        """
+        T1.8.7b: E0441 includes explicit probe paths
+        TESTS: Missing import file error lists all search paths probed
+        VALIDATES: create_file_not_found_error integration with orchestrator
+        """
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            dir1 = temp_path / "libs1"
+            dir2 = temp_path / "libs2"
+            dir1.mkdir()
+            dir2.mkdir()
+
+            main_file_path = temp_path / "main.asdl"
+            main_file_path.write_text(
+                """
+file_info:
+  top_module: main
+imports:
+  common_lib: shared/common.asdl
+modules:
+  top:
+    instances: {}
+"""
+            )
+
+            result, diagnostics = self.resolver.resolve_imports(
+                main_file_path,
+                search_paths=[dir1, dir2]
+            )
+
+            assert result is not None
+            e0441 = [d for d in diagnostics if d.code == "E0441"]
+            assert len(e0441) >= 1
+            # Both search paths should be present in diagnostic details
+            assert str(dir1) in e0441[0].details
+            assert str(dir2) in e0441[0].details
+
     def test_qualified_reference_errors_E0443_E0444(self):
         """
         T1.8.7: Qualified Reference Validation
@@ -420,3 +458,10 @@ modules:
             e0443 = [d for d in diagnostics if d.code == "E0443"]
             assert len(e0443) >= 1
             assert any("unknown_mod" in d.details and "lib1" in d.details for d in e0443)
+
+            # Also expect I0601 unused import and I0602 unused model_alias warnings when applicable
+            i0601 = [d for d in diagnostics if d.code == "I0601"]
+            i0602 = [d for d in diagnostics if d.code == "I0602"]
+            # In this scenario, lib1 is used (even though module missing), missing_alias referenced as qualified (counts as used alias attempt)
+            # No model_alias declared here, so I0602 should be empty
+            assert len(i0602) == 0

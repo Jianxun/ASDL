@@ -228,3 +228,39 @@ class ImportDiagnostics:
             severity=DiagnosticSeverity.ERROR,
             suggestion=suggestion
         )
+
+    def create_unused_import_warning(self, import_alias: str) -> Diagnostic:
+        """
+        Create I0601 diagnostic for unused import alias.
+
+        Args:
+            import_alias: Import alias that is declared but never used
+
+        Returns:
+            Diagnostic with I0601 warning code
+        """
+        return Diagnostic(
+            code="I0601",
+            title="Unused Import Alias",
+            details=f"Import alias '{import_alias}' is declared but never referenced by any instance model or model_alias.",
+            severity=DiagnosticSeverity.WARNING,
+            suggestion="Remove the unused import or reference it in a model or model_alias."
+        )
+
+    def create_unused_model_alias_warning(self, local_alias: str) -> Diagnostic:
+        """
+        Create I0602 diagnostic for unused model_alias entry.
+
+        Args:
+            local_alias: Local model alias name that is never used
+
+        Returns:
+            Diagnostic with I0602 warning code
+        """
+        return Diagnostic(
+            code="I0602",
+            title="Unused Model Alias",
+            details=f"Model alias '{local_alias}' is declared but never used by any instance.",
+            severity=DiagnosticSeverity.WARNING,
+            suggestion="Remove the unused model_alias entry or update instances to use it."
+        )

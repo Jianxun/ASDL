@@ -253,12 +253,16 @@ class ImportResolver:
         files_to_scan: List[Tuple[Path, ASDLFile]] = [(main_file_path, main_file)]
         files_to_scan.extend(list(loaded_files.items()))
 
+        used_import_aliases_by_file: Dict[Path, Set[str]] = {}
+        used_model_aliases_by_file: Dict[Path, Set[str]] = {}
         for file_path, asdl_file in files_to_scan:
             if not asdl_file.modules:
                 continue
             imports_for_file: Dict[str, str] = asdl_file.imports or {}
             available_imports = list(imports_for_file.keys())
             alias_map_for_file = alias_resolution_map.get(file_path, {})
+            used_import_aliases: Set[str] = set()
+            used_model_aliases: Set[str] = set()
 
             for module in asdl_file.modules.values():
                 instances = getattr(module, "instances", None)
@@ -277,6 +281,7 @@ class ImportResolver:
                             )
                         )
                         continue
+                    used_import_aliases.add(alias)
                     # Resolve alias to file path used during loading
                     resolved_path = alias_map_for_file.get(alias)
                     imported_file = loaded_files.get(resolved_path) if resolved_path else None
@@ -291,6 +296,25 @@ class ImportResolver:
                                 module_name, alias, import_file_path, available_modules
                             )
                         )
+                else:
+                    # Track uses of model_alias when model names refer to local alias
+                    if isinstance(model_ref, str) and '.' not in model_ref and asdl_file.model_alias and model_ref in asdl_file.model_alias:
+                        used_model_aliases.add(model_ref)
+
+            used_import_aliases_by_file[file_path] = used_import_aliases
+            used_model_aliases_by_file[file_path] = used_model_aliases
+
+        # Emit warnings for unused import aliases and model_alias entries in the main file only for now
+        main_used_imports = used_import_aliases_by_file.get(main_file_path, set())
+        main_used_model_aliases = used_model_aliases_by_file.get(main_file_path, set())
+        if main_file.imports:
+            for imp_alias in main_file.imports.keys():
+                if imp_alias not in main_used_imports:
+                    diagnostics.append(self.diagnostics.create_unused_import_warning(imp_alias))
+        if main_file.model_alias:
+            for local_alias in main_file.model_alias.keys():
+                if local_alias not in main_used_model_aliases:
+                    diagnostics.append(self.diagnostics.create_unused_model_alias_warning(local_alias))
 
         return diagnostics
     
