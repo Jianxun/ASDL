@@ -38,6 +38,7 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 5. **XCCSS Diagnostic System**: Structured error codes replacing PXXX (see `doc/diagnostic_system/`)
 6. **Two-Stage Compilation**: Import Elaboration → SPICE Generation
 7. **Tool Separation**: ASDL handles imports/resolution, external tools (ams-compose) handle versioning/reproducibility
+8. **Project Venv Usage**: Always use project-wide Python venv at `venv/` for commands/tests
 
 ## Known Limitations
 - **YAML Pattern Parsing**: `ruamel.yaml` has issues with inline dictionary mappings containing `<p,n>` patterns. Use multi-line YAML format as workaround.
@@ -90,23 +91,18 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - Updated CLI `netlist` to skip generation when any ERROR diagnostics exist (prevents runtime exceptions and surfaces diagnostics).
 - Added unit tests for E0443/E0444 and probe paths; scaffolded CLI integration test for toy example.
 
-## Previous Evolution (2025-08-23)
+### **Generator Refactor & XCCSS Migration (2025-08-25)**
+- Refactored monolithic `src/asdl/generator.py` into package `src/asdl/generator/` with `spice_generator.py` and `diagnostics.py`.
+- Adopted XCCSS diagnostics for generator; implemented `G0305` (unresolved placeholders) and defined `G0401` (unknown model reference). Added per-code unit tests under `tests/unit_tests/generator/`.
+- Consolidated misplaced root test into unit tests; moved pipeline structure tests to `tests/integration/generator/`.
+- Rewrote unit tests to target public behavior of unified generator (no legacy `DeviceModel`).
+- Added `context/todo_generator.md` to track PDK include path redesign.
 
-### **Phase 1.1 Completed - Data Structure Simplification**
-- **Breaking Changes Applied**: ImportDeclaration class removed, simplified imports to Dict[str, str]
-- **model_alias Field Added**: Local module aliasing for technology portability
-- **Comprehensive Testing**: 7 test cases passing for simplified structure
-- **Schema Integration**: JSON schema generation working with new fields
-
-### **Phase 1.2 Architecture Finalized - Import as Elaborator Phase**
-- **Architectural Boundary**: Import resolution integrated as Phase 1 of elaboration
-- **Component Placement**: Parser extensions in `sections/`, elaborator extensions in `elaborator/import/`
-- **Error Code Strategy**: P05xx for syntax, E044x for reference resolution
-- **Modular Structure**: 6 focused components under `src/asdl/elaborator/import/`
-- **Enhanced Pipeline**: Import Resolution → Pattern Expansion → Variable Resolution
-
-### **Key Simplifications**
-- **Direct File Paths**: `alias: "library_dir/file_name.asdl"` syntax
-- **ASDL_PATH Resolution**: Unix-like path-based file discovery
-- **Tool Separation**: ASDL handles imports, ams-compose handles versioning
-- **Unit Device Strategy**: Primitive modules for LVS compatibility
+### **Generator Diagnostics Roadmap (Unit Test Focus)**
+- Diagnostics-first policy in generator unit tests; no raw exceptions in unit layer.
+- Planned diagnostics:
+  - G0102 Top module not found (ERROR): top specified but missing in `modules`; no XMAIN emitted; emit header comment.
+  - G0301 Invalid module definition (ERROR): module lacks both `spice_template` and `instances`; skip generation for that module.
+  - G0201 Unconnected port in subcircuit call (ERROR): missing port mappings; annotate and skip instance emission.
+  - I0701 Missing top module (INFO): no top specified; document skipped XMAIN.
+- Tests will be added per-code in `tests/unit_tests/generator/`; unified tests de-duplicated.
