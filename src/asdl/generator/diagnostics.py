@@ -51,8 +51,8 @@ GENERATOR_DIAGNOSTICS: Dict[str, Tuple[str, str]] = {
         "Template Processing Error",
         "Error processing SPICE template: {error}.",
     ),
-    # Informational (custom prefix kept as planned for tests)
-    "I0701": (
+    # Informational/warning class for missing top specification
+    "G0701": (
         "Missing Top Module",
         "No top module specified; skipping main instantiation.",
     ),

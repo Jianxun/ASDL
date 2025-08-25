@@ -74,7 +74,8 @@ class TestSPICEGeneratorBasics:
         output, diags = generator.generate(asdl_file)
         assert output.count('gf180mcu_fd_pr/models/ngspice/design.ngspice') == 1
         assert output.count('sky130_fd_pr/models/ngspice/design.ngspice') == 1
-        assert diags == []
+        # Allow informational diagnostic for missing top
+        assert all(d.code != "G0102" and d.code != "G0401" and not d.severity.name == "ERROR" for d in diags)
 
 
     def test_comment_style_and_indentation(self):

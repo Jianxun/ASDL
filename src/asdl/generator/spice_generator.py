@@ -120,11 +120,11 @@ class SPICEGenerator:
                     f"* ERROR G0102: top module '{top_module_name}' not found; available: {available}"
                 )
         else:
-            # No top specified, emit informational I0701
+            # No top specified, emit informational G0701
             self._pending_diagnostics.append(
-                create_generator_diagnostic("I0701")
+                create_generator_diagnostic("G0701")
             )
-            lines.append("* INFO I0701: no top module specified; skipping main instantiation")
+            lines.append("* INFO G0701: no top module specified; skipping main instantiation")
         
         # End SPICE netlist (ngspice compatibility)
         lines.append("")
