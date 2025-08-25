@@ -68,7 +68,7 @@ class TestPipelineStructure:
         assert spice_output.strip().endswith('.end'), "SPICE file should end with .end statement"
         assert '.subckt' in spice_output, "Should contain subcircuit definitions"
         assert '.ends' in spice_output, "Should contain subcircuit endings"
-
+    
     def test_model_subcircuits_come_first(self):
         """Test that model subcircuits are generated before module subcircuits."""
         parser = ASDLParser()
@@ -92,7 +92,7 @@ class TestPipelineStructure:
         assert nmos_pos < inverter_pos, "NMOS model should come before inverter module"
         assert pmos_pos < inverter_pos, "PMOS model should come before inverter module"
         assert nmos_pos != -1 and pmos_pos != -1 and inverter_pos != -1, "All subcircuits should be present"
-
+    
     def test_hierarchical_instance_calls(self):
         """Test that hierarchical instance calls use correct subcircuit references."""
         parser = ASDLParser()
@@ -116,7 +116,7 @@ class TestPipelineStructure:
         assert '.subckt pmos_unit G D S B' in spice_output
         assert '.subckt nmos_unit G D S B' in spice_output
         assert '.subckt inverter in out vss vdd' in spice_output
-
+    
     def test_ngspice_compatibility_features(self):
         """Test specific ngspice compatibility features."""
         parser = ASDLParser()
@@ -150,7 +150,7 @@ class TestPipelineStructure:
         # X-prefix for subcircuit calls
         x_calls = [line for line in lines if line.strip().startswith('X')]
         assert len(x_calls) > 0, "Should have subcircuit calls with X prefix"
-
+    
     def test_parameter_handling_in_pipeline(self):
         """Test that parameters are handled correctly throughout the pipeline."""
         parser = ASDLParser()
@@ -179,4 +179,6 @@ class TestPipelineStructure:
         # Verify hierarchical structure
         assert '.subckt nmos_unit G D S B' in spice_output
         assert '.subckt pmos_unit G D S B' in spice_output
-        assert '.subckt inverter in out vss vdd' in spice_output 
+        assert '.subckt inverter in out vss vdd' in spice_output
+
+

@@ -1,0 +1,106 @@
+{
+  "file_info": {
+    "file_path": "/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/tests/fixtures/inverter.yml",
+    "start_line": 1,
+    "start_col": 1,
+    "end_line": 1,
+    "end_col": 10,
+    "top_module": "inverter",
+    "doc": "Basic CMOS inverter",
+    "revision": "v0.4",
+    "author": "ASDL",
+    "date": "2024-03-19",
+    "metadata": null
+  },
+  "models": {},
+  "modules": {
+    "inverter": {
+      "file_path": "/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/tests/fixtures/inverter.yml",
+      "start_line": 35,
+      "start_col": 3,
+      "end_line": 35,
+      "end_col": 11,
+      "doc": "Basic CMOS inverter with PMOS pull-up and NMOS pull-down",
+      "ports": {
+        "in": {
+          "file_path": "/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/tests/fixtures/inverter.yml",
+          "start_line": 38,
+          "start_col": 7,
+          "end_line": 38,
+          "end_col": 9,
+          "dir": "in",
+          "type": "voltage",
+          "constraints": null,
+          "metadata": null
+        },
+        "out": {
+          "file_path": "/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/tests/fixtures/inverter.yml",
+          "start_line": 39,
+          "start_col": 7,
+          "end_line": 39,
+          "end_col": 10,
+          "dir": "out",
+          "type": "voltage",
+          "constraints": null,
+          "metadata": null
+        },
+        "vss": {
+          "file_path": "/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/tests/fixtures/inverter.yml",
+          "start_line": 40,
+          "start_col": 7,
+          "end_line": 40,
+          "end_col": 10,
+          "dir": "in_out",
+          "type": "voltage",
+          "constraints": null,
+          "metadata": null
+        },
+        "vdd": {
+          "file_path": "/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/tests/fixtures/inverter.yml",
+          "start_line": 41,
+          "start_col": 7,
+          "end_line": 41,
+          "end_col": 10,
+          "dir": "in_out",
+          "type": "voltage",
+          "constraints": {
+            "constraints": {}
+          },
+          "metadata": null
+        }
+      },
+      "internal_nets": null,
+      "parameters": {},
+      "variables": null,
+      "spice_template": null,
+      "instances": {
+        "MP": {
+          "file_path": "/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/tests/fixtures/inverter.yml",
+          "start_line": 45,
+          "start_col": 7,
+          "end_line": 45,
+          "end_col": 9,
+          "model": "pmos_unit",
+          "mappings": {},
+          "doc": null,
+          "parameters": {},
+          "metadata": null
+        },
+        "MN": {
+          "file_path": "/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/tests/fixtures/inverter.yml",
+          "start_line": 58,
+          "start_col": 7,
+          "end_line": 58,
+          "end_col": 9,
+          "model": "nmos_unit",
+          "mappings": {},
+          "doc": null,
+          "parameters": {},
+          "metadata": null
+        }
+      },
+      "pdk": null,
+      "metadata": null
+    }
+  }
+}
