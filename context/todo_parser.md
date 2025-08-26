@@ -19,11 +19,12 @@
 - [X] Replace ImportParser diagnostics to P0501/P0502; update tests
 - [X] Align imports tests to simple path + P0501/P0502 (no P106)
 
-### Phase 3 — Implement Duplicate Detection + Tests
-- [ ] Implement P0232 duplicate module name detection + tests
-- [ ] Implement P0242 duplicate port name detection + tests
-- [ ] Implement P0251 duplicate instance name detection + tests
-- [ ] Implement P0221 duplicate import alias detection + tests
+### Phase 3 — Duplicate Handling Strategy
+- [X] Parser: Treat duplicate YAML keys as P0101 (ruamel DuplicateKeyError)
+- [X] Parser: Forbid YAML merge keys (<<) → P0101
+- [ ] Elaborator: Detect duplicate module names across imports (moved here)
+- [ ] Elaborator: Detect duplicate port/instance names after pattern expansion
+- [ ] Elaborator: Detect duplicate import alias after resolution/normalization
 
 ### Phase 4 — Enum Validation + Tests
 - [ ] Implement P0501 invalid port direction enum + tests
