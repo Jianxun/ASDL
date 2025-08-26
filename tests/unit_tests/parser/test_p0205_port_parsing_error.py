@@ -21,5 +21,6 @@ modules:
     asdl_file, diagnostics = parser.parse_string(yaml_content)
 
     assert asdl_file is not None
-    assert any(d.code == "P0205" for d in diagnostics)
+    # With enum-specific validation, invalid enum should trigger P0511 instead of generic P0205
+    assert any(d.code == "P0511" for d in diagnostics)
 

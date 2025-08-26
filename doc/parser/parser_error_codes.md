@@ -26,6 +26,13 @@ These 15 codes prevent compilation-breaking errors and silent data corruption:
 - **Example**: `- file_info: ...` (starts with list)
 - **Test**: Verify rejection of non-dictionary root with helpful suggestion
 
+#### P0103: Empty File (INFO)
+- **Severity**: Info
+- **Current**: Implemented
+- **Details**: The ASDL file is empty; there is nothing to parse
+- **Example**: File with 0 bytes or only `---`
+- **Test**: Verify informational diagnostic is emitted and parser returns None
+
 ### **02 - Schema Structure Errors** 
 
 #### P0201: Missing Required Section 
@@ -122,18 +129,18 @@ These 15 codes prevent compilation-breaking errors and silent data corruption:
 
 ### **05 - Type Validation Errors**
 
-#### P0501: Invalid Port Direction Enum L **MISSING - MEDIUM PRIORITY**
+#### P0511: Invalid Port Direction Enum 
 - **Severity**: Error
-- **Current**: **Not Implemented**
+- **Current**: Implemented
 - **Details**: Port direction must be valid enum (in, out, in_out)
 - **Example**: `dir: "input"` (should be "in")
 - **Implementation**: Add enum validation in port parsing
 - **Test**: Verify enum validation with suggestions
 
-#### P0502: Invalid Port Type Enum L **MISSING - MEDIUM PRIORITY**
+#### P0512: Invalid Port Type Enum 
 - **Severity**: Error
-- **Current**: **Not Implemented**  
-- **Details**: Port type must be valid enum (voltage, current, etc.)
+- **Current**: Implemented  
+- **Details**: Port type must be valid enum (voltage, current, digital)
 - **Example**: `type: "volt"` (should be "voltage")
 - **Implementation**: Add enum validation in port parsing
 - **Test**: Verify enum validation with suggestions
@@ -166,12 +173,12 @@ These 15 codes prevent compilation-breaking errors and silent data corruption:
 ### **Phase 2: Enum Validation (Next)**
 **Effort**: ~6 hours
 
-5. **P0501: Invalid Port Direction Enum** (3 hours)
+5. **P0511: Invalid Port Direction Enum** (3 hours)
    - Add enum validation in `_parse_ports()`
    - Provide suggestions for typos
    - Test all valid/invalid combinations
 
-6. **P0502: Invalid Port Type Enum** (3 hours)
+6. **P0512: Invalid Port Type Enum** (3 hours)
    - Add enum validation in `_parse_ports()`
    - Provide suggestions for typos
    - Test all valid/invalid combinations
@@ -220,15 +227,15 @@ Each MVP critical code needs 4 test types:
 3. **Suggestion Test**: Verify helpful error suggestions
 4. **Edge Case Test**: Verify boundary conditions
 
-**Total MVP Tests**: 15 codes × 4 tests = 60 comprehensive tests
+**Total MVP Tests**: 15 codes 4 tests = 60 comprehensive tests
 
 ### **Test File Organization**
 ```
 tests/unit_tests/parser/
-   test_mvp_critical_errors.py      # 15 MVP codes
-   test_duplicate_detection.py      # P0232, P0242, P0251, P0221
-   test_enum_validation.py          # P0501, P0502
-   test_hardening_errors.py         # Future 56 codes
+ test_mvp_critical_errors.py      # 15 MVP codes
+ test_duplicate_detection.py      # P0232, P0242, P0251, P0221
+ test_enum_validation.py          # P0511, P0512
+ test_hardening_errors.py         # Future 56 codes
 ```
 
 ## Benefits of MVP-First Approach

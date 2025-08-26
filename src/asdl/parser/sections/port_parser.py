@@ -71,11 +71,43 @@ class PortParser:
                 loc
             )
 
+            # Enum validation with explicit diagnostics
+            dir_enum = None
+            type_enum = None
+            try:
+                dir_enum = PortDirection(dir_val.lower())
+            except Exception:
+                diagnostics.append(Diagnostic(
+                    code="P0511",
+                    title="Invalid Port Direction Enum",
+                    details=f"Port direction must be one of: in, out, in_out. Found '{dir_val}'.",
+                    severity=DiagnosticSeverity.ERROR,
+                    location=loc,
+                    suggestion="Use one of: in, out, in_out."
+                ))
+                # Skip creating this port due to invalid direction
+                continue
+
+            if type_val is not None:
+                try:
+                    type_enum = SignalType(type_val.lower())
+                except Exception:
+                    diagnostics.append(Diagnostic(
+                        code="P0512",
+                        title="Invalid Port Type Enum",
+                        details=f"Port type must be one of: voltage, current, digital. Found '{type_val}'.",
+                        severity=DiagnosticSeverity.ERROR,
+                        location=loc,
+                        suggestion="Use one of: voltage, current, digital."
+                    ))
+                    # Skip creating this port due to invalid type
+                    continue
+
             try:
                 ports[port_name] = Port(
                     **loc.__dict__,
-                    dir=PortDirection(dir_val.lower()),
-                    type=SignalType(type_val.lower()) if type_val else None,
+                    dir=dir_enum,
+                    type=type_enum,
                     constraints=self._parse_constraints(port_data.get('constraints')),
                     metadata=port_data.get('metadata')
                 )

@@ -27,11 +27,11 @@
 - [ ] Elaborator: Detect duplicate import alias after resolution/normalization
 
 ### Phase 4 — Enum Validation + Tests
-- [ ] Implement P0501 invalid port direction enum + tests
-- [ ] Implement P0502 invalid port type enum + tests
+- [X] Implement P0511 invalid port direction enum + tests
+- [X] Implement P0512 invalid port type enum + tests
 
 ### Phase 5 — Docs Alignment and Optional Diagnostics
-- [ ] Add optional INFO diagnostic for empty file (P0103)
+- [X] Add optional INFO diagnostic for empty file (P0103)
 - [ ] Update error-code docs per P104→P0240/P0250 and P301/302→P0601/0602 migration
 
 ### Phase 6 — Test Environment Hygiene

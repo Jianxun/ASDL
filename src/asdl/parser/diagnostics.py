@@ -22,6 +22,7 @@ PARSER_DIAGNOSTICS: Dict[str, Tuple[str, str]] = {
     # Syntax (P01xx)
     "P0101": ("Invalid YAML Syntax", "The file could not be parsed because of a syntax error: {problem}"),
     "P0102": ("Invalid Root Type", "The root of an ASDL file must be a dictionary (a set of key-value pairs)."),
+    "P0103": ("Empty File", "The ASDL file is empty. There is nothing to parse."),
 
     # Schema (P02xx)
     "P0201": ("Missing Required Section", "'{section}' is a mandatory section and must be present at the top level of the ASDL file."),
@@ -48,6 +49,9 @@ PARSER_DIAGNOSTICS: Dict[str, Tuple[str, str]] = {
 
     # Type (P05xx) — model_alias format
     "P0503": ("Invalid Model Alias Format", "Model alias '{alias}' must follow 'library.module' format; {details}"),
+    # Type (P05xx) — enum validation for port fields
+    "P0511": ("Invalid Port Direction Enum", "Port direction must be one of: in, out, in_out. Found '{found_value}'."),
+    "P0512": ("Invalid Port Type Enum", "Port type must be one of: voltage, current, digital. Found '{found_value}'."),
 }
 
 

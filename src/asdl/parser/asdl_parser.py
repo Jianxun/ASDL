@@ -25,14 +25,16 @@ class ASDLParser:
     the future possibility of tracking line numbers for diagnostics.
     """
     
-    def __init__(self, preserve_unknown: bool = True):
+    def __init__(self, preserve_unknown: bool = True, *, emit_empty_file_info: bool = False):
         """
         Initialize the parser with dependency injection.
         
         Args:
             preserve_unknown: If True, preserve unknown fields in extensible structures.
+            emit_empty_file_info: If True, emit informational diagnostic P0103 for empty files.
         """
         self.preserve_unknown = preserve_unknown
+        self.emit_empty_file_info = emit_empty_file_info
         
         # Create all utility components
         self.yaml_loader = YAMLLoader()
@@ -88,6 +90,20 @@ class ASDLParser:
         data, yaml_diagnostics = self.yaml_loader.load_with_diagnostics(yaml_content, file_path)
         diagnostics.extend(yaml_diagnostics)
         if data is None:
+            # If no YAML errors were emitted and the content is effectively empty,
+            # optionally emit an informational diagnostic P0103 and return.
+            if (
+                self.emit_empty_file_info
+                and not diagnostics
+                and (yaml_content.strip() == "" or yaml_content.strip() == "---")
+            ):
+                diagnostics.append(Diagnostic(
+                    code="P0103",
+                    title="Empty File",
+                    details="The ASDL file is empty. There is nothing to parse.",
+                    severity=DiagnosticSeverity.INFO,
+                    location=Locatable(start_line=1, start_col=1, file_path=file_path),
+                ))
             return None, diagnostics
         
         if data is None:

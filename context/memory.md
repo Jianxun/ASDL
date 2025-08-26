@@ -130,7 +130,15 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
     P301→P0601, P302→P0602. Kept existing P0101, P0102, P0201, P0202, P0501, P0502, P0503, P0701, P0702.
 - Created one-per-code unit tests named after codes (e.g., `test_p0240_missing_port_dir.py`).
 - Pruned overlapping consolidated tests in favor of per-code tests.
-- Current parser unit tests: 34 passed.
+- Current parser unit tests: 38 passed.
+
+### **Parser Phase 4 — Enum Validation (2025-08-26)**
+- Implemented enum-specific diagnostics:
+  - P0511 Invalid Port Direction Enum
+  - P0512 Invalid Port Type Enum
+- Updated `PortParser` to emit enum-specific errors instead of generic P0205.
+- Added unit tests `test_p0511_invalid_port_direction_enum.py` and `test_p0512_invalid_port_type_enum.py`.
+- Adjusted `test_p0205_port_parsing_error.py` to expect P0511 for invalid direction value.
 
 ### **Parser Test Suite Refactor — Naming Cleanup (2025-08-26)**
 - Removed redundant `tests/unit_tests/parser/test_unified_parsing.py`; negative cases are covered by per-code tests:
