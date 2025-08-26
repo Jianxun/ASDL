@@ -34,7 +34,7 @@ class FieldValidator:
         """
         if not isinstance(data, dict):
             diagnostics.append(Diagnostic(
-                code="P103",
+                code="P0202",
                 title="Invalid Section Type",
                 details=f"The '{section_name}' section must be a dictionary (mapping), but found {type(data).__name__}.",
                 severity=DiagnosticSeverity.ERROR,
@@ -66,7 +66,7 @@ class FieldValidator:
         for field_name in data.keys():
             if field_name not in allowed_fields:
                 diagnostics.append(Diagnostic(
-                    code="P201",
+                    code="P0702",
                     title="Unknown Field",
                     details=f"{context} contains unknown field '{field_name}' which is not a recognized field.",
                     severity=DiagnosticSeverity.WARNING,

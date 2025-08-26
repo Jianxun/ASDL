@@ -51,7 +51,7 @@ class YAMLLoader:
             
             diagnostics.append(
                 Diagnostic(
-                    code="P100",
+                    code="P0101",
                     title="Invalid YAML Syntax",
                     details=f"The file could not be parsed because of a syntax error: {e.problem}",  # type: ignore
                     severity=DiagnosticSeverity.ERROR,

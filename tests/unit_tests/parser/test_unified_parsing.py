@@ -7,7 +7,7 @@ while rejecting the legacy models section format.
 
 import pytest
 from src.asdl.parser import ASDLParser
-from src.asdl.data_structures import ASDLFile, Module, ImportDeclaration
+from src.asdl.data_structures import ASDLFile, Module
 from src.asdl.diagnostics import DiagnosticSeverity
 
 
@@ -36,7 +36,7 @@ modules: {}
         # Should still parse but generate warning about unknown section
         assert asdl_file is not None
         assert len(diagnostics) == 1
-        assert diagnostics[0].code == "P200"  # Unknown top-level section
+        assert diagnostics[0].code == "P0701"  # Unknown top-level section
         assert diagnostics[0].title == "Unknown Top-Level Section"
         assert "'models'" in diagnostics[0].details
         assert diagnostics[0].severity == DiagnosticSeverity.WARNING
@@ -182,9 +182,9 @@ modules:
 file_info:
   top_module: "test_design"
 imports:
-  pdk_primitives: gf180mcu_pdk.primitives
-  std_devices: gf180mcu_std_tiles.devices
-  amplifiers: analog_ip.amplifiers@1.2.0
+  pdk_primitives: libs/pdk/primitives.asdl
+  std_devices: libs/tiles/devices.asdl
+  amplifiers: libs/analog/amps.asdl
 modules:
   test_circuit:
     instances:
@@ -201,21 +201,11 @@ modules:
         # Verify imports parsing
         assert asdl_file.imports is not None
         assert len(asdl_file.imports) == 3
-        
-        # Check individual imports
-        pdk_import = asdl_file.imports["pdk_primitives"]
-        assert isinstance(pdk_import, ImportDeclaration)
-        assert pdk_import.alias == "pdk_primitives"
-        assert pdk_import.qualified_source == "gf180mcu_pdk.primitives"
-        assert pdk_import.version is None
-        
-        # Check version parsing
-        amp_import = asdl_file.imports["amplifiers"]
-        assert amp_import.alias == "amplifiers"
-        assert amp_import.qualified_source == "analog_ip.amplifiers"
-        assert amp_import.version == "1.2.0"
+        assert asdl_file.imports["pdk_primitives"] == "libs/pdk/primitives.asdl"
+        assert asdl_file.imports["std_devices"] == "libs/tiles/devices.asdl"
+        assert asdl_file.imports["amplifiers"] == "libs/analog/amps.asdl"
     
-    def test_invalid_import_format(self):
+    def test_invalid_import_entries(self):
         """
         TESTS: Parser validates import format and generates errors for invalid syntax
         VALIDATES: Early detection of malformed import declarations
@@ -225,9 +215,9 @@ modules:
 file_info:
   top_module: "test"
 imports:
-  valid_import: gf180mcu_pdk.primitives
-  invalid_import: not_library_dot_filename_format
-  another_invalid: just_a_name
+  valid_import: lib/valid.asdl
+  invalid_import: 42
+  another_invalid: lib/invalid.txt
 modules: {}
 """
         parser = ASDLParser()
@@ -235,14 +225,12 @@ modules: {}
         
         assert asdl_file is not None
         
-        # Should have 2 import format errors
-        import_errors = [d for d in diagnostics if d.code == "P106"]
-        assert len(import_errors) == 2
-        
-        for error in import_errors:
-            assert error.title == "Invalid Import Format"
-            assert "library.filename" in error.details
-            assert error.severity == DiagnosticSeverity.ERROR
+        # Should have 2 import errors: P0501 (type) and P0502 (extension)
+        p0501 = [d for d in diagnostics if d.code == "P0501"]
+        p0502 = [d for d in diagnostics if d.code == "P0502"]
+        assert len(p0501) == 1
+        assert len(p0502) == 1
+        assert all(d.severity == DiagnosticSeverity.ERROR for d in (p0501 + p0502))
         
         # Valid import should still be parsed
         assert asdl_file.imports is not None
@@ -282,7 +270,7 @@ modules:
 file_info:
   top_module: "test"
 imports:
-  test_lib: valid.library
+  test_lib: libs/valid.asdl
 modules:
   test_module:
     spice_template: "R{name} {n1} {n2} {R}"
@@ -294,11 +282,7 @@ modules:
         assert asdl_file is not None
         assert not diagnostics
         
-        # Check that location info is preserved
-        import_decl = asdl_file.imports["test_lib"]
-        assert import_decl.start_line is not None
-        assert import_decl.start_col is not None
-        
+        # Check that module location info is preserved
         module = asdl_file.modules["test_module"]
         assert module.start_line is not None
         assert module.start_col is not None

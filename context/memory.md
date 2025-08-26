@@ -107,3 +107,13 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
   - G0201 Unconnected port in subcircuit call (ERROR): missing port mappings; annotate and skip instance emission.
   - I0701 Missing top module (INFO): no top specified; document skipped XMAIN.
 - Tests will be added per-code in `tests/unit_tests/generator/`; unified tests de-duplicated.
+
+### **Parser Phase 0 Complete (2025-08-25)**
+- Introduced parser XCCSS diagnostics module `src/asdl/parser/diagnostics.py` with `create_parser_diagnostic`.
+- Imports simplified to file-path strings; consolidated import diagnostics under parser P-codes:
+  - P0501 Invalid Import Path Type (non-string)
+  - P0502 Invalid Import File Extension (not .asdl)
+- Began XCCSS migration for parser codes:
+  - P100→P0101, P101→P0102, P102→P0201, P103→P0202
+  - P200→P0701 (unknown top-level), P201→P0702 (unknown field)
+- Updated unit tests to match (refactored imports tests, dropped rich import objects).

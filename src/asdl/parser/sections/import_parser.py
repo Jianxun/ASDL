@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, cast
 from pathlib import Path
 
 from ...diagnostics import Diagnostic, DiagnosticSeverity
+from ..diagnostics import create_parser_diagnostic
 from ..core.locatable_builder import LocatableBuilder, YAMLObject
 from ..resolvers.field_validator import FieldValidator
 
@@ -49,26 +50,28 @@ class ImportParser:
             
             # Validate import format: alias: path/to/file.asdl
             if not isinstance(file_path_str, str):
-                diagnostics.append(Diagnostic(
-                    code="I0501",
-                    title="Invalid Import Path Type",
-                    details=f"Import '{alias}' path must be a string, got {type(file_path_str).__name__}.",
-                    severity=DiagnosticSeverity.ERROR,
-                    location=loc,
-                    suggestion="Use format 'alias: path/to/file.asdl'."
-                ))
+                diagnostics.append(
+                    create_parser_diagnostic(
+                        "P0501",
+                        location=loc,
+                        suggestion="Use format 'alias: path/to/file.asdl'.",
+                        alias=alias,
+                        found_type=type(file_path_str).__name__,
+                    )
+                )
                 continue
                 
             # Validate .asdl extension
             if not file_path_str.endswith('.asdl'):
-                diagnostics.append(Diagnostic(
-                    code="I0502", 
-                    title="Invalid Import File Extension",
-                    details=f"Import '{alias}' must reference a .asdl file, got '{file_path_str}'.",
-                    severity=DiagnosticSeverity.ERROR,
-                    location=loc,
-                    suggestion="Import paths must end with '.asdl' extension."
-                ))
+                diagnostics.append(
+                    create_parser_diagnostic(
+                        "P0502",
+                        location=loc,
+                        suggestion="Import paths must end with '.asdl' extension.",
+                        alias=alias,
+                        path=file_path_str,
+                    )
+                )
                 continue
                 
             imports[alias] = file_path_str

@@ -28,7 +28,7 @@ modules:
         assert asdl_file is not None
         assert len(diagnostics) == 1
         diagnostic = diagnostics[0]
-        assert diagnostic.code == "P201"
+        assert diagnostic.code == "P0702"
         assert diagnostic.severity == DiagnosticSeverity.WARNING
         assert "unknown_field" in diagnostic.details
         assert "not a recognized" in diagnostic.details
@@ -53,7 +53,7 @@ modules:
         assert asdl_file is not None
         assert len(diagnostics) == 1
         diagnostic = diagnostics[0]
-        assert diagnostic.code == "P201"
+        assert diagnostic.code == "P0702"
         assert diagnostic.severity == DiagnosticSeverity.WARNING
         assert "unknown_port_field" in diagnostic.details
 
@@ -76,7 +76,7 @@ modules:
         assert asdl_file is not None
         assert len(diagnostics) == 1
         diagnostic = diagnostics[0]
-        assert diagnostic.code == "P201"
+        assert diagnostic.code == "P0702"
         assert diagnostic.severity == DiagnosticSeverity.WARNING
         assert "unknown_instance_field" in diagnostic.details
 
@@ -97,7 +97,7 @@ modules:
         assert asdl_file is not None
         assert len(diagnostics) == 2
         codes = [d.code for d in diagnostics]
-        assert all(code == "P201" for code in codes)
+        assert all(code == "P0702" for code in codes)
         fields = [d.details for d in diagnostics]
         assert any("unknown_field1" in field for field in fields)
         assert any("unknown_field2" in field for field in fields)

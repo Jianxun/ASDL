@@ -89,7 +89,7 @@ modules: {}
         asdl_file, diagnostics = parser.parse_string(invalid_yaml)
         assert asdl_file is None
         assert len(diagnostics) == 1
-        assert diagnostics[0].code == "P100"
+        assert diagnostics[0].code == "P0101"
 
     def test_parse_non_dictionary_root(self):
         """Test parsing YAML that's not a dictionary returns a diagnostic."""
@@ -98,7 +98,7 @@ modules: {}
         asdl_file, diagnostics = parser.parse_string(non_dict_yaml)
         assert asdl_file is None
         assert len(diagnostics) == 1
-        assert diagnostics[0].code == "P101"
+        assert diagnostics[0].code == "P0102"
 
     def test_parse_empty_yaml(self):
         """Test parsing empty YAML returns no file and no diagnostics."""

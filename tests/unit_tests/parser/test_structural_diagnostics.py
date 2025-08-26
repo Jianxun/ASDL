@@ -18,7 +18,7 @@ modules:
     assert asdl_file is None
     assert len(diagnostics) == 1
     diagnostic = diagnostics[0]
-    assert diagnostic.code == "P102"
+    assert diagnostic.code == "P0201"
     assert diagnostic.severity == DiagnosticSeverity.ERROR
     assert "'file_info' is a mandatory section" in diagnostic.details
 
@@ -40,7 +40,7 @@ modules:
     assert asdl_file is not None # The file should parse, but with errors.
     assert len(diagnostics) == 1
     diagnostic = diagnostics[0]
-    assert diagnostic.code == "P103"
+    assert diagnostic.code == "P0202"
     assert diagnostic.severity == DiagnosticSeverity.ERROR
     assert "must be a dictionary (mapping)" in diagnostic.details
 
@@ -60,7 +60,7 @@ future_feature:
     assert asdl_file is not None
     assert len(diagnostics) == 1
     diagnostic = diagnostics[0]
-    assert diagnostic.code == "P200"
+    assert diagnostic.code == "P0701"
     assert diagnostic.severity == DiagnosticSeverity.WARNING
     assert "section 'future_feature' is not a recognized" in diagnostic.details
     assert diagnostic.location is not None

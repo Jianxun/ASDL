@@ -94,11 +94,11 @@ class ASDLParser:
             # This can happen for an empty file
             return None, diagnostics
 
-        # 2. Root validation (preserve P101, P102 logic)
+        # 2. Root validation (XCCSS codes)
         if not isinstance(data, dict):
             loc = Locatable(start_line=1, start_col=1, file_path=file_path)
             diagnostics.append(Diagnostic(
-                code="P101",
+                code="P0102",
                 title="Invalid Root Type",
                 details="The root of an ASDL file must be a dictionary (a set of key-value pairs).",
                 severity=DiagnosticSeverity.ERROR,
@@ -110,7 +110,7 @@ class ASDLParser:
         # Check for mandatory sections
         if 'file_info' not in data:
             diagnostics.append(Diagnostic(
-                code="P102",
+                code="P0201",
                 title="Missing Required Section",
                 details="'file_info' is a mandatory section and must be present at the top level of the ASDL file.",
                 severity=DiagnosticSeverity.ERROR,
@@ -126,14 +126,14 @@ class ASDLParser:
         model_alias = self.model_alias_parser.parse(yaml_data.get('model_alias', {}), diagnostics, file_path)
         modules = self.module_parser.parse(yaml_data.get('modules', {}), diagnostics, file_path)
         
-        # 4. Unknown top-level section validation (preserve P200 logic)
+        # 4. Unknown top-level section validation (XCCSS P0701)
         allowed_keys = {'file_info', 'imports', 'model_alias', 'modules'}
         if isinstance(data, dict):
             for key in data.keys():
                 if key not in allowed_keys:
                     loc = self.locatable_builder.from_yaml_key(yaml_data, key, file_path)
                     diagnostics.append(Diagnostic(
-                        code="P200",
+                        code="P0701",
                         title="Unknown Top-Level Section",
                         details=f"The top-level section '{key}' is not a recognized ASDL section.",
                         severity=DiagnosticSeverity.WARNING,
