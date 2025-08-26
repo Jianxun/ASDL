@@ -35,5 +35,5 @@
 - [X] Update error-code docs per P104→P0240/P0250 and P301/302→P0601/0602 migration
 
 ### Phase 6 — Test Environment Hygiene
-- [ ] Remove test sys.path hacks; rely on pyproject pythonpath
+- [X] Remove test sys.path hacks; rely on pyproject pythonpath
 
