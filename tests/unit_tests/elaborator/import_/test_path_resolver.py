@@ -10,12 +10,6 @@ import os
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-import sys
-
-# Add src to path for testing
-test_dir = Path(__file__).parent
-project_root = test_dir.parent.parent.parent.parent
-sys.path.insert(0, str(project_root / "src"))
 
 from asdl.elaborator.import_.path_resolver import PathResolver
 

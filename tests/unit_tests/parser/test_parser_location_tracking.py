@@ -1,23 +1,18 @@
 """
-Test location tracking for all ASDL data structures during parsing.
+Location tracking tests for parser outputs.
 """
 
 import pytest
 from pathlib import Path
 import sys
 
-# Add src to path for testing
-test_dir = Path(__file__).parent
-project_root = test_dir.parent.parent.parent
-sys.path.insert(0, str(project_root / "src"))
-
 from asdl.parser import ASDLParser
 from asdl.data_structures import (
+    ASDLFile,
+    FileInfo,
     Module,
     Port,
     Instance,
-    FileInfo,
-    ASDLFile,
 )
 
 class TestLocationTracking:

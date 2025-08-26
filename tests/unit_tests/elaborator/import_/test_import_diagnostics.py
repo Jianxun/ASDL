@@ -7,12 +7,6 @@ file not found, circular imports, module resolution failures, and alias issues.
 
 import pytest
 from pathlib import Path
-import sys
-
-# Add src to path for testing
-test_dir = Path(__file__).parent
-project_root = test_dir.parent.parent.parent.parent
-sys.path.insert(0, str(project_root / "src"))
 
 from asdl.elaborator.import_.diagnostics import ImportDiagnostics
 from asdl.diagnostics import DiagnosticSeverity

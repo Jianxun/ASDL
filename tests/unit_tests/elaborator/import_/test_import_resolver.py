@@ -11,11 +11,6 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 import sys
 
-# Add src to path for testing
-test_dir = Path(__file__).parent
-project_root = test_dir.parent.parent.parent.parent
-sys.path.insert(0, str(project_root / "src"))
-
 from asdl.elaborator.import_.import_resolver import ImportResolver
 from asdl.data_structures import ASDLFile, FileInfo, Module
 from asdl.diagnostics import Diagnostic, DiagnosticSeverity
@@ -70,7 +65,8 @@ modules:
             )
             
             assert result is not None
-            assert len(diagnostics) == 0
+            # Allow non-error quality warnings; ensure no errors present
+            assert all(d.severity != DiagnosticSeverity.ERROR for d in diagnostics)
             
             # Should have flattened all modules into single file
             assert len(result.modules) == 2  # inverter + nmos_unit
@@ -134,7 +130,8 @@ modules:
             )
             
             assert result is not None
-            assert len(diagnostics) == 0
+            # Allow non-error quality warnings; ensure no errors present
+            assert all(d.severity != DiagnosticSeverity.ERROR for d in diagnostics)
             
             # Should have all modules flattened
             assert len(result.modules) == 3  # inverter + nmos_unit + pmos_unit

@@ -8,12 +8,6 @@ Validates module reference resolution and error handling.
 import pytest
 from pathlib import Path
 from unittest.mock import Mock
-import sys
-
-# Add src to path for testing
-test_dir = Path(__file__).parent
-project_root = test_dir.parent.parent.parent.parent
-sys.path.insert(0, str(project_root / "src"))
 
 from asdl.elaborator.import_.module_resolver import ModuleResolver
 from asdl.data_structures import ASDLFile, FileInfo, Module
