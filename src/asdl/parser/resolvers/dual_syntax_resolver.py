@@ -2,7 +2,7 @@
 Dual syntax resolution for parameters/params and variables/vars fields.
 
 Extracts dual syntax resolution functionality from the monolithic parser
-with exact preservation of business logic and P301/P302 warning generation.
+with exact preservation of business logic and P0601/P0602 warning generation (XCCSS).
 """
 
 from typing import Dict, Any, Optional, List

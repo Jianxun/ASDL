@@ -2,7 +2,7 @@
 Port definitions parser.
 
 Extracts port parsing functionality from the monolithic parser
-with exact preservation of validation logic and P104/P105/P201 diagnostic generation.
+with exact preservation of validation logic and XCCSS diagnostic generation (P0240/P0205/P0702; P0511/P0512).
 """
 
 from typing import Any, Dict, List, Optional, cast
@@ -27,10 +27,10 @@ class PortParser:
         Parse ports section.
         
         Exact implementation from _parse_ports() method.
-        Preserves P104 required field validation (dir only, type is optional).
-        Preserves P105 port parsing error handling.
-        Preserves P201 unknown field validation.
-        Preserves enum conversion logic.
+        Preserves P0240 required field validation (dir only, type is optional).
+        Preserves P0205 generic port parsing error handling (fallback).
+        Preserves P0702 unknown field validation.
+        Adds explicit enum conversion validation P0511/P0512.
         
         Args:
             data: Ports section data

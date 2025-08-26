@@ -38,18 +38,18 @@
   - `test_models_section_rejected`: Legacy `models` section → P200 (warning); ignored during parsing.
   - `test_unified_module_parsing`: Happy-path mixed primitive/hierarchical parsing; no diagnostics.
   - `test_parser_enforces_mutual_exclusion`: Both `spice_template` and `instances` → P107.
-  - `test_parser_requires_implementation`: Neither `spice_template` nor `instances` → P108.
+  - `test_parser_requires_implementation`: Neither `spice_template` nor `instances` → P0231.
   - `test_imports_section_parsing`: Expects rich import model (`ImportDeclaration`, alias/version), no diagnostics.
-  - `test_invalid_import_format`: Expects two invalid import format errors → P106.
+  - `test_invalid_import_format`: Expects two invalid import errors → P0501/P0502.
   - `test_empty_imports_section`: No imports → no diagnostics; `imports` is `None`.
   - `test_unified_parser_preserves_location_info`: Sanity check for location in imports/modules; redundant with dedicated location tests.
 
 - `tests/unit_tests/parser/test_unknown_field_warnings.py`
-  - Unknown field in module/port/instance → P201 (warning). Multiple warnings supported. Known fields only → no diagnostics.
+  - Unknown field in module/port/instance → P0702 (warning). Multiple warnings supported. Known fields only → no diagnostics.
 
 - `tests/unit_tests/parser/test_parameter_variable_dual_syntax.py`
   - Canonical/abbreviated `parameters` and `variables` at module/instance levels parse without diagnostics; stored canonically.
-  - Both forms in same scope → warning expected; should map to P301 (parameters) and P302 (variables). Current tests do not assert codes explicitly.
+  - Both forms in same scope → warning expected; should map to P0601 (parameters) and P0602 (variables). Current tests do not assert codes explicitly.
 
 ### Redundancies to consolidate
 - **P100/P101 YAML/root**: Duplicated across `test_basic_parsing.py` and `test_error_handling.py`. Keep a single focused file that asserts code, severity, details, and location.
@@ -65,9 +65,9 @@
 
 ### Coverage map: implemented codes hit by tests
 - YAML/root: P100, P101 (covered). Empty file: returns no diag (covered behavior).
-- Sections: P102 (missing `file_info`) and P103 (section not dict) covered.
-- Modules semantic: P107 (conflict) and P108 (incomplete) covered.
-- Unknown sections/fields: P200 (unknown top-level) and P201 (unknown field) covered.
+- Sections: P0201 (missing `file_info`) and P0202 (section not dict) covered.
+- Modules semantic: P0230 (conflict) and P0231 (incomplete) covered.
+- Unknown sections/fields: P0701 (unknown top-level) and P0702 (unknown field) covered.
 - Model alias: P0503 covered.
 - Dual syntax warnings: Behavior covered, but codes **P301/P302** not asserted explicitly.
 - Imports: Tests currently expect P106 (outdated). Parser should emit P0501/P0502; add/adjust tests accordingly.
@@ -113,9 +113,9 @@ tests/unit_tests/parser/
 ```
 
 ### High-priority test additions (TDD)
-- Ports: P104 for missing `dir`; P105 for conversion failure.
-- Instances: P104 for missing `model`.
-- Dual syntax: Assert **P301** and **P302** codes in existing warning tests.
+- Ports: P0240 for missing `dir`; P0205 for generic conversion failure; P0511/P0512 for enum.
+- Instances: P0250 for missing `model`.
+- Dual syntax: Assert **P0601** and **P0602** codes in existing warning tests.
 - Imports: Add tests for P0501 (non-string) and P0502 (non-.asdl).
 
 ### Medium-priority test additions (drive new implementation)

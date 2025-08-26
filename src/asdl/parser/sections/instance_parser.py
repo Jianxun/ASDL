@@ -2,7 +2,7 @@
 Instance definitions parser.
 
 Extracts instance parsing functionality from the monolithic parser
-with exact preservation of validation logic and P104/P201 diagnostic generation.
+with exact preservation of validation logic and XCCSS diagnostic generation (P0250/P0702).
 """
 
 from typing import Any, Dict, List, Optional, cast
@@ -30,9 +30,9 @@ class InstanceParser:
         Parse instances section.
         
         Exact implementation from _parse_instances() method.
-        Preserves P104 required model field validation.
+        Preserves P0250 required model field validation.
         Preserves dual syntax parameter resolution.
-        Preserves P201 unknown field validation.
+        Preserves P0702 unknown field validation.
         
         Args:
             data: Instances section data

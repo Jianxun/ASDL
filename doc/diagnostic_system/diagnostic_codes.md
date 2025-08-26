@@ -38,14 +38,24 @@ The future diagnostic system will use a structured `XCCSS` format:
 | :----- | :------------------------ | :-------------------- | :------------ |
 | **P100**   | Invalid YAML Syntax       | ✅ Implemented       | ✅ Covered    |
 | **P101**   | Invalid Root Type         | ✅ Implemented       | ✅ Covered    |
-| **P102**   | Missing Required Section  | ✅ Implemented       | ✅ Covered    |
-| **P103**   | Invalid Section Type      | ❌ Not Implemented   | ❌ Not Covered|
-| **P104**   | Missing Required Field    | ❌ Not Implemented   | ❌ Not Covered|
-| **P106**   | Invalid Import Format     | ✅ Implemented       | ✅ Covered    |
-| **P107**   | Module Type Conflict      | ✅ Implemented       | ✅ Covered    |
-| **P108**   | Incomplete Module Definition | ✅ Implemented    | ✅ Covered    |
-| **P200**   | Unknown Top-Level Section | ✅ Implemented       | ✅ Covered    |
-| **P201**   | Unknown Field             | ❌ Not Implemented   | ❌ Not Covered|
+| **P0101** | Invalid YAML Syntax               | ✅ Implemented | ✅ Covered |
+| **P0102** | Invalid Root Type                 | ✅ Implemented | ✅ Covered |
+| **P0103** | Empty File (INFO)                 | ✅ Implemented | ✅ Covered |
+| **P0201** | Missing Required Section          | ✅ Implemented | ✅ Covered |
+| **P0202** | Invalid Section Type              | ✅ Implemented | ✅ Covered |
+| **P0230** | Module Type Conflict              | ✅ Implemented | ✅ Covered |
+| **P0231** | Incomplete Module Definition      | ✅ Implemented | ✅ Covered |
+| **P0240** | Missing Port Direction            | ✅ Implemented | ✅ Covered |
+| **P0250** | Missing Instance Model            | ✅ Implemented | ✅ Covered |
+| **P0501** | Invalid Import Path Type          | ✅ Implemented | ✅ Covered |
+| **P0502** | Invalid Import File Extension     | ✅ Implemented | ✅ Covered |
+| **P0503** | Invalid Model Alias Format        | ✅ Implemented | ✅ Covered |
+| **P0511** | Invalid Port Direction Enum       | ✅ Implemented | ✅ Covered |
+| **P0512** | Invalid Port Type Enum            | ✅ Implemented | ✅ Covered |
+| **P0601** | Dual Parameter Syntax (WARNING)   | ✅ Implemented | ✅ Covered |
+| **P0602** | Dual Variables Syntax (WARNING)   | ✅ Implemented | ✅ Covered |
+| **P0701** | Unknown Top-Level Section (WARN)  | ✅ Implemented | ✅ Covered |
+| **P0702** | Unknown Field (WARNING)           | ✅ Implemented | ✅ Covered |
 
 ### P100: Invalid YAML Syntax
 - **Type**: `Error`
@@ -97,7 +107,7 @@ The future diagnostic system will use a structured `XCCSS` format:
   ```
 - **Suggestion**: Ensure the section type is valid and supported by the parser.
 
-### P104: Missing Required Field
+### P0240: Missing Port Direction
 - **Type**: `Error`
 - **Component**: `Parser`
 - **Title**: `Missing Required Field`
@@ -110,7 +120,7 @@ The future diagnostic system will use a structured `XCCSS` format:
   ```
 - **Suggestion**: Add the missing mandatory field to the file.
 
-### P106: Invalid Import Format
+### P0501/P0502: Invalid Import Path Type / File Extension
 - **Type**: `Error`
 - **Component**: `Parser`
 - **Title**: `Invalid Import Format`

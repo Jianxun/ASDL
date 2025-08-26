@@ -151,11 +151,13 @@ Diagnostic.create("P0201", location=loc, section="file_info")
 | P101 | P0102 | Syntax | Invalid Root Type |
 | P102 | P0201 | Schema | Missing Required Section |
 | P103 | P0202 | Schema | Invalid Section Type |
-| P104 | P0203 | Schema | Missing Required Field |
-| P107 | P0303 | Semantic | Module Type Conflict |
-| P108 | P0304 | Semantic | Incomplete Module Definition |
+| P104 | P0240/P0250 | Schema | Missing Required Field (split) |
+| P107 | P0230 | Semantic | Module Type Conflict |
+| P108 | P0231 | Semantic | Incomplete Module Definition |
 | P200 | P0701 | Extension | Unknown Top-Level Section |
+| P201 | P0702 | Extension | Unknown Field |
 | P301 | P0601 | Style | Dual Parameter Syntax |
+| P302 | P0602 | Style | Dual Variables Syntax |
 
 ### Elaborator Code Examples
 
