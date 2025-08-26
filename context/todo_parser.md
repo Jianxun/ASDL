@@ -8,6 +8,8 @@
 - [X] Consolidate YAML/root tests into single P100/P101 suite
 - [X] Parameterize P200 unknown top-level test; remove duplicates
 - [X] Centralize location tests; remove redundant assertions elsewhere
+  - [X] Remove `test_unified_parsing.py` and rely on per-code tests for negatives
+  - [X] Keep positive-path coverage in `test_parser_positive_paths.py`
 
 ### Phase 2 — Add Missing Tests (Existing Behavior)
 - [X] Add P0240 test: port missing dir in PortParser

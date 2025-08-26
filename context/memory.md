@@ -131,3 +131,16 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - Created one-per-code unit tests named after codes (e.g., `test_p0240_missing_port_dir.py`).
 - Pruned overlapping consolidated tests in favor of per-code tests.
 - Current parser unit tests: 34 passed.
+
+### **Parser Test Suite Refactor — Naming Cleanup (2025-08-26)**
+- Removed redundant `tests/unit_tests/parser/test_unified_parsing.py`; negative cases are covered by per-code tests:
+  - P0230 in `test_p0230_module_type_conflict.py`
+  - P0231 in `test_p0231_incomplete_module_definition.py`
+  - P0501 in `test_p0501_invalid_import_path_type.py`
+  - P0502 in `test_p0502_invalid_import_file_extension.py`
+- Kept and relocated positive-path coverage into focused suites:
+  - `tests/unit_tests/parser/test_parser_positive_paths.py` (happy-path parsing and imports)
+  - `tests/unit_tests/parser/test_parser_basics.py` (root/yaml basics where applicable)
+  - `tests/unit_tests/parser/test_parser_modules.py` (module-focused behaviors)
+  - `tests/unit_tests/parser/test_parser_location_tracking.py` (centralized location tracking)
+- Suite structure now: per-code diagnostics files + focused positive-path/module/location suites.

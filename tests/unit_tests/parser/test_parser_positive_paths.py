@@ -74,75 +74,6 @@ modules:
         assert "M1" in inverter.instances
         assert "M2" in inverter.instances
     
-    def test_parser_enforces_mutual_exclusion(self):
-        """
-        TESTS: Parser validates spice_template XOR instances constraint
-        VALIDATES: Early error detection for malformed modules
-        ENSURES: Clear diagnostic messages for constraint violations
-        """
-        yaml_content = """
-file_info:
-  top_module: "test"
-modules:
-  invalid_module:
-    ports:
-      in: {dir: in, type: voltage}
-      out: {dir: out, type: voltage}
-    spice_template: "X{name} {in} {out} invalid_device"
-    instances:
-      M1:
-        model: some_model
-        mappings: {in: in, out: out}
-"""
-        parser = ASDLParser()
-        asdl_file, diagnostics = parser.parse_string(yaml_content)
-        
-        # Should fail to parse the invalid module
-        assert len(diagnostics) == 1
-        assert diagnostics[0].code == "P0230"  # Module Type Conflict
-        assert diagnostics[0].title == "Module Type Conflict"
-        assert "cannot have both" in diagnostics[0].details
-        assert "spice_template" in diagnostics[0].details
-        assert "instances" in diagnostics[0].details
-        # Per-code tests assert severity; this file focuses on structure only
-        
-        # Module should not be in parsed result
-        assert asdl_file is not None
-        assert "invalid_module" not in asdl_file.modules
-    
-    def test_parser_requires_implementation(self):
-        """
-        TESTS: Parser rejects modules with neither spice_template nor instances
-        VALIDATES: All modules must have valid implementation
-        ENSURES: Clear error for incomplete module definitions
-        """
-        yaml_content = """
-file_info:
-  top_module: "test"
-modules:
-  empty_module:
-    ports:
-      in: {dir: in, type: voltage}
-      out: {dir: out, type: voltage}
-    parameters: {gain: 1.0}
-    # Missing both spice_template and instances
-"""
-        parser = ASDLParser()
-        asdl_file, diagnostics = parser.parse_string(yaml_content)
-        
-        # Should fail to parse the empty module
-        assert len(diagnostics) == 1
-        assert diagnostics[0].code == "P0231"  # Incomplete Module Definition
-        assert diagnostics[0].title == "Incomplete Module Definition"
-        assert "must have either" in diagnostics[0].details
-        assert "spice_template" in diagnostics[0].details
-        assert "instances" in diagnostics[0].details
-        # Per-code tests assert severity; this file focuses on structure only
-        
-        # Module should not be in parsed result
-        assert asdl_file is not None
-        assert "empty_module" not in asdl_file.modules
-    
     def test_imports_section_parsing(self):
         """
         TESTS: Basic imports section recognition and parsing
@@ -175,38 +106,6 @@ modules:
         assert asdl_file.imports["pdk_primitives"] == "libs/pdk/primitives.asdl"
         assert asdl_file.imports["std_devices"] == "libs/tiles/devices.asdl"
         assert asdl_file.imports["amplifiers"] == "libs/analog/amps.asdl"
-    
-    def test_invalid_import_entries(self):
-        """
-        TESTS: Parser validates import format and generates errors for invalid syntax
-        VALIDATES: Early detection of malformed import declarations
-        ENSURES: Clear diagnostic messages for import format violations
-        """
-        yaml_content = """
-file_info:
-  top_module: "test"
-imports:
-  valid_import: lib/valid.asdl
-  invalid_import: 42
-  another_invalid: lib/invalid.txt
-modules: {}
-"""
-        parser = ASDLParser()
-        asdl_file, diagnostics = parser.parse_string(yaml_content)
-        
-        assert asdl_file is not None
-        
-        # Should have 2 import errors: P0501 (type) and P0502 (extension)
-        p0501 = [d for d in diagnostics if d.code == "P0501"]
-        p0502 = [d for d in diagnostics if d.code == "P0502"]
-        assert len(p0501) == 1
-        assert len(p0502) == 1
-        
-        # Valid import should still be parsed
-        assert asdl_file.imports is not None
-        assert "valid_import" in asdl_file.imports
-        assert "invalid_import" not in asdl_file.imports
-        assert "another_invalid" not in asdl_file.imports
     
     def test_empty_imports_section(self):
         """
