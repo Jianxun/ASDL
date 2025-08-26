@@ -40,7 +40,7 @@ class DualSyntaxResolver:
         if parameters is not None and params is not None:
             # Both forms present - generate warning and prefer canonical
             diagnostics.append(Diagnostic(
-                code="P301",
+                code="P0601",
                 title="Dual Parameter Syntax",
                 details=f"{context} contains both 'parameters' and 'params' fields. Using 'parameters' and ignoring 'params'.",
                 severity=DiagnosticSeverity.WARNING,
@@ -81,7 +81,7 @@ class DualSyntaxResolver:
         if variables is not None and vars_abbrev is not None:
             # Both forms present - generate warning and prefer canonical
             diagnostics.append(Diagnostic(
-                code="P302",
+                code="P0602",
                 title="Dual Variables Syntax",
                 details=f"{context} contains both 'variables' and 'vars' fields. Using 'variables' and ignoring 'vars'.",
                 severity=DiagnosticSeverity.WARNING,

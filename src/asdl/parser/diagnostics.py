@@ -20,26 +20,27 @@ from ..diagnostics import Diagnostic, DiagnosticSeverity
 # Diagnostic definitions for the Parser component
 PARSER_DIAGNOSTICS: Dict[str, Tuple[str, str]] = {
     # Syntax (P01xx)
-    "P100": ("Invalid YAML Syntax", "The file could not be parsed because of a syntax error: {problem}"),
-    "P101": ("Invalid Root Type", "The root of an ASDL file must be a dictionary (a set of key-value pairs)."),
+    "P0101": ("Invalid YAML Syntax", "The file could not be parsed because of a syntax error: {problem}"),
+    "P0102": ("Invalid Root Type", "The root of an ASDL file must be a dictionary (a set of key-value pairs)."),
 
     # Schema (P02xx)
-    "P102": ("Missing Required Section", "'{section}' is a mandatory section and must be present at the top level of the ASDL file."),
-    "P103": ("Invalid Section Type", "The '{section}' section must be a dictionary (mapping), but found {found_type}."),
-    "P104": ("Missing Required Field", "{context} is missing the required '{field}' field."),
-    "P105": ("Port Parsing Error", "An error occurred while parsing port '{port_name}': {error}"),
+    "P0201": ("Missing Required Section", "'{section}' is a mandatory section and must be present at the top level of the ASDL file."),
+    "P0202": ("Invalid Section Type", "The '{section}' section must be a dictionary (mapping), but found {found_type}."),
+    "P0240": ("Missing Port Direction", "Port '{port_name}' is missing the required 'dir' field."),
+    "P0205": ("Port Parsing Error", "An error occurred while parsing port '{port_name}': {error}"),
 
-    # Semantic (P03xx)
-    "P107": ("Module Type Conflict", "Module '{module}' cannot have both 'spice_template' and 'instances'."),
-    "P108": ("Incomplete Module Definition", "Module '{module}' must have either 'spice_template' or 'instances'."),
+    # Semantic (P02/03xx)
+    "P0230": ("Module Type Conflict", "Module '{module}' cannot have both 'spice_template' and 'instances'."),
+    "P0231": ("Incomplete Module Definition", "Module '{module}' must have either 'spice_template' or 'instances'."),
+    "P0250": ("Missing Instance Model", "Instance '{instance_name}' is missing the required 'model' field."),
 
     # Extension (P07xx)
-    "P200": ("Unknown Top-Level Section", "The top-level section '{section}' is not a recognized ASDL section."),
-    "P201": ("Unknown Field", "{context} contains unknown field '{field_name}' which is not a recognized field."),
+    "P0701": ("Unknown Top-Level Section", "The top-level section '{section}' is not a recognized ASDL section."),
+    "P0702": ("Unknown Field", "{context} contains unknown field '{field_name}' which is not a recognized field."),
 
     # Style (P06xx) — dual syntax warnings
-    "P301": ("Dual Parameter Syntax", "{context} contains both 'parameters' and 'params' fields. Using 'parameters' and ignoring 'params'."),
-    "P302": ("Dual Variables Syntax", "{context} contains both 'variables' and 'vars' fields. Using 'variables' and ignoring 'vars'."),
+    "P0601": ("Dual Parameter Syntax", "{context} contains both 'parameters' and 'params' fields. Using 'parameters' and ignoring 'params'."),
+    "P0602": ("Dual Variables Syntax", "{context} contains both 'variables' and 'vars' fields. Using 'variables' and ignoring 'vars'."),
 
     # Type (P05xx) — imports simplified path validation
     "P0501": ("Invalid Import Path Type", "Import '{alias}' path must be a string, got {found_type}."),

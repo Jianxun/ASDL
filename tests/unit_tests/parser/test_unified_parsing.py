@@ -8,41 +8,12 @@ while rejecting the legacy models section format.
 import pytest
 from src.asdl.parser import ASDLParser
 from src.asdl.data_structures import ASDLFile, Module
-from src.asdl.diagnostics import DiagnosticSeverity
 
 
 class TestUnifiedParsing:
     """Test parser handling of unified module architecture."""
     
-    def test_models_section_rejected(self):
-        """
-        TESTS: Parser rejects ASDL files with models section
-        VALIDATES: Clean break from legacy format
-        ENSURES: No ambiguity about supported format
-        """
-        yaml_content = """
-file_info:
-  top_module: "test"
-models:
-  nmos_old:
-    type: pdk_device
-    ports: ["D", "G", "S", "B"]
-    device_line: "M_nmos D G S B nfet_03v3"
-modules: {}
-"""
-        parser = ASDLParser()
-        asdl_file, diagnostics = parser.parse_string(yaml_content)
-        
-        # Should still parse but generate warning about unknown section
-        assert asdl_file is not None
-        assert len(diagnostics) == 1
-        assert diagnostics[0].code == "P0701"  # Unknown top-level section
-        assert diagnostics[0].title == "Unknown Top-Level Section"
-        assert "'models'" in diagnostics[0].details
-        assert diagnostics[0].severity == DiagnosticSeverity.WARNING
-        
-        # Models section should be ignored - not parsed into ASDLFile
-        assert not hasattr(asdl_file, 'models') or asdl_file.modules == {}
+    # P0701 covered in per-code test file
     
     def test_unified_module_parsing(self):
         """
@@ -128,12 +99,12 @@ modules:
         
         # Should fail to parse the invalid module
         assert len(diagnostics) == 1
-        assert diagnostics[0].code == "P107"  # Module Type Conflict
+        assert diagnostics[0].code == "P0230"  # Module Type Conflict
         assert diagnostics[0].title == "Module Type Conflict"
         assert "cannot have both" in diagnostics[0].details
         assert "spice_template" in diagnostics[0].details
         assert "instances" in diagnostics[0].details
-        assert diagnostics[0].severity == DiagnosticSeverity.ERROR
+        # Per-code tests assert severity; this file focuses on structure only
         
         # Module should not be in parsed result
         assert asdl_file is not None
@@ -161,12 +132,12 @@ modules:
         
         # Should fail to parse the empty module
         assert len(diagnostics) == 1
-        assert diagnostics[0].code == "P108"  # Incomplete Module Definition
+        assert diagnostics[0].code == "P0231"  # Incomplete Module Definition
         assert diagnostics[0].title == "Incomplete Module Definition"
         assert "must have either" in diagnostics[0].details
         assert "spice_template" in diagnostics[0].details
         assert "instances" in diagnostics[0].details
-        assert diagnostics[0].severity == DiagnosticSeverity.ERROR
+        # Per-code tests assert severity; this file focuses on structure only
         
         # Module should not be in parsed result
         assert asdl_file is not None
@@ -230,7 +201,6 @@ modules: {}
         p0502 = [d for d in diagnostics if d.code == "P0502"]
         assert len(p0501) == 1
         assert len(p0502) == 1
-        assert all(d.severity == DiagnosticSeverity.ERROR for d in (p0501 + p0502))
         
         # Valid import should still be parsed
         assert asdl_file.imports is not None
@@ -260,29 +230,4 @@ modules:
         assert asdl_file.imports is None  # No imports section
         assert len(asdl_file.modules) == 1
     
-    def test_unified_parser_preserves_location_info(self):
-        """
-        TESTS: Location tracking works with unified parsing architecture
-        VALIDATES: Diagnostics can point to specific locations in modules and imports
-        ENSURES: Error messages are helpful for debugging
-        """
-        yaml_content = """
-file_info:
-  top_module: "test"
-imports:
-  test_lib: libs/valid.asdl
-modules:
-  test_module:
-    spice_template: "R{name} {n1} {n2} {R}"
-    parameters: {R: "1k"}
-"""
-        parser = ASDLParser()
-        asdl_file, diagnostics = parser.parse_string(yaml_content)
-        
-        assert asdl_file is not None
-        assert not diagnostics
-        
-        # Check that module location info is preserved
-        module = asdl_file.modules["test_module"]
-        assert module.start_line is not None
-        assert module.start_col is not None
+    # Location-tracking assertions are centralized in test_location_tracking.py

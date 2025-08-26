@@ -53,8 +53,8 @@ class InstanceParser:
             model_val = instance_data.get('model')
             if not model_val:
                 diagnostics.append(Diagnostic(
-                    code="P104", 
-                    title="Missing Required Field", 
+                    code="P0250",
+                    title="Missing Instance Model",
                     details=f"Instance '{instance_name}' is missing the required 'model' field.",
                     severity=DiagnosticSeverity.ERROR,
                     location=loc

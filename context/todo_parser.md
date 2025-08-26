@@ -5,15 +5,15 @@
 - [X] Introduce parser XCCSS diagnostics module and migration plan
 
 ### Phase 1 — Consolidation and Cleanup
-- [ ] Consolidate YAML/root tests into single P100/P101 suite
-- [ ] Parameterize P200 unknown top-level test; remove duplicates
-- [ ] Centralize location tests; remove redundant assertions elsewhere
+- [X] Consolidate YAML/root tests into single P100/P101 suite
+- [X] Parameterize P200 unknown top-level test; remove duplicates
+- [X] Centralize location tests; remove redundant assertions elsewhere
 
 ### Phase 2 — Add Missing Tests (Existing Behavior)
-- [ ] Add P104 test: port missing dir in PortParser
-- [ ] Add P104 test: instance missing model in InstanceParser
-- [ ] Add P105 test: port parsing error (bad enum)
-- [ ] Assert P301/P302 codes in dual-syntax warning tests
+- [X] Add P0240 test: port missing dir in PortParser
+- [X] Add P0250 test: instance missing model in InstanceParser
+- [X] Add P0205 test: port parsing error (bad enum)
+- [X] Assert P0601/P0602 codes in dual-syntax warning tests
 - [X] Replace ImportParser diagnostics to P0501/P0502; update tests
 - [X] Align imports tests to simple path + P0501/P0502 (no P106)
 
@@ -29,7 +29,7 @@
 
 ### Phase 5 — Docs Alignment and Optional Diagnostics
 - [ ] Add optional INFO diagnostic for empty file (P0103)
-- [ ] Update error-code docs per P104 vs P0240/P0250 decision
+- [ ] Update error-code docs per P104→P0240/P0250 and P301/302→P0601/0602 migration
 
 ### Phase 6 — Test Environment Hygiene
 - [ ] Remove test sys.path hacks; rely on pyproject pythonpath

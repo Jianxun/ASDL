@@ -52,9 +52,9 @@ class PortParser:
             dir_val = port_data.get('dir')
             if not dir_val:
                 diagnostics.append(Diagnostic(
-                    code="P104", 
-                    title="Missing Required Field", 
-                    details=f"Port '{port_name}' is missing the required 'dir' field.", 
+                    code="P0240",
+                    title="Missing Port Direction",
+                    details=f"Port '{port_name}' is missing the required 'dir' field.",
                     severity=DiagnosticSeverity.ERROR,
                     location=loc
                 ))
@@ -81,7 +81,7 @@ class PortParser:
                 )
             except Exception as e:
                 diagnostics.append(Diagnostic(
-                    code="P105",
+                    code="P0205",
                     title="Port Parsing Error",
                     details=f"An error occurred while parsing port '{port_name}': {e}",
                     severity=DiagnosticSeverity.ERROR,

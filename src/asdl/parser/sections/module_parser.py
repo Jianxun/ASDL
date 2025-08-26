@@ -68,7 +68,7 @@ class ModuleParser:
             
             if has_spice_template and has_instances:
                 diagnostics.append(Diagnostic(
-                    code="P107",
+                    code="P0230",
                     title="Module Type Conflict",
                     details=f"Module '{module_id}' cannot have both 'spice_template' and 'instances'. Choose one: primitive (spice_template) or hierarchical (instances).",
                     severity=DiagnosticSeverity.ERROR,
@@ -79,7 +79,7 @@ class ModuleParser:
                 
             if not has_spice_template and not has_instances:
                 diagnostics.append(Diagnostic(
-                    code="P108",
+                    code="P0231",
                     title="Incomplete Module Definition",
                     details=f"Module '{module_id}' must have either 'spice_template' (primitive) or 'instances' (hierarchical).",
                     severity=DiagnosticSeverity.ERROR,

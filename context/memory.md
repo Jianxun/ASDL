@@ -117,3 +117,17 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
   - P100→P0101, P101→P0102, P102→P0201, P103→P0202
   - P200→P0701 (unknown top-level), P201→P0702 (unknown field)
 - Updated unit tests to match (refactored imports tests, dropped rich import objects).
+
+### **Parser Test Suite Refactor — Phase 1 Progress (2025-08-26)**
+- Consolidated YAML/root diagnostics into canonical `tests/unit_tests/parser/test_yaml_and_root.py` covering P0101/P0102 and empty content behavior.
+- Parameterized unknown top-level section diagnostics into `tests/unit_tests/parser/test_toplevel_sections.py` covering P0701 for `models` and `future_feature`.
+- Removed redundant `tests/unit_tests/parser/test_error_handling.py` and deduplicated P0701 case from `test_unified_parsing.py`.
+- All parser unit tests green: 45 passed.
+
+### **Parser XCCSS Migration Completed (2025-08-26)**
+- Migrated legacy parser codes to XCCSS and updated registry:
+  - P107→P0230, P108→P0231, P104→P0240 (port), P104→P0250 (instance), P105→P0205,
+    P301→P0601, P302→P0602. Kept existing P0101, P0102, P0201, P0202, P0501, P0502, P0503, P0701, P0702.
+- Created one-per-code unit tests named after codes (e.g., `test_p0240_missing_port_dir.py`).
+- Pruned overlapping consolidated tests in favor of per-code tests.
+- Current parser unit tests: 34 passed.
