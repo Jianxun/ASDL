@@ -1,53 +1,95 @@
 # Generator TODOs
 
-- Revisit PDK include path assumptions used during generation and tests.
-  - Current test `tests/unit_tests/generator/test_generation_methods.py::test_pdk_include_generation_deduplicates` assumes includes like "{pdk}_fd_pr/models/ngspice/design.ngspice".
-  - Evaluate per-PDK configurability, environment overrides, and technology libraries layout.
-  - Consider moving path composition to a resolver utility with tests.
+This file tracks the netlist generator refactor and behavior changes.
 
+## In-Progress: Behavior Changes (MVP)
 
-## Planned Diagnostics and Unit Tests
+- Remove XMAIN emission entirely from generator output.
+- Add top-level rendering modes via options/CLI:
+  - subckt: emit `.subckt {top} … .ends` as the final section.
+  - flat: comment out only the top `.subckt`/`.ends` wrapper lines with `*` (body unchanged).
+- Emit hierarchical subckts in dependency order (children before parents), with `top` last. Use deterministic tie-breaking for orphans.
+- Remove automatic PDK `.include` emission from the generator. PDK model includes will be injected by a higher-level simulation orchestrator (or separate CLI facility later if needed).
 
-The generator should use diagnostics (XCCSS) rather than raising raw exceptions. The following diagnostics will be added with focused unit tests under `tests/unit_tests/generator/` (one file per error code):
+## Refactor Tasks
 
-- G0102: Top module not found
-  - Severity: ERROR
-  - Trigger: `file_info.top_module` is set, but that module key is absent from `asdl_file.modules`.
-  - Behavior: Do not emit `XMAIN`; emit diagnostic G0102 with details: missing top name, available module names; add a helpful comment in header.
-  - Comment example: `* ERROR G0102: top module 'top_name' not found; available: [a, b, c]`
-  - Unit test: `tests/unit_tests/generator/test_g0102_top_module_not_found.py`
-    - Create `ASDLFile(file_info.top_module="top")` with modules missing `top`.
-    - Assert: diagnostic list contains code=="G0102"; no `XMAIN` present.
+- Extract generator components:
+  - options.py: `TopStyle` enum and `GeneratorOptions` dataclass.
+  - ordering.py: dependency graph + reverse topo ordering ensuring `top` last.
+  - subckt.py: subckt builder (supports `flat` commenting of top wrapper).
+  - instances.py: instance renderer dispatch (primitive vs hierarchical).
+  - templates.py: primitive template rendering with var/param merge and G0601 warning.
+  - calls.py: hierarchical subckt call formatting (ordered nodes, sorted params).
+  - formatting.py: helpers and constants (port order, param formatting, indent/comment).
+  - guards.py: defensive checks for unknown model/missing mappings (G0401, G0201).
+  - postprocess.py: unresolved placeholder scan (G0305).
+- Slim `spice_generator.py` to orchestration only; remove PDK includes and XMAIN.
+- CLI: add `--top-style {subckt,flat}` and pass options to generator.
 
-- G0301: Invalid module definition
-  - Severity: ERROR
-  - Trigger: A module has neither `spice_template` nor `instances` (invalid for generation).
-  - Behavior: Emit diagnostic G0301 with module name; add a comment in the module subckt area; skip generation for that module.
-  - Comment example: `* ERROR G0301: module 'foo' has neither spice_template nor instances`
-  - Unit test: `tests/unit_tests/generator/test_g0301_invalid_module.py`
-    - Create module with both fields `None`.
-    - Assert: diagnostic code=="G0301"; no device/subckt lines emitted for that module.
+## Diagnostics and Unit Tests
 
-- G0201: Unconnected port in subcircuit call (fatal)
-  - Severity: ERROR
-  - Trigger: An instance omits a declared port mapping; generator would otherwise emit `UNCONNECTED` placeholder.
-  - Behavior: Treat as fatal; emit diagnostic G0201 identifying instance id, model, and missing port names; include a comment line at the offending call site and skip emitting that instance line.
-  - Comment example: `* ERROR G0201: instance 'U1' of 'child' missing mappings for: ['b','c']`
-  - Unit test: `tests/unit_tests/generator/test_g0201_unconnected_port.py`
-    - Child module with ports [a,b,c]; parent instance maps only `a`.
-    - Assert: diagnostic code=="G0201"; subckt contains an error comment and no `X_` call for that instance.
+The generator emits diagnostics (XCCSS) for defensive checks and postprocessing. Focused unit tests live under `tests/unit_tests/generator/` (one file per code):
 
-- I0701: Missing top module (informational)
-  - Severity: INFO
+- G0102: Top module not found (ERROR)
+  - Trigger: `file_info.top_module` is set but absent from `modules`.
+  - Behavior: emit diagnostic with missing name and available modules; annotate output with a comment.
+- G0301: Invalid module definition (ERROR)
+  - Trigger: module has neither `spice_template` nor `instances`.
+  - Behavior: emit diagnostic; add a comment; skip generation for that module.
+- G0201: Unconnected port in subckt call (ERROR)
+  - Trigger: hierarchical instance missing mappings for declared child ports.
+  - Behavior: emit diagnostic; add a comment; skip the offending instance line.
+- G0401: Unknown model reference (ERROR)
+  - Trigger: instance.model not found in `modules`.
+  - Behavior: emit diagnostic; add a comment; skip the instance line.
+- G0601: Variable shadows parameter (WARNING)
+  - Trigger: primitive template render where a variable name overwrites a parameter.
+  - Behavior: emit warning; variable takes precedence.
+- G0305: Unresolved template placeholders (ERROR)
+  - Trigger: `{placeholder}` remains after rendering.
+  - Behavior: emit diagnostic listing unique placeholders.
+- I0701: No top specified (INFO)
   - Trigger: `file_info.top_module` is None/empty.
-  - Behavior: Emit informational diagnostic indicating no `XMAIN` will be generated.
-  - Comment example: `* INFO I0701: no top module specified; skipping main instantiation`
-  - Unit test: `tests/unit_tests/generator/test_i0701_missing_top.py`
-    - Create `ASDLFile` with `top_module=None`.
-    - Assert: diagnostic code=="I0701"; no `XMAIN` present; otherwise valid `.end`.
+  - Behavior: emit informational diagnostic; output remains a valid library ending with `.end`.
 
+## Test Suite Updates (post-refactor)
 
-### Notes on existing tests and overlap cleanup
-- Unknown model reference is covered in `tests/unit_tests/generator/test_g0401_unknown_model.py` (canonical).
-- PDK include presence stays covered in unified generation basics; deduplication is tested in `test_generation_methods`.
-- Mixed primitive/hierarchical scenario moved to integration under `tests/integration/generator/test_mixed_design.py`.
+- Remove assertions expecting `XMAIN` lines.
+- Add ordering tests: children-before-parents; `top` subckt last.
+- Add `flat` vs `subckt` top mode tests (commented wrappers vs normal wrappers for top only).
+- Ensure no automatic PDK includes appear in generator output; PDK handling moved to orchestrator-level tests.
+- Keep existing focused diagnostics tests (G0102/G0201/G0301/G0305/G0401/G0601/I0701) with updated expectations/messages.
+
+## Completed/Cleaned Up
+
+- Dropped legacy assumption of inferred PDK include paths in generator.
+- Retired tests that asserted PDK include deduplication inside generator; these will be replaced by orchestrator/header injection tests later if needed.
+
+## Dependency Ordering Algorithm
+
+- Build the DAG
+  - Nodes: hierarchical modules only (`module.instances is not None`).
+  - Edges: parent → child for each instance whose `instance.model` is hierarchical (skip primitives).
+  - Source: `asdl_file.modules` provides deterministic iteration (insertion order); fall back to name-sorted if needed.
+
+- Ordering (children-first, top last)
+  - Use DFS postorder with cycle detection:
+    - `temp_mark` (on recursion stack) and `perm_mark` (fully visited) sets.
+    - Visit all hierarchical children first; append the parent to `ordered` when done.
+  - Handle `top` explicitly:
+    - Run DFS from `top` to get `reachable_by_top` (postorder → `top` naturally last in that subgraph).
+    - For remaining hierarchical modules not reachable from `top`, run DFS in deterministic order and append results.
+    - Final emission: `reachable_by_top` excluding `top`, then all orphan groups, then `top` as the very end.
+
+- Multiple references and deduplication
+  - The `perm_mark` set ensures each module emits exactly one `.subckt`, even if referenced by multiple parents.
+
+- Cycles (invalid hierarchy)
+  - Encountering a node already in `temp_mark` indicates a cycle. Emit a generator diagnostic (e.g., recursive hierarchy detected) and skip the back-edge to terminate traversal safely. Validator should normally catch this earlier.
+
+- Determinism
+  - Iterate children using module insertion order (or name-sorted) to keep stable output across runs.
+
+- Top-style interaction
+  - `subckt`: emit wrappers for all modules; `top` last.
+  - `flat`: same order, but comment only the `top` `.subckt`/`.ends` lines with `*`; keep body intact.

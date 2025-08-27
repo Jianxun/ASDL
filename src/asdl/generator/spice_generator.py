@@ -10,6 +10,7 @@ import re
 from ..data_structures import ASDLFile, Module, Instance
 from ..diagnostics import Diagnostic
 from .diagnostics import create_generator_diagnostic
+from .options import GeneratorOptions, TopStyle
 
 
 class SPICEGenerator:
@@ -19,23 +20,22 @@ class SPICEGenerator:
     Generates SPICE netlists with unified module architecture:
     - Primitive modules (with spice_template) → inline SPICE generation
     - Hierarchical modules (with instances) → .subckt definitions
-    - PDK includes generated automatically for primitive modules
     - ngspice compatible output format
     
     Pipeline order:
-    1. PDK include statements (.include for used PDKs)
-    2. Hierarchical module subcircuit definitions (.subckt for each circuit module)
-    3. Main circuit instantiation (XMAIN top-level call)
-    4. End statement (.end)
+    1. Hierarchical module subcircuit definitions (.subckt for each circuit module)
+    2. Main circuit instantiation (XMAIN top-level call)
+    3. End statement (.end)
     """
     
 
     
-    def __init__(self):
+    def __init__(self, options: Optional[GeneratorOptions] = None):
         """Initialize SPICE generator with default settings."""
         self.comment_style = "*"  # SPICE comment character
         self.indent = "  "        # Indentation for readability
         self._pending_diagnostics: List[Diagnostic] = []
+        self.options = options or GeneratorOptions()
     
     def generate(self, asdl_file: ASDLFile) -> Tuple[str, List[Diagnostic]]:
         """
@@ -61,13 +61,6 @@ class SPICEGenerator:
         lines.append(f"* Date: {asdl_file.file_info.date}")
         lines.append(f"* Revision: {asdl_file.file_info.revision}")
         lines.append("")
-        
-        # Generate PDK include statements for primitive modules
-        pdk_includes = self._generate_pdk_includes(asdl_file)
-        if pdk_includes:
-            lines.append("* PDK model includes")
-            lines.extend(pdk_includes)
-            lines.append("")
         
         # Detect invalid modules (neither primitive nor hierarchical)
         invalid_modules = [
@@ -139,25 +132,7 @@ class SPICEGenerator:
         
         return final_spice, diagnostics
     
-    def _generate_pdk_includes(self, asdl_file: ASDLFile) -> List[str]:
-        """
-        Generate .include statements for PDK modules.
-        
-        Args:
-            asdl_file: ASDL design containing modules
-            
-        Returns:
-            List of .include statement strings
-        """
-        includes = []
-        used_pdks = set()
-        
-        for module in asdl_file.modules.values():
-            if module.pdk and module.pdk not in used_pdks:
-                includes.append(f'.include "{module.pdk}_fd_pr/models/ngspice/design.ngspice"')
-                used_pdks.add(module.pdk)
-                
-        return includes
+    
     
     def generate_subckt(self, module: Module, module_name: str, 
                        asdl_file: ASDLFile) -> str:

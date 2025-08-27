@@ -50,6 +50,17 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - **Documentation**: Import system usage guide and best practices
   - See also: context/import_implementations.md for a distilled implementation snapshot
 
+### ✅ Generator Refactor Decisions (2025-08-27)
+- Remove XMAIN from netlist output entirely.
+- Remove automatic PDK `.include` emission from the generator; PDK handling is injected by a higher-level simulation orchestrator (or future CLI header-prepend facility).
+- Introduce top-level rendering modes:
+  - `subckt`: emit `.subckt {top} … .ends` with `top` last.
+  - `flat`: comment only the top `.subckt`/`.ends` wrapper lines with `*`; preserve body unchanged.
+- Emit hierarchical subcircuits in dependency order (children-before-parents), with `top` last.
+- Refactor `spice_generator.py` into components: options, ordering, subckt builder, instance rendering (templates/calls), formatting, guards, and postprocess.
+- Validation vs generation: keep minimal defensive generator diagnostics (unknown model, missing mappings, unresolved placeholders, variable-shadowing), while CLI runs validator first and skips generation on prior ERRORs.
+- Breaking changes policy: accept test breakage during MVP refactor; update tests after implementation.
+
 ## Recent Design Evolution
 
 ### **Phase 1.2.4 Completed (2025-08-24)**

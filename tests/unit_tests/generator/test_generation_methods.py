@@ -61,7 +61,7 @@ class TestSPICEGeneratorBasics:
         subckt = generator.generate_subckt(parent, "parent", asdl_file)
         assert "X_U1 n1 n2 n3 child a=2 z=1" in subckt
 
-    def test_pdk_include_generation_deduplicates(self):
+    def test_no_automatic_pdk_includes(self):
         generator = SPICEGenerator()
         m1 = Module(spice_template="R{name} {n1} {n2} {R}", pdk="gf180mcu")
         m2 = Module(spice_template="C{name} {n1} {n2} {C}", pdk="gf180mcu")
@@ -72,8 +72,7 @@ class TestSPICEGeneratorBasics:
             "d": m3,
         })
         output, diags = generator.generate(asdl_file)
-        assert output.count('gf180mcu_fd_pr/models/ngspice/design.ngspice') == 1
-        assert output.count('sky130_fd_pr/models/ngspice/design.ngspice') == 1
+        assert ".include" not in output
         # Allow informational diagnostic for missing top
         assert all(d.code != "G0102" and d.code != "G0401" and not d.severity.name == "ERROR" for d in diags)
 
