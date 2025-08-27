@@ -180,11 +180,19 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - Updated exports in `src/asdl/data_structures/__init__.py` and `src/asdl/__init__.py`.
 - Updated unit tests under `tests/unit_tests/` to use `PortType.SIGNAL`; removed all `PortConstraints` references.
 
+### Data Structures Test Suite Simplification (2025-08-27)
+- Archived legacy data structure tests referencing removed types (`PrimitiveType`, `DeviceModel`).
+- Added lean, invariants-oriented tests covering: module invariants, port defaults/enums, instance helpers, locatable formatting, and `ASDLFile` basics.
+- `tests/unit_tests/data_structures`: 14 passed.
+
 ### Current Unit Test Status (2025-08-27)
+- Data structures unit tests: green (14/14).
 - Generator unit tests: green.
-- Updated many unit tests for `PortType`; remaining failing suites addressed and corrected incrementally.
+- Validator unit tests: one suite still references legacy `DeviceModel` (to refactor next session).
 - Integration tests intentionally skipped (under refactor).
 
 ### Next Session Plan
-- Continue updating remaining data structure unit tests if any regressions appear.
-- Review schema text output to reflect enum rename in documentation where applicable.
+- Refactor validator test suite to align with unified data structures (remove `DeviceModel` usage).
+- Focus on schema generation improvements now that data structures are stable:
+  - Ensure JSON Schema and text schema fully reflect `PortType` and field metadata.
+  - Remove any remaining duplication and align CLI `asdlc schema` behavior.
