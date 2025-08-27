@@ -11,6 +11,10 @@ from ..data_structures import ASDLFile, Module, Instance
 from ..diagnostics import Diagnostic
 from .diagnostics import create_generator_diagnostic
 from .options import GeneratorOptions, TopStyle
+from .formatting import get_port_list
+from .subckt import build_subckt
+from .instances import generate_instance as _generate_instance_line
+from .postprocess import check_unresolved_placeholders
 
 
 class SPICEGenerator:
@@ -88,7 +92,13 @@ class SPICEGenerator:
         if hierarchical_modules:
             lines.append("* Hierarchical module subcircuit definitions")
             for module_name, module in hierarchical_modules.items():
-                subckt_def = self.generate_subckt(module, module_name, asdl_file)
+                subckt_def = build_subckt(
+                    module,
+                    module_name,
+                    asdl_file,
+                    self._pending_diagnostics,
+                    indent=self.indent,
+                )
                 lines.append(subckt_def)
                 lines.append("")
         
@@ -119,237 +129,29 @@ class SPICEGenerator:
         
         # Check for unresolved placeholders in the final SPICE output
         final_spice = "\n".join(lines)
-        placeholder_diagnostics = self._check_unresolved_placeholders(final_spice, asdl_file)
+        placeholder_diagnostics = check_unresolved_placeholders(final_spice)
         diagnostics.extend(placeholder_diagnostics)
         # Include any diagnostics collected during generation
         diagnostics.extend(self._pending_diagnostics)
         
         return final_spice, diagnostics
     
-    
-    
-    def generate_subckt(self, module: Module, module_name: str, 
-                       asdl_file: ASDLFile) -> str:
-        """
-        Generate .subckt definition for a module.
-        
-        Args:
-            module: Module to generate subcircuit for
-            module_name: Name of the module
-            asdl_file: Full ASDL design for context
-            
-        Returns:
-            SPICE subcircuit definition as string
-        """
-        lines = []
-        
-        # Add module documentation
-        if module.doc:
-            lines.append(f"* {module.doc}")
-        
-        # Generate .subckt header
-        port_list = self._get_port_list(module)
-        lines.append(f".subckt {module_name} {' '.join(port_list)}")
-        
-        # NOTE: No .param declarations for hierarchical modules per parameter resolving system design
-        # Parameters should be resolved at compile time to concrete values for LVS compatibility
-        
+    # Backwards-compatibility wrappers for unit tests
+    def generate_subckt(self, module: Module, module_name: str, asdl_file: ASDLFile) -> str:
+        return build_subckt(
+            module,
+            module_name,
+            asdl_file,
+            self._pending_diagnostics,
+            indent=self.indent,
+        )
 
-        
-        # Generate instances
-        if module.instances:
-            for instance_id, instance in module.instances.items():
-                # Add instance documentation as comment if present
-                if instance.doc:
-                    lines.append(f"{self.indent}* {instance.doc}")
-                # Validate model reference before generation
-                if instance.model not in asdl_file.modules:
-                    # Emit diagnostic G0401 and add a comment placeholder in output
-                    self._pending_diagnostics.append(
-                        create_generator_diagnostic("G0401", model=instance.model)
-                    )
-                    lines.append(f"{self.indent}* ERROR G0401: unknown model '{instance.model}'")
-                    continue
-                # Validate all required port mappings exist
-                child_module = asdl_file.modules[instance.model]
-                required_ports = self._get_port_list(child_module)
-                missing_ports = [p for p in required_ports if p not in (instance.mappings or {})]
-                if missing_ports:
-                    self._pending_diagnostics.append(
-                        create_generator_diagnostic(
-                            "G0201",
-                            instance_id=instance_id,
-                            model=instance.model,
-                            missing=str(missing_ports),
-                        )
-                    )
-                    lines.append(
-                        f"{self.indent}* ERROR G0201: instance '{instance_id}' of '{instance.model}' missing mappings for: {missing_ports}"
-                    )
-                    # Skip emitting this instance
-                    continue
-                instance_line = self.generate_instance(
-                    instance_id, instance, asdl_file
-                )
-                lines.append(f"{self.indent}{instance_line}")
-        
-        # Close subcircuit
-        lines.append(".ends")
-        
-        return "\n".join(lines)
+    def generate_instance(self, instance_id: str, instance: Instance, asdl_file: ASDLFile) -> str:
+        return _generate_instance_line(instance_id, instance, asdl_file, self._pending_diagnostics)
     
-    def generate_instance(self, instance_id: str, instance: Instance, 
-                         asdl_file: ASDLFile) -> str:
-        """
-        Generate SPICE line for an instance with unified module architecture.
-        
-        Args:
-            instance_id: Instance identifier
-            instance: Instance definition
-            asdl_file: Full ASDL design for context
-            
-        Returns:
-            SPICE instance line as string
-        """
-        # Check if instance model exists in modules
-        if instance.model not in asdl_file.modules:
-            # Emit diagnostic G0401 and surface as error in diagnostics-based flows
-            # For direct method call usage that expects exceptions, we still raise to avoid silent failures
-            raise ValueError(f"Unknown model reference: {instance.model}")
-            
-        module = asdl_file.modules[instance.model]
-        
-        # Determine if this is a primitive or hierarchical module
-        if module.spice_template is not None:
-            # Primitive module - generate inline SPICE using template
-            return self._generate_primitive_instance(instance_id, instance, module)
-        elif module.instances is not None:
-            # Hierarchical module - generate subcircuit call
-            return self._generate_subckt_call(instance_id, instance, asdl_file)
-        else:
-            raise ValueError(f"Module {instance.model} has neither spice_template nor instances")
     
-    def _generate_primitive_instance(self, instance_id: str, instance: Instance, 
-                                   module: Module) -> str:
-        """
-        Generate inline SPICE line for a primitive module instance.
-        
-        Uses the module's spice_template with parameter and port substitution.
-        
-        Args:
-            instance_id: Instance identifier
-            instance: Instance definition
-            module: Primitive module with spice_template
-            
-        Returns:
-            SPICE device line as string
-        """
-        if not module.spice_template:
-            raise ValueError(f"Module {instance_id} has no spice_template for primitive generation")
-        
-        # Build substitution data for template
-        template_data = {}
-        
-        # Add instance name substitution
-        template_data['name'] = instance_id
-        
-        # Add port mappings from instance.mappings
-        if instance.mappings:
-            for port_name, net_name in instance.mappings.items():
-                template_data[port_name] = net_name
-        
-        # Add parameter substitutions (merge module defaults with instance overrides)
-        merged_params = {}
-        if module.parameters:
-            merged_params.update(module.parameters)
-        if instance.parameters:
-            merged_params.update(instance.parameters)
-
-        for param_name, param_value in merged_params.items():
-            template_data[param_name] = param_value
-        
-        # Add variable substitutions (variables shadow parameters with same names)
-        if module.variables:
-            for var_name, var_value in module.variables.items():
-                # If a parameter with the same name exists (from module or instance), this is a shadow
-                if var_name in template_data:
-                    # Emit warning diagnostic about shadowing
-                    self._pending_diagnostics.append(
-                        create_generator_diagnostic(
-                            "G0601",
-                            param=var_name,
-                            instance_id=instance_id,
-                            model=instance.model,
-                        )
-                    )
-                template_data[var_name] = var_value  # Variables override parameters
-        
-        # Apply substitutions to the spice_template using safe formatting.
-        # Unknown placeholders remain as-is to be caught by G0305 later.
-        class _DefaultingDict(dict):
-            def __missing__(self, key):
-                return '{' + key + '}'
-
-        final_line = module.spice_template.format_map(_DefaultingDict(template_data))
-        return final_line
     
-    def _format_named_parameters(self, params: Dict[str, Any]) -> str:
-        """Format parameters as param=value pairs in alphabetical order."""
-        param_parts = []
-        for param_name in sorted(params.keys()):
-            param_parts.append(f"{param_name}={params[param_name]}")
-        return " ".join(param_parts)
     
-    def _generate_subckt_call(self, instance_id: str, instance: Instance, 
-                             asdl_file: ASDLFile) -> str:
-        """
-        Generate subcircuit call for a module instance.
-        
-        Format: X_<name> <nodes> <subckt_name> <parameters>
-        Example: X_INV1 in out vdd vss inverter M=2
-        """
-        module = asdl_file.modules[instance.model]
-        
-        
-        # Get node connections in port order
-        node_list = []
-        port_list = self._get_port_list(module)
-        
-        for port_name in port_list:
-            if port_name in instance.mappings:
-                node_list.append(instance.mappings[port_name])
-            else:
-                # Handle unconnected ports (after validation, this should be intentional)
-                node_list.append("UNCONNECTED")
-        
-        # Get instance parameters (only instance-specific parameters)
-        instance_params = instance.parameters if instance.parameters else {}
-        
-        # Format subcircuit call: X_name nodes subckt_name params
-        parts = [f"X_{instance_id}", " ".join(node_list), instance.model]
-        
-        # Add parameters if any
-        if instance_params:
-            param_str = self._format_named_parameters(instance_params)
-            parts.append(param_str)
-        
-        return " ".join(parts)
-    
-
-    
-    def _get_port_list(self, module: Module) -> List[str]:
-        """
-        Get ordered list of port names for a module.
-        
-        Preserves declaration order from YAML instead of alphabetical sorting.
-        This ensures SPICE .subckt port order matches the canonical order 
-        defined in the ASDL YAML file.
-        """
-        if not module.ports:
-            return []
-        
-        # Preserve declaration order (Python 3.7+ dict insertion order)
-        return list(module.ports.keys())
     
     def _get_top_level_nets(self, module: Optional[Module] = None) -> str:
         """
