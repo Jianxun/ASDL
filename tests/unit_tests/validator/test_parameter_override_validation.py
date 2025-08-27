@@ -16,7 +16,7 @@ These tests will initially fail until validator implementation is complete.
 import pytest
 from src.asdl.validator import ASDLValidator
 from src.asdl.data_structures import (
-    Instance, Module, Port, PortDirection, SignalType, ASDLFile, FileInfo
+    Instance, Module, Port, PortDirection, PortType, ASDLFile, FileInfo
 )
 from src.asdl.diagnostics import Diagnostic, DiagnosticSeverity
 
@@ -39,10 +39,10 @@ class TestParameterOverrideValidation:
             pdk="gf180mcu",
             parameters={'W': '1u', 'L': '0.28u', 'M': '1'},
             ports={
-                'D': Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                'G': Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                'S': Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                'B': Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE)
+                'D': Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+                'G': Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                'S': Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+                'B': Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL)
             }
         )
         
@@ -82,10 +82,10 @@ class TestParameterOverrideValidation:
             },
             parameters={'drive_strength': '1X'},  # Module-level parameters are OK
             ports={
-                'in': Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                'out': Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE),
-                'vdd': Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                'vss': Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE)
+                'in': Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                'out': Port(dir=PortDirection.OUT, type=PortType.SIGNAL),
+                'vdd': Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+                'vss': Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL)
             }
         )
         

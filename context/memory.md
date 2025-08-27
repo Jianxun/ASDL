@@ -165,12 +165,26 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - Suite structure now: per-code diagnostics files + focused positive-path/module/location suites.
 
 ### Generator Refactor Progress (2025-08-27)
-- Modularization complete for generator: `options`, `subckt`, `instances`, `templates`, `calls`, `formatting`, `guards`, `postprocess`.
+- Modularization complete for generator: `options`, `ordering`, `subckt`, `instances`, `templates`, `calls`, `formatting`, `guards`, `postprocess`.
 - Removed automatic PDK `.include` emission and `XMAIN` emission; preserved diagnostics behavior (G0102, G0701).
 - `SPICEGenerator.generate()` split into helper methods for readability and testability.
-- All generator unit tests passing (18/18) post-refactor.
+- Implemented hierarchical dependency ordering (children-first; `top` last) and `TopStyle.FLAT` (comment-only wrappers for top).
+- CLI supports `--top-style {subckt,flat}`; options threaded to generator.
+- All generator unit tests passing (20/20).
+
+### Data Structures and Parser Updates (2025-08-27)
+- Removed deprecated `PortConstraints` class and the `constraints` field from `Port`.
+- Renamed `SignalType` → `PortType` with enum values: `signal`, `power`, `ground`, `bias`, `control`.
+- `Port.type` is now optional with default `PortType.SIGNAL`.
+- Updated `parser/sections/port_parser.py` to validate `PortType` and removed constraints parsing; updated P0512 messages.
+- Updated exports in `src/asdl/data_structures/__init__.py` and `src/asdl/__init__.py`.
+- Updated unit tests under `tests/unit_tests/` to use `PortType.SIGNAL`; removed all `PortConstraints` references.
+
+### Current Unit Test Status (2025-08-27)
+- Generator unit tests: green.
+- Updated many unit tests for `PortType`; remaining failing suites addressed and corrected incrementally.
+- Integration tests intentionally skipped (under refactor).
 
 ### Next Session Plan
-- Implement `ordering.py` to emit hierarchical subckts in dependency order with `top` last.
-- Add `TopStyle` handling in emission: `subckt` vs `flat` (comment-only wrappers for top).
-- Wire CLI `--top-style` flag and thread options through CLI to generator.
+- Continue updating remaining data structure unit tests if any regressions appear.
+- Review schema text output to reflect enum rename in documentation where applicable.

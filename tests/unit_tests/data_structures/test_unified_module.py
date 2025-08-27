@@ -10,7 +10,7 @@ Tests correspond to T0.1 in the ASDL Import System Test Plan.
 
 import pytest
 from src.asdl.data_structures import (
-    Module, Port, PortDirection, SignalType, Instance, PrimitiveType
+    Module, Port, PortDirection, PortType, Instance, PrimitiveType
 )
 
 
@@ -28,10 +28,10 @@ class TestUnifiedModule:
         module = Module(
             doc="NMOS transistor from GF180MCU PDK",
             ports={
-                'D': Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                'G': Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                'S': Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                'B': Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE)
+                'D': Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+                'G': Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                'S': Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+                'B': Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL)
             },
             parameters={'W': '1u', 'L': '0.28u', 'M': '1'},
             spice_template="MN {D} {G} {S} {B} nfet_03v3 W={W} L={L} M={M}",
@@ -58,10 +58,10 @@ class TestUnifiedModule:
         module = Module(
             doc="Basic CMOS inverter",
             ports={
-                'in': Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                'out': Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE),
-                'vdd': Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                'vss': Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE)
+                'in': Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                'out': Port(dir=PortDirection.OUT, type=PortType.SIGNAL),
+                'vdd': Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+                'vss': Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL)
             },
             parameters={'M': '1'},
             instances={

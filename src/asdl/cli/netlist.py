@@ -8,6 +8,7 @@ import click
 from ..parser import ASDLParser
 from ..elaborator import Elaborator
 from ..generator import SPICEGenerator
+from ..generator.options import GeneratorOptions, TopStyle
 from ..validator import ASDLValidator
 from ..diagnostics import Diagnostic
 from .helpers import diagnostics_to_jsonable, has_error, print_human_diagnostics
@@ -20,7 +21,8 @@ from .helpers import diagnostics_to_jsonable, has_error, print_human_diagnostics
 @click.option("-v", "--verbose", is_flag=True, help="Verbose logs")
 @click.option("--top", type=str, help="Override top module")
 @click.option("--search-path", "search_paths", multiple=True, type=click.Path(path_type=Path), help="Additional search paths for import resolution (can be repeated)")
-def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose: bool, top: Optional[str], search_paths: Optional[List[Path]]) -> None:
+@click.option("--top-style", type=click.Choice([e.value for e in TopStyle], case_sensitive=False), default=TopStyle.SUBCKT.value, help="Top-level emission style: subckt (default) or flat (comment wrappers)")
+def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose: bool, top: Optional[str], search_paths: Optional[List[Path]], top_style: str) -> None:
     exit_code = 0
     diagnostics: List[Diagnostic] = []
     artifact_path: Optional[Path] = None
@@ -55,7 +57,8 @@ def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose:
             if not has_error(diagnostics):
                 if verbose:
                     click.echo("[generate] writing SPICE netlist…")
-                generator = SPICEGenerator()
+                gen_options = GeneratorOptions(top_style=TopStyle(top_style))
+                generator = SPICEGenerator(options=gen_options)
                 netlist_str, generator_diags = generator.generate(elaborated_file)
                 diagnostics.extend(generator_diags)
                 artifact_path = output if output else input.with_suffix(".spice")

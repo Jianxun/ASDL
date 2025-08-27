@@ -11,6 +11,8 @@ from ..diagnostics import Diagnostic
 from .diagnostics import create_generator_diagnostic
 from .options import GeneratorOptions
 from .subckt import build_subckt
+from .ordering import compute_hierarchical_dependency_order
+from .options import TopStyle
 from .instances import generate_instance as _generate_instance_line
 from .postprocess import check_unresolved_placeholders
 
@@ -81,15 +83,23 @@ class SPICEGenerator:
             lines.append("")
 
     def _append_hierarchical_subckts(self, lines: List[str], asdl_file: ASDLFile) -> None:
-        hierarchical_modules = {
-            name: module for name, module in asdl_file.modules.items() if module.instances is not None
-        }
-        if not hierarchical_modules:
+        # Determine hierarchical dependency order (children before parents, top last)
+        top_name = asdl_file.file_info.top_module if asdl_file.file_info.top_module else None
+        order = compute_hierarchical_dependency_order(asdl_file, top_name)
+        if not order:
             return
         lines.append("* Hierarchical module subcircuit definitions")
-        for module_name, module in hierarchical_modules.items():
+        for module_name in order:
+            module = asdl_file.modules[module_name]
+            is_top = (top_name == module_name)
+            comment_wrappers = is_top and self.options.top_style == TopStyle.FLAT
             subckt_def = build_subckt(
-                module, module_name, asdl_file, self._pending_diagnostics, indent=self.indent
+                module,
+                module_name,
+                asdl_file,
+                self._pending_diagnostics,
+                indent=self.indent,
+                comment_top_wrappers=comment_wrappers,
             )
             lines.append(subckt_def)
             lines.append("")

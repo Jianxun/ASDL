@@ -8,7 +8,7 @@ with exact preservation of validation logic and XCCSS diagnostic generation (P02
 from typing import Any, Dict, List, Optional, cast
 from pathlib import Path
 
-from ...data_structures import Port, PortDirection, SignalType, PortConstraints
+from ...data_structures import Port, PortDirection, PortType
 from ...diagnostics import Diagnostic, DiagnosticSeverity
 from ..core.locatable_builder import LocatableBuilder, YAMLObject
 from ..resolvers.field_validator import FieldValidator
@@ -66,7 +66,7 @@ class PortParser:
             self.field_validator.validate_unknown_fields(
                 port_data,
                 f"Port '{port_name}'",
-                ['dir', 'type', 'constraints', 'metadata'],
+                ['dir', 'type', 'metadata'],
                 diagnostics,
                 loc
             )
@@ -90,15 +90,15 @@ class PortParser:
 
             if type_val is not None:
                 try:
-                    type_enum = SignalType(type_val.lower())
+                    type_enum = PortType(str(type_val).lower())
                 except Exception:
                     diagnostics.append(Diagnostic(
                         code="P0512",
                         title="Invalid Port Type Enum",
-                        details=f"Port type must be one of: voltage, current, digital. Found '{type_val}'.",
+                        details=f"Port type must be one of: signal, power, ground, bias, control. Found '{type_val}'.",
                         severity=DiagnosticSeverity.ERROR,
                         location=loc,
-                        suggestion="Use one of: voltage, current, digital."
+                        suggestion="Use one of: signal, power, ground, bias, control."
                     ))
                     # Skip creating this port due to invalid type
                     continue
@@ -107,8 +107,7 @@ class PortParser:
                 ports[port_name] = Port(
                     **loc.__dict__,
                     dir=dir_enum,
-                    type=type_enum,
-                    constraints=self._parse_constraints(port_data.get('constraints')),
+                    type=type_enum if type_enum is not None else PortType.SIGNAL,
                     metadata=port_data.get('metadata')
                 )
             except Exception as e:
@@ -122,19 +121,4 @@ class PortParser:
                 ))
         return ports
     
-    def _parse_constraints(self, data: Any) -> Optional[PortConstraints]:
-        """
-        Parse port constraints.
-        
-        Exact implementation from _parse_constraints() method.
-        Currently a placeholder implementation.
-        
-        Args:
-            data: Constraints data
-            
-        Returns:
-            PortConstraints object or None if no constraints
-        """
-        if not data:
-            return None
-        return PortConstraints(constraints=data)
+    # Port constraints are deprecated; no-op retained intentionally for backward compatibility in callers.

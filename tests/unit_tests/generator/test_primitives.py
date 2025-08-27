@@ -1,14 +1,14 @@
 from src.asdl.generator import SPICEGenerator
-from src.asdl.data_structures import ASDLFile, FileInfo, Module, Instance, Port, PortDirection, SignalType
+from src.asdl.data_structures import ASDLFile, FileInfo, Module, Instance, Port, PortDirection, PortType
 
 
 def test_primitive_module_inline_generation():
     nfet_module = Module(
         ports={
-            "D": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-            "G": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-            "S": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-            "B": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+            "D": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+            "G": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+            "S": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+            "B": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
         },
         parameters={"L": "0.28u", "W": "3u", "M": 1},
         spice_template="MN{name} {D} {G} {S} {B} nfet_03v3 L={L} W={W} m={M}",
@@ -17,9 +17,9 @@ def test_primitive_module_inline_generation():
 
     test_module = Module(
         ports={
-            "in": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-            "out": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE),
-            "vss": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
+            "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+            "out": Port(dir=PortDirection.OUT, type=PortType.SIGNAL),
+            "vss": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
         },
         instances={
             "M1": Instance(
@@ -46,8 +46,8 @@ def test_primitive_module_inline_generation():
 def test_parameter_substitution_in_primitives():
     resistor = Module(
         ports={
-            "n1": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-            "n2": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+            "n1": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+            "n2": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
         },
         parameters={"R": "1k", "TC1": "0", "TC2": "0"},
         spice_template="R{name} {n1} {n2} {R} TC1={TC1} TC2={TC2}",

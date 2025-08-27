@@ -9,6 +9,7 @@ The original combined todo list has been split for clarity. Please refer to the 
 - `context/todo_cli.md` – CLI implementation and testing tasks
 - `context/todo_visualizer.md` – Front-end visualizer work
 - `context/todo_schema.md` – Schema generation system tasks
+  - Note: Reflect enum rename `SignalType` → `PortType` and removal of `PortConstraints` in schema docs
 
 ## Planning & Backlog
 - `context/backlog_validation.md` – Validation & DRC backlog
@@ -17,6 +18,10 @@ The original combined todo list has been split for clarity. Please refer to the 
 ## Archive & Reference
 - `context/done.md` – Archive of completed milestones
 - `context/todo_legacy_archive.md` – Historical todo archive
+
+## Next Session
+- Continue updating any remaining unit tests under `tests/unit_tests/data_structures/` to align with `PortType` and removed `PortConstraints`.
+- Run unit tests only (skip integration) until refactor completes.
 
 ## Documentation Reference
 - `doc/cli/` – CLI architecture and implementation plans

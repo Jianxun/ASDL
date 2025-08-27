@@ -1,5 +1,5 @@
 from src.asdl.generator import SPICEGenerator
-from src.asdl.data_structures import ASDLFile, FileInfo, Module, Instance, Port, PortDirection, SignalType
+from src.asdl.data_structures import ASDLFile, FileInfo, Module, Instance, Port, PortDirection, PortType
 
 
 def test_g0201_unconnected_port_in_subckt_call_emits_diagnostic_and_skips_instance():
@@ -8,9 +8,9 @@ def test_g0201_unconnected_port_in_subckt_call_emits_diagnostic_and_skips_instan
     # Child hierarchical module with ports a,b,c
     child = Module(
         ports={
-            "a": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-            "b": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-            "c": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
+            "a": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+            "b": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+            "c": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
         },
         instances={},
     )

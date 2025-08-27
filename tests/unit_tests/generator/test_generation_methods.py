@@ -9,7 +9,7 @@ import pytest
 from src.asdl.generator import SPICEGenerator
 from src.asdl.data_structures import (
     ASDLFile, FileInfo, Module, Instance, Port, PortDirection, 
-    SignalType
+    PortType
 )
 
 
@@ -26,10 +26,10 @@ class TestSPICEGeneratorBasics:
         module = Module(
             doc="Order test",
             ports={
-                "in": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                "out": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE),
-                "vdd": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                "vss": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+                "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                "out": Port(dir=PortDirection.OUT, type=PortType.SIGNAL),
+                "vdd": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+                "vss": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
             },
             instances={},
         )
@@ -41,14 +41,14 @@ class TestSPICEGeneratorBasics:
         generator = SPICEGenerator()
         child = Module(
             ports={
-                "a": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                "b": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                "c": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+                "a": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+                "b": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+                "c": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
             },
             instances={},  # hierarchical module (no inner instances)
         )
         parent = Module(
-            ports={"p": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE)},
+            ports={"p": Port(dir=PortDirection.IN, type=PortType.SIGNAL)},
             instances={
                 "U1": Instance(
                     model="child",
@@ -79,8 +79,8 @@ class TestSPICEGeneratorBasics:
 
     def test_comment_style_and_indentation(self):
         generator = SPICEGenerator()
-        prim = Module(ports={"n1": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-                             "n2": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE)},
+        prim = Module(ports={"n1": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+                             "n2": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL)},
                       spice_template="R{name} {n1} {n2} {R}",
                       parameters={"R": "1k"})
         top = Module(instances={"R1": Instance(model="prim", mappings={"n1": "a", "n2": "b"})})

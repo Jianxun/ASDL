@@ -6,17 +6,15 @@
 * Revision: None
 
 * Hierarchical module subcircuit definitions
-.subckt top in_p in_n vdd vss out
-  X_A1 in_p in_n out vdd vss ota_diffpair
-.ends
-
 .subckt ota_diffpair in_p in_n out vdd vss
   MMN1 out in_p vss vss nfet_03v3 L=0.28u W=3u
   MMN2 out in_n vss vss nfet_03v3 L=0.28u W=3u
   MMP1 out in_p vdd vdd pfet_03v3 L=0.28u W=6u
 .ends
 
-* Main circuit instantiation
-XMAIN in_p in_n vdd vss out top
+* .subckt top in_p in_n vdd vss out
+  X_A1 in_p in_n out vdd vss ota_diffpair
+* .ends
+
 
 .end

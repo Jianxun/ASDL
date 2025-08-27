@@ -6,7 +6,7 @@ Tests validation that all nets used in instance mappings are properly declared.
 
 import pytest
 from src.asdl.validator import ASDLValidator
-from src.asdl.data_structures import Instance, Module, Port, PortDirection, SignalType
+from src.asdl.data_structures import Instance, Module, Port, PortDirection, PortType
 from src.asdl.diagnostics import Diagnostic, DiagnosticSeverity
 
 
@@ -20,8 +20,8 @@ class TestNetDeclarationValidation:
         # Create a module with ports and internal nets
         module = Module(
             ports={
-                "in": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                "out": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE)
+                "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                "out": Port(dir=PortDirection.OUT, type=PortType.SIGNAL)
             },
             internal_nets=["bias", "intermediate"],
             instances={
@@ -47,8 +47,8 @@ class TestNetDeclarationValidation:
         # Create a module with only ports (no internal nets)
         module = Module(
             ports={
-                "in": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                "out": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE)
+                "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                "out": Port(dir=PortDirection.OUT, type=PortType.SIGNAL)
             },
             instances={
                 "R1": Instance(

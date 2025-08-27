@@ -96,22 +96,13 @@ class PortDirection(Enum):
     IN_OUT = "in_out"
 
 
-class SignalType(Enum):
-    """Signal type classification."""
-    VOLTAGE = "voltage"
-    CURRENT = "current"
-    DIGITAL = "digital"
-
-
-@dataclass
-class PortConstraints:
-    """
-    Port constraint specification (placeholder implementation).
-    
-    Constraints are stored as raw data for future implementation.
-    This allows us to defer constraint handling while preserving the data.
-    """
-    constraints: Any  # schema: description="Placeholder for future formal constraints; preserved as-is"
+class PortType(Enum):
+    """Port type classification."""
+    SIGNAL = "signal"
+    POWER = "power"
+    GROUND = "ground"
+    BIAS = "bias"
+    CONTROL = "control"
 
 
 @dataclass(kw_only=True)
@@ -123,8 +114,7 @@ class Port(Locatable):
     during the pattern expansion phase.
     """
     dir: PortDirection  # schema: description="Port direction classification"
-    type: Optional[SignalType] = None  # schema: description="Optional port signal type classification"
-    constraints: Optional[PortConstraints] = None  # schema: description="Optional constraint object"
+    type: PortType = PortType.SIGNAL  # schema: description="Optional port type classification; defaults to 'signal'"
     metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
 
 

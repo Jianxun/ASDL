@@ -1,14 +1,14 @@
 from src.asdl.generator import SPICEGenerator
-from src.asdl.data_structures import ASDLFile, FileInfo, Module, Instance, Port, PortDirection, SignalType
+from src.asdl.data_structures import ASDLFile, FileInfo, Module, Instance, Port, PortDirection, PortType
 
 
 def test_template_with_both_parameters_and_variables():
     transistor = Module(
         ports={
-            "D": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-            "G": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-            "S": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-            "B": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+            "D": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+            "G": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+            "S": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+            "B": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
         },
         parameters={"L": "0.28u", "W": "1u", "M": 1},
         variables={"gm": "1e-3", "vth": "0.7", "temp": "27"},
@@ -44,8 +44,8 @@ def test_template_with_both_parameters_and_variables():
 def test_variable_shadowing_of_parameters():
     device = Module(
         ports={
-            "n1": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-            "n2": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+            "n1": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+            "n2": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
         },
         parameters={"value": "1k", "temp": "25"},
         variables={"temp": "75"},
@@ -80,8 +80,8 @@ def test_variable_shadowing_of_parameters():
 def test_template_with_variables_only():
     voltage_source = Module(
         ports={
-            "plus": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-            "minus": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+            "plus": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+            "minus": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
         },
         variables={"voltage": "1.8", "rise_time": "10n", "fall_time": "10n"},
         spice_template="V{name} {plus} {minus} DC {voltage} rise={rise_time} fall={fall_time}",
@@ -107,8 +107,8 @@ def test_template_with_variables_only():
 def test_template_with_parameters_only():
     capacitor = Module(
         ports={
-            "n1": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
-            "n2": Port(dir=PortDirection.IN_OUT, type=SignalType.VOLTAGE),
+            "n1": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
+            "n2": Port(dir=PortDirection.IN_OUT, type=PortType.SIGNAL),
         },
         parameters={"C": "1p", "IC": "0"},
         spice_template="C{name} {n1} {n2} {C} IC={IC}",

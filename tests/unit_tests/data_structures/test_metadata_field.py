@@ -9,7 +9,7 @@ import pytest
 from pathlib import Path
 from src.asdl.data_structures import (
     ASDLFile, FileInfo, DeviceModel, PrimitiveType, 
-    Port, PortDirection, SignalType, Module, Instance
+    Port, PortDirection, PortType, Module, Instance
 )
 from asdl.parser import ASDLParser
 
@@ -89,7 +89,7 @@ class TestMetadataField:
         """Test metadata field on Port."""
         port = Port(
             dir=PortDirection.IN,
-            type=SignalType.VOLTAGE,
+            type=PortType.SIGNAL,
             metadata={
                 "signal_range": {"min": 0.0, "max": 1.8},
                 "load_capacitance": "10fF",
@@ -167,7 +167,7 @@ class TestMetadataField:
         """Test metadata field with empty dictionary."""
         port = Port(
             dir=PortDirection.OUT,
-            type=SignalType.VOLTAGE,
+            type=PortType.SIGNAL,
             metadata={}  # Empty but not None
         )
         

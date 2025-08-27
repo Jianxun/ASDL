@@ -6,7 +6,7 @@ Tests the validation of instance port mappings against module port definitions.
 
 import pytest
 from src.asdl.validator import ASDLValidator
-from src.asdl.data_structures import Instance, Module, Port, PortDirection, SignalType
+from src.asdl.data_structures import Instance, Module, Port, PortDirection, PortType
 from src.asdl.diagnostics import Diagnostic, DiagnosticSeverity
 
 
@@ -20,8 +20,8 @@ class TestPortMappingValidation:
         # Create a module with two ports
         module = Module(
             ports={
-                "in": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                "out": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE)
+                "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                "out": Port(dir=PortDirection.OUT, type=PortType.SIGNAL)
             }
         )
         
@@ -42,7 +42,7 @@ class TestPortMappingValidation:
         # Create a module with only one port
         module = Module(
             ports={
-                "in": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE)
+                "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL)
             }
         )
         

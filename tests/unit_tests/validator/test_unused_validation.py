@@ -8,7 +8,7 @@ import pytest
 from src.asdl.validator import ASDLValidator
 from src.asdl.data_structures import (
     ASDLFile, FileInfo, Instance, Module, DeviceModel, 
-    Port, PortDirection, SignalType, PrimitiveType
+    Port, PortDirection, PortType, PrimitiveType
 )
 from src.asdl.diagnostics import Diagnostic, DiagnosticSeverity
 
@@ -33,8 +33,8 @@ class TestUnusedValidation:
             modules={
                 "test_circuit": Module(
                     ports={
-                        "in": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                        "out": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE)
+                        "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                        "out": Port(dir=PortDirection.OUT, type=PortType.SIGNAL)
                     },
                     instances={
                         "R1": Instance(

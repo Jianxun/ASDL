@@ -1,14 +1,14 @@
 from src.asdl.generator import SPICEGenerator
-from src.asdl.data_structures import ASDLFile, FileInfo, Module, Instance, Port, PortDirection, SignalType
+from src.asdl.data_structures import ASDLFile, FileInfo, Module, Instance, Port, PortDirection, PortType
 
 
 def test_hierarchical_module_subcircuit_generation():
     inverter = Module(
         ports={
-            "in": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-            "out": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE),
-            "vdd": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-            "vss": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
+            "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+            "out": Port(dir=PortDirection.OUT, type=PortType.SIGNAL),
+            "vdd": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+            "vss": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
         },
         parameters={"M": 1},
         instances={

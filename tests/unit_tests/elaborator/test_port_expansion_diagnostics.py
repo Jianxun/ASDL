@@ -5,7 +5,7 @@ from asdl.data_structures import (
     Port,
     FileInfo,
     PortDirection,
-    SignalType,
+    PortType,
 )
 from asdl.elaborator import Elaborator
 from asdl.diagnostics import Diagnostic, DiagnosticSeverity
@@ -20,7 +20,7 @@ def test_empty_pattern_diagnostic():
         modules={
             "test_module": Module(
                 ports={
-                    "in<>": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
+                    "in<>": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
                 }
             )
         },
@@ -45,7 +45,7 @@ def test_single_item_pattern_diagnostic():
         modules={
             "test_module": Module(
                 ports={
-                    "in<p>": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
+                    "in<p>": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
                 }
             )
         },
@@ -69,7 +69,7 @@ def test_empty_items_pattern_diagnostic():
         modules={
             "test_module": Module(
                 ports={
-                    "in<,>": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
+                    "in<,>": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
                 }
             )
         },
@@ -93,7 +93,7 @@ def test_mismatched_pattern_count_diagnostic():
         modules={
             "test_module": Module(
                 ports={
-                    "in<p>": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
+                    "in<p>": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
                 }
             )
         },

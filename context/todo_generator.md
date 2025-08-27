@@ -13,7 +13,7 @@ This file tracks the netlist generator refactor and behavior changes.
 
 - Extract generator components:
   - options.py: `TopStyle` enum and `GeneratorOptions` dataclass. [DONE]
-  - ordering.py: dependency graph + reverse topo ordering ensuring `top` last. [PENDING]
+  - ordering.py: dependency graph + reverse topo ordering ensuring `top` last. [DONE]
   - subckt.py: subckt builder (supports `flat` commenting of top wrapper). [DONE]
   - instances.py: instance renderer dispatch (primitive vs hierarchical). [DONE]
   - templates.py: primitive template rendering with var/param merge and G0601 warning. [DONE]
@@ -22,7 +22,7 @@ This file tracks the netlist generator refactor and behavior changes.
   - guards.py: defensive checks for unknown model/missing mappings (G0401, G0201). [DONE]
   - postprocess.py: unresolved placeholder scan (G0305). [DONE]
 - Slim `spice_generator.py` to orchestration only; remove PDK includes and XMAIN. [DONE]
-- CLI: add `--top-style {subckt,flat}` and pass options to generator. [PENDING]
+- CLI: add `--top-style {subckt,flat}` and pass options to generator. [DONE]
 
 ## Diagnostics and Unit Tests
 
@@ -46,7 +46,7 @@ The generator emits diagnostics (XCCSS) for defensive checks and postprocessing.
 - G0305: Unresolved template placeholders (ERROR)
   - Trigger: `{placeholder}` remains after rendering.
   - Behavior: emit diagnostic listing unique placeholders.
-- I0701: No top specified (INFO)
+- G0701: No top specified (INFO)
   - Trigger: `file_info.top_module` is None/empty.
   - Behavior: emit informational diagnostic; output remains a valid library ending with `.end`.
 
@@ -67,7 +67,7 @@ The generator emits diagnostics (XCCSS) for defensive checks and postprocessing.
  - Extracted generator into modular components: `options.py`, `subckt.py`, `instances.py`, `templates.py`, `calls.py`, `formatting.py`, `guards.py`, `postprocess.py`.
  - Refactored `SPICEGenerator.generate()` into focused helper methods (header/invalids/subckts/top_diag/end).
  - Kept thin wrapper methods for `generate_subckt`/`generate_instance` to maintain unit test API.
- - Updated unit tests to remove expectations about auto-includes; all generator unit tests passing (18/18).
+ - Updated unit tests to remove expectations about auto-includes; all generator unit tests passing (20/20).
 
 ## Dependency Ordering Algorithm
 

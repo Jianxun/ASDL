@@ -10,7 +10,7 @@ Tests correspond to T0.2 in the ASDL Import System Test Plan.
 
 import pytest
 from src.asdl.data_structures import (
-    ASDLFile, FileInfo, Module, Instance, Port, PortDirection, SignalType
+    ASDLFile, FileInfo, Module, Instance, Port, PortDirection, PortType
 )
 
 
@@ -86,8 +86,8 @@ class TestUnifiedASDLFile:
             'inverter': Module(
                 doc="CMOS inverter",
                 ports={
-                    'in': Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                    'out': Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE)
+                    'in': Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                    'out': Port(dir=PortDirection.OUT, type=PortType.SIGNAL)
                 },
                 instances={
                     'MP': Instance(

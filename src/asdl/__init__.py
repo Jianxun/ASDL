@@ -10,8 +10,7 @@ from .data_structures import (
     Module,
     Port,
     PortDirection,
-    SignalType,
-    PortConstraints,
+    PortType,
     Instance
 )
 
@@ -28,8 +27,7 @@ __all__ = [
     "Module",
     "Port",
     "PortDirection", 
-    "SignalType",
-    "PortConstraints",
+    "PortType",
     "Instance",
     # Processing pipeline
     "ASDLParser",

@@ -14,6 +14,8 @@ def build_subckt(
     asdl_file: ASDLFile,
     diagnostics: List,
     indent: str = "  ",
+    *,
+    comment_top_wrappers: bool = False,
 ) -> str:
     lines: List[str] = []
 
@@ -21,7 +23,8 @@ def build_subckt(
         lines.append(f"* {module.doc}")
 
     port_list = get_port_list(module)
-    lines.append(f".subckt {module_name} {' '.join(port_list)}")
+    subckt_line = f".subckt {module_name} {' '.join(port_list)}"
+    lines.append(f"* {subckt_line}" if comment_top_wrappers else subckt_line)
 
     if module.instances:
         for instance_id, instance in module.instances.items():
@@ -43,7 +46,8 @@ def build_subckt(
             instance_line = generate_instance(instance_id, instance, asdl_file, diagnostics)
             lines.append(f"{indent}{instance_line}")
 
-    lines.append(".ends")
+    end_line = ".ends"
+    lines.append(f"* {end_line}" if comment_top_wrappers else end_line)
     return "\n".join(lines)
 
 

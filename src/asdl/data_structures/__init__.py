@@ -24,8 +24,7 @@ from .structures import (
     # Port system
     Port,
     PortDirection,
-    SignalType,
-    PortConstraints,
+    PortType,
     
     # Instance system
     Instance,
@@ -54,8 +53,7 @@ __all__ = [
     # Port system
     "Port",
     "PortDirection",
-    "SignalType", 
-    "PortConstraints",
+    "PortType", 
     
     # Instance system
     "Instance",

@@ -14,7 +14,7 @@ These tests will initially fail until implementation is complete.
 
 import pytest
 from src.asdl.data_structures import (
-    Module, Port, PortDirection, SignalType, Instance
+    Module, Port, PortDirection, Instance
 )
 
 

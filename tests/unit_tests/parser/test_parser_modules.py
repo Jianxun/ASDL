@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 
 from asdl.parser import ASDLParser
-from asdl.data_structures import Module, Port, Instance, PortConstraints, PortDirection, SignalType
+from asdl.data_structures import Module, Port, Instance, PortDirection, PortType
 
 class TestModulesParsing:
     """Test Module section parsing (no validation)."""
@@ -48,7 +48,7 @@ modules:
         assert "in" in inverter.ports
         assert "out" in inverter.ports
         assert inverter.ports["in"].dir == PortDirection.IN
-        assert inverter.ports["in"].type == SignalType.VOLTAGE
+        assert inverter.ports["in"].type == PortType.SIGNAL
 
         assert inverter.instances is not None
         assert "MN1" in inverter.instances

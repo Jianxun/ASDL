@@ -6,7 +6,7 @@ The internal_nets field provides a direct, simple way to declare internal nets o
 """
 
 import pytest
-from src.asdl.data_structures import Module, Port, PortDirection, SignalType, Instance
+from src.asdl.data_structures import Module, Port, PortDirection, PortType, Instance
 
 
 class TestInternalNetsField:
@@ -51,9 +51,9 @@ class TestInternalNetsField:
     def test_module_with_ports_and_internal_nets(self):
         """Test Module with both ports and internal_nets."""
         ports = {
-            "in_p": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-            "in_n": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-            "out": Port(dir=PortDirection.OUT, type=SignalType.VOLTAGE)
+            "in_p": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+            "in_n": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+            "out": Port(dir=PortDirection.OUT, type=PortType.SIGNAL)
         }
         
         module = Module(
