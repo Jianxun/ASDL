@@ -39,22 +39,25 @@ class SPICEGenerator:
         self.options = options or GeneratorOptions()
     
     def generate(self, asdl_file: ASDLFile) -> Tuple[str, List[Diagnostic]]:
-        """
-        Generate complete SPICE netlist from ASDL design with unified architecture.
-        
-        Args:
-            asdl_file: Fully elaborated ASDL design
-            
-        Returns:
-            Tuple of (complete SPICE netlist as string, list of diagnostics)
-        """
-        lines = []
+        """Generate complete SPICE netlist from ASDL design."""
+        lines: List[str] = []
+        self._reset_run_state()
+        self._append_header(lines, asdl_file)
+        self._append_invalid_module_comments(lines, asdl_file)
+        self._append_hierarchical_subckts(lines, asdl_file)
+        self._append_top_diagnostics(lines, asdl_file)
+        self._append_end(lines)
+        final_spice = "\n".join(lines)
         diagnostics: List[Diagnostic] = []
-        
-        # Reset pending diagnostics for this run
+        diagnostics.extend(check_unresolved_placeholders(final_spice))
+        diagnostics.extend(self._pending_diagnostics)
+        return final_spice, diagnostics
+
+    # Orchestration helpers
+    def _reset_run_state(self) -> None:
         self._pending_diagnostics = []
 
-        # Add header comment
+    def _append_header(self, lines: List[str], asdl_file: ASDLFile) -> None:
         lines.append(f"* SPICE netlist generated from ASDL")
         lines.append(f"* Design: {asdl_file.file_info.doc}")
         lines.append(f"* Top module: {asdl_file.file_info.top_module}")
@@ -62,76 +65,55 @@ class SPICEGenerator:
         lines.append(f"* Date: {asdl_file.file_info.date}")
         lines.append(f"* Revision: {asdl_file.file_info.revision}")
         lines.append("")
-        
-        # Detect invalid modules (neither primitive nor hierarchical)
+
+    def _append_invalid_module_comments(self, lines: List[str], asdl_file: ASDLFile) -> None:
         invalid_modules = [
             (name, module)
             for name, module in asdl_file.modules.items()
             if module.spice_template is None and module.instances is None
         ]
         for module_name, _module in invalid_modules:
-            # Emit diagnostic and add helpful comment; skip generation for that module
-            self._pending_diagnostics.append(
-                create_generator_diagnostic("G0301", module=module_name)
-            )
+            self._pending_diagnostics.append(create_generator_diagnostic("G0301", module=module_name))
             lines.append(
                 f"* ERROR G0301: module '{module_name}' has neither spice_template nor instances"
             )
         if invalid_modules:
             lines.append("")
 
-        # Generate subcircuit definitions for hierarchical modules only
-        # (primitive modules are handled inline)
-        hierarchical_modules = {name: module for name, module in asdl_file.modules.items() 
-                               if module.instances is not None}
-        
-        
-        if hierarchical_modules:
-            lines.append("* Hierarchical module subcircuit definitions")
-            for module_name, module in hierarchical_modules.items():
-                subckt_def = build_subckt(
-                    module,
-                    module_name,
-                    asdl_file,
-                    self._pending_diagnostics,
-                    indent=self.indent,
-                )
-                lines.append(subckt_def)
-                lines.append("")
-        
-        # Top-level instantiation removed in refactor. Preserve diagnostics behavior.
+    def _append_hierarchical_subckts(self, lines: List[str], asdl_file: ASDLFile) -> None:
+        hierarchical_modules = {
+            name: module for name, module in asdl_file.modules.items() if module.instances is not None
+        }
+        if not hierarchical_modules:
+            return
+        lines.append("* Hierarchical module subcircuit definitions")
+        for module_name, module in hierarchical_modules.items():
+            subckt_def = build_subckt(
+                module, module_name, asdl_file, self._pending_diagnostics, indent=self.indent
+            )
+            lines.append(subckt_def)
+            lines.append("")
+
+    def _append_top_diagnostics(self, lines: List[str], asdl_file: ASDLFile) -> None:
         if asdl_file.file_info.top_module:
             top_module_name = asdl_file.file_info.top_module
             if top_module_name not in asdl_file.modules:
                 available = sorted(asdl_file.modules.keys())
                 self._pending_diagnostics.append(
                     create_generator_diagnostic(
-                        "G0102",
-                        top_module=top_module_name,
-                        available=str(available),
+                        "G0102", top_module=top_module_name, available=str(available)
                     )
                 )
                 lines.append(
                     f"* ERROR G0102: top module '{top_module_name}' not found; available: {available}"
                 )
         else:
-            self._pending_diagnostics.append(
-                create_generator_diagnostic("G0701")
-            )
+            self._pending_diagnostics.append(create_generator_diagnostic("G0701"))
             lines.append("* INFO G0701: no top module specified; skipping main instantiation")
-        
-        # End SPICE netlist (ngspice compatibility)
+
+    def _append_end(self, lines: List[str]) -> None:
         lines.append("")
         lines.append(".end")
-        
-        # Check for unresolved placeholders in the final SPICE output
-        final_spice = "\n".join(lines)
-        placeholder_diagnostics = check_unresolved_placeholders(final_spice)
-        diagnostics.extend(placeholder_diagnostics)
-        # Include any diagnostics collected during generation
-        diagnostics.extend(self._pending_diagnostics)
-        
-        return final_spice, diagnostics
     
     # Backwards-compatibility wrappers for unit tests
     def generate_subckt(self, module: Module, module_name: str, asdl_file: ASDLFile) -> str:
