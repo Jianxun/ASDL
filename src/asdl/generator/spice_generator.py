@@ -92,15 +92,10 @@ class SPICEGenerator:
                 lines.append(subckt_def)
                 lines.append("")
         
-        # Add main circuit instantiation if top_module is specified
+        # Top-level instantiation removed in refactor. Preserve diagnostics behavior.
         if asdl_file.file_info.top_module:
             top_module_name = asdl_file.file_info.top_module
-            if top_module_name in asdl_file.modules:
-                top_module = asdl_file.modules[top_module_name]
-                lines.append(f"* Main circuit instantiation")
-                lines.append(f"XMAIN {self._get_top_level_nets(top_module)} {top_module_name}")
-            else:
-                # Emit diagnostic G0102 and add helpful header comment
+            if top_module_name not in asdl_file.modules:
                 available = sorted(asdl_file.modules.keys())
                 self._pending_diagnostics.append(
                     create_generator_diagnostic(
@@ -113,7 +108,6 @@ class SPICEGenerator:
                     f"* ERROR G0102: top module '{top_module_name}' not found; available: {available}"
                 )
         else:
-            # No top specified, emit informational G0701
             self._pending_diagnostics.append(
                 create_generator_diagnostic("G0701")
             )
