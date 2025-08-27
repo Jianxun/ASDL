@@ -1,74 +1,34 @@
-# Ready for Next Session: Phase 1.2.5 Elaborator Integration + Generator Follow-ups
+# Ready for Next Session: Generator Ordering + Top-Style, and Elaborator Follow-ups
 
-## ✅ Phase 1.2 Import System MVP - COMPLETE
+## ✅ This Session Summary (Generator Refactor)
+- Removed automatic PDK `.include` emission from generator
+- Removed `XMAIN` emission; preserved top diagnostics (G0102/G0701)
+- Modularized generator: `options`, `subckt`, `instances`, `templates`, `calls`, `formatting`, `guards`, `postprocess`
+- Refactored `SPICEGenerator.generate()` into helper methods
+- All generator unit tests passing (18/18)
 
-**Status**: Production-ready import system fully implemented and tested
-**Commit**: 06cfbb1 - feat(imports): complete Phase 1.2.4 import orchestrator with circular dependency fix
+## 🚀 Next Priority: Generator Ordering + Top-Style
 
-### **What's Complete**
-- **6 Core Components**: All implemented, tested, integrated
-  - PathResolver: ASDL_PATH and search path resolution
-  - FileLoader: Caching with circular dependency detection  
-  - ModuleResolver: 3-step module lookup (local → alias → imports)
-  - AliasResolver: Model alias validation and collision detection
-  - ImportDiagnostics: Structured error codes (E0441-E0445)
-  - ImportResolver: Main orchestrator with recursive loading and flattening
-- **Testing**: 41/41 tests passing (100% success rate)
-- **Circular Import Detection**: Fixed critical cache bypass bug
-- **Examples**: Working test cases in `examples/imports/`
-- **Error Handling**: Complete MVP diagnostic system
+### Objectives
+- Emit hierarchical subckts in dependency order (children before parents), with `top` last
+- Support top-level rendering modes:
+  - `subckt`: normal wrappers, `top` last
+  - `flat`: comment only the `top` `.subckt`/`.ends` lines with `*`; keep body unchanged
 
-## 🚀 Next Priority: Phase 1.2.5 Elaborator Integration
+### Tasks
+- [ ] Implement `ordering.py` (DAG build + DFS postorder with cycle guard)
+- [ ] Integrate ordering into `SPICEGenerator` emission (use new helper)
+- [ ] Add top-style handling in `subckt` emission for `top` module only
+- [ ] Update/add generator unit tests: ordering and top-style
+- [ ] CLI: add `--top-style {subckt,flat}` and pass to `GeneratorOptions`
 
-### **Objective**
-Integrate import resolution as Phase 1 of the main elaboration pipeline:
-```python
-class Elaborator:
-    def elaborate(self, main_file: ASDLFile, search_paths: List[str] = None) -> ASDLFile:
-        # PHASE 1: Import Resolution (NEW)
-        resolved_file = self.import_resolver.resolve_imports(main_file, search_paths)
-        
-        # PHASE 2: Pattern Expansion (EXISTING)
-        expanded_file = self.pattern_expander.expand_patterns(resolved_file)
-        
-        # PHASE 3: Variable Resolution (EXISTING)
-        return self.variable_resolver.resolve_variables(expanded_file)
-```
+### Notes
+- Deterministic traversal via module insertion order (fallback to name-sort)
+- Preserve single emission per module (perm_mark)
+- Emit cycle diagnostic and skip back-edge if encountered (validator should catch earlier)
 
-### **Implementation Tasks**
-1. **Update `src/asdl/elaborator/elaborator.py`**:
-   - Add import resolution as Phase 1
-   - Integrate ImportResolver with existing architecture
-   - Support search_paths parameter
-   - Preserve existing pattern expansion and variable resolution
+## 📦 Elaborator Phase (Follow-up)
+- Keep `Phase 1.2.5` elaborator integration plan available (import resolution → pattern → variable)
+- CLI `--search-path` already supported; re-run e2e tests after generator changes
 
-2. **CLI Integration**:
-   - Add `--search-path` arguments support
-   - Update command-line interface to handle import resolution
-
-3. **Integration Testing**:
-   - End-to-end pipeline validation
-   - Real circuit examples with imports
-   - Performance validation
-
-### **Files Ready for Integration**
-- `src/asdl/elaborator/import_/` - Complete import system (all 6 components)
-- `tests/unit_tests/elaborator/import_/` - Comprehensive test suite
-- `examples/imports/` - Working examples and debug tools
-
-### **Success Criteria for Phase 1.2.5**
-- [ ] Import resolution integrated as elaborator Phase 1
-- [ ] CLI supports search paths for import resolution
-- [ ] End-to-end tests passing with import-enabled circuits
-- [ ] Documentation updated with import usage examples
-
-### **Context Files Updated**
-- `context/memory.md` - Reflects completed Phase 1.2.4
-- `context/todo_imports.md` - Shows completion status and next steps
-
-## Generator Follow-ups (Next Session Candidates)
-- [ ] PDK include path resolver redesign (configurable per PDK, deduped) – see `context/todo_generator.md`
-- [ ] Add explicit unit test for `G0701` informational diagnostic
-- [ ] Consider top-level net mapping strategy beyond port-name passthrough
-
-**Ready to continue with elaborator integration in new session!**
+**Ready to continue with generator ordering/top-style implementation in a new session.**

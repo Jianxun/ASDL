@@ -163,3 +163,14 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
   - `tests/unit_tests/parser/test_parser_modules.py` (module-focused behaviors)
   - `tests/unit_tests/parser/test_parser_location_tracking.py` (centralized location tracking)
 - Suite structure now: per-code diagnostics files + focused positive-path/module/location suites.
+
+### Generator Refactor Progress (2025-08-27)
+- Modularization complete for generator: `options`, `subckt`, `instances`, `templates`, `calls`, `formatting`, `guards`, `postprocess`.
+- Removed automatic PDK `.include` emission and `XMAIN` emission; preserved diagnostics behavior (G0102, G0701).
+- `SPICEGenerator.generate()` split into helper methods for readability and testability.
+- All generator unit tests passing (18/18) post-refactor.
+
+### Next Session Plan
+- Implement `ordering.py` to emit hierarchical subckts in dependency order with `top` last.
+- Add `TopStyle` handling in emission: `subckt` vs `flat` (comment-only wrappers for top).
+- Wire CLI `--top-style` flag and thread options through CLI to generator.
