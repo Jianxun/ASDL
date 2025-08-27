@@ -5,13 +5,11 @@ Generates SPICE netlists from elaborated ASDL designs where patterns
 have been expanded and parameters have been resolved.
 """
 
-from typing import Dict, List, Any, Optional, Tuple
-import re
+from typing import List, Optional, Tuple
 from ..data_structures import ASDLFile, Module, Instance
 from ..diagnostics import Diagnostic
 from .diagnostics import create_generator_diagnostic
-from .options import GeneratorOptions, TopStyle
-from .formatting import get_port_list
+from .options import GeneratorOptions
 from .subckt import build_subckt
 from .instances import generate_instance as _generate_instance_line
 from .postprocess import check_unresolved_placeholders
@@ -28,8 +26,7 @@ class SPICEGenerator:
     
     Pipeline order:
     1. Hierarchical module subcircuit definitions (.subckt for each circuit module)
-    2. Main circuit instantiation (XMAIN top-level call)
-    3. End statement (.end)
+    2. End statement (.end)
     """
     
 
@@ -153,68 +150,6 @@ class SPICEGenerator:
     
     
     
-    def _get_top_level_nets(self, module: Optional[Module] = None) -> str:
-        """
-        Get net list for top-level instantiation.
-        
-        For now, return the port list of the module being instantiated.
-        TODO: Implement proper top-level net generation with actual connections.
-        """
-        if module and module.ports:
-            # Use the module's port names as top-level nets
-            port_list = self._get_port_list(module)
-            return " ".join(port_list)
-        else:
-            return "vdd vss"  # Fallback
-    
-    def _format_parameter_value(self, value: Any) -> str:
-        """
-        Format parameter value for SPICE output.
-        
-        Handles different value types and units.
-        """
-        if isinstance(value, str):
-            return value
-        elif isinstance(value, (int, float)):
-            return str(value)
-        else:
-            return str(value)
-
-    def _check_unresolved_placeholders(self, spice_output: str, asdl_file: ASDLFile) -> List[Diagnostic]:
-        """
-        Check for unresolved template placeholders in the generated SPICE output.
-        
-        Detects patterns like {R_val}, {C_val}, etc. that weren't resolved during
-        template substitution, which would cause SPICE simulation failures.
-        
-        Args:
-            spice_output: Generated SPICE netlist content
-            asdl_file: Original ASDL file for context
-            
-        Returns:
-            List of G03xx diagnostics for unresolved placeholders
-        """
-        diagnostics: List[Diagnostic] = []
-        
-        # Pattern to match unresolved placeholders: {any_text}
-        placeholder_pattern = re.compile(r'\{([^}]+)\}')
-        
-        # Find all unresolved placeholders
-        matches = placeholder_pattern.findall(spice_output)
-        
-        if matches:
-            # Get unique placeholder names
-            unique_placeholders = sorted(set(matches))
-            
-            # Create diagnostic for unresolved placeholders (G0305)
-            placeholder_list = ", ".join(f"'{{{name}}}'" for name in unique_placeholders)
-            diagnostic = create_generator_diagnostic(
-                "G0305",
-                placeholders=placeholder_list,
-                location=None,
-            )
-            diagnostics.append(diagnostic)
-        
-        return diagnostics
+    # Removed legacy helpers (_get_top_level_nets, _format_parameter_value, _check_unresolved_placeholders)
 
 
