@@ -4,27 +4,25 @@ This file tracks the netlist generator refactor and behavior changes.
 
 ## In-Progress: Behavior Changes (MVP)
 
-- Remove XMAIN emission entirely from generator output.
 - Add top-level rendering modes via options/CLI:
   - subckt: emit `.subckt {top} … .ends` as the final section.
   - flat: comment out only the top `.subckt`/`.ends` wrapper lines with `*` (body unchanged).
 - Emit hierarchical subckts in dependency order (children before parents), with `top` last. Use deterministic tie-breaking for orphans.
-- Remove automatic PDK `.include` emission from the generator. PDK model includes will be injected by a higher-level simulation orchestrator (or separate CLI facility later if needed).
 
 ## Refactor Tasks
 
 - Extract generator components:
-  - options.py: `TopStyle` enum and `GeneratorOptions` dataclass.
-  - ordering.py: dependency graph + reverse topo ordering ensuring `top` last.
-  - subckt.py: subckt builder (supports `flat` commenting of top wrapper).
-  - instances.py: instance renderer dispatch (primitive vs hierarchical).
-  - templates.py: primitive template rendering with var/param merge and G0601 warning.
-  - calls.py: hierarchical subckt call formatting (ordered nodes, sorted params).
-  - formatting.py: helpers and constants (port order, param formatting, indent/comment).
-  - guards.py: defensive checks for unknown model/missing mappings (G0401, G0201).
-  - postprocess.py: unresolved placeholder scan (G0305).
-- Slim `spice_generator.py` to orchestration only; remove PDK includes and XMAIN.
-- CLI: add `--top-style {subckt,flat}` and pass options to generator.
+  - options.py: `TopStyle` enum and `GeneratorOptions` dataclass. [DONE]
+  - ordering.py: dependency graph + reverse topo ordering ensuring `top` last. [PENDING]
+  - subckt.py: subckt builder (supports `flat` commenting of top wrapper). [DONE]
+  - instances.py: instance renderer dispatch (primitive vs hierarchical). [DONE]
+  - templates.py: primitive template rendering with var/param merge and G0601 warning. [DONE]
+  - calls.py: hierarchical subckt call formatting (ordered nodes, sorted params). [DONE]
+  - formatting.py: helpers and constants (port order, param formatting, indent/comment). [DONE]
+  - guards.py: defensive checks for unknown model/missing mappings (G0401, G0201). [DONE]
+  - postprocess.py: unresolved placeholder scan (G0305). [DONE]
+- Slim `spice_generator.py` to orchestration only; remove PDK includes and XMAIN. [DONE]
+- CLI: add `--top-style {subckt,flat}` and pass options to generator. [PENDING]
 
 ## Diagnostics and Unit Tests
 
@@ -64,6 +62,12 @@ The generator emits diagnostics (XCCSS) for defensive checks and postprocessing.
 
 - Dropped legacy assumption of inferred PDK include paths in generator.
 - Retired tests that asserted PDK include deduplication inside generator; these will be replaced by orchestrator/header injection tests later if needed.
+ - Removed automatic PDK `.include` emission from generator output.
+ - Removed `XMAIN` emission from generator output; preserved diagnostics for missing/unknown top.
+ - Extracted generator into modular components: `options.py`, `subckt.py`, `instances.py`, `templates.py`, `calls.py`, `formatting.py`, `guards.py`, `postprocess.py`.
+ - Refactored `SPICEGenerator.generate()` into focused helper methods (header/invalids/subckts/top_diag/end).
+ - Kept thin wrapper methods for `generate_subckt`/`generate_instance` to maintain unit test API.
+ - Updated unit tests to remove expectations about auto-includes; all generator unit tests passing (18/18).
 
 ## Dependency Ordering Algorithm
 
