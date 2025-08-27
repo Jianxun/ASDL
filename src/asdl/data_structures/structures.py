@@ -29,11 +29,24 @@ class ASDLFile:
     The imports field enables dependency resolution across multiple files.
     The model_alias field provides local shorthand for imported module references.
     """
-    file_info: 'FileInfo'  # schema: description="Document metadata; does not affect netlisting"
-    modules: Dict[str, 'Module']  # schema: description="Map of unified module definitions (both primitive and hierarchical)"
-    imports: Optional[Dict[str, str]] = None  # schema: description="Map of file aliases to .asdl file paths for dependency resolution"
-    model_alias: Optional[Dict[str, str]] = None  # schema: description="Local module aliases mapping to imported module references (alias.module_name format)"
-    metadata: Optional[Metadata] = None  # schema: description="Open extension bag; agents should preserve unknown keys"
+    file_info: 'FileInfo' = field(
+        metadata={"schema": {"description": "Document metadata; does not affect netlisting"}}
+    )
+    modules: Dict[str, 'Module'] = field(
+        metadata={"schema": {"description": "Map of unified module definitions (both primitive and hierarchical)"}}
+    )
+    imports: Optional[Dict[str, str]] = field(
+        default=None,
+        metadata={"schema": {"description": "Map of file aliases to .asdl file paths for dependency resolution"}},
+    )
+    model_alias: Optional[Dict[str, str]] = field(
+        default=None,
+        metadata={"schema": {"description": "Local module aliases mapping to imported module references (alias.module_name format)"}},
+    )
+    metadata: Optional[Metadata] = field(
+        default=None,
+        metadata={"schema": {"description": "Open extension bag; agents should preserve unknown keys"}},
+    )
 
 
 # ─────────────────────────────────────────
@@ -74,12 +87,30 @@ class Locatable:
 @dataclass
 class FileInfo(Locatable):
     """Represents the file_info section of an ASDL file."""
-    top_module: Optional[str] = None  # schema: description="Default top module name in this ASDL file"
-    doc: Optional[str] = None  # schema: description="Human-readable description of the design/library"
-    revision: Optional[str] = None  # schema: description="Revision identifier for this document"
-    author: Optional[str] = None  # schema: description="Author name or contact"
-    date: Optional[str] = None  # schema: description="Date string"
-    metadata: Optional[Dict[str, Any]] = None  # schema: description="Additional metadata for tools and annotations"
+    top_module: Optional[str] = field(
+        default=None,
+        metadata={"schema": {"description": "Default top module name in this ASDL file"}},
+    )
+    doc: Optional[str] = field(
+        default=None,
+        metadata={"schema": {"description": "Human-readable description of the design/library"}},
+    )
+    revision: Optional[str] = field(
+        default=None,
+        metadata={"schema": {"description": "Revision identifier for this document"}},
+    )
+    author: Optional[str] = field(
+        default=None,
+        metadata={"schema": {"description": "Author name or contact"}},
+    )
+    date: Optional[str] = field(
+        default=None,
+        metadata={"schema": {"description": "Date string (free-form or ISO 8601)"}},
+    )
+    metadata: Optional[Dict[str, Any]] = field(
+        default=None,
+        metadata={"schema": {"description": "Additional metadata for tools and annotations"}},
+    )
 
 
 
@@ -108,14 +139,21 @@ class PortType(Enum):
 @dataclass(kw_only=True)
 class Port(Locatable):
     """
-    Port definition with direction, type, and optional constraints.
+    Port definition with direction and optional type classification.
     
     Port names may contain patterns (e.g., "in_<p,n>") that will be expanded
     during the pattern expansion phase.
     """
-    dir: PortDirection  # schema: description="Port direction classification"
-    type: PortType = PortType.SIGNAL  # schema: description="Optional port type classification; defaults to 'signal'"
-    metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
+    dir: PortDirection = field(
+        metadata={"schema": {"description": "Port direction classification"}}
+    )
+    type: PortType = field(
+        default=PortType.SIGNAL,
+        metadata={"schema": {"description": "Optional port type classification; defaults to 'signal'"}},
+    )
+    metadata: Optional[Metadata] = field(
+        default=None, metadata={"schema": {"description": "Arbitrary metadata for tools and annotations"}}
+    )
 
 
 @dataclass(kw_only=True)
@@ -137,11 +175,23 @@ class Instance(Locatable):
     - Tool-specific metadata: {"simulator": "spectre", "model_opts": {...}}
     - Future extensions: Any additional fields can be preserved here
     """
-    model: str  # schema: description="Reference to a Module by key/name"
-    mappings: Dict[str, str]  # schema: description="Map from target's port names to net names"
-    doc: Optional[str] = None  # schema: description="Instance-level documentation"
-    parameters: Optional[Dict[str, Any]] = None  # schema: description="Parameter overrides for this instance"
-    metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
+    model: str = field(metadata={"schema": {"description": "Reference to a Module by key/name"}})
+    mappings: Dict[str, str] = field(
+        metadata={
+            "schema": {
+                "description": "Map from target module's port names to net names. Keys must match the declared port names of the referenced module."
+            }
+        }
+    )
+    doc: Optional[str] = field(
+        default=None, metadata={"schema": {"description": "Instance-level documentation"}}
+    )
+    parameters: Optional[Dict[str, Any]] = field(
+        default=None, metadata={"schema": {"description": "Parameter overrides for this instance"}}
+    )
+    metadata: Optional[Metadata] = field(
+        default=None, metadata={"schema": {"description": "Arbitrary metadata for tools and annotations"}}
+    )
     
     def is_primitive_instance(self, asdl_file: 'ASDLFile') -> bool:
         """Check if this instance references a primitive Module."""
@@ -165,19 +215,67 @@ class Module(Locatable):
     
     These are mutually exclusive - a module cannot have both spice_template and instances.
     """
-    doc: Optional[str] = None  # schema: description="Module-level documentation"
-    ports: Optional[Dict[str, Port]] = None  # schema: description="Port declarations keyed by port name"
-    internal_nets: Optional[List[str]] = None  # schema: description="Internal nets local to this module"
-    parameters: Optional[Dict[str, Any]] = None  # schema: description="Module parameters and default values"
-    variables: Optional[Dict[str, Any]] = None  # schema: description="Module variables for computed values (cannot be overridden in instances)"
+    doc: Optional[str] = field(
+        default=None, metadata={"schema": {"description": "Module-level documentation"}}
+    )
+    ports: Optional[Dict[str, Port]] = field(
+        default=None,
+        metadata={
+            "schema": {
+                "description": "Port declarations keyed by port name. Each declared port implicitly defines a net with the same name in the module's interface. Use 'internal_nets' to declare additional local nets."
+            }
+        },
+    )
+    internal_nets: Optional[List[str]] = field(
+        default=None,
+        metadata={
+            "schema": {
+                "description": "Additional local nets inside the module body. Ports already imply interface nets; use this list for extra internal nodes."
+            }
+        },
+    )
+    parameters: Optional[Dict[str, Any]] = field(
+        default=None,
+        metadata={
+            "schema": {
+                "description": "Module parameters and default values. Parameters may be overridden per-instance via 'Instance.parameters'."
+            }
+        },
+    )
+    variables: Optional[Dict[str, Any]] = field(
+        default=None,
+        metadata={
+            "schema": {
+                "description": "Module variables for computed or derived values; variables are not overridable by instances."
+            }
+        },
+    )
     
     # MUTUALLY EXCLUSIVE: Either primitive OR hierarchical
-    spice_template: Optional[str] = None  # schema: description="SPICE device template for primitive modules"
-    instances: Optional[Dict[str, Instance]] = None  # schema: description="Map of instance id to Instance for hierarchical modules"
+    spice_template: Optional[str] = field(
+        default=None,
+        metadata={
+            "schema": {
+                "description": "SPICE device template for primitive modules; implicit placeholder '{name}' resolves to the instance id"
+            }
+        },
+    )
+    instances: Optional[Dict[str, Instance]] = field(
+        default=None, metadata={"schema": {"description": "Map of instance id to Instance for hierarchical modules"}}
+    )
     
     # Additional fields
-    pdk: Optional[str] = None  # schema: description="PDK name for primitive modules (drives .include generation)"
-    metadata: Optional[Metadata] = None  # schema: description="Arbitrary metadata for tools and annotations"
+    pdk: Optional[str] = field(
+        default=None,
+        metadata={
+            "schema": {
+                "description": "PDK identifier associated with this module (informational). Note: automatic .include generation is deprecated and handled outside the generator."
+            }
+        },
+    )
+    metadata: Optional[Metadata] = field(
+        default=None, metadata={"schema": {"description": "Arbitrary metadata for tools and annotations"}}
+    )
     
     def __post_init__(self):
         """Validate mutual exclusion constraint and ensure module has implementation."""

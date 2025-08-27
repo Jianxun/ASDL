@@ -1,27 +1,22 @@
 # ASDL Examples
 
-This directory contains example ASDL (Analog Structural Description Language) files that demonstrate the usage of the ASDL schema v0.4.
+This directory contains ASDL (Analog Structured-Description Language) examples that match the current schema (generated via `asdlc schema`).
 
-## Available Examples
+Regenerate schema documentation: `bash doc/schema/generate.sh`.
 
-1. **inverter.yml**
-   - A basic CMOS inverter design
-   - Demonstrates simple device instantiation and port mapping
-   - Shows basic intent specification for operation and layout
+## Up-to-date Examples
 
-2. **two_stage_ota.yml**
-   - A two-stage Miller-compensated operational transconductance amplifier
-   - Demonstrates hierarchical module composition
-   - Shows complex port constraints and differential pair patterns
-   - Includes Miller compensation network
-   - Demonstrates parameter propagation and device multiplicity
+- Toy import composition (under `examples/imports/toy/`):
+  - `primitives.asdl`: Primitive device library with `spice_template` modules
+  - `opamp.asdl`: Uses `imports` and `model_alias` to reference primitives
+  - `top.asdl`: Top-level design instantiating `opamp.ota_diffpair`
 
-## Schema Version
+These demonstrate:
+- Unified `Module` (primitive vs hierarchical)
+- Port directions and types (`power`, `ground`, etc.)
+- Instances with port-to-net `mappings`
+- Import and alias resolution
 
-All examples follow the ASDL schema v0.4 specification, which includes:
-- Design information and metadata
-- Model definitions with port ordering
-- Module hierarchy with ports, nets, and instances
-- Intent specification for operation and layout
-- Parameter propagation and device multiplicity
-- Pattern expansion rules for differential and bus structures 
+## Notes
+
+- Older `.yml` examples are legacy and may not reflect the current schema semantics (e.g., removed constraints). Prefer the `.asdl` files above.

@@ -1,5 +1,5 @@
 file_info:
-  name: opamp
+  doc: Toy opamp library
 
 imports:
   prim: primitives.asdl
@@ -14,8 +14,8 @@ modules:
       in_p: {dir: in}
       in_n: {dir: in}
       out: {dir: out}
-      vdd: {dir: in}
-      vss: {dir: in}
+      vdd: {dir: in, type: power}
+      vss: {dir: in, type: ground}
     instances:
       MN1: {model: nmos, mappings: {D: out, G: in_p, S: vss, B: vss}}
       MN2: {model: nmos, mappings: {D: out, G: in_n, S: vss, B: vss}}

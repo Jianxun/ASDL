@@ -1,5 +1,4 @@
 file_info:
-  name: top
   top_module: top
 
 imports:
@@ -10,8 +9,8 @@ modules:
     ports:
       in_p: {dir: in}
       in_n: {dir: in}
-      vdd: {dir: in}
-      vss: {dir: in}
+      vdd: {dir: in, type: power}
+      vss: {dir: in, type: ground}
       out: {dir: out}
     instances:
       A1: {model: op.ota_diffpair, mappings: {in_p: in_p, in_n: in_n, vdd: vdd, vss: vss, out: out}}

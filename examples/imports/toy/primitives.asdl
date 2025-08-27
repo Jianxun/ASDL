@@ -1,5 +1,5 @@
 file_info:
-  name: primitives
+  doc: Primitive device library
 
 modules:
   nfet_03v3:
