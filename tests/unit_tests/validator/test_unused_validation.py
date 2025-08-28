@@ -7,8 +7,7 @@ Tests validation that identifies unused models and modules.
 import pytest
 from src.asdl.validator import ASDLValidator
 from src.asdl.data_structures import (
-    ASDLFile, FileInfo, Instance, Module, DeviceModel, 
-    Port, PortDirection, PortType, PrimitiveType
+    ASDLFile, FileInfo, Instance, Module
 )
 from src.asdl.diagnostics import Diagnostic, DiagnosticSeverity
 
@@ -16,31 +15,18 @@ from src.asdl.diagnostics import Diagnostic, DiagnosticSeverity
 class TestUnusedValidation:
     """Test unused components validation logic."""
     
-    def test_all_components_used_no_warnings(self):
-        """Test that when all components are used, no warnings are generated."""
+    def test_all_modules_used_no_warnings(self):
+        """No warnings when all modules are used (top and its children)."""
         validator = ASDLValidator()
         
-        # Create ASDL file with all components used
+        # Create ASDL file with all modules used
         asdl_file = ASDLFile(
-            file_info=FileInfo(top_module="test_circuit"),
-            models={
-                "resistor": DeviceModel(
-                    type=PrimitiveType.SPICE_DEVICE,
-                    ports=["plus", "minus"],
-                    device_line="R{name} {plus} {minus} {value}"
-                )
-            },
+            file_info=FileInfo(top_module="top"),
             modules={
-                "test_circuit": Module(
-                    ports={
-                        "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
-                        "out": Port(dir=PortDirection.OUT, type=PortType.SIGNAL)
-                    },
+                "child": Module(instances={}),
+                "top": Module(
                     instances={
-                        "R1": Instance(
-                            model="resistor",
-                            mappings={"plus": "in", "minus": "out"}
-                        )
+                        "U1": Instance(model="child", mappings={})
                     }
                 )
             }
@@ -50,32 +36,19 @@ class TestUnusedValidation:
         diagnostics = validator.validate_unused_components(asdl_file)
         assert len(diagnostics) == 0
     
-    def test_unused_model_generates_warning(self):
-        """Test that unused models generate warning diagnostics."""
+    def test_unused_module_generates_warning(self):
+        """Warn when a defined module is never instantiated (excluding top)."""
         validator = ASDLValidator()
         
-        # Create ASDL file with unused model
+        # Create ASDL file with an unused module
         asdl_file = ASDLFile(
-            file_info=FileInfo(top_module="test_circuit"),
-            models={
-                "resistor": DeviceModel(
-                    type=PrimitiveType.SPICE_DEVICE,
-                    ports=["plus", "minus"],
-                    device_line="R{name} {plus} {minus} {value}"
-                ),
-                "unused_capacitor": DeviceModel(  # This one is unused
-                    type=PrimitiveType.SPICE_DEVICE,
-                    ports=["plus", "minus"],
-                    device_line="C{name} {plus} {minus} {value}"
-                )
-            },
+            file_info=FileInfo(top_module="top"),
             modules={
-                "test_circuit": Module(
+                "used_child": Module(instances={}),
+                "unused_child": Module(instances={}),
+                "top": Module(
                     instances={
-                        "R1": Instance(
-                            model="resistor",
-                            mappings={"plus": "in", "minus": "out"}
-                        )
+                        "U1": Instance(model="used_child", mappings={})
                     }
                 )
             }
@@ -85,5 +58,6 @@ class TestUnusedValidation:
         diagnostics = validator.validate_unused_components(asdl_file)
         assert len(diagnostics) == 1
         assert diagnostics[0].severity == DiagnosticSeverity.WARNING
-        assert "unused_capacitor" in diagnostics[0].details
-        assert "unused models" in diagnostics[0].details.lower() 
+        assert diagnostics[0].code == "V0601"
+        assert "unused_child" in diagnostics[0].details
+        assert "unused modules" in diagnostics[0].details.lower()

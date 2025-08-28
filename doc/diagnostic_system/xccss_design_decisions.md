@@ -160,6 +160,19 @@ Diagnostic.create("P0201", location=loc, section="file_info")
 | P302 | P0602 | Style | Dual Variables Syntax |
 
 ### Elaborator Code Examples
+### Validator Code Migration
+
+| Old Code | New Code | Category | Description |
+|----------|----------|----------|-------------|
+| V001 | V0301 | Semantic | Instance maps to ports but module has no ports |
+| V002 | V0302 | Semantic | Mapped ports not defined in module |
+| V003 | V0401 | Reference | Undeclared nets used in mappings |
+| V005 | V0601 | Style | Unused modules detected |
+| V301 | V0303 | Semantic | Parameter override on hierarchical module |
+| V302 | V0304 | Semantic | Variable override attempted |
+| V303 | V0305 | Semantic | Non-existent parameter override |
+| V304 | V0201 | Schema | Hierarchical module declares parameters field |
+
 
 | New Code | Category | Description |
 |----------|----------|-------------|

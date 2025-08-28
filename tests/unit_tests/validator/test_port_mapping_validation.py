@@ -22,7 +22,8 @@ class TestPortMappingValidation:
             ports={
                 "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
                 "out": Port(dir=PortDirection.OUT, type=PortType.SIGNAL)
-            }
+            },
+            instances={}
         )
         
         # Create an instance that maps to these ports
@@ -43,7 +44,8 @@ class TestPortMappingValidation:
         module = Module(
             ports={
                 "in": Port(dir=PortDirection.IN, type=PortType.SIGNAL)
-            }
+            },
+            instances={}
         )
         
         # Create an instance that maps to non-existent port
@@ -56,5 +58,6 @@ class TestPortMappingValidation:
         diagnostics = validator.validate_port_mappings("inst1", instance, module)
         assert len(diagnostics) == 1
         assert diagnostics[0].severity == DiagnosticSeverity.ERROR
+        assert diagnostics[0].code == "V0302"
         assert "invalid_port" in diagnostics[0].details
         assert "inst1" in diagnostics[0].details 

@@ -62,5 +62,6 @@ class TestNetDeclarationValidation:
         diagnostics = validator.validate_net_declarations(module, "test_module")
         assert len(diagnostics) == 1
         assert diagnostics[0].severity == DiagnosticSeverity.WARNING
+        assert diagnostics[0].code == "V0401"
         assert "undeclared_net" in diagnostics[0].details
         assert "test_module" in diagnostics[0].details 

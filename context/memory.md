@@ -188,11 +188,13 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 ### Current Unit Test Status (2025-08-27)
 - Data structures unit tests: green (14/14).
 - Generator unit tests: green.
-- Validator unit tests: one suite still references legacy `DeviceModel` (to refactor next session).
+- Validator unit tests: green (15/15) after XCCSS migration.
 - Integration tests intentionally skipped (under refactor).
 
 ### Next Session Plan
-- Refactor validator test suite to align with unified data structures (remove `DeviceModel` usage).
+- Continue validator refactor follow-ups:
+  - Review integration tests for legacy validator codes and migrate to V-codes
+  - Add any missing validator diagnostics per roadmap
 - Focus on schema generation improvements now that data structures are stable:
   - Ensure JSON Schema and text schema fully reflect `PortType` and field metadata.
   - Remove any remaining duplication and align CLI `asdlc schema` behavior.

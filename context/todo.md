@@ -20,8 +20,10 @@ The original combined todo list has been split for clarity. Please refer to the 
 - `context/todo_legacy_archive.md` – Historical todo archive
 
 ## Next Session
-- Continue updating any remaining unit tests under `tests/unit_tests/data_structures/` to align with `PortType` and removed `PortConstraints`.
-- Run unit tests only (skip integration) until refactor completes.
+- Continue validator refactor:
+  - Migrate any integration tests expecting legacy V00x/V30x to new V-codes
+  - Add missing validator diagnostics and per-code unit tests as needed
+- Schema tasks: ensure `PortType` reflected across JSON/Text schema and CLI output
 
 ## Documentation Reference
 - `doc/cli/` – CLI architecture and implementation plans

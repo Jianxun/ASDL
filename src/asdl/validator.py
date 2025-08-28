@@ -7,6 +7,7 @@ Provides validation services for ASDL designs before generation.
 from typing import List
 from .data_structures import Instance, Module, ASDLFile
 from .diagnostics import Diagnostic, DiagnosticSeverity
+from .validator_diagnostics import create_validator_diagnostic
 
 
 class ASDLValidator:
@@ -34,12 +35,11 @@ class ASDLValidator:
             # Module has no ports, but instance has mappings
             if instance.mappings:
                 mapped_ports = list(instance.mappings.keys())
-                diagnostic = Diagnostic(
-                    code="V001",
-                    title="Invalid Port Mapping",
-                    details=f"Instance '{instance_id}' maps to ports {mapped_ports}, "
-                           f"but module '{instance.model}' defines no ports",
-                    severity=DiagnosticSeverity.ERROR
+                diagnostic = create_validator_diagnostic(
+                    "V0301",
+                    instance_id=instance_id,
+                    mapped_ports=mapped_ports,
+                    module_name=instance.model,
                 )
                 diagnostics.append(diagnostic)
             return diagnostics
@@ -51,12 +51,12 @@ class ASDLValidator:
         # Check: All mapped ports must exist in module definition
         invalid_ports = mapped_ports - valid_ports
         if invalid_ports:
-            diagnostic = Diagnostic(
-                code="V002",
-                title="Invalid Port Mapping",
-                details=f"Instance '{instance_id}' maps to invalid ports: {sorted(invalid_ports)}. "
-                       f"Module '{instance.model}' only defines ports: {sorted(valid_ports)}",
-                severity=DiagnosticSeverity.ERROR
+            diagnostic = create_validator_diagnostic(
+                "V0302",
+                instance_id=instance_id,
+                invalid_ports=sorted(invalid_ports),
+                valid_ports=sorted(valid_ports),
+                module_name=instance.model,
             )
             diagnostics.append(diagnostic)
         
@@ -96,12 +96,9 @@ class ASDLValidator:
         # Generate warning for unused modules  
         if unused_modules:
             modules_list = ", ".join(f"'{module}'" for module in sorted(unused_modules))
-            diagnostic = Diagnostic(
-                code="V005",
-                title="Unused Modules",
-                details=f"Unused modules detected: {modules_list}. "
-                       f"These modules are defined but never instantiated.",
-                severity=DiagnosticSeverity.WARNING
+            diagnostic = create_validator_diagnostic(
+                "V0601",
+                modules_list=modules_list,
             )
             diagnostics.append(diagnostic)
         
@@ -148,12 +145,10 @@ class ASDLValidator:
         # Generate warning for undeclared nets
         if undeclared_nets:
             nets_list = ", ".join(f"'{net}'" for net in sorted(undeclared_nets))
-            diagnostic = Diagnostic(
-                code="V003",
-                title="Undeclared Nets",
-                details=f"In module '{module_name}', undeclared nets used in instance mappings: {nets_list}. "
-                       f"These nets are not declared as ports or internal nets.",
-                severity=DiagnosticSeverity.WARNING
+            diagnostic = create_validator_diagnostic(
+                "V0401",
+                module_name=module_name,
+                nets_list=nets_list,
             )
             diagnostics.append(diagnostic)
         
@@ -190,14 +185,12 @@ class ASDLValidator:
         # Rule 1: Parameter overrides only allowed for primitive modules
         if is_hierarchical:
             override_params = list(instance.parameters.keys())
-            diagnostic = Diagnostic(
-                code="V301",
-                title="Invalid Parameter Override",
-                details=f"Instance '{instance_id}' attempts to override parameters {override_params} "
-                       f"on hierarchical module '{instance.model}'. Parameter overrides are only "
-                       f"allowed for primitive modules (those with spice_template).",
-                severity=DiagnosticSeverity.ERROR,
-                location=instance
+            diagnostic = create_validator_diagnostic(
+                "V0303",
+                instance_id=instance_id,
+                override_params=override_params,
+                module_name=instance.model,
+                location=instance,
             )
             diagnostics.append(diagnostic)
             return diagnostics  # Don't check further if it's hierarchical
@@ -209,13 +202,12 @@ class ASDLValidator:
         # Rule 2: Variable overrides never allowed
         attempted_variable_overrides = set(instance.parameters.keys()) & module_variables
         for var_name in sorted(attempted_variable_overrides):
-            diagnostic = Diagnostic(
-                code="V302", 
-                title="Invalid Variable Override",
-                details=f"Instance '{instance_id}' attempts to override variable '{var_name}' "
-                       f"on module '{instance.model}'. Variables cannot be overridden in instances.",
-                severity=DiagnosticSeverity.ERROR,
-                location=instance
+            diagnostic = create_validator_diagnostic(
+                "V0304",
+                instance_id=instance_id,
+                var_name=var_name,
+                module_name=instance.model,
+                location=instance,
             )
             diagnostics.append(diagnostic)
         
@@ -230,13 +222,11 @@ class ASDLValidator:
             else:
                 details = (f"Instance '{instance_id}' attempts to override parameter '{param_name}' "
                           f"on module '{instance.model}', but module defines no parameters.")
-            
-            diagnostic = Diagnostic(
-                code="V303",
-                title="Invalid Parameter Override",
+
+            diagnostic = create_validator_diagnostic(
+                "V0305",
                 details=details,
-                severity=DiagnosticSeverity.ERROR,
-                location=instance
+                location=instance,
             )
             diagnostics.append(diagnostic)
         
@@ -300,14 +290,11 @@ class ASDLValidator:
             # Rule: Hierarchical modules must not declare parameters fields
             if is_hierarchical and has_parameters:
                 param_names = list(module.parameters.keys())
-                diagnostic = Diagnostic(
-                    code="V304",
-                    title="Invalid Module Parameter Declaration",
-                    details=f"Hierarchical module '{module_name}' declares parameters {param_names}. "
-                           f"Hierarchical modules should only use 'variables' for internal implementation details. "
-                           f"Use 'variables' instead of 'parameters' or convert to primitive module with spice_template.",
-                    severity=DiagnosticSeverity.ERROR,
-                    location=module
+                diagnostic = create_validator_diagnostic(
+                    "V0201",
+                    module_name=module_name,
+                    param_names=param_names,
+                    location=module,
                 )
                 diagnostics.append(diagnostic)
         

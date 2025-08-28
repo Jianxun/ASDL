@@ -102,7 +102,7 @@ class TestParameterOverrideValidation:
         
         error = diagnostics[0]
         assert error.severity == DiagnosticSeverity.ERROR
-        assert error.code == "V301"
+        assert error.code == "V0303"
         assert "hierarchical" in error.details.lower()
         assert "parameter override" in error.details.lower()
         assert "INV1" in error.details
@@ -155,7 +155,7 @@ class TestParameterOverrideValidation:
         
         for diagnostic in diagnostics:
             assert diagnostic.severity == DiagnosticSeverity.ERROR
-            assert diagnostic.code == "V302"
+            assert diagnostic.code == "V0304"
             assert "variable" in diagnostic.details.lower()
             assert "override" in diagnostic.details.lower()
             
@@ -248,7 +248,7 @@ class TestParameterOverrideValidation:
         # All errors should be variable override errors
         for diagnostic in diagnostics:
             assert diagnostic.severity == DiagnosticSeverity.ERROR
-            assert diagnostic.code == "V302"
+            assert diagnostic.code == "V0304"
             assert "variable" in diagnostic.details.lower()
 
 
@@ -283,7 +283,7 @@ class TestParameterOverrideValidationEdgeCases:
         
         error = diagnostics[0]
         assert error.severity == DiagnosticSeverity.ERROR
-        assert error.code == "V303"
+        assert error.code == "V0305"
         assert "no parameters" in error.details.lower()
         
     def test_case_sensitive_parameter_variable_names(self):
@@ -318,7 +318,7 @@ class TestParameterOverrideValidationEdgeCases:
         
         for diagnostic in diagnostics:
             assert diagnostic.severity == DiagnosticSeverity.ERROR
-            assert diagnostic.code == "V303"  # Unrecognized parameter
+            assert diagnostic.code == "V0305"  # Unrecognized parameter
             
     def test_parameter_override_with_none_values(self):
         """
@@ -403,12 +403,12 @@ class TestParameterOverrideValidationIntegration:
         assert len(all_diagnostics) == 2
         
         # Check for hierarchical module override error
-        hierarchical_errors = [d for d in all_diagnostics if d.code == "V301"]
+        hierarchical_errors = [d for d in all_diagnostics if d.code == "V0303"]
         assert len(hierarchical_errors) == 1
         assert "INV1" in hierarchical_errors[0].details
         
         # Check for variable override error  
-        variable_errors = [d for d in all_diagnostics if d.code == "V302"]
+        variable_errors = [d for d in all_diagnostics if d.code == "V0304"]
         assert len(variable_errors) == 1
         assert "M2" in variable_errors[0].details
         assert "gm" in variable_errors[0].details
