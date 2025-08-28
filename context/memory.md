@@ -192,9 +192,12 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - Integration tests intentionally skipped (under refactor).
 
 ### Next Session Plan
-- Continue validator refactor follow-ups:
-  - Review integration tests for legacy validator codes and migrate to V-codes
-  - Add any missing validator diagnostics per roadmap
-- Focus on schema generation improvements now that data structures are stable:
+ - Continue validator refactor follow-ups:
+  - Validator split into package with modular rules (Completed 2025-08-28):
+    - New structure under `src/asdl/validator/`: `core/` (types, registry, runner), `rules/` (port_mapping, parameter_overrides, net_declarations, module_parameters, unused), `diagnostics.py`.
+    - `ASDLValidator` re-exported; backward-compat shim methods preserved for tests/CLI.
+    - All validator unit tests green after refactor.
+  - Next: optional rule toggles/presets via CLI; consider removing shims once tests migrate to new API.
+ - Focus on schema generation improvements now that data structures are stable:
   - Ensure JSON Schema and text schema fully reflect `PortType` and field metadata.
   - Remove any remaining duplication and align CLI `asdlc schema` behavior.

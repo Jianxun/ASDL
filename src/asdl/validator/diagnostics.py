@@ -9,7 +9,7 @@ Code format: XCCSS where
 
 from typing import Dict, Tuple, Optional
 
-from .diagnostics import Diagnostic, DiagnosticSeverity
+from ..diagnostics import Diagnostic, DiagnosticSeverity
 
 
 # Diagnostic definitions for the Validator component
@@ -116,6 +116,7 @@ def create_validator_diagnostic(
         location=location,
         suggestion=suggestion,
     )
+
 
 
 

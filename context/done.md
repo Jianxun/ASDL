@@ -1,3 +1,13 @@
+### 2025-08-28 — Validator Refactor
+- Moved `src/asdl/validator.py` → `src/asdl/validator/validator.py`; created package `src/asdl/validator/`.
+- Renamed `src/asdl/validator_diagnostics.py` → `src/asdl/validator/diagnostics.py`.
+- Introduced modular validator architecture:
+  - `core/` with `types.py`, `registry.py`, `runner.py` (exports `ASDLValidator`).
+  - `rules/` with `port_mapping.py`, `parameter_overrides.py`, `net_declarations.py`, `module_parameters.py`, `unused.py`.
+- Kept public API `from src.asdl.validator import ASDLValidator` via package re-export.
+- Added backward-compat shim methods to `ASDLValidator` to preserve legacy unit tests and CLI usage.
+- All validator unit tests green after refactor.
+
 # Done – Completed Milestones & Features
 
 _This file archives major completed tasks so they don't clutter active todo lists._
