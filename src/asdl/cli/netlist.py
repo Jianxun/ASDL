@@ -42,16 +42,7 @@ def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose:
             if verbose:
                 click.echo("[validate] running structural checks…")
             validator = ASDLValidator()
-            for module_name, module in (elaborated_file.modules or {}).items():
-                diagnostics.extend(validator.validate_net_declarations(module, module_name))
-                if module.instances:
-                    for inst_id, inst in module.instances.items():
-                        if inst.model in elaborated_file.modules:
-                            target_mod = elaborated_file.modules[inst.model]
-                            diagnostics.extend(validator.validate_port_mappings(inst_id, inst, target_mod))
-            diagnostics.extend(validator.validate_unused_components(elaborated_file))
-            diagnostics.extend(validator.validate_file_parameter_overrides(elaborated_file))
-            diagnostics.extend(validator.validate_module_parameter_fields(elaborated_file))
+            diagnostics.extend(validator.validate_file(elaborated_file))
             
             # If there are any prior ERROR diagnostics, skip generation
             if not has_error(diagnostics):
