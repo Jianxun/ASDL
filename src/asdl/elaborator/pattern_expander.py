@@ -202,7 +202,11 @@ class PatternExpander:
                         
                         # Use the corresponding items for this instance index
                         if instance_index < len(port_items):
-                            expanded_mappings[port_items[instance_index]] = net_items[instance_index]
+                            # Expand the port name using the instance pattern item
+                            expanded_port = port_name.replace(f"<{','.join(port_items)}>", instance_items[instance_index])
+                            # Expand the net name using the instance pattern item
+                            expanded_net = net_name.replace(f"<{','.join(net_items)}>", instance_items[instance_index])
+                            expanded_mappings[expanded_port] = expanded_net
                 else:
                     # No instance pattern, expand all port-net pairs
                     for p, n in zip(port_items, net_items):
@@ -219,8 +223,24 @@ class PatternExpander:
                 # Only net has pattern - keep port, expand net (if instance has pattern)
                 if instance_has_pattern:
                     net_items = self.extract_literal_pattern(net_name)
+                    instance_items = self.extract_literal_pattern(original_instance_id)
+                    
+                    # Validate that net pattern count matches instance pattern count
+                    if net_items and instance_items and len(net_items) != len(instance_items):
+                        diagnostics.append(
+                            self._create_diagnostic(
+                                "E105",
+                                "Pattern Count Mismatch",
+                                f"Pattern item counts must match: {len(instance_items)} vs {len(net_items)}",
+                            )
+                        )
+                        continue
+                    
                     if net_items and instance_index < len(net_items):
-                        expanded_mappings[port_name] = net_items[instance_index]
+                        # Expand the net name using the instance pattern item
+                        if instance_index < len(instance_items):
+                            expanded_net = net_name.replace(f"<{','.join(net_items)}>", instance_items[instance_index])
+                            expanded_mappings[port_name] = expanded_net
                 else:
                     # No instance pattern, can't expand net pattern alone
                     diagnostics.append(
