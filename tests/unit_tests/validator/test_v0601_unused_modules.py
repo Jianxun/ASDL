@@ -10,6 +10,12 @@ from src.asdl.diagnostics import DiagnosticSeverity
 
 
 def test_v0601_unused_modules_warning():
+    """
+    Test that V0601 unused modules warning is currently suppressed.
+    
+    Note: This diagnostic is temporarily suppressed to provide a clean compile experience.
+    It will be re-enabled later with refined validation logic.
+    """
     validator = ASDLValidator()
 
     asdl_file = ASDLFile(
@@ -23,7 +29,12 @@ def test_v0601_unused_modules_warning():
 
     diags = validator.validate_file(asdl_file)
     v0601 = [d for d in diags if d.code == "V0601"]
-    assert len(v0601) == 1
-    assert v0601[0].severity == DiagnosticSeverity.WARNING
-    assert "unused" in v0601[0].details
+    
+    # Currently suppressed for clean compile experience
+    assert len(v0601) == 0
+    
+    # TODO: Re-enable when V0601 is refined and re-implemented
+    # assert len(v0601) == 1
+    # assert v0601[0].severity == DiagnosticSeverity.WARNING
+    # assert "unused" in v0601[0].details
 

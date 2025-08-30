@@ -37,6 +37,7 @@ class TestBusExpansion:
                     "data[3:0]":
                         dir: IN
                         type: SIGNAL
+                spice_template: "test {data[3:0]}"
         """
         parser = ASDLParser()
         asdl_file, parse_diagnostics = parser.parse_string(asdl_string)
@@ -77,6 +78,7 @@ class TestBusExpansion:
                     "data[0:3]":
                         dir: IN
                         type: SIGNAL
+                spice_template: "test {data[0:3]}"
         """
         parser = ASDLParser()
         asdl_file, parse_diagnostics = parser.parse_string(asdl_string)

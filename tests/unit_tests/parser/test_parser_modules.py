@@ -23,10 +23,10 @@ modules:
     ports:
       in:
         dir: "in"
-        type: "voltage"
+        type: "signal"
       out:
         dir: "out"
-        type: "voltage"
+        type: "signal"
     instances:
       MN1:
         model: "nmos_test"
@@ -65,7 +65,7 @@ modules:
   full_module:
     doc: "A complete module."
     ports:
-      in: {dir: "in", type: "digital"}
+      in: {dir: "in", type: "signal"}
     internal_nets: ["net1", "net2"]
     parameters:
       param1: "value1"

@@ -17,21 +17,21 @@ class TestUnifiedParsing:
     
     def test_unified_module_parsing(self):
         """
-        TESTS: Single parsing path for all module types
-        VALIDATES: Simplified parser logic without type-specific branches
-        ENSURES: Consistent parsing behavior regardless of module type
+        TESTS: Basic module parsing with both primitive and hierarchical modules
+        VALIDATES: Core parser functionality for all module types
+        ENSURES: Proper data structure population and validation
         """
         yaml_content = """
 file_info:
-  top_module: "test_circuit"
+  top_module: "test_design"
 modules:
   # Primitive module
   nfet_03v3:
     ports:
-      D: {dir: in_out, type: voltage}
-      G: {dir: in, type: voltage}
-      S: {dir: in_out, type: voltage}
-      B: {dir: in_out, type: voltage}
+      D: {dir: in_out, type: signal}
+      G: {dir: in_out, type: signal}
+      S: {dir: in_out, type: signal}
+      B: {dir: in_out, type: signal}
     parameters: {L: "0.28u", W: "3u", M: 1}
     spice_template: "MN {D} {G} {S} {B} nfet_03v3 L={L} W={W} m={M}"
     pdk: "gf180mcu"
@@ -39,10 +39,10 @@ modules:
   # Hierarchical module
   inverter:
     ports:
-      in: {dir: in, type: voltage}
-      out: {dir: out, type: voltage}
-      vdd: {dir: in, type: voltage}
-      vss: {dir: in, type: voltage}
+      in: {dir: in, type: signal}
+      out: {dir: out, type: signal}
+      vdd: {dir: in, type: signal}
+      vss: {dir: in, type: signal}
     instances:
       M1:
         model: nfet_03v3

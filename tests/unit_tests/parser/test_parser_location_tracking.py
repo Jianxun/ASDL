@@ -45,10 +45,10 @@ modules:
     ports:
       in:
         dir: in
-        type: voltage
+        type: signal
       out:
         dir: out
-        type: voltage
+        type: signal
     spice_template: "X_inverter in out inverter_model"
   buffer:
     doc: "A simple buffer."
@@ -79,10 +79,10 @@ modules:
       # port comment
       in:
         dir: in
-        type: voltage
+        type: signal
       out:
         dir: out
-        type: voltage
+        type: signal
     spice_template: "X_inverter in out inverter_model"
 """
         parser = ASDLParser()

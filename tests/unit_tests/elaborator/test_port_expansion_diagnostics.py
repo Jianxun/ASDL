@@ -16,12 +16,12 @@ def test_empty_pattern_diagnostic():
     """
     asdl_file = ASDLFile(
         file_info=FileInfo(top_module="test_module"),
-        models={},
         modules={
             "test_module": Module(
                 ports={
                     "in<>": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
-                }
+                },
+                spice_template="test_module {in<>}"
             )
         },
     )
@@ -41,12 +41,12 @@ def test_single_item_pattern_diagnostic():
     """
     asdl_file = ASDLFile(
         file_info=FileInfo(top_module="test_module"),
-        models={},
         modules={
             "test_module": Module(
                 ports={
                     "in<p>": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
-                }
+                },
+                spice_template="test_module {in<p>}"
             )
         },
     )
@@ -59,18 +59,18 @@ def test_single_item_pattern_diagnostic():
     assert diagnostic.code == "E101"
     assert "contains only a single item" in diagnostic.details
 
-def test_empty_items_pattern_diagnostic():
+def test_empty_item_pattern_diagnostic():
     """
     Test that a pattern with only empty items like 'in<,>' generates a diagnostic.
     """
     asdl_file = ASDLFile(
         file_info=FileInfo(top_module="test_module"),
-        models={},
         modules={
             "test_module": Module(
                 ports={
                     "in<,>": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
-                }
+                },
+                spice_template="test_module {in<,>}"
             )
         },
     )
@@ -89,12 +89,12 @@ def test_mismatched_pattern_count_diagnostic():
     """
     asdl_file = ASDLFile(
         file_info=FileInfo(top_module="test_module"),
-        models={},
         modules={
             "test_module": Module(
                 ports={
                     "in<p>": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
-                }
+                },
+                spice_template="test_module {in<p>}"
             )
         },
     )
