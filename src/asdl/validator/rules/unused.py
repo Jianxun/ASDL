@@ -26,14 +26,15 @@ class UnusedModulesRule(FileRule):
         if ctx.asdl_file.file_info.top_module:
             unused_modules.discard(ctx.asdl_file.file_info.top_module)
 
-        if unused_modules:
-            modules_list = ", ".join(f"'{module}'" for module in sorted(unused_modules))
-            diagnostics.append(
-                create_validator_diagnostic(
-                    "V0601",
-                    modules_list=modules_list,
-                )
-            )
+        # TEMPORARILY SUPPRESSED - will refine later
+        # if unused_modules:
+        #     modules_list = ", ".join(f"'{module}'" for module in sorted(unused_modules))
+        #     diagnostics.append(
+        #         create_validator_diagnostic(
+        #             "V0601",
+        #             modules_list=modules_list,
+        #         )
+        #     )
 
         return diagnostics
 

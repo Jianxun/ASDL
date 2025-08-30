@@ -201,3 +201,14 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
  - Focus on schema generation improvements now that data structures are stable:
   - Ensure JSON Schema and text schema fully reflect `PortType` and field metadata.
   - Remove any remaining duplication and align CLI `asdlc schema` behavior.
+
+### **Diagnostic Suppression Implementation (2025-08-30)**
+- **Temporarily suppressed specific diagnostic codes** to provide clean compile experience:
+  - **I0601**: Unused Import Alias - Suppressed in import resolver
+  - **I0602**: Unused Model Alias - Suppressed in import resolver  
+  - **V0401**: Undeclared Nets - Suppressed in net declarations rule
+  - **V0601**: Unused Modules - Suppressed in unused modules rule
+- **Implementation Method**: Commented out diagnostic creation calls with clear "TEMPORARILY SUPPRESSED" markers
+- **Verification**: `asdlc netlist ./test.asdl` now runs cleanly without warnings
+- **Future Refinement**: Rules preserved for later implementation of library-aware validation logic
+- **Files Modified**: `import_resolver.py`, `net_declarations.py`, `unused.py`

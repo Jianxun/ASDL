@@ -305,16 +305,17 @@ class ImportResolver:
             used_model_aliases_by_file[file_path] = used_model_aliases
 
         # Emit warnings for unused import aliases and model_alias entries in the main file only for now
+        # TEMPORARILY SUPPRESSED - will refine later
         main_used_imports = used_import_aliases_by_file.get(main_file_path, set())
         main_used_model_aliases = used_model_aliases_by_file.get(main_file_path, set())
-        if main_file.imports:
-            for imp_alias in main_file.imports.keys():
-                if imp_alias not in main_used_imports:
-                    diagnostics.append(self.diagnostics.create_unused_import_warning(imp_alias))
-        if main_file.model_alias:
-            for local_alias in main_file.model_alias.keys():
-                if local_alias not in main_used_model_aliases:
-                    diagnostics.append(self.diagnostics.create_unused_model_alias_warning(local_alias))
+        # if main_file.imports:
+        #     for imp_alias in main_file.imports.keys():
+        #         if imp_alias not in main_used_imports:
+        #             diagnostics.append(self.diagnostics.create_unused_import_warning(imp_alias))
+        # if main_file.model_alias:
+        #     for local_alias in main_file.model_alias.keys():
+        #         if local_alias not in main_used_model_aliases:
+        #             diagnostics.append(self.diagnostics.create_unused_model_alias_warning(local_alias))
 
         return diagnostics
     

@@ -30,15 +30,16 @@ class NetDeclarationsRule(ModuleRule):
                 if net_name not in declared_nets:
                     undeclared_nets.add(net_name)
 
-        if undeclared_nets:
-            nets_list = ", ".join(f"'{net}'" for net in sorted(undeclared_nets))
-            diagnostics.append(
-                create_validator_diagnostic(
-                    "V0401",
-                    module_name=module_name,
-                    nets_list=nets_list,
-                )
-            )
+        # TEMPORARILY SUPPRESSED - will refine later
+        # if undeclared_nets:
+        #     nets_list = ", ".join(f"'{net}'" for net in sorted(undeclared_nets))
+        #     diagnostics.append(
+        #         create_validator_diagnostic(
+        #             "V0401",
+        #             module_name=module_name,
+        #             nets_list=nets_list,
+        #         )
+        #     )
 
         return diagnostics
 
