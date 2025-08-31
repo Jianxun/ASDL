@@ -16,7 +16,6 @@ def test_mismatched_pattern_count_diagnostic():
     """
     asdl_file = ASDLFile(
         file_info=FileInfo(top_module="test_module"),
-        models={},
         modules={
             "test_module": Module(
                 instances={

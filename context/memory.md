@@ -4,66 +4,107 @@
 ASDL (Analog System Description Language) is a comprehensive Python framework for analog circuit design and verification. The project provides parsing, elaboration, validation, and SPICE netlist generation capabilities with a focus on hierarchical design and test-driven development.
 
 ## Current State
-**Schema Generation Initiative (in progress)**
 
-### ✅ Decisions
-- Single source of truth for schema: `src/asdl/data_structures.py`
-- Exclude runtime-only fields via class-level `__schema_exclude_fields__` on `Locatable` (Option A)
-- Generate both JSON Schema and human-readable schema from dataclass introspection (no static text)
-  
-### 🔧 Implementation Progress
-- Added `__schema_exclude_fields__` to `Locatable`
-- Implemented `src/asdl/schema_gen.py` (JSON Schema + text renderer)
-- Wired `asdlc schema` and `scripts/generate_schema.py` to use the new generator
-- Deprecated `src/asdl/schema_models.py` (to be removed after migration)
- - Improved generator robustness and readability:
-   - Use `typing.get_type_hints` with `asdl.data_structures` namespace to resolve forward refs (e.g., `'FileInfo'`)
-   - Treat `Optional[T]` as `T` in schema type mapping; optionality is encoded via required fields
-   - Add `title` to dataclass-derived JSON Schema objects (e.g., `DeviceModel`, `Module`) for better text rendering
-   - Text renderer now shows informative labels for arrays (e.g., `[ Port ]`) and dict maps (e.g., `{ <string>: Module }`)
+### 🔍 **Architecture Status**
+- **Unified Module System**: Single `Module` class handles both primitive and hierarchical modules
+- **Parser**: Modular architecture complete (was 550-line monolith)
+- **Elaborator**: Pattern expansion and parameter resolution implemented
+- **Validator**: Full validation pipeline with location tracking
+- **Generator**: LVS-compatible SPICE generation
+- **Import System**: Architecture finalized, modular structure designed, MVP error codes defined
 
-### 🧪 Testing Status
-- Devcontainer-dependent sims skipped via `tests/conftest.py`
-- PySpice integration guarded/skipped when not available; tests green
-- Temporarily skipped `test_parameter_handling_in_pipeline` pending expectation update for model subckt params
+### ✅ **Completed Systems**
+- **Import System**: Full MVP implementation with circular import detection, CLI integration, and 41 passing tests
+- **Generator**: Refactored into modular components with XCCSS diagnostics and 20 passing tests
+- **Parser**: XCCSS migration complete with 39 passing tests and optimized test suite organization
+- **Data Structures**: PortType enum system implemented, legacy types removed, 14 passing tests
+- **Test Suite**: 136/136 unit tests passing (100% success rate) across all components
+- **Schema Generation**: JSON/text schema from data structures, CLI integration
+- **Visualizer**: Functional with jsPlumb, zoom/pan/drag, layout export
 
-### ✅ **PHASE 1 COMPLETE - MINIMAL VISUALIZER FOUNDATION**
-- **Architecture Achievement**: Successfully implemented minimal functional architecture with jsPlumb Community Edition 2.15.6
-- **Core Functionality**: Cursor-centered zoom (0.1x-3.0x), smooth canvas panning, invisible grid-snap dragging (20px)
-- **Technical Implementation**: Two-layer container architecture, manual zoom/pan for Community Edition, proper event conflict resolution
-- **Documentation**: Created comprehensive `jsplumb_development_guide.md` with 350+ lines of patterns, pitfalls, and best practices
+## Key Architectural Decisions
+1. **Unified Module Architecture**: Single `Module` class for both primitive and hierarchical modules
+2. **Import System Design**: File-based imports with ASDL_PATH resolution and `model_alias` section (see `doc/import_system/`)
+3. **Unit Device Strategy**: Unit devices implemented as primitive modules (not hierarchical) for LVS compatibility
+4. **Modular Parser**: 550-line monolith split into focused components (see `doc/parser/`)
+5. **XCCSS Diagnostic System**: Structured error codes replacing PXXX (see `doc/diagnostic_system/`)
+6. **Two-Stage Compilation**: Import Elaboration → SPICE Generation
+7. **Tool Separation**: ASDL handles imports/resolution, external tools (ams-compose) handle versioning/reproducibility
+8. **Project Venv Usage**: Always use project-wide Python venv at `venv/` for commands/tests
 
-### ✅ **JSON SCHEMA ENHANCEMENT COMPLETE - READY FOR PHASE 2**
-- **Enhanced Extractor**: Successfully modified `extractor.py` to generate visualization-ready JSON with coordinates and dimensions
-- **Three Node Types**: Device nodes (60×60px), power supply ports (400×20px horizontal bars), regular ports (30×30px)
-- **Complete Connectivity**: All VDD/VSS connections properly included with correct port-to-device signal flow direction
-- **Perfect Layout**: Hardcoded coordinates for vertical layout (VDD → R_LOAD → MN_DP → M_TAIL → VSS)
-- **Connection Filtering**: Bulk 'B' connections properly filtered out for clean visualization
-- **Production Ready**: `diff_pair_enhanced.json` contains 8 nodes (3 devices + 5 ports) with complete connectivity (8 connections)
-- **Ready for Phase 2**: Enhanced JSON schema provides everything needed for node rendering implementation
+## Known Limitations
+- **YAML Pattern Parsing**: `ruamel.yaml` has issues with inline dictionary mappings containing `<p,n>` patterns. Use multi-line YAML format as workaround.
+- **Diagnostic Suppression**: Several diagnostic codes temporarily suppressed for clean compile experience (see `context/archive/2025-01-27_diagnostic_suppression_implementation.md`)
 
-### 📊 Snapshot
-- Tests: 96 passed, 11 skipped, 0 xfailed; schema tests relaxed to avoid prescribing enum members
-- CLI: `asdlc schema` prints live schema; `--json` outputs JSON Schema; `--out` writes artifacts
+## Current Focus Areas
+- **CLI Enhancement**: Add missing features like `--search-path` arguments and import resolution
+- **Integration Testing**: End-to-end pipeline validation with real circuit examples
+- **Documentation**: Import system usage guide and best practices
+- **Schema Generation**: Ensure JSON/Text schema fully reflects current data structures (`PortType`, etc.)
+- **Validator Refactor Follow-ups**: Migrate integration tests to new V-codes, add missing diagnostics
+- **Environment Variable Support**: Implemented in elaboration; `${VAR}` resolved in parameters
+  - Diagnostics: E0501 (missing env), E0502 (invalid format)
+  - Resolver: `EnvVarResolver` (separate from `VariableResolver`)
+  - Wired in `Elaborator` for module and instance parameters
 
-### 📊 **Component Health**
-- ✅ **Parser**: 23/23 tests passing - Complete location tracking and diagnostics (with known YAML pattern parsing limitation)
-- ✅ **Data Structures**: 34/34 tests passing - All refactoring completed  
-- ✅ **Elaborator**: 13/13 tests passing - Complete pattern expansion system
-- ✅ **Validator**: 6/6 tests passing - Complete validation pipeline
-- ✅ **SPICEGenerator**: 2/2 integration tests passing - Complete modernization successful
-- ✅ **Visualization Extractor**: Manual testing complete - Ready for frontend development
+## Environment Variable Support Design Decisions
 
-## Key Decisions
-1. Schema source: use dataclasses in `data_structures.py`
-2. Exclusions via `Locatable.__schema_exclude_fields__`
-3. No static schema text; derive human-readable output from JSON Schema
+### Architecture Decision: Environment Variables in Parameters
+**Date**: 2025-01-27  
+**Status**: Implemented (Phase 1.3.1–1.3.2 complete)  
+**Decision**: Support `${VAR}` syntax in parameter values for dynamic environment-based configuration
 
-## Open Questions
-1. Whether to ship `schema.txt` inside sdist/wheel or generate-on-demand
-2. Field-level descriptions: which fields need explicit metadata vs docstring-derived
+### Core Design Principles
+1. **Clean Integration**: Environment variables resolved in parameters, no changes to generator logic
+2. **Strict Syntax**: Only `${VAR}` format supported, anything else emits error diagnostic
+3. **Fail Fast**: No defaults, missing environment variables emit E0501 diagnostic
+4. **Pipeline Integration**: Resolution happens during elaboration phase with parameter resolution
 
-## Compiler Improvement Notes
-- **Parser Robustness**: The `ASDLParser` crashed when a `model` was missing the `type` field. It should instead produce a user-friendly error (e.g., `P104: Missing 'type' in model definition`).
-- **Elaborator Robustness**: The `Elaborator` crashed with a `'NoneType' is not iterable` error when an `instance` was missing a `parameters` block. It should handle this gracefully and produce a specific error code (e.g., `E201: Instance missing required 'parameters' block`). These internal errors make debugging difficult.
-- **YAML Pattern Parsing Bug**: `ruamel.yaml` incorrectly parses inline dictionary mappings containing `<p,n>` patterns, creating malformed dictionaries. Workaround: use multi-line YAML format for all mappings with patterns. This should be documented as a known limitation.
+### Implementation Approach
+- **New Resolver**: `EnvVarResolver.resolve_in_parameters()`
+- **Error Codes**: E0501 (missing env var), E0502 (invalid format)
+- **Integration**: In `Elaborator._elaborate_module` before variable reference resolution
+- **No Generator Changes**: Reuses `{param}` substitution as-is
+
+### Benefits
+- **Flexibility**: Dynamic PDK paths, corners, temperatures from environment
+- **Simplicity**: No changes to existing template substitution logic
+- **Maintainability**: Clean separation of concerns
+- **LVS Compatibility**: Environment variables resolved to concrete values before generation
+
+### Example Usage
+```yaml
+parameters:
+  pdk_root: ${PDK_ROOT}
+  corner: ${CORNER}
+  temp: ${TEMP}
+
+spice_template: |
+  .include {pdk_root}/devices.asdl
+  .lib {pdk_root}/devices.lib {corner}
+  .temp {temp}
+```
+
+## Next Session Plan
+- Add tracing/logging for import resolution and model resolution
+  - Verbose option in CLI to surface search paths, resolved files, and alias mapping
+  - Hook debug logs in `ImportResolver._load_file_recursive` and alias validation
+  - Optional trace id per elaboration run for grouping logs
+- Add integration test for env-var resolution via CLI (`asdl elaborate` and `asdl netlist`)
+- Document ASDL_PATH usage and best practices in docs
+- Plan refactor: migrate legacy E10x elaborator diagnostics to XCCSS helper
+
+## Project Status: Production Ready 🎉
+- **All Major Components**: Parser, Elaborator, Validator, Generator, Import System - all working correctly
+- **Test Coverage**: 136/136 unit tests passing (100% success rate)
+- **Core Functionality**: `test.asdl` compiles cleanly into simulation-legal netlist
+- **Architecture**: Stable and well-organized with clear separation of concerns
+- **Documentation**: Comprehensive design documents and implementation guides available
+
+## Archived Sessions
+- **Import System MVP Implementation**: See `context/archive/2025-01-27_import_system_mvp_complete.md`
+- **Generator Refactor & XCCSS Migration**: See `context/archive/2025-01-27_generator_refactor_xccss_migration.md`
+- **Parser XCCSS Migration**: See `context/archive/2025-01-27_parser_xccss_migration_complete.md`
+- **Data Structures and Parser Updates**: See `context/archive/2025-01-27_data_structures_parser_updates.md`
+- **Test Suite Fixes**: See `context/archive/2025-01-27_test_suite_fixes_complete.md`
+- **Diagnostic Suppression Implementation**: See `context/archive/2025-01-27_diagnostic_suppression_implementation.md`

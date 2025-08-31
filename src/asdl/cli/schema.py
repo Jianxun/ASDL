@@ -4,7 +4,7 @@ from typing import Optional
 
 import click
 
-from ..schema_gen import build_json_schema, render_text_schema
+from ..data_structures import build_json_schema, render_text_schema
 
 
 @click.command("schema", help="Print ASDL schema (text by default, or JSON with --json)")

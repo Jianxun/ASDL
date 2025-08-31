@@ -15,8 +15,9 @@ modules:
     test_module:
         ports:
             "in<p,n>[0]":
-                dir: in
-                type: digital
+                dir: IN
+                type: signal
+        spice_template: "test_module {in<p,n>[0]}"
 """
     parser = ASDLParser()
     asdl_file, parser_diags = parser.parse_string(asdl_str)
@@ -74,8 +75,8 @@ modules:
     test_module:
         ports:
             in<p,n>:
-                dir: in
-                type: digital
+                dir: IN
+                type: signal
         instances:
             M<1,2>:
                 model: some_model

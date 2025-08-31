@@ -1,0 +1,39 @@
+file_info:
+  doc: |
+    NGSPICE simulator control wrapper for ASDL
+
+modules:
+  sim_dc:
+    doc: |
+      NGSPICE simulation library for ASDL
+      
+    parameters:
+      source: ''
+      from: 0
+      to: 1
+      step: 0.01
+      raw_file: ''
+    spice_template: |
+      .control
+      save all
+      dc {source} {from} {to} {step}
+      *write to raw file
+      write {raw_file}
+      .endc
+
+  sim_tran:
+    doc: |
+      NGSPICE transient simulation control
+      
+    parameters:
+      from: 0
+      to: 1u
+      step: 0.01u
+      raw_file: ''
+    spice_template: |
+      .control
+      save all
+      tran {step} {to}
+      *write to raw file
+      write {raw_file}
+      .endc

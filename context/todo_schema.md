@@ -22,6 +22,8 @@ Legend: [ ] pending, [x] done
   - [x] `--out DIR` writes `schema.json` and `schema.txt`
 - [x] Replace script: make `ASDL/scripts/generate_schema.py` call new generator
 - [ ] Remove duplication: deprecate and then delete `src/asdl/schema_models.py`
+- [ ] Update schema outputs to reflect `PortType` rename and removed constraints
+- [ ] Add CLI smoke test for `asdlc schema --json` and text output
 
 ## Phase B – Metadata & Docs
 - [ ] Add minimal `field(metadata={"schema": {"description": "..."}})` where helpful
@@ -32,17 +34,20 @@ Legend: [ ] pending, [x] done
   - [ ] Document the generator in developer docs and CLI docs
   - [ ] Note exclusion of `Locatable` fields and rationale
   - [ ] Add a section on how to annotate fields for schema docs
+  - [ ] Reflect `PortType` in docs; remove references to `SignalType`/constraints
 
 ## Phase C – Packaging & CI
 - [ ] Ensure `schema.txt` and `schema.json` can be generated reproducibly in CI (no drift)
 - [ ] Optionally include `schema.txt` in sdist/wheel (confirm decision)
 - [ ] Add tests to prevent accidental re-introduction of `Locatable` fields
+ - [ ] Add test to assert no references to legacy types (`PrimitiveType`, `DeviceModel`) in schema
 
 ## Tests
 - [x] Unit: mapping rules (Enum values, Optional detection, arrays, dicts)
 - [x] Snapshot: top-level JSON Schema structure (selected subsets)
 - [x] Text renderer: smoke test for key sections and required markers
 - [x] Guard: `Locatable` fields excluded from schema
+ - [ ] CLI: `asdlc schema` smoke test (text + json)
 
 ## Acceptance Criteria
 - [ ] `asdlc schema` and `--json` reflect `data_structures.py` faithfully
