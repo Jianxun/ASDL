@@ -1,0 +1,34 @@
+# Test ASDL Syntax Highlighting
+# This file should show different colors for different elements
+
+file_info:
+  top_module: test_module
+  doc: "Test file for syntax highlighting"
+
+imports:
+  lib: library.asdl
+
+model_alias:
+  nmos: lib.nfet
+  pmos: lib.pfet
+
+modules:
+  test_module:
+    ports:
+      in: { dir: in, type: signal }
+      out: { dir: out, type: signal }
+      vdd: { dir: in, type: power }
+      vss: { dir: in, type: ground }
+    instances:
+      M1: { model: nmos, mappings: { d: out, g: in, s: vss, b: vss } }
+
+  nmos_primitive:
+    ports: { d: { dir: out }, g: { dir: in }, s: { dir: in }, b: { dir: in } }
+    spice_template: "{name} {d} {g} {s} {b} nmos L=0.18u W=1u"
+
+# Field names that should be highlighted:
+# - in, out, vdd, vss (port names)
+# - d, g, s, b (SPICE terminal names)
+# - M1 (instance names)
+# - lib, nmos, pmos (alias names)
+
