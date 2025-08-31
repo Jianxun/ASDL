@@ -1,0 +1,245 @@
+file_info:
+  doc: |
+    Analog library for ASDL
+    
+    IMPORTANT: SPICE naming requirements
+    - Voltage sources must start with 'V' (e.g., vdd, vin, v1)
+    - Current sources must start with 'I' (e.g., ibias, i1)
+    - Resistors must start with 'R' (e.g., r1, rload, rfb)
+    - Capacitors must start with 'C' (e.g., c1, cbypass, cc)
+    - Inductors must start with 'L' (e.g., l1, lfilter)
+    
+    Examples:
+    - vdd, vin, v1, vpulse1
+    - ibias, i1, isource
+    - r1, rload, rfb, r10k
+    - c1, cbypass, cc, c1n
+    - l1, lfilter, l1u
+
+
+modules:
+  vdc:
+    doc: |
+      DC voltage source. Generates: <name> <plus> <minus> DC <dc>
+      
+      IMPORTANT: Instance name must start with 'V' (e.g., vdd, vin, v1)
+      
+      Parameters:
+      - dc: DC voltage value (V). Default: 0V
+      
+      Usage: Power supplies, bias voltages
+    ports:
+      plus: { dir: in_out, type: power }
+      minus: { dir: in_out, type: power }
+    parameters:
+      dc: 0
+    spice_template: |
+      {name} {plus} {minus} DC {dc}
+
+  vac:
+    doc: |
+      AC voltage source for small-signal analysis. Generates: <name> <plus> <minus> AC <ac_mag> <ac_phase>
+      
+      IMPORTANT: Instance name must start with 'V' (e.g., vin, v1, vac1)
+      
+      Parameters:
+      - ac_mag: AC magnitude (V). Default: 1V
+      - ac_phase: AC phase in degrees. Default: 0°
+      
+      Usage: AC analysis, small-signal simulation
+    ports:
+      plus: { dir: in_out, type: power }
+      minus: { dir: in_out, type: power }
+    parameters:
+      ac_mag: 1
+      ac_phase: 0
+    spice_template: |
+      {name} {plus} {minus} AC {ac_mag} {ac_phase}
+
+  vpulse:
+    doc: |
+      Pulse voltage source for transient analysis. Generates: <name> <plus> <minus> PULSE(<v1> <v2> <td> <tr> <tf> <pw> <per>)
+      
+      IMPORTANT: Instance name must start with 'V' (e.g., vpulse, v1, vclk)
+      
+      Parameters:
+      - v1: Initial voltage (V). Default: 0V
+      - v2: Peak voltage (V). Default: 1V
+      - td: Delay time (s). Default: 0s
+      - tr: Rise time (s). Default: 1ns
+      - tf: Fall time (s). Default: 1ns
+      - pw: Pulse width (s). Default: 1μs
+      - per: Period (s). Default: 2μs
+      
+      Usage: Digital signals, clock generation, switching analysis
+    ports:
+      plus: { dir: in_out, type: power }
+      minus: { dir: in_out, type: power }
+    parameters:
+      v1: 0
+      v2: 1
+      td: 0
+      tr: 1n
+      tf: 1n
+      pw: 1u
+      per: 2u
+    spice_template: |
+      {name} {plus} {minus} PULSE({v1} {v2} {td} {tr} {tf} {pw} {per})
+
+  vsin:
+    doc: |
+      Sinusoidal voltage source. Generates: <name> <plus> <minus> SIN(<offset> <amplitude> <freq> <td> <df> <phase>)
+      
+      IMPORTANT: Instance name must start with 'V' (e.g., vsin, v1, vac)
+      
+      Parameters:
+      - offset: DC offset voltage (V). Default: 0V
+      - amplitude: Peak amplitude (V). Default: 1V
+      - freq: Frequency (Hz). Default: 1kHz
+      - td: Delay time (s). Default: 0s
+      - df: Damping factor (1/s). Default: 0 (no damping)
+      - phase: Phase in degrees. Default: 0°
+      
+      Usage: AC analysis, oscillator simulation, signal generation
+    ports:
+      plus: { dir: in_out, type: power }
+      minus: { dir: in_out, type: power }
+    parameters:
+      offset: 0
+      amplitude: 1
+      freq: 1k
+      td: 0
+      df: 0
+      phase: 0
+    spice_template: |
+      {name} {plus} {minus} SIN({offset} {amplitude} {freq} {td} {df} {phase})
+
+  idc:
+    doc: |
+      DC current source. Generates: <name> <plus> <minus> DC <dc>
+      
+      IMPORTANT: Instance name must start with 'I' (e.g., ibias, i1, idc)
+      
+      Parameters:
+      - dc: DC current value (A). Default: 0A
+      
+      Usage: Current biasing, current sources, load simulation
+    ports:
+      plus: { dir: in_out, type: power }
+      minus: { dir: in_out, type: power }
+    parameters:
+      dc: 0
+    spice_template: |
+      {name} {plus} {minus} DC {dc}
+
+  iac:
+    doc: |
+      AC current source for small-signal analysis. Generates: <name> <plus> <minus> AC <ac_mag> <ac_phase>
+      
+      IMPORTANT: Instance name must start with 'I' (e.g., iac, i1, isource)
+      
+      Parameters:
+      - ac_mag: AC magnitude (A). Default: 1A
+      - ac_phase: AC phase in degrees. Default: 0°
+      
+      Usage: AC analysis, current injection, impedance measurement
+    ports:
+      plus: { dir: in_out, type: power }
+      minus: { dir: in_out, type: power }
+    parameters:
+      ac_mag: 1
+      ac_phase: 0
+    spice_template: |
+      {name} {plus} {minus} AC {ac_mag} {ac_phase}
+
+  ipulse:
+    doc: |
+      Pulse current source for transient analysis. Generates: <name> <plus> <minus> PULSE(<i1> <i2> <td> <tr> <tf> <pw> <per>)
+      
+      IMPORTANT: Instance name must start with 'I' (e.g., ipulse, i1, iclk)
+      
+      Parameters:
+      - i1: Initial current (A). Default: 0A
+      - i2: Peak current (A). Default: 1mA
+      - td: Delay time (s). Default: 0s
+      - tr: Rise time (s). Default: 1ns
+      - tf: Fall time (s). Default: 1ns
+      - pw: Pulse width (s). Default: 1μs
+      - per: Period (s). Default: 2μs
+      
+      Usage: Current pulses, switching analysis, load testing
+    ports:
+      plus: { dir: in_out, type: power }
+      minus: { dir: in_out, type: power }
+    parameters:
+      i1: 0
+      i2: 1m
+      td: 0
+      tr: 1n
+      tf: 1n
+      pw: 1u
+      per: 2u
+    spice_template: |
+      {name} {plus} {minus} PULSE({i1} {i2} {td} {tr} {tf} {pw} {per})
+
+  res:
+    doc: |
+      Resistor. Generates: <name> <n1> <n2> <value>
+      
+      IMPORTANT: Instance name must start with 'R' (e.g., r1, rload, rfb)
+      
+      Parameters:
+      - value: Resistance value (Ω). Default: 1kΩ
+      
+      Usage: Load resistors, biasing networks, voltage dividers, current limiting
+    ports:
+      n1: { dir: in_out, type: signal }
+      n2: { dir: in_out, type: signal }
+    parameters:
+      value: 1k
+    spice_template: |
+      {name} {n1} {n2} {value}
+
+  cap:
+    doc: |
+      Capacitor. Generates: <name> <n1> <n2> <value>
+      
+      IMPORTANT: Instance name must start with 'C' (e.g., c1, cbypass, cc)
+      
+      Parameters:
+      - value: Capacitance value (F). Default: 1pF
+      
+      Usage: Coupling capacitors, bypass capacitors, filters, timing circuits
+    ports:
+      n1: { dir: in_out, type: signal }
+      n2: { dir: in_out, type: signal }
+    parameters:
+      value: 1p
+    spice_template: |
+      {name} {n1} {n2} {value}
+
+  ind:
+    doc: |
+      Inductor. Generates: <name> <n1> <n2> <value>
+      
+      IMPORTANT: Instance name must start with 'L' (e.g., l1, lfilter, l1u)
+      
+      Parameters:
+      - value: Inductance value (H). Default: 1μH
+      
+      Usage: Filters, oscillators, energy storage, RF circuits
+    ports:
+      n1: { dir: in_out, type: signal }
+      n2: { dir: in_out, type: signal }
+    parameters:
+      value: 1u
+    spice_template: |
+      {name} {n1} {n2} {value}
+
+  code_block:
+    doc: |
+      Code block. Generates: <code>
+    parameters:
+      code: ""
+    spice_template: |
+      {code}
