@@ -34,6 +34,7 @@ The original combined todo list has been split for clarity. Please refer to the 
 - **Schema tasks**: ensure `PortType` reflected across JSON/Text schema and CLI output
 - **Diagnostic Suppression**: ✅ COMPLETED - Temporarily suppressed I0601, I0602, V0401, V0601 for clean compile
 - **Integration Testing**: All integration tests now passing; ready for end-to-end pipeline validation
+- **Environment Variable Support**: ✅ **IMPLEMENTATION COMPLETE** - Full environment variable support in parameters (${VAR} syntax)
 
 ## Documentation Reference
 - `doc/cli/` – CLI architecture and implementation plans

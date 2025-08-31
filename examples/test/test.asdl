@@ -3,12 +3,12 @@ file_info:
   doc: "Test ASDL file"
 
 imports:
-  analoglib: libs/analoglib.asdl
-  #gf180mcu: libs/gf180mcu.asdl
-  gf180mcu_std_tile: libs/gf180mcu_std_tile.asdl
-  sim_lib: libs/sim_ngspice.asdl
+  analoglib: ../libs/analoglib.asdl
+  #gf180mcu: ../libs/gf180mcu.asdl
+  gf180mcu_std_tile: ../libs/gf180mcu_std_tile.asdl
+  sim_lib: ../libs/sim_ngspice.asdl
 model_alias:
-  nmos: gf180mcu_std_tile.nmos_tile_short
+  nmos_tile_short: gf180mcu_std_tile.nmos_tile_short
   #pmos: gf180mcu_std_tile.pmos_tile_short
 
 modules:
@@ -44,7 +44,7 @@ modules:
           dc: 0.0
 
       m1:
-        model: nmos
+        model: nmos_tile_short
         mappings: { D: d, G: g, S: vss, B: vss }
         parameters: {m: 1}
 
@@ -52,8 +52,8 @@ modules:
         model: analoglib.code_block
         parameters:
           code: |
-            .include ./gf180mcu/ngspice/design.ngspice
-            .lib ./gf180mcu/ngspice/sm141064.ngspice typical
+            .include ../gf180mcu/ngspice/design.ngspice
+            .lib ../gf180mcu/ngspice/sm141064.ngspice typical
 
       sim:
         model: sim_lib.sim_dc

@@ -1,0 +1,25 @@
+* SPICE netlist generated from ASDL
+* Design: Hierarchical inverter built with nmos_tile_short and pmos_tile_short, both m=2
+* Top module: inv
+* Author: None
+* Date: None
+* Revision: None
+
+* Hierarchical module subcircuit definitions
+* .subckt inv in out vdd vss
+X_mp1 out in vdd vdd pfet_03v3 L=0.28u W=3u nf=2 m=2
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+X_mn1 out in vss vss nfet_03v3 L=0.28u W=3u nf=2 m=2
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+* .ends
+
+
+.end

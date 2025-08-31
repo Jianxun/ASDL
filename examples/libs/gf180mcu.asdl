@@ -2,6 +2,16 @@ file_info:
   doc: "GF180MCU library for ASDL"
 
 modules:
+  pdk_model:
+    ports: {}
+    spice_template: |
+      .include {pdk_root}/ngspice/design.ngspice
+      .lib {pdk_root}ngspice/sm141064.ngspice {corner}
+    parameters:
+      pdk_root: "${PDK_ROOT}"
+      corner: typical
+
+
   nfet_03v3:
     ports:
       D: { dir: in_out, type: signal }

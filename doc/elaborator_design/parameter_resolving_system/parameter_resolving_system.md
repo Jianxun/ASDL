@@ -24,6 +24,7 @@ The ASDL parameter resolving system provides a clean separation between external
 - **Design Intent**: "These are the knobs users can control"
 - **LVS Impact**: Overrides create variations (restricted scope prevents LVS issues)
 - **Usage**: Device dimensions (L, W, M), circuit specifications (frequency, gain)
+- **Environment Variables**: Support `${VAR}` syntax for dynamic values from environment
 
 ### `variables` (Canonical) / `vars` (Abbreviation)
 
@@ -34,6 +35,130 @@ The ASDL parameter resolving system provides a clean separation between external
 - **Design Intent**: "These are internal implementation details"
 - **LVS Impact**: Always resolved to concrete values
 - **Usage**: Model names, temperature coefficients, derived calculations, internal constants
+
+## Environment Variable Support in Parameters
+
+### Design Decisions
+
+**Syntax**: Only `${VAR}` format is supported in parameter values
+- **Valid**: `${PDK_ROOT}`, `${CORNER}`, `${TEMP}`
+- **Invalid**: `$PDK_ROOT`, `${PDK_ROOT:-default}`, `${PDK_ROOT}/path`
+
+**Resolution Timing**: Environment variables are resolved during elaboration phase, integrated with parameter resolution
+
+**Error Handling**: 
+- Missing environment variables emit `E0501` diagnostic with parameter context
+- Invalid format emits error diagnostic for malformed syntax
+- No default values - fail fast for missing environment variables
+
+**Security**: No validation of environment variable names - let system handle malformed names naturally
+
+### Implementation Approach
+
+Environment variable resolution is integrated into the existing parameter resolution pipeline:
+
+```python
+class VariableResolver:
+    def resolve_environment_variables(self, parameters: Dict) -> Dict:
+        """Resolve ${VAR} syntax in parameter values."""
+        # Resolve environment variables before parameter substitution
+        # Emit E0501 for missing environment variables
+        pass
+    
+    def resolve_instance_variables(self, instances, variables, module_name):
+        """Existing method - now variables have environment variables resolved."""
+        pass
+```
+
+### Usage Examples
+
+```yaml
+# Environment variables in parameters
+nfet_03v3:
+  parameters:
+    L: "0.28u"
+    W: "${WIDTH:-3u}"           # ❌ Invalid - no defaults supported
+    M: "${MULTIPLIER}"          # ✅ Valid - uses $MULTIPLIER environment variable
+    corner: "${CORNER}"          # ✅ Valid - uses $CORNER environment variable
+
+# Template substitution works as before
+spice_template: "MN{name} {D} {G} {S} {B} nfet_03v3 L={L} W={W} m={M}"
+```
+
+### Diagnostic Messages
+
+```
+E0501: Environment variable ${PDK_ROOT} not found in parameter 'pdk_root'
+E0502: Invalid environment variable format in parameter 'corner': expected ${VAR} format
+```
+
+### Error Codes
+
+**E0501**: Environment Variable Not Found
+- **When**: Environment variable referenced in parameter value is not defined
+- **Message**: "Environment variable ${VAR_NAME} not found in parameter 'param_name'"
+- **Severity**: ERROR
+- **Resolution**: Set the required environment variable or use a static value
+
+**E0502**: Invalid Environment Variable Format
+- **When**: Parameter value contains malformed environment variable syntax
+- **Message**: "Invalid environment variable format in parameter 'param_name': expected ${VAR} format"
+- **Severity**: ERROR
+- **Resolution**: Use correct `${VAR}` syntax in parameter value
+
+### Implementation Workflow
+
+#### Resolution Order
+1. **Environment Variable Resolution**: Resolve `${VAR}` in parameter values
+2. **Parameter Substitution**: Substitute resolved parameters in `spice_template`
+3. **Template Generation**: Generate final SPICE with concrete values
+
+#### Pipeline Integration
+```
+ASDL File → Parser → Elaborator (Environment Resolution + Parameter Resolution) → Generator → SPICE
+```
+
+The environment variable resolution happens during the elaboration phase, ensuring that:
+- All environment variables are resolved to concrete values
+- Parameter substitution works with existing generator logic
+- No changes needed in template substitution mechanism
+
+### Practical Example
+
+#### Environment Setup
+```bash
+export PDK_ROOT=/usr/local/pdk/gf180mcu
+export CORNER=fast
+export TEMP=100
+export WIDTH=6u
+```
+
+#### ASDL File
+```yaml
+nfet_03v3:
+  parameters:
+    L: "0.28u"
+    W: "${WIDTH}"
+    M: "${MULTIPLIER:-1}"  # ❌ Invalid - no defaults supported
+    corner: "${CORNER}"
+    temp: "${TEMP}"
+  spice_template: "MN{name} {D} {G} {S} {B} nfet_03v3 L={L} W={W} m={M} corner={corner} temp={temp}"
+```
+
+#### Resolution Process
+1. **Environment Resolution**: `${WIDTH}` → `"6u"`, `${CORNER}` → `"fast"`, `${TEMP}` → `"100"`
+2. **Parameter Substitution**: `{W}` → `6u`, `{corner}` → `fast`, `{temp}` → `100`
+3. **Final SPICE**: `MN... nfet_03v3 L=0.28u W=6u m=1 corner=fast temp=100`
+
+#### Error Cases
+- **Missing Environment Variable**: `${MULTIPLIER}` → `E0501: Environment variable ${MULTIPLIER} not found in parameter 'M'`
+- **Invalid Format**: `$WIDTH` → `E0502: Invalid environment variable format in parameter 'W': expected ${VAR} format`
+
+### Integration with Existing Systems
+
+- **No changes to generator**: Environment variables are resolved to concrete values before template substitution
+- **No changes to spice_template**: Uses existing `{param}` substitution mechanism
+- **Clean separation**: Parameter resolution handles environment variables, generator handles template substitution
 
 ## Parameter Override Policy
 

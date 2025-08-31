@@ -1,0 +1,297 @@
+file_info:
+  file_path: examples/imports/toy/top.asdl
+  start_line: 1
+  start_col: 1
+  end_line: 1
+  end_col: 10
+  top_module: top
+  doc: null
+  revision: null
+  author: null
+  date: null
+  metadata: null
+models: {}
+modules:
+  top:
+    file_path: examples/imports/toy/top.asdl
+    start_line: 8
+    start_col: 3
+    end_line: 8
+    end_col: 6
+    doc: null
+    ports:
+      in_p:
+        file_path: examples/imports/toy/top.asdl
+        start_line: 10
+        start_col: 7
+        end_line: 10
+        end_col: 11
+        dir: in
+        type: signal
+        metadata: null
+      in_n:
+        file_path: examples/imports/toy/top.asdl
+        start_line: 11
+        start_col: 7
+        end_line: 11
+        end_col: 11
+        dir: in
+        type: signal
+        metadata: null
+      vdd:
+        file_path: examples/imports/toy/top.asdl
+        start_line: 12
+        start_col: 7
+        end_line: 12
+        end_col: 10
+        dir: in
+        type: power
+        metadata: null
+      vss:
+        file_path: examples/imports/toy/top.asdl
+        start_line: 13
+        start_col: 7
+        end_line: 13
+        end_col: 10
+        dir: in
+        type: ground
+        metadata: null
+      out:
+        file_path: examples/imports/toy/top.asdl
+        start_line: 14
+        start_col: 7
+        end_line: 14
+        end_col: 10
+        dir: out
+        type: signal
+        metadata: null
+    internal_nets: null
+    parameters: null
+    variables: null
+    spice_template: null
+    instances:
+      A1:
+        file_path: examples/imports/toy/top.asdl
+        start_line: 16
+        start_col: 7
+        end_line: 16
+        end_col: 9
+        model: ota_diffpair
+        mappings:
+          in_p: in_p
+          in_n: in_n
+          vdd: vdd
+          vss: vss
+          out: out
+        doc: null
+        parameters: null
+        metadata: null
+    pdk: null
+    metadata: null
+  ota_diffpair:
+    file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/opamp.asdl
+    start_line: 12
+    start_col: 3
+    end_line: 12
+    end_col: 15
+    doc: null
+    ports:
+      in_p:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/opamp.asdl
+        start_line: 14
+        start_col: 7
+        end_line: 14
+        end_col: 11
+        dir: in
+        type: signal
+        metadata: null
+      in_n:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/opamp.asdl
+        start_line: 15
+        start_col: 7
+        end_line: 15
+        end_col: 11
+        dir: in
+        type: signal
+        metadata: null
+      out:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/opamp.asdl
+        start_line: 16
+        start_col: 7
+        end_line: 16
+        end_col: 10
+        dir: out
+        type: signal
+        metadata: null
+      vdd:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/opamp.asdl
+        start_line: 17
+        start_col: 7
+        end_line: 17
+        end_col: 10
+        dir: in
+        type: power
+        metadata: null
+      vss:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/opamp.asdl
+        start_line: 18
+        start_col: 7
+        end_line: 18
+        end_col: 10
+        dir: in
+        type: ground
+        metadata: null
+    internal_nets: null
+    parameters: null
+    variables: null
+    spice_template: null
+    instances:
+      MN1:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/opamp.asdl
+        start_line: 20
+        start_col: 7
+        end_line: 20
+        end_col: 10
+        model: nfet_03v3
+        mappings:
+          D: out
+          G: in_p
+          S: vss
+          B: vss
+        doc: null
+        parameters: null
+        metadata: null
+      MN2:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/opamp.asdl
+        start_line: 21
+        start_col: 7
+        end_line: 21
+        end_col: 10
+        model: nfet_03v3
+        mappings:
+          D: out
+          G: in_n
+          S: vss
+          B: vss
+        doc: null
+        parameters: null
+        metadata: null
+      MP1:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/opamp.asdl
+        start_line: 22
+        start_col: 7
+        end_line: 22
+        end_col: 10
+        model: pfet_03v3
+        mappings:
+          D: out
+          G: in_p
+          S: vdd
+          B: vdd
+        doc: null
+        parameters: null
+        metadata: null
+    pdk: null
+    metadata: null
+  nfet_03v3:
+    file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/primitives.asdl
+    start_line: 5
+    start_col: 3
+    end_line: 5
+    end_col: 12
+    doc: null
+    ports:
+      D:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/primitives.asdl
+        start_line: 6
+        start_col: 13
+        end_line: 6
+        end_col: 14
+        dir: out
+        type: signal
+        metadata: null
+      G:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/primitives.asdl
+        start_line: 6
+        start_col: 28
+        end_line: 6
+        end_col: 29
+        dir: in
+        type: signal
+        metadata: null
+      S:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/primitives.asdl
+        start_line: 6
+        start_col: 42
+        end_line: 6
+        end_col: 43
+        dir: in
+        type: signal
+        metadata: null
+      B:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/primitives.asdl
+        start_line: 6
+        start_col: 56
+        end_line: 6
+        end_col: 57
+        dir: in
+        type: signal
+        metadata: null
+    internal_nets: null
+    parameters: null
+    variables: null
+    spice_template: M{name} {D} {G} {S} {B} nfet_03v3 L=0.28u W=3u
+    instances: null
+    pdk: null
+    metadata: null
+  pfet_03v3:
+    file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/primitives.asdl
+    start_line: 8
+    start_col: 3
+    end_line: 8
+    end_col: 12
+    doc: null
+    ports:
+      D:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/primitives.asdl
+        start_line: 9
+        start_col: 13
+        end_line: 9
+        end_col: 14
+        dir: out
+        type: signal
+        metadata: null
+      G:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/primitives.asdl
+        start_line: 9
+        start_col: 28
+        end_line: 9
+        end_col: 29
+        dir: in
+        type: signal
+        metadata: null
+      S:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/primitives.asdl
+        start_line: 9
+        start_col: 42
+        end_line: 9
+        end_col: 43
+        dir: in
+        type: signal
+        metadata: null
+      B:
+        file_path: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/imports/toy/primitives.asdl
+        start_line: 9
+        start_col: 56
+        end_line: 9
+        end_col: 57
+        dir: in
+        type: signal
+        metadata: null
+    internal_nets: null
+    parameters: null
+    variables: null
+    spice_template: M{name} {D} {G} {S} {B} pfet_03v3 L=0.28u W=6u
+    instances: null
+    pdk: null
+    metadata: null

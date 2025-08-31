@@ -20,3 +20,20 @@ modules:
       *write to raw file
       write {raw_file}
       .endc
+
+  sim_tran:
+    doc: |
+      NGSPICE transient simulation control
+      
+    parameters:
+      from: 0
+      to: 1u
+      step: 0.01u
+      raw_file: ''
+    spice_template: |
+      .control
+      save all
+      tran {step} {to}
+      *write to raw file
+      write {raw_file}
+      .endc
