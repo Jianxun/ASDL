@@ -21,7 +21,7 @@ from .helpers import diagnostics_to_jsonable, has_error, print_human_diagnostics
 @click.option("-v", "--verbose", is_flag=True, help="Verbose logs")
 @click.option("--top", type=str, help="Override top module")
 @click.option("--search-path", "search_paths", multiple=True, type=click.Path(path_type=Path), help="Additional search paths for import resolution (can be repeated)")
-@click.option("--top-style", type=click.Choice([e.value for e in TopStyle], case_sensitive=False), default=TopStyle.SUBCKT.value, help="Top-level emission style: subckt (default) or flat (comment wrappers)")
+@click.option("--top-style", type=click.Choice([e.value for e in TopStyle], case_sensitive=False), default=TopStyle.FLAT.value, help="Top-level emission style: subckt (default) or flat (comment wrappers)")
 def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose: bool, top: Optional[str], search_paths: Optional[List[Path]], top_style: str) -> None:
     exit_code = 0
     diagnostics: List[Diagnostic] = []
