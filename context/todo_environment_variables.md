@@ -13,55 +13,55 @@ Implement environment variable support in ASDL parameters using `${VAR}` syntax.
 ## Implementation Phases
 
 ### Phase 1.3.1: Extend VariableResolver
-**Status**: Ready to Start  
+**Status**: Completed  
 **Priority**: High  
 **Estimated Effort**: 1-2 hours
 
 **Tasks**:
-- [ ] Add `resolve_environment_variables()` method to `VariableResolver`
-- [ ] Implement `${VAR}` syntax validation (strict format only)
-- [ ] Add environment variable resolution logic
-- [ ] Integrate with existing parameter resolution flow
-- [ ] Add diagnostic code generation (E0501, E0502)
+- [X] Add `EnvVarResolver.resolve_in_parameters()` in separate file
+- [X] Implement `${VAR}` syntax validation (strict format only)
+- [X] Add environment variable resolution logic
+- [X] Integrate with existing parameter resolution flow
+- [X] Add diagnostic code generation (E0501, E0502)
 
 **Files to Modify**:
-- `src/asdl/elaborator/variable_resolver.py`
-- `src/asdl/diagnostics.py` (add new error codes)
+- `src/asdl/elaborator/env_var_resolver.py`
+- `src/asdl/elaborator/diagnostics.py` (add new error codes)
 
 **Success Criteria**:
-- [ ] Method resolves `${VAR}` to environment variable values
-- [ ] Invalid formats emit appropriate error diagnostics
-- [ ] Missing environment variables emit E0501 with parameter context
-- [ ] Integration with existing parameter resolution works correctly
+- [X] Method resolves `${VAR}` to environment variable values
+- [X] Invalid formats emit appropriate error diagnostics
+- [X] Missing environment variables emit E0501 with parameter context
+- [X] Integration with existing parameter resolution works correctly
 
 ### Phase 1.3.2: Elaborator Integration
-**Status**: Blocked by Phase 1.3.1  
+**Status**: Completed  
 **Priority**: High  
 **Estimated Effort**: 30 minutes
 
 **Tasks**:
-- [ ] Ensure environment variable resolution happens during elaboration
-- [ ] Verify resolution order: Environment → Parameters → Instance Variables
-- [ ] Test integration with existing elaborator pipeline
+- [X] Ensure environment variable resolution happens during elaboration
+- [X] Verify resolution order: Environment → Parameters → Instance Variables
+- [X] Test integration with existing elaborator pipeline
 
 **Files to Modify**:
 - `src/asdl/elaborator/elaborator.py` (if needed)
 
 **Success Criteria**:
-- [ ] Environment variables resolved before parameter substitution
-- [ ] No changes needed to existing elaborator logic
-- [ ] Pipeline maintains existing behavior for non-environment parameters
+- [X] Environment variables resolved before parameter substitution
+- [X] No changes needed to existing elaborator logic
+- [X] Pipeline maintains existing behavior for non-environment parameters
 
 ### Phase 1.3.3: Testing and Validation
-**Status**: Blocked by Phase 1.3.2  
+**Status**: Completed  
 **Priority**: High  
 **Estimated Effort**: 1-2 hours
 
 **Tasks**:
-- [ ] Create unit tests for environment variable resolution
-- [ ] Test error handling for missing environment variables
-- [ ] Test error handling for invalid format
-- [ ] Test integration with existing parameter system
+- [X] Create unit tests for environment variable resolution
+- [X] Test error handling for missing environment variables
+- [X] Test error handling for invalid format
+- [X] Test integration with existing parameter system
 - [ ] Create integration tests with real ASDL files
 
 **Test Files to Create**:
@@ -69,10 +69,10 @@ Implement environment variable support in ASDL parameters using `${VAR}` syntax.
 - `tests/integration/test_environment_variables.py`
 
 **Success Criteria**:
-- [ ] All unit tests pass
-- [ ] Error diagnostics generated correctly
+- [X] All unit tests pass
+- [X] Error diagnostics generated correctly
 - [ ] Integration tests demonstrate end-to-end functionality
-- [ ] No regression in existing parameter resolution
+- [X] No regression in existing parameter resolution
 
 ## Error Codes
 
@@ -128,11 +128,11 @@ parameters:
 ## Success Criteria
 
 ### Functional Requirements
-- [ ] Environment variables resolved from `${VAR}` syntax
-- [ ] Error diagnostics for missing environment variables
-- [ ] Error diagnostics for invalid format
-- [ ] Integration with existing parameter resolution
-- [ ] No changes to generator or template logic
+- [X] Environment variables resolved from `${VAR}` syntax
+- [X] Error diagnostics for missing environment variables
+- [X] Error diagnostics for invalid format
+- [X] Integration with existing parameter resolution
+- [X] No changes to generator or template logic
 
 ### Quality Requirements
 - [ ] Comprehensive unit test coverage

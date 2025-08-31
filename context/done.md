@@ -27,6 +27,13 @@ _This file archives major completed tasks so they don't clutter active todo list
   - Unit tests refactored into focused files; integration tests updated ✅
 - Integration test framework with NgSpice validation ✅
 
+## Environment Variable Support (2025-08-31)
+- Implemented parameter env var resolution in Elaborator
+  - Added `EnvVarResolver` and `elaborator/diagnostics.py` (E0501/E0502)
+  - Wired into module and instance parameter resolution
+  - Unit tests added for resolver; verified with `examples/inv/tb_inv.asdl`
+  - Fixed `.lib` path typo in `examples/libs/gf180mcu.asdl`
+
 # Completed Tasks Archive
 
 ## 2025-08-30: Test Suite Fixes - Round 1 Complete

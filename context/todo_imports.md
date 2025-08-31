@@ -17,6 +17,21 @@
 - Prune unreachable modules based on top/--top; deterministic module order
 - Documentation: user guide, import tutorial, ASDL_PATH best practices
 
+## Tracing & Logging (Next Session)
+- [ ] Structured tracing for import resolution
+  - [ ] Log search paths (ASDL_PATH, CLI --search-path) and probe order
+  - [ ] Log per-import alias resolution → absolute path mapping
+  - [ ] Log circular detection stack transitions
+- [ ] Model resolution trace
+  - [ ] Show how qualified refs `alias.module` are stripped and mapped via `model_alias`
+  - [ ] Emit a per-file alias table in verbose mode
+- [ ] CLI verbosity
+  - [ ] `--verbose` shows tracing; `--trace-imports` for focused import logs
+  - [ ] Optional `--trace-id` to group logs per run
+- [ ] Tests
+  - [ ] Unit: path resolver probe lists
+  - [ ] Integration: trace output contains expected lines for toy example
+
 ## Tests
 - Unit: E0443/E0444 reference validation
 - Unit: E0441 probe paths in missing import diagnostics

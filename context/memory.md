@@ -42,13 +42,16 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - **Documentation**: Import system usage guide and best practices
 - **Schema Generation**: Ensure JSON/Text schema fully reflects current data structures (`PortType`, etc.)
 - **Validator Refactor Follow-ups**: Migrate integration tests to new V-codes, add missing diagnostics
-- **Environment Variable Support**: Design complete for environment variables in parameters (${VAR} syntax)
+- **Environment Variable Support**: Implemented in elaboration; `${VAR}` resolved in parameters
+  - Diagnostics: E0501 (missing env), E0502 (invalid format)
+  - Resolver: `EnvVarResolver` (separate from `VariableResolver`)
+  - Wired in `Elaborator` for module and instance parameters
 
 ## Environment Variable Support Design Decisions
 
 ### Architecture Decision: Environment Variables in Parameters
 **Date**: 2025-01-27  
-**Status**: Design Complete, Ready for Implementation  
+**Status**: Implemented (Phase 1.3.1–1.3.2 complete)  
 **Decision**: Support `${VAR}` syntax in parameter values for dynamic environment-based configuration
 
 ### Core Design Principles
@@ -58,10 +61,10 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 4. **Pipeline Integration**: Resolution happens during elaboration phase with parameter resolution
 
 ### Implementation Approach
-- **Extend VariableResolver**: Add `resolve_environment_variables()` method
+- **New Resolver**: `EnvVarResolver.resolve_in_parameters()`
 - **Error Codes**: E0501 (missing env var), E0502 (invalid format)
-- **Integration**: Environment resolution before instance variable resolution
-- **No Generator Changes**: Uses existing `{param}` substitution mechanism
+- **Integration**: In `Elaborator._elaborate_module` before variable reference resolution
+- **No Generator Changes**: Reuses `{param}` substitution as-is
 
 ### Benefits
 - **Flexibility**: Dynamic PDK paths, corners, temperatures from environment
@@ -83,13 +86,13 @@ spice_template: |
 ```
 
 ## Next Session Plan
-- **Test Suite**: ✅ **COMPLETE** - All unit tests passing (136/136)
-- **Integration Testing**: Ready for end-to-end pipeline validation with real circuit examples
-- **CLI Enhancement**: Add missing features like `--search-path` arguments and import resolution
-- **Schema Generation**: Ensure JSON/Text schema fully reflects current data structures (`PortType`, etc.)
-- **Documentation**: Update import system usage guide and best practices
-- **Validator Refactor Follow-ups**: Migrate integration tests to new V-codes, add missing diagnostics
-- **Environment Variable Support**: 🚀 **READY FOR IMPLEMENTATION** - Design complete, implementation plan ready
+- Add tracing/logging for import resolution and model resolution
+  - Verbose option in CLI to surface search paths, resolved files, and alias mapping
+  - Hook debug logs in `ImportResolver._load_file_recursive` and alias validation
+  - Optional trace id per elaboration run for grouping logs
+- Add integration test for env-var resolution via CLI (`asdl elaborate` and `asdl netlist`)
+- Document ASDL_PATH usage and best practices in docs
+- Plan refactor: migrate legacy E10x elaborator diagnostics to XCCSS helper
 
 ## Project Status: Production Ready 🎉
 - **All Major Components**: Parser, Elaborator, Validator, Generator, Import System - all working correctly

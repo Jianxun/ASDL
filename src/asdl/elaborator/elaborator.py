@@ -6,6 +6,7 @@ from ..data_structures import ASDLFile, Module, Port, Locatable, Instance
 from ..diagnostics import Diagnostic, DiagnosticSeverity
 from .pattern_expander import PatternExpander
 from .variable_resolver import VariableResolver
+from .env_var_resolver import EnvVarResolver
 from .import_ import ImportResolver
 
 
@@ -20,6 +21,7 @@ class Elaborator:
     def __init__(self):
         self.pattern_expander = PatternExpander()
         self.variable_resolver = VariableResolver()
+        self.env_var_resolver = EnvVarResolver()
         self._import_resolver = ImportResolver()
 
     def elaborate(
@@ -97,12 +99,39 @@ class Elaborator:
         diagnostics.extend(port_diagnostics)
         module_copy.ports = expanded_ports
 
+        # Resolve environment variables in module parameters before any parameter/variable resolution
+        if module_copy.parameters:
+            resolved_params, env_diags = self.env_var_resolver.resolve_in_parameters(
+                parameters=module_copy.parameters,
+                owner_name=module_name,
+                owner_kind="module",
+                locatable=module_copy,
+            )
+            diagnostics.extend(env_diags)
+            module_copy = replace(module_copy, parameters=resolved_params)
+
         # Only expand instances if the module actually has instances (preserve None for primitives)
         if module_copy.instances is not None:
             expanded_instances, instance_diagnostics = self._expand_instances(module_copy.instances)
             diagnostics.extend(instance_diagnostics)
             module_copy.instances = expanded_instances
             
+            # Resolve environment variables in instance parameters
+            new_instances = {}
+            for inst_name, inst in module_copy.instances.items():
+                if inst.parameters:
+                    resolved_p, env_diags_i = self.env_var_resolver.resolve_in_parameters(
+                        parameters=inst.parameters,
+                        owner_name=inst_name,
+                        owner_kind="instance",
+                        locatable=inst,
+                    )
+                    diagnostics.extend(env_diags_i)
+                    new_instances[inst_name] = replace(inst, parameters=resolved_p)
+                else:
+                    new_instances[inst_name] = inst
+            module_copy.instances = new_instances
+
             # Resolve variable references in instance parameters using module variables
             if module_copy.variables:
                 resolved_instances, variable_diagnostics = self.variable_resolver.resolve_instance_variables(

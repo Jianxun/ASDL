@@ -5,8 +5,8 @@ modules:
   pdk_model:
     ports: {}
     spice_template: |
-      .include {pdk_root}/ngspice/design.ngspice
-      .lib {pdk_root}ngspice/sm141064.ngspice {corner}
+      .include {pdk_root}/ngspice/design.ngspice TT
+      .lib {pdk_root}/ngspice/sm141064.ngspice {corner}
     parameters:
       pdk_root: "${PDK_ROOT}"
       corner: typical
