@@ -1,0 +1,11 @@
+file_info:
+  top_module: module_b
+imports:
+  module_a: module_a.asdl
+modules:
+  circuit_b:
+    ports:
+      in: {dir: in}
+      out: {dir: out}
+    instances:
+      A_INST: {model: module_a.circuit_a, mappings: {in: in, out: out}}

@@ -1,0 +1,212 @@
+{
+  "title": "ASDLFile",
+  "type": "object",
+  "properties": {
+    "file_info": {
+      "title": "FileInfo",
+      "type": "object",
+      "properties": {
+        "top_module": {
+          "type": "string",
+          "description": "Default top module name in this ASDL file",
+          "default": null
+        },
+        "doc": {
+          "type": "string",
+          "description": "Human-readable description of the design/library",
+          "default": null
+        },
+        "revision": {
+          "type": "string",
+          "description": "Revision identifier for this document",
+          "default": null
+        },
+        "author": {
+          "type": "string",
+          "description": "Author name or contact",
+          "default": null
+        },
+        "date": {
+          "type": "string",
+          "description": "Date string (free-form or ISO 8601)",
+          "default": null
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Additional metadata for tools and annotations",
+          "default": null
+        }
+      },
+      "description": "Document metadata; does not affect netlisting"
+    },
+    "modules": {
+      "type": "object",
+      "additionalProperties": {
+        "title": "Module",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "type": "string",
+            "description": "Module-level documentation",
+            "default": null
+          },
+          "ports": {
+            "type": "object",
+            "additionalProperties": {
+              "title": "Port",
+              "type": "object",
+              "properties": {
+                "dir": {
+                  "type": "string",
+                  "enum": [
+                    "in",
+                    "out",
+                    "in_out"
+                  ],
+                  "description": "Port direction classification"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "signal",
+                    "power",
+                    "ground",
+                    "bias",
+                    "control"
+                  ],
+                  "description": "Optional port type classification; defaults to 'signal'",
+                  "default": "signal"
+                },
+                "metadata": {
+                  "type": "object",
+                  "additionalProperties": {},
+                  "description": "Arbitrary metadata for tools and annotations",
+                  "default": null
+                }
+              },
+              "description": "Port definition with direction and optional type classification. Port names may contain patterns (e.g., \"in_<p,n>\") that will be expanded during the pattern expansion phase.",
+              "required": [
+                "dir"
+              ]
+            },
+            "description": "Port declarations keyed by port name. Each declared port implicitly defines a net with the same name in the module's interface. Use 'internal_nets' to declare additional local nets.",
+            "default": null
+          },
+          "internal_nets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Additional local nets inside the module body. Ports already imply interface nets; use this list for extra internal nodes.",
+            "default": null
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Module parameters and default values. Parameters may be overridden per-instance via 'Instance.parameters'.",
+            "default": null
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Module variables for computed or derived values; variables are not overridable by instances.",
+            "default": null
+          },
+          "spice_template": {
+            "type": "string",
+            "description": "SPICE device template for primitive modules; implicit placeholder '{name}' resolves to the instance id",
+            "default": null
+          },
+          "instances": {
+            "type": "object",
+            "additionalProperties": {
+              "title": "Instance",
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string",
+                  "description": "Reference to a Module by key/name"
+                },
+                "mappings": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Map from target module's port names to net names. Keys must match the declared port names of the referenced module."
+                },
+                "doc": {
+                  "type": "string",
+                  "description": "Instance-level documentation",
+                  "default": null
+                },
+                "parameters": {
+                  "type": "object",
+                  "additionalProperties": {},
+                  "description": "Parameter overrides for this instance",
+                  "default": null
+                },
+                "metadata": {
+                  "type": "object",
+                  "additionalProperties": {},
+                  "description": "Arbitrary metadata for tools and annotations",
+                  "default": null
+                }
+              },
+              "description": "Instance of a unified Module. An Instance represents the usage/instantiation of a Module, which can be either: - Primitive Module (has spice_template) -> generates inline SPICE device - Hierarchical Module (has instances) -> generates subcircuit call in SPICE Mappings and parameters may contain patterns and expressions that will be resolved during the expansion and resolution phases. The metadata field provides extensible metadata storage for: - Design intent annotations: {\"purpose\": \"current mirror\", \"matching\": \"critical\"} - Layout hints: {\"placement\": \"symmetric\", \"routing\": \"minimize_parasitic\"} - Optimization directives: {\"optimize\": [\"power\", \"area\"], \"constraint\": \"speed\"} - Tool-specific metadata: {\"simulator\": \"spectre\", \"model_opts\": {...}} - Future extensions: Any additional fields can be preserved here",
+              "required": [
+                "mappings",
+                "model"
+              ]
+            },
+            "description": "Map of instance id to Instance for hierarchical modules",
+            "default": null
+          },
+          "pdk": {
+            "type": "string",
+            "description": "PDK identifier associated with this module (informational). Note: automatic .include generation is deprecated and handled outside the generator.",
+            "default": null
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Arbitrary metadata for tools and annotations",
+            "default": null
+          }
+        },
+        "description": "Unified module definition for both primitive and hierarchical circuits. A Module can be either: - Primitive: Has spice_template, renders as inline SPICE device - Hierarchical: Has instances, renders as .subckt definition These are mutually exclusive - a module cannot have both spice_template and instances."
+      },
+      "description": "Map of unified module definitions (both primitive and hierarchical)"
+    },
+    "imports": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Map of file aliases to .asdl file paths for dependency resolution",
+      "default": null
+    },
+    "model_alias": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Local module aliases mapping to imported module references (alias.module_name format)",
+      "default": null
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {},
+      "description": "Open extension bag; agents should preserve unknown keys",
+      "default": null
+    }
+  },
+  "description": "Represents a single ASDL file with its unified modules and optional imports. Each ASDL file is like a library that can be included/imported by other files. The unified modules field contains both primitive and hierarchical modules. The imports field enables dependency resolution across multiple files. The model_alias field provides local shorthand for imported module references.",
+  "required": [
+    "file_info",
+    "modules"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://osic-suite.org/asdl/schema/0.1.0",
+  "version": "0.1.0"
+}

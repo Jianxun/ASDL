@@ -1,0 +1,11 @@
+file_info:
+  doc: Primitive device library
+
+modules:
+  nfet_03v3:
+    ports: {D: {dir: out}, G: {dir: in}, S: {dir: in}, B: {dir: in}}
+    spice_template: "M{name} {D} {G} {S} {B} nfet_03v3 L=0.28u W=3u"
+  pfet_03v3:
+    ports: {D: {dir: out}, G: {dir: in}, S: {dir: in}, B: {dir: in}}
+    spice_template: "M{name} {D} {G} {S} {B} pfet_03v3 L=0.28u W=6u"
+

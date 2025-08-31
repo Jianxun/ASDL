@@ -55,14 +55,7 @@ def validate_cmd(input: Path, json_output: bool, verbose: bool, top: Optional[st
             if verbose:
                 click.echo("[validate] running structural checks…")
             validator = ASDLValidator()
-            for module_name, module in (elaborated_file.modules or {}).items():
-                diagnostics.extend(validator.validate_net_declarations(module, module_name))
-                if module.instances:
-                    for inst_id, inst in module.instances.items():
-                        if inst.model in elaborated_file.modules:
-                            target_mod = elaborated_file.modules[inst.model]
-                            diagnostics.extend(validator.validate_port_mappings(inst_id, inst, target_mod))
-            diagnostics.extend(validator.validate_unused_components(elaborated_file))
+            diagnostics.extend(validator.validate_file(elaborated_file))
 
         exit_code = 1 if has_error(diagnostics) else exit_code
 

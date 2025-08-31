@@ -19,7 +19,8 @@ from .helpers import diagnostics_to_jsonable, has_error, print_human_diagnostics
 @click.option("--json", "json_output", is_flag=True, help="Emit machine-readable JSON to stdout")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose logs")
 @click.option("--top", type=str, help="Override top module")
-def elaborate_cmd(input: Path, output: Optional[Path], fmt: str, json_output: bool, verbose: bool, top: Optional[str]) -> None:
+@click.option("--search-path", "search_paths", multiple=True, type=click.Path(path_type=Path), help="Additional search paths for import resolution (can be repeated)")
+def elaborate_cmd(input: Path, output: Optional[Path], fmt: str, json_output: bool, verbose: bool, top: Optional[str], search_paths: Optional[List[Path]]) -> None:
     exit_code = 0
     diagnostics: List[Diagnostic] = []
     artifact_path: Optional[Path] = None
@@ -27,33 +28,27 @@ def elaborate_cmd(input: Path, output: Optional[Path], fmt: str, json_output: bo
     try:
         if verbose:
             click.echo("[parse] reading input…")
-        parser = ASDLParser()
-        asdl_file, parse_diags = parser.parse_file(str(input))
-        diagnostics.extend(parse_diags)
-        if asdl_file is None:
+        elaborator = Elaborator()
+        if verbose:
+            click.echo("[imports] resolving…")
+        elaborated_file, elab_diags = elaborator.elaborate_with_imports(
+            input, search_paths=list(search_paths) if search_paths else None, top=top
+        )
+        diagnostics.extend(elab_diags)
+        if elaborated_file is None:
             exit_code = 1
         else:
-            if top:
-                asdl_file.file_info.top_module = top
-            if verbose:
-                click.echo("[elaborate] expanding patterns…")
-            elaborator = Elaborator()
-            elaborated_file, elab_diags = elaborator.elaborate(asdl_file)
-            diagnostics.extend(elab_diags)
-            if elaborated_file is None:
-                exit_code = 1
+            if output is None:
+                suffix = ".elab.yaml" if fmt.lower() == "yaml" else ".elab.json"
+                artifact_path = input.with_suffix(suffix)
             else:
-                if output is None:
-                    suffix = ".elab.yaml" if fmt.lower() == "yaml" else ".elab.json"
-                    artifact_path = input.with_suffix(suffix)
-                else:
-                    artifact_path = output
-                artifact_path.parent.mkdir(parents=True, exist_ok=True)
-                if fmt.lower() == "yaml":
-                    asdl_serialization.save_asdl_to_yaml_file(elaborated_file, str(artifact_path))
-                else:
-                    as_json = asdl_serialization.asdl_to_json_string(elaborated_file)
-                    artifact_path.write_text(as_json, encoding="utf-8")
+                artifact_path = output
+            artifact_path.parent.mkdir(parents=True, exist_ok=True)
+            if fmt.lower() == "yaml":
+                asdl_serialization.save_asdl_to_yaml_file(elaborated_file, str(artifact_path))
+            else:
+                as_json = asdl_serialization.asdl_to_json_string(elaborated_file)
+                artifact_path.write_text(as_json, encoding="utf-8")
 
         exit_code = 1 if has_error(diagnostics) else exit_code
 

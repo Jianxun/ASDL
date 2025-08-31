@@ -12,7 +12,7 @@ from asdl.data_structures import (
     Port,
     Instance,
     PortDirection,
-    SignalType,
+    PortType,
 )
 from asdl.elaborator import Elaborator
 from asdl.parser import ASDLParser
@@ -36,7 +36,8 @@ class TestBusExpansion:
                 ports:
                     "data[3:0]":
                         dir: IN
-                        type: DIGITAL
+                        type: SIGNAL
+                spice_template: "test {data[3:0]}"
         """
         parser = ASDLParser()
         asdl_file, parse_diagnostics = parser.parse_string(asdl_string)
@@ -61,7 +62,7 @@ class TestBusExpansion:
             assert port_name in test_module.ports
             port = test_module.ports[port_name]
             assert port.dir == PortDirection.IN
-            assert port.type == SignalType.DIGITAL
+            assert port.type == PortType.SIGNAL
 
     def test_simple_port_bus_expansion_ascending(self):
         """
@@ -76,7 +77,8 @@ class TestBusExpansion:
                 ports:
                     "data[0:3]":
                         dir: IN
-                        type: DIGITAL
+                        type: SIGNAL
+                spice_template: "test {data[0:3]}"
         """
         parser = ASDLParser()
         asdl_file, parse_diagnostics = parser.parse_string(asdl_string)
@@ -101,4 +103,4 @@ class TestBusExpansion:
             assert port_name in test_module.ports
             port = test_module.ports[port_name]
             assert port.dir == PortDirection.IN
-            assert port.type == SignalType.DIGITAL 
+            assert port.type == PortType.SIGNAL

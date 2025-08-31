@@ -15,7 +15,6 @@ def test_basic_instance_expansion():
     """
     asdl_file = ASDLFile(
         file_info=FileInfo(top_module="test_module"),
-        models={},
         modules={
             "test_module": Module(
                 instances={

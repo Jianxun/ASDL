@@ -5,7 +5,7 @@ from asdl.data_structures import (
     Port,
     FileInfo,
     PortDirection,
-    SignalType,
+    PortType,
 )
 from asdl.elaborator import Elaborator
 
@@ -16,13 +16,13 @@ def test_basic_port_expansion():
     """
     asdl_file = ASDLFile(
         file_info=FileInfo(top_module="test_module"),
-        models={},
         modules={
             "test_module": Module(
                 ports={
-                    "in_<p,n>": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                    "vss": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                }
+                    "in_<p,n>": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                    "vss": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                },
+                spice_template="test_module {in_<p,n>} {vss}"
             )
         },
     )
@@ -51,12 +51,12 @@ def test_port_expansion_with_empty_item():
     """
     asdl_file = ASDLFile(
         file_info=FileInfo(top_module="test_module"),
-        models={},
         modules={
             "test_module": Module(
                 ports={
-                    "clk<,_b>": Port(dir=PortDirection.IN, type=SignalType.VOLTAGE),
-                }
+                    "clk<,_b>": Port(dir=PortDirection.IN, type=PortType.SIGNAL),
+                },
+                spice_template="test_module {clk<,_b>}"
             )
         },
     )

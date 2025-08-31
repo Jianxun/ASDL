@@ -49,7 +49,8 @@ def asdl_to_dict(asdl_file: ASDLFile) -> Dict[str, Any]:
     # Use 'file_info' key (v0.4 format) for consistency
     return {
         'file_info': result['file_info'],
-        'models': result['models'],
+        # Backward-compatible: some fixtures still use v0.4 'models'.
+        'models': result.get('models', {}),
         'modules': result['modules']
     }
 

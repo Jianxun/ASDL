@@ -17,7 +17,7 @@ import argparse
 import json
 from pathlib import Path
 
-from asdl.schema_gen import build_json_schema, render_text_schema
+from asdl.data_structures import build_json_schema, render_text_schema
 
 
 def main() -> None:

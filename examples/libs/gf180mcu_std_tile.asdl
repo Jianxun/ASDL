@@ -1,0 +1,67 @@
+file_info:
+  doc: "GF180MCU standard cell tile library"
+
+modules:
+  pdk_model:
+    ports: {}
+    spice_template: |
+      .include ../gf180mcu/ngspice/design.ngspice
+      .lib ../gf180mcu/ngspice/sm141064.ngspice {corner}
+    parameters:
+      corner: typical
+
+  nmos_tile_short:
+    ports:
+      D: { dir: in_out, type: signal }
+      G: { dir: in_out, type: signal }
+      S: { dir: in_out, type: signal }
+      B: { dir: in_out, type: signal }
+    spice_template: |
+      X_{name} {D} {G} {S} {B} nfet_03v3 L={L} W={W} nf={nf} m={m}
+      + ad={ad} as={as} 
+      + pd={pd} ps={ps} 
+      + nrd={nrd} nrs={nrs} 
+      + sa={sa} sb={sb} sd={sd}
+    variables:
+      L: 0.28u
+      W: 3u
+      nf: 2
+      ad: "'int((nf+1)/2) * W/nf * 0.18u'"
+      pd: "'2*int((nf+1)/2) * (W/nf + 0.18u)'"
+      as: "'int((nf+2)/2) * W/nf * 0.18u'"
+      ps: "'2*int((nf+2)/2) * (W/nf + 0.18u)'"
+      nrd: "'0.18u / W'"
+      nrs: "'0.18u / W'"
+      sa: 0
+      sb: 0
+      sd: 0
+    parameters:
+      m: 1
+
+  pmos_tile_short:
+    ports:
+      D: { dir: in_out, type: signal }
+      G: { dir: in_out, type: signal }
+      S: { dir: in_out, type: signal }
+      B: { dir: in_out, type: signal }
+    spice_template: |
+      X_{name} {D} {G} {S} {B} pfet_03v3 L={L} W={W} nf={nf} m={m}
+      + ad={ad} as={as} 
+      + pd={pd} ps={ps} 
+      + nrd={nrd} nrs={nrs} 
+      + sa={sa} sb={sb} sd={sd}
+    variables:
+      L: 0.28u
+      W: 3u
+      nf: 2
+      ad: "'int((nf+1)/2) * W/nf * 0.18u'"
+      pd: "'2*int((nf+1)/2) * (W/nf + 0.18u)'"
+      as: "'int((nf+2)/2) * W/nf * 0.18u'"
+      ps: "'2*int((nf+2)/2) * (W/nf + 0.18u)'"
+      nrd: "'0.18u / W'"
+      nrs: "'0.18u / W'"
+      sa: 0
+      sb: 0
+      sd: 0
+    parameters:
+      m: 1
