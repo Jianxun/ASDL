@@ -31,8 +31,8 @@
   X_dut vin vout vdd vss inv
   cload vout vss 10f
 
-  .include ../gf180mcu/ngspice/design.ngspice
-.lib ../gf180mcu/ngspice/sm141064.ngspice typical
+  .include /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/gf180mcu/ngspice/design.ngspice TT
+.lib /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/gf180mcu/ngspice/sm141064.ngspice typical
 
   .control
 save all

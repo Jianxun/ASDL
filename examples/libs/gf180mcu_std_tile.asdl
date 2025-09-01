@@ -2,13 +2,7 @@ file_info:
   doc: "GF180MCU standard cell tile library"
 
 modules:
-  pdk_model:
-    ports: {}
-    spice_template: |
-      .include ../gf180mcu/ngspice/design.ngspice
-      .lib ../gf180mcu/ngspice/sm141064.ngspice {corner}
-    parameters:
-      corner: typical
+
 
   nmos_tile_short:
     ports:
