@@ -2,13 +2,13 @@
 
 ## Current Sprint (Phase 1: Structured Logging Foundation)
 
-- [ ] Integrate Python logging hierarchy under root `asdlc`
-- [ ] Map CLI flags to log levels (`-v`→INFO, `--debug`→DEBUG, `--trace`→TRACE)
-- [ ] Replace `click.echo()` progress messages with logger calls (INFO/DEBUG)
-- [ ] Implement human-readable formatter with timestamps and component tags
-- [ ] Add optional JSON formatter for logs (`--log-json`)
-- [ ] Add console handler by default; optional file handler via `--log-file`
-- [ ] Respect env vars: `ASDL_LOG_LEVEL`, `ASDL_LOG_FILE`, `ASDL_LOG_FORMAT`
+- [X] Integrate Python logging hierarchy under root `asdlc`
+- [X] Map CLI flags to log levels (`-v`→INFO, `--debug`→DEBUG, `--trace`→TRACE)
+- [X] Replace `click.echo()` progress messages with logger calls (INFO/DEBUG)
+- [X] Implement human-readable formatter with timestamps and component tags
+- [X] Add optional JSON formatter for logs (`--log-json`)
+- [X] Add console handler by default; optional file handler via `--log-file`
+- [X] Respect env vars: `ASDL_LOG_LEVEL`, `ASDL_LOG_FILE`, `ASDL_LOG_FORMAT`
 - [ ] Minimal unit tests for logger configuration and flag mapping
 - [ ] Integration smoke test: run `asdlc elaborate` with `--debug` and verify output
 
@@ -23,6 +23,6 @@
 
 ## Completed Tasks
 
-- [ ] (none yet)
+- [X] Phase 1 foundation implemented in CLI and logging utils
 
 
