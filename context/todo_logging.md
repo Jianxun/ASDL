@@ -10,7 +10,8 @@
 - [X] Add console handler by default; optional file handler via `--log-file`
 - [X] Respect env vars: `ASDL_LOG_LEVEL`, `ASDL_LOG_FILE`, `ASDL_LOG_FORMAT`
 - [ ] Minimal unit tests for logger configuration and flag mapping
-- [ ] Integration smoke test: run `asdlc elaborate` with `--debug` and verify output
+- [X] Minimal unit tests for logger configuration and flag mapping
+- [X] Integration smoke test: run CLI with `--debug/--trace` and verify output levels
 
 ## Backlog
 

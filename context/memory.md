@@ -47,6 +47,18 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
   - Resolver: `EnvVarResolver` (separate from `VariableResolver`)
   - Wired in `Elaborator` for module and instance parameters
 
+## Logging System Phase 1 – Implemented
+**Branch**: `feature/logging_system_phase1`
+
+- Hierarchical logging under `asdlc.*`; CLI flags `--debug`, `--trace`, `--log-json`, `--log-file` at group level; `-v` at subcommands maps to INFO.
+- Human and JSON formatters; file handler with env overrides `ASDL_LOG_LEVEL`, `ASDL_LOG_FILE`, `ASDL_LOG_FORMAT`.
+- Import resolver emits DEBUG/TRACE logs for search paths, alias resolution, loads; added timing scaffolding.
+- Unit tests added: logging config, CLI logging; all unit tests passing. Integration tests skipped during Phase 1.
+
+### Demo Notes
+- INFO: shows stage progress; DEBUG: adds initialization, file loads, timings; TRACE: adds alias resolution lines.
+- Example used: `examples/inv/tb_inv.asdl` with `PDK_ROOT` and `ASDL_PATH` set; netlists written to `/tmp/tb_inv_*.spice`.
+
 ## Environment Variable Support Design Decisions
 
 ### Architecture Decision: Environment Variables in Parameters
