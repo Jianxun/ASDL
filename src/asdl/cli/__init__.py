@@ -1,5 +1,5 @@
 import click
-from ..logging_utils import configure_logging
+from ..logging_utils import configure_logging, get_logger
 
 from .. import __version__ as ASDL_VERSION
 from .version import version_cmd
@@ -27,6 +27,7 @@ def cli(ctx: click.Context, debug: bool, trace: bool, log_file: str | None, log_
         "log_file": log_file,
         "log_json": log_json,
     })
+    get_logger("cli").debug("CLI initialized")
 
 # Register commands
 cli.add_command(version_cmd)

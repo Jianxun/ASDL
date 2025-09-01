@@ -125,3 +125,7 @@ def get_logger(component: str) -> logging.Logger:
     return logging.getLogger(f"asdlc.{component}")
 
 
+# Ensure TRACE is available as soon as this module is imported
+ensure_trace_level_registered()
+
+
