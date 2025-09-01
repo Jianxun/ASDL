@@ -36,7 +36,7 @@ class SPICEGenerator:
     def __init__(self, options: Optional[GeneratorOptions] = None):
         """Initialize SPICE generator with default settings."""
         self.comment_style = "*"  # SPICE comment character
-        self.indent = "  "        # Indentation for readability
+        self.indent = ""        # Indentation for readability
         self._pending_diagnostics: List[Diagnostic] = []
         self.options = options or GeneratorOptions()
     
