@@ -47,6 +47,18 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
   - Resolver: `EnvVarResolver` (separate from `VariableResolver`)
   - Wired in `Elaborator` for module and instance parameters
 
+## Logging System Phase 1 – Implemented
+**Branch**: `feature/logging_system_phase1`
+
+- Hierarchical logging under `asdlc.*`; CLI flags `--debug`, `--trace`, `--log-json`, `--log-file` at group level; `-v` at subcommands maps to INFO.
+- Human and JSON formatters; file handler with env overrides `ASDL_LOG_LEVEL`, `ASDL_LOG_FILE`, `ASDL_LOG_FORMAT`.
+- Import resolver emits DEBUG/TRACE logs for search paths, alias resolution, loads; added timing scaffolding.
+- Unit tests added: logging config, CLI logging; all unit tests passing. Integration tests skipped during Phase 1.
+
+### Demo Notes
+- INFO: shows stage progress; DEBUG: adds initialization, file loads, timings; TRACE: adds alias resolution lines.
+- Example used: `examples/inv/tb_inv.asdl` with `PDK_ROOT` and `ASDL_PATH` set; netlists written to `/tmp/tb_inv_*.spice`.
+
 ## Environment Variable Support Design Decisions
 
 ### Architecture Decision: Environment Variables in Parameters
@@ -93,6 +105,19 @@ spice_template: |
 - Add integration test for env-var resolution via CLI (`asdl elaborate` and `asdl netlist`)
 - Document ASDL_PATH usage and best practices in docs
 - Plan refactor: migrate legacy E10x elaborator diagnostics to XCCSS helper
+
+## Logging System Implementation
+**Branch**: `feature/logging_system_phase1`  
+**Scope**: Phase 1 – Structured Logging Foundation (see `doc/logging/logging_system_design.md`)
+
+### Objectives (Phase 1)
+- Integrate Python `logging` with hierarchical loggers under root `asdlc`
+- Map CLI flags to levels (`-v`→INFO, `--debug`→DEBUG, `--trace`→TRACE)
+- Replace `click.echo()` progress prints with logger calls
+- Human-readable formatter with timestamps and component tags
+- Optional JSON formatter and `--log-file` handler
+- Respect env vars: `ASDL_LOG_LEVEL`, `ASDL_LOG_FILE`, `ASDL_LOG_FORMAT`
+- Minimal tests for configuration and flag mapping
 
 ## Project Status: Production Ready 🎉
 - **All Major Components**: Parser, Elaborator, Validator, Generator, Import System - all working correctly

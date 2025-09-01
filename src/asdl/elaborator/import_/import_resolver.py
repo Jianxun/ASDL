@@ -10,6 +10,8 @@ from typing import Dict, List, Optional, Set, Tuple
 from dataclasses import replace
 
 from ...data_structures import ASDLFile
+from ...logging_utils import get_logger
+from ...timing import time_block
 from ...diagnostics import Diagnostic
 from ...parser import ASDLParser
 from .path_resolver import PathResolver
@@ -70,9 +72,11 @@ class ImportResolver:
         Returns:
             Tuple of (flattened_asdl_file, diagnostics_list)
         """
+        log = get_logger("elaborator.imports")
         all_diagnostics = []
         
         # Step 1: Parse main file
+        log.debug(f"Parsing main file: {main_file_path}")
         main_file, parse_diagnostics = self.parser.parse_file(str(main_file_path))
         all_diagnostics.extend(parse_diagnostics)
         
@@ -82,21 +86,25 @@ class ImportResolver:
         # Step 2: Resolve search paths
         if search_paths is None:
             search_paths = self.path_resolver.get_search_paths()
+        log.debug(f"Search paths: {[str(p) for p in search_paths]}")
         
         # Step 3: Load all import dependencies
-        loaded_files, alias_resolution_map, load_diagnostics = self._load_all_dependencies(
-            main_file, search_paths, main_file_path
-        )
+        with time_block(log, "Load all dependencies"):
+            loaded_files, alias_resolution_map, load_diagnostics = self._load_all_dependencies(
+                main_file, search_paths, main_file_path
+            )
         all_diagnostics.extend(load_diagnostics)
         
         # Step 4: Validate import references and aliases
-        validation_diagnostics = self._validate_imports_and_aliases(
-            main_file, main_file_path, loaded_files, alias_resolution_map
-        )
+        with time_block(log, "Validate imports/aliases"):
+            validation_diagnostics = self._validate_imports_and_aliases(
+                main_file, main_file_path, loaded_files, alias_resolution_map
+            )
         all_diagnostics.extend(validation_diagnostics)
         
         # Step 5: Flatten all modules into single output file
-        flattened_file = self._flatten_modules(main_file, loaded_files)
+        with time_block(log, "Flatten modules"):
+            flattened_file = self._flatten_modules(main_file, loaded_files)
         
         return flattened_file, all_diagnostics
     
@@ -161,6 +169,7 @@ class ImportResolver:
         if current_path not in alias_resolution_map:
             alias_resolution_map[current_path] = {}
             
+        log = get_logger("elaborator.imports")
         for import_alias, import_path in current_file.imports.items():
             # Resolve import path
             resolved_path = self.path_resolver.resolve_file_path(
@@ -168,6 +177,11 @@ class ImportResolver:
             )
             # Record resolution result (could be None)
             alias_resolution_map[current_path][import_alias] = resolved_path
+            # Use debug level for broader compatibility in tests
+            try:
+                log.trace(f"Resolve alias '{import_alias}': '{import_path}' -> {resolved_path}")
+            except AttributeError:
+                log.debug(f"Resolve alias '{import_alias}': '{import_path}' -> {resolved_path}")
             
             if resolved_path is None:
                 # File not found
@@ -190,6 +204,7 @@ class ImportResolver:
                 continue
             
             # Load with circular dependency detection using current loading stack
+            log.debug(f"Loading file: {resolved_path}")
             loaded_file, load_diagnostics = self.file_loader.load_file_with_dependency_check(
                 resolved_path, loading_stack + [current_path]
             )

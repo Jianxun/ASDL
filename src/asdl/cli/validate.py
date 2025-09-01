@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, List
 
 import click
+from ..logging_utils import get_logger, configure_logging
 
 from ..parser import ASDLParser
 from ..elaborator import Elaborator
@@ -15,15 +16,23 @@ from .helpers import diagnostics_to_jsonable, has_error, print_human_diagnostics
 @click.command("validate", help="Parse → (elaborate) → validate; no SPICE output")
 @click.argument("input", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option("--json", "json_output", is_flag=True, help="Emit machine-readable JSON to stdout")
-@click.option("-v", "--verbose", is_flag=True, help="Verbose logs")
+@click.option("-v", "--verbose", is_flag=True, help="Verbose logs (INFO level)")
 @click.option("--top", type=str, help="Override top module")
-def validate_cmd(input: Path, json_output: bool, verbose: bool, top: Optional[str]) -> None:
+@click.pass_context
+def validate_cmd(ctx: click.Context, input: Path, json_output: bool, verbose: bool, top: Optional[str]) -> None:
     exit_code = 0
     diagnostics: List[Diagnostic] = []
 
     try:
-        if verbose:
-            click.echo("[parse] reading input…")
+        configure_logging(
+            verbose=verbose,
+            debug=ctx.obj.get("debug", False),
+            trace=ctx.obj.get("trace", False),
+            log_file=ctx.obj.get("log_file"),
+            log_json=ctx.obj.get("log_json"),
+        )
+        log = get_logger("cli")
+        log.info("[parse] reading input…")
         parser = ASDLParser()
         asdl_file, parse_diags = parser.parse_file(str(input))
         diagnostics.extend(parse_diags)
@@ -44,16 +53,14 @@ def validate_cmd(input: Path, json_output: bool, verbose: bool, top: Optional[st
         if top:
             asdl_file.file_info.top_module = top
 
-        if verbose:
-            click.echo("[elaborate] expanding patterns…")
+        log.info("[elaborate] expanding patterns…")
         elaborator = Elaborator()
         elaborated_file, elab_diags = elaborator.elaborate(asdl_file)
         diagnostics.extend(elab_diags)
         if elaborated_file is None:
             exit_code = 1
         else:
-            if verbose:
-                click.echo("[validate] running structural checks…")
+            log.info("[validate] running structural checks…")
             validator = ASDLValidator()
             diagnostics.extend(validator.validate_file(elaborated_file))
 

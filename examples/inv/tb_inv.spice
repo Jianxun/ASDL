@@ -7,13 +7,13 @@
 
 * Hierarchical module subcircuit definitions
 .subckt inv in out vdd vss
-  X_mp1 out in vdd vdd pfet_03v3 L=0.28u W=3u nf=2 m=2
+X_mp1 out in vdd vdd pfet_03v3 L=0.28u W=3u nf=2 m=2
 + ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
 + pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
 + nrd='0.18u / W' nrs='0.18u / W' 
 + sa=0 sb=0 sd=0
 
-  X_mn1 out in vss vss nfet_03v3 L=0.28u W=3u nf=2 m=2
+X_mn1 out in vss vss nfet_03v3 L=0.28u W=3u nf=2 m=2
 + ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
 + pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
 + nrd='0.18u / W' nrs='0.18u / W' 
@@ -22,19 +22,19 @@
 .ends
 
 * .subckt tb_inv 
-  vdd vdd vss DC 3.3
+vdd vdd vss DC 3.3
 
-  vss vss GND DC 0.0
+vss vss GND DC 0.0
 
-  vin_pulse vin vss PULSE(0.0 3.3 0 1n 1n 10n 20n)
+vin_pulse vin vss PULSE(0.0 3.3 0 1n 1n 10n 20n)
 
-  X_dut vin vout vdd vss inv
-  cload vout vss 10f
+X_dut vin vout vdd vss inv
+cload vout vss 10f
 
-  .include /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/gf180mcu/ngspice/design.ngspice TT
+.include /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/gf180mcu/ngspice/design.ngspice
 .lib /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/gf180mcu/ngspice/sm141064.ngspice typical
 
-  .control
+.control
 save all
 tran 0.1n 100n
 *write to raw file

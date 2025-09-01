@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, List
 
 import click
+from ..logging_utils import get_logger, configure_logging
 
 from ..parser import ASDLParser
 from ..elaborator import Elaborator
@@ -18,19 +19,27 @@ from .helpers import diagnostics_to_jsonable, has_error, print_human_diagnostics
 @click.argument("input", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option("-o", "--output", type=click.Path(dir_okay=False, path_type=Path), help="Output SPICE file (default: input with .spice)")
 @click.option("--json", "json_output", is_flag=True, help="Emit machine-readable JSON to stdout")
-@click.option("-v", "--verbose", is_flag=True, help="Verbose logs")
+@click.option("-v", "--verbose", is_flag=True, help="Verbose logs (INFO level)")
 @click.option("--top", type=str, help="Override top module")
 @click.option("--search-path", "search_paths", multiple=True, type=click.Path(path_type=Path), help="Additional search paths for import resolution (can be repeated)")
 @click.option("--top-style", type=click.Choice([e.value for e in TopStyle], case_sensitive=False), default=TopStyle.FLAT.value, help="Top-level emission style: subckt (default) or flat (comment wrappers)")
-def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose: bool, top: Optional[str], search_paths: Optional[List[Path]], top_style: str) -> None:
+@click.pass_context
+def netlist_cmd(ctx: click.Context, input: Path, output: Optional[Path], json_output: bool, verbose: bool, top: Optional[str], search_paths: Optional[List[Path]], top_style: str) -> None:
     exit_code = 0
     diagnostics: List[Diagnostic] = []
     artifact_path: Optional[Path] = None
 
     try:
+        configure_logging(
+            verbose=verbose,
+            debug=ctx.obj.get("debug", False),
+            trace=ctx.obj.get("trace", False),
+            log_file=ctx.obj.get("log_file"),
+            log_json=ctx.obj.get("log_json"),
+        )
+        log = get_logger("cli")
         elaborator = Elaborator()
-        if verbose:
-            click.echo("[imports] resolving…")
+        log.info("[imports] resolving…")
         elaborated_file, elab_diags = elaborator.elaborate_with_imports(
             input, search_paths=list(search_paths) if search_paths else None, top=top
         )
@@ -39,15 +48,13 @@ def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose:
         if elaborated_file is None:
             exit_code = 1
         else:
-            if verbose:
-                click.echo("[validate] running structural checks…")
+            log.info("[validate] running structural checks…")
             validator = ASDLValidator()
             diagnostics.extend(validator.validate_file(elaborated_file))
             
             # If there are any prior ERROR diagnostics, skip generation
             if not has_error(diagnostics):
-                if verbose:
-                    click.echo("[generate] writing SPICE netlist…")
+                log.info("[generate] writing SPICE netlist…")
                 gen_options = GeneratorOptions(top_style=TopStyle(top_style))
                 generator = SPICEGenerator(options=gen_options)
                 netlist_str, generator_diags = generator.generate(elaborated_file)
@@ -68,8 +75,8 @@ def netlist_cmd(input: Path, output: Optional[Path], json_output: bool, verbose:
             click.echo(json.dumps(payload, indent=2))
         else:
             print_human_diagnostics(diagnostics, click.echo)
-            if verbose and artifact_path:
-                click.echo(f"netlist written to: {artifact_path}")
+            if artifact_path:
+                log.info(f"netlist written to: {artifact_path}")
 
     except click.ClickException as e:
         exit_code = 2
