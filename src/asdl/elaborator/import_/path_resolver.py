@@ -13,8 +13,8 @@ from typing import List, Optional
 class PathResolver:
     """Handles ASDL_PATH resolution and file discovery."""
     
-    # Built-in default search paths
-    DEFAULT_SEARCH_PATHS = [".", "libs", "third_party"]
+    # Built-in default search paths (minimal policy)
+    DEFAULT_SEARCH_PATHS = ["."]
     
     def __init__(self):
         """Initialize path resolver."""
@@ -26,30 +26,22 @@ class PathResolver:
         config_paths: Optional[List[str]] = None
     ) -> List[Path]:
         """
-        Get search paths in resolution order: CLI → config → env → defaults.
+        Get search paths in resolution order: env → defaults.
         
         Args:
-            cli_paths: Optional CLI-provided search paths (highest priority)
-            config_paths: Optional config file search paths
+            cli_paths: Deprecated; ignored.
+            config_paths: Deprecated; ignored.
             
         Returns:
             List of search paths in priority order
         """
-        search_paths = []
+        search_paths: List[Path] = []
         
-        # 1. CLI arguments (highest priority)
-        if cli_paths:
-            search_paths.extend([Path(p) for p in cli_paths])
-        
-        # 2. Config file paths
-        if config_paths:
-            search_paths.extend([Path(p) for p in config_paths])
-        
-        # 3. Environment variable ASDL_PATH
+        # 1. Environment variable ASDL_PATH
         env_paths = self._parse_asdl_path()
         search_paths.extend(env_paths)
         
-        # 4. Built-in defaults (lowest priority)
+        # 2. Built-in defaults (lowest priority)
         search_paths.extend([Path(p) for p in self.DEFAULT_SEARCH_PATHS])
         
         return search_paths

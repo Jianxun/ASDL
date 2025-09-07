@@ -67,34 +67,24 @@ class TestPathResolver:
         asdl_path_entries = paths[:3]  # First 3 should be from ASDL_PATH
         assert asdl_path_entries == expected_paths
     
-    def test_search_path_resolution_order(self):
+    def test_search_path_env_then_default(self):
         """
-        T1.3.3: Search Path Resolution Order
-        TESTS: CLI args → config → environment → defaults precedence
-        VALIDATES: Proper resolution order is maintained
-        ENSURES: Higher priority paths come first
+        T1.3.3: Search Path Resolution Order (ASDL_PATH-only policy)
+        TESTS: Environment → default precedence
+        VALIDATES: ASDL_PATH entries precede fallback '.' and exclude legacy defaults
         """
-        # Test with all sources
-        cli_paths = ["/cli/path1", "/cli/path2"]
-        config_paths = ["/config/path1", "/config/path2"]
         env_path = "/env/path1:/env/path2"
         
         with patch.dict(os.environ, {'ASDL_PATH': env_path}):
             with patch('os.name', 'posix'):
-                paths = self.resolver.get_search_paths(
-                    cli_paths=cli_paths,
-                    config_paths=config_paths
-                )
+                paths = self.resolver.get_search_paths()
         
-        # Should be: CLI, config, env, defaults
-        assert paths[:2] == [Path("/cli/path1"), Path("/cli/path2")]
-        assert paths[2:4] == [Path("/config/path1"), Path("/config/path2")]
-        assert paths[4:6] == [Path("/env/path1"), Path("/env/path2")]
-        
-        # Check built-in defaults are at the end
-        assert Path(".") in paths
-        assert Path("libs") in paths
-        assert Path("third_party") in paths
+        # Should be: env, then fallback '.' only
+        assert paths[:2] == [Path("/env/path1"), Path("/env/path2")]
+        assert paths[-1] == Path(".")
+        # Ensure legacy defaults are not present
+        assert Path("libs") not in paths
+        assert Path("third_party") not in paths
     
     def test_file_discovery_and_probing(self):
         """
@@ -149,16 +139,13 @@ class TestPathResolver:
     def test_built_in_defaults_included(self):
         """
         T1.3.6: Built-in Default Paths
-        TESTS: Built-in search paths are always included
-        VALIDATES: Default paths (./,  ./libs, ./third_party) present
-        ENSURES: Fallback paths exist when no other configuration
+        TESTS: Built-in search paths are included as minimal fallback
+        VALIDATES: Default path is only '.' when no ASDL_PATH is set
+        ENSURES: Fallback path exists when no other configuration
         """
         # Clear environment to test defaults only
         with patch.dict(os.environ, {}, clear=True):
             paths = self.resolver.get_search_paths()
         
-        # Check that built-in defaults are present
-        path_strings = [str(p) for p in paths]
-        assert "." in path_strings or str(Path(".")) in path_strings
-        assert "libs" in path_strings or str(Path("libs")) in path_strings  
-        assert "third_party" in path_strings or str(Path("third_party")) in path_strings
+        # Check that only '.' is present as default
+        assert paths == [Path(".")]
