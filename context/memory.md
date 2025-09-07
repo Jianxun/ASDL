@@ -37,15 +37,15 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - **Diagnostic Suppression**: Several diagnostic codes temporarily suppressed for clean compile experience (see `context/archive/2025-01-27_diagnostic_suppression_implementation.md`)
 
 ## Current Focus Areas
-- **CLI Enhancement**: Add missing features like `--search-path` arguments and import resolution
+- **CLI Enhancement**: Simplify flags; imports resolve via `ASDL_PATH` (no `--search-path`)
 - **Integration Testing**: End-to-end pipeline validation with real circuit examples
 - **Documentation**: Import system usage guide and best practices
 - **Schema Generation**: Ensure JSON/Text schema fully reflects current data structures (`PortType`, etc.)
 - **Validator Refactor Follow-ups**: Migrate integration tests to new V-codes, add missing diagnostics
-- **Environment Variable Support**: Implemented in elaboration; `${VAR}` resolved in parameters
+- **Environment Variable Support**: Implemented in elaboration; `${VAR}` resolved in parameters and primitive `spice_template`
   - Diagnostics: E0501 (missing env), E0502 (invalid format)
   - Resolver: `EnvVarResolver` (separate from `VariableResolver`)
-  - Wired in `Elaborator` for module and instance parameters
+  - Wired in `Elaborator` for module/instance parameters and for module `spice_template`
 
 ## Logging System Phase 1 – Implemented
 **Branch**: `feature/logging_system_phase1`
@@ -97,6 +97,15 @@ spice_template: |
   .temp {temp}
 ```
 
+## Session – 2025-09-07 Examples & Heuristics
+
+- Variable resolver heuristic refined: only case-insensitive exact name clashes trigger E108. Identifier-like strings (e.g., source names) are no longer misinterpreted as variables.
+- Environment variable substitution extended to primitive `spice_template` strings: `${VAR}` now resolved during elaboration.
+- Example libraries:
+  - Added `examples/libs/ota_single_ended/ota_5t/ota_5t_pin.asdl` (PMOS input pair, NMOS mirror load, PMOS tail). Naming convention preserves `tail` node; sizing reflects PMOS≈2× NMOS.
+  - Updated `examples/libs/ota_single_ended/tb/tb_ota_5t.asdl` to test PMOS-input OTA; corrected bias polarity and import/model aliasing.
+- Verified netlisting; unresolved placeholder G0305 eliminated when `PDK_ROOT` is set.
+
 ## Next Session Plan
 - Add tracing/logging for import resolution and model resolution
   - Verbose option in CLI to surface search paths, resolved files, and alias mapping
@@ -133,3 +142,20 @@ spice_template: |
 - **Data Structures and Parser Updates**: See `context/archive/2025-01-27_data_structures_parser_updates.md`
 - **Test Suite Fixes**: See `context/archive/2025-01-27_test_suite_fixes_complete.md`
 - **Diagnostic Suppression Implementation**: See `context/archive/2025-01-27_diagnostic_suppression_implementation.md`
+
+## Import System Update – Search Path Policy
+**Date**: 2025-09-07  
+**Branch**: `feature/import_refactor_paths`  
+**Change**:
+- Import search paths now resolve from `ASDL_PATH` only, with fallback to `.`
+- Removed CLI flag `--search-path`; CLI no longer passes search paths
+- `PathResolver.DEFAULT_SEARCH_PATHS = ["."]`; legacy defaults (`libs`, `third_party`) removed
+- Diagnostics E0441 suggestion text updated to reference `ASDL_PATH` (no CLI flag)
+
+**Rationale**:
+- Simplify mental model and commands; ensure portability via environment
+- Keep programmatic API override available (`search_paths` param) without CLI exposure
+
+**Follow-ups**:
+- Add tracing to log effective search roots and probe candidates
+- Update docs and examples to export `ASDL_PATH` (see `examples/setup.sh`)

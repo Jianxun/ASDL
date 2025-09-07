@@ -2,7 +2,7 @@
 
 ## Current Status
 - Phase 1.2 MVP complete; enhancements through 1.2.6 shipped (2025-08-25)
-- Core components integrated; CLI supports `--search-path`; diagnostics E0441–E0445 active
+- Core components integrated; imports resolve via `ASDL_PATH` (CLI `--search-path` removed); diagnostics E0441–E0445 active
 - Quality warnings added: I0601 (unused import), I0602 (unused model_alias)
 
 ## Recent Enhancements

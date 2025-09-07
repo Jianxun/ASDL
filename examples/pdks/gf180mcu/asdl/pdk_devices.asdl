@@ -5,10 +5,10 @@ modules:
   pdk_model:
     ports: {}
     spice_template: |
-      .include models/design.ngspice
-      .lib models/sm141064.ngspice {corner}
+      .include ${PDK_MODEL_PATH}/design.ngspice
+      .lib ${PDK_MODEL_PATH}/sm141064.ngspice {corner}
     parameters:
-      corner: typical
+      corner: typical 
 
 
   nfet_03v3:

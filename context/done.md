@@ -35,6 +35,14 @@ _This file archives major completed tasks so they don't clutter active todo list
   - Fixed `.lib` path typo in `examples/libs/gf180mcu.asdl`
 
 # Completed Tasks Archive
+## 2025-09-07: Examples & Env Vars
+- Extended environment variable resolution to `spice_template` for primitive modules (E0501/E0502 diagnostics on missing/invalid tokens).
+- Refined variable resolver heuristic to avoid false E108 on identifier-like strings used as literals.
+- Added PMOS-input OTA example `examples/libs/ota_single_ended/ota_5t/ota_5t_pin.asdl`:
+  - PMOS differential pair; NMOS mirror load; PMOS tail.
+  - Preserved `tail` naming convention across polarities.
+  - Sizing: PMOS≈2× NMOS; mirror ratio 1:2 maintained.
+- Updated testbench `examples/libs/ota_single_ended/tb/tb_ota_5t.asdl` to test PMOS version and corrected bias polarity.
 
 ## 2025-08-30: Test Suite Fixes - Round 1 Complete
 - **Integration Test Restoration**: Fixed `test_mixed_design.py` to pass

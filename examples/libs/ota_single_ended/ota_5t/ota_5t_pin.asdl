@@ -1,0 +1,42 @@
+file_info:
+  top_module: ota_5t_pin
+  doc: "Classic 5-transistor OTA: PMOS differential pair, NMOS mirror load, PMOS tail."
+
+imports:
+  std: pdk_std_tile.asdl
+
+model_alias:
+  nmos: std.MN_L1_W1_F2_SVT
+  pmos: std.MP_L1_W1_F2_SVT
+
+modules:
+  ota_5t_pin:
+    doc: "Classic 5-transistor OTA: PMOS differential pair, NMOS mirror load, PMOS tail."
+    ports:
+      vin_<p,n>: { dir: in, type: signal }
+      vout: { dir: out, type: signal }
+      vdd:  { dir: in, type: power }
+      vss:  { dir: in, type: ground }
+      ibias: { dir: in, type: bias } # connected to pmos diode, sources tail current from vdd
+    internal_nets:
+      - tail # common source node of the PMOS differential pair
+      - vd   # diode/reference node for the NMOS mirror load
+    variables:
+      M_in: 2      # PMOS input pair sized 2x for inversion parity
+      M_load: 1    # NMOS mirror load baseline size
+      M_dio: 2     # PMOS diode device doubled vs NMOS to match inversion
+      M_tail: 4    # 1:2 mirror relative to diode (maintain nin ratio with PMOS scaling)
+    instances:
+      # NMOS current mirror load (diode-connected ref + mirrored active load)
+      mn_ref: { model: nmos, mappings: { D: vd, G: vd, S: vss, B: vss }, parameters: { m: M_load } }
+      mn_mirror: { model: nmos, mappings: { D: vout, G: vd, S: vss, B: vss }, parameters: { m: M_load } }
+
+      # PMOS differential pair (sources tied to 'tail')
+      mp_in_p: { model: pmos, mappings: { D: vd,   G: vin_p, S: tail, B: vdd }, parameters: { m: M_in } }
+      mp_in_n: { model: pmos, mappings: { D: vout, G: vin_n, S: tail, B: vdd }, parameters: { m: M_in } }
+
+      # PMOS tail bias (diode for bias reference + tail sourcing device)
+      mp_diode: { model: pmos, mappings: { D: ibias, G: ibias, S: vdd, B: vdd }, parameters: { m: M_dio } }
+      mp_tail:  { model: pmos, mappings: { D: tail,  G: ibias, S: vdd, B: vdd }, parameters: { m: M_tail } }
+
+

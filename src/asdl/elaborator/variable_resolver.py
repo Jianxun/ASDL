@@ -125,7 +125,8 @@ class VariableResolver:
             return resolved_value, diagnostics
         
         # Check if it looks like a variable reference but isn't defined
-        # This helps catch typos in variable names
+        # This helps catch typos in variable names. Be conservative to avoid
+        # flagging legitimate literal strings (e.g., device/source names).
         if self._looks_like_variable_reference(str_value, variables):
             diagnostics.append(
                 self._create_diagnostic(
@@ -144,9 +145,10 @@ class VariableResolver:
         """
         Heuristic to detect if a value looks like it was intended to be a variable reference.
         
-        This helps catch common typos in variable names by detecting values that:
-        - Are similar to defined variable names (simple case matching)
-        - Follow variable naming conventions but aren't defined
+        This helps catch common typos in variable names by detecting values that
+        are similar to defined variable names (simple case-insensitive match).
+        We intentionally avoid flagging generic identifier-like strings because
+        parameters may legitimately use plain strings (e.g., source/device names).
         
         Args:
             value: String value to check
@@ -158,20 +160,12 @@ class VariableResolver:
         if not value or not variables:
             return False
             
-        # Check for case-insensitive matches (common typo)
+        # Check for case-insensitive exact matches (common typo)
         value_lower = value.lower()
         for var_name in variables.keys():
             if var_name.lower() == value_lower and var_name != value:
                 return True
-                
-        # Check if value follows variable naming conventions
-        # (starts with letter, contains only letters/numbers/underscores)
-        import re
-        if re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', value):
-            # Looks like a valid identifier, but not too generic
-            if len(value) > 1 and not value.isdigit():
-                return True
-                
+
         return False
 
     def _create_diagnostic(

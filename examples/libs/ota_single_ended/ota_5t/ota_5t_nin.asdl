@@ -1,5 +1,5 @@
 file_info:
-  top_module: ota_5t
+  top_module: ota_5t_nin
   doc: "Classic 5-transistor OTA: NMOS differential pair, PMOS mirror load, NMOS tail."
 
 imports:
@@ -16,7 +16,7 @@ modules:
       vout: { dir: out, type: signal }
       vdd:  { dir: in, type: power }
       vss:  { dir: in, type: ground }
-      ibias: { dir: in, type: bias }
+      ibias: { dir: in, type: bias } # connected to nmos diode, accepts 50uA nominal current
     internal_nets:
       - tail # tail node of the differential pair
       - vd # diode node of the current mirror load

@@ -1,0 +1,50 @@
+* SPICE netlist generated from ASDL
+* Design: Classic 5-transistor OTA: PMOS differential pair, NMOS mirror load, PMOS tail.
+* Top module: ota_5t_pin
+* Author: None
+* Date: None
+* Revision: None
+
+* Hierarchical module subcircuit definitions
+* Classic 5-transistor OTA: PMOS differential pair, NMOS mirror load, PMOS tail.
+* .subckt ota_5t_pin vin_p vin_n vout vdd vss ibias
+X_mn_ref vd vd vss vss nfet_03v3 L=0.28u W=3u nf=2 m=1
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+X_mn_mirror vout vd vss vss nfet_03v3 L=0.28u W=3u nf=2 m=1
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+X_mp_in_p vd vin_p tail vdd pfet_03v3 L=0.28u W=3u nf=2 m=2
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+X_mp_in_n vout vin_n tail vdd pfet_03v3 L=0.28u W=3u nf=2 m=2
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+X_mp_diode ibias ibias vdd vdd pfet_03v3 L=0.28u W=3u nf=2 m=2
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+X_mp_tail tail ibias vdd vdd pfet_03v3 L=0.28u W=3u nf=2 m=4
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+* .ends
+
+
+.end
