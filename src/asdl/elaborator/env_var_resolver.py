@@ -72,4 +72,63 @@ class EnvVarResolver:
 
         return resolved, diagnostics
 
+    def resolve_in_template(
+        self,
+        *,
+        template: str,
+        owner_name: str,
+        owner_kind: str,  # "module" | "instance"
+        locatable: Optional[Locatable] = None,
+    ) -> Tuple[str, List]:
+        """
+        Resolve environment variables in a SPICE template string.
+
+        Rules mirror resolve_in_parameters:
+        - Only resolves exact tokens of the form `${VAR}` (full-string match is not required; tokens can appear within the template string).
+        - If a `${VAR}` is found but the environment variable is missing, emit E0501 and leave the token unchanged.
+        - If `$` appears in an invalid `${...}` format, emit E0502 and leave as-is.
+        """
+        diagnostics: List = []
+        if not isinstance(template, str) or "$" not in template:
+            return template, diagnostics
+
+        # Replace all occurrences of ${VAR} while collecting diagnostics for missing vars
+        def _replace(match: re.Match) -> str:
+            var_name = match.group(1)
+            env_value = os.environ.get(var_name)
+            if env_value is None:
+                diagnostics.append(
+                    create_elaborator_diagnostic(
+                        "E0501",
+                        location=locatable,
+                        var_name=var_name,
+                        param_name="spice_template",
+                        owner_name=owner_name,
+                        owner_kind=owner_kind,
+                    )
+                )
+                return match.group(0)
+            return env_value
+
+        # First pass: valid pattern replacements for any occurrence of ${VAR}
+        any_valid_token = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+        new_template = any_valid_token.sub(_replace, template)
+
+        # Second pass: if any remaining '$' patterns that look like `${...}` but invalid, flag E0502
+        # Detect `${...}` with invalid identifier
+        invalid_token_pattern = re.compile(r"\$\{([^}]*)\}")
+        for invalid in invalid_token_pattern.findall(new_template):
+            if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", invalid or ""):
+                diagnostics.append(
+                    create_elaborator_diagnostic(
+                        "E0502",
+                        location=locatable,
+                        param_name="spice_template",
+                        owner_name=owner_name,
+                        owner_kind=owner_kind,
+                    )
+                )
+
+        return new_template, diagnostics
+
 

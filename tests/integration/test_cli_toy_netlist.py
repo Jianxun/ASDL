@@ -1,10 +1,12 @@
 """
-CLI integration test for toy example with search-path and top module override.
+CLI integration test for toy example using ASDL_PATH and top module override.
 """
 
 import sys
 from pathlib import Path
+import os
 import subprocess
+import pytest
 
 
 def test_cli_toy_netlist_runs_and_emits_error_for_bad_model(tmp_path: Path):
@@ -13,13 +15,17 @@ def test_cli_toy_netlist_runs_and_emits_error_for_bad_model(tmp_path: Path):
     toy_dir = repo_root / "examples" / "imports" / "toy"
     top_asdl = toy_dir / "top.asdl"
 
-    # Ensure the toy example is present
-    assert top_asdl.exists()
+    # Ensure the toy example is present; skip if the repo doesn't include it
+    if not top_asdl.exists():
+        pytest.skip("toy example not present in this checkout")
 
-    # Invoke CLI; do not pass --top (uses file's top) and use toy dir as search path
+    # Invoke CLI; set ASDL_PATH to toy dir (no CLI search-path)
+    env = dict(**os.environ)
+    env["ASDL_PATH"] = str(toy_dir)
     proc = subprocess.run(
-        [str(asdl_exe), "netlist", str(top_asdl), "--search-path", str(toy_dir)],
+        [str(asdl_exe), "netlist", str(top_asdl)],
         cwd=str(repo_root),
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

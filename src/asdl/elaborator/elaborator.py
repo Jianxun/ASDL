@@ -110,6 +110,17 @@ class Elaborator:
             diagnostics.extend(env_diags)
             module_copy = replace(module_copy, parameters=resolved_params)
 
+        # Resolve environment variables inside primitive spice_template, if present
+        if module_copy.spice_template:
+            resolved_tpl, tpl_diags = self.env_var_resolver.resolve_in_template(
+                template=module_copy.spice_template,
+                owner_name=module_name,
+                owner_kind="module",
+                locatable=module_copy,
+            )
+            diagnostics.extend(tpl_diags)
+            module_copy = replace(module_copy, spice_template=resolved_tpl)
+
         # Only expand instances if the module actually has instances (preserve None for primitives)
         if module_copy.instances is not None:
             expanded_instances, instance_diagnostics = self._expand_instances(module_copy.instances)
