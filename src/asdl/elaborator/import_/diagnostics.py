@@ -43,8 +43,7 @@ class ImportDiagnostics:
         
         suggestion = (
             "Check that the file path is correct and the file exists. "
-            "Ensure ASDL_PATH environment variable includes the directory containing the file, "
-            "or use --search-path CLI argument to specify additional search directories."
+            "Ensure the ASDL_PATH environment variable includes the directory containing the file."
         )
         
         return Diagnostic(

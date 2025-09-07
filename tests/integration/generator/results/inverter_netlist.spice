@@ -8,8 +8,8 @@
 * Hierarchical module subcircuit definitions
 * Basic CMOS inverter with PMOS pull-up and NMOS pull-down
 .subckt inverter 
-  * ERROR G0401: unknown model 'pmos_unit'
-  * ERROR G0401: unknown model 'nmos_unit'
+* ERROR G0401: unknown model 'pmos_unit'
+* ERROR G0401: unknown model 'nmos_unit'
 .ends
 
 

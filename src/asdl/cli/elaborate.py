@@ -20,9 +20,8 @@ from .helpers import diagnostics_to_jsonable, has_error, print_human_diagnostics
 @click.option("--json", "json_output", is_flag=True, help="Emit machine-readable JSON to stdout")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose logs (INFO level)")
 @click.option("--top", type=str, help="Override top module")
-@click.option("--search-path", "search_paths", multiple=True, type=click.Path(path_type=Path), help="Additional search paths for import resolution (can be repeated)")
 @click.pass_context
-def elaborate_cmd(ctx: click.Context, input: Path, output: Optional[Path], fmt: str, json_output: bool, verbose: bool, top: Optional[str], search_paths: Optional[List[Path]]) -> None:
+def elaborate_cmd(ctx: click.Context, input: Path, output: Optional[Path], fmt: str, json_output: bool, verbose: bool, top: Optional[str]) -> None:
     exit_code = 0
     diagnostics: List[Diagnostic] = []
     artifact_path: Optional[Path] = None
@@ -40,9 +39,7 @@ def elaborate_cmd(ctx: click.Context, input: Path, output: Optional[Path], fmt: 
         log.info("[parse] reading input…")
         elaborator = Elaborator()
         log.info("[imports] resolving…")
-        elaborated_file, elab_diags = elaborator.elaborate_with_imports(
-            input, search_paths=list(search_paths) if search_paths else None, top=top
-        )
+        elaborated_file, elab_diags = elaborator.elaborate_with_imports(input, top=top)
         diagnostics.extend(elab_diags)
         if elaborated_file is None:
             exit_code = 1
