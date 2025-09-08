@@ -43,6 +43,9 @@ class ImportCoordinator:
         log = get_logger("elaborator.imports")
         diagnostics: List[Diagnostic] = []
 
+        # Normalize main file path to absolute for consistent identity across components
+        main_file_path = main_file_path.resolve()
+
         # Parse main file
         log.debug(f"Parsing main file: {main_file_path}")
         main_file, parse_diags = self.parser.parse_file(str(main_file_path))

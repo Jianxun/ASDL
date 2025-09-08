@@ -7,6 +7,8 @@ the FileLoader while avoiding duplicate circular checks outside the loader.
 
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Set
+import json
+import os
 
 from ...data_structures import ASDLFile
 from ...diagnostics import Diagnostic
@@ -45,6 +47,9 @@ class DependencyGraphBuilder:
         graph = ImportGraph()
         alias_map: AliasResolutionMap = {}
         loaded_files: Dict[Path, ASDLFile] = {}
+
+        # Normalize main file path to absolute for consistent identity
+        main_file_path = main_file_path.resolve()
 
         if search_paths is None:
             search_paths = self.path_resolver.get_search_paths()
@@ -128,13 +133,6 @@ class DependencyGraphBuilder:
                 diagnostics.append(diag)
                 continue
 
-            # Check for circular dependency before using cache
-            if resolved_path in loading_stack + [current_path]:
-                cycle_stack = loading_stack + [current_path, resolved_path]
-                diagnostics.append(self.diagnostics.create_circular_import_error(cycle_stack))
-                # Do not proceed to load in cycle
-                continue
-
             # Add edge in graph
             graph.edges.setdefault(current_path, set()).add(resolved_path)
 
@@ -173,3 +171,96 @@ class DependencyGraphBuilder:
             )
 
 
+
+
+# --- Serialization helpers ----------------------------------------------------
+
+def _format_path_for_export(path: Path, base_dir: Optional[Path]) -> str:
+    """Format a path as relative to base_dir when provided, else as absolute.
+
+    Args:
+        path: Absolute path to format
+        base_dir: Optional base directory to relativize paths against
+
+    Returns:
+        String path suitable for human-readable artifacts
+    """
+    if base_dir is None:
+        return str(path)
+    try:
+        # Normalize to resolved absolute paths to avoid symlink prefix issues
+        abs_path = path.resolve()
+        abs_base = base_dir.resolve()
+        return os.path.relpath(str(abs_path), str(abs_base))
+    except Exception:
+        return str(path)
+
+
+def export_import_graph(
+    graph: ImportGraph,
+    alias_map: AliasResolutionMap,
+    base_dir: Optional[Path] = None,
+    include_absolute: bool = False,
+) -> Dict:
+    """Serialize the import dependency graph and alias map to a dict.
+
+    Args:
+        graph: ImportGraph built by DependencyGraphBuilder
+        alias_map: AliasResolutionMap keyed by absolute paths
+        base_dir: If provided, emit relative paths w.r.t. this directory
+        include_absolute: When True, include absolute paths alongside relative
+
+    Returns:
+        A JSON-serializable dict with nodes, edges, and alias_map
+    """
+    payload_nodes: List[Dict] = []
+    for abs_path, node in graph.nodes.items():
+        entry = {
+            "path": _format_path_for_export(abs_path, base_dir),
+            "num_modules": len(node.asdl_file.modules or {}),
+        }
+        if include_absolute:
+            entry["abs_path"] = str(abs_path)
+        payload_nodes.append(entry)
+
+    payload_edges: List[Dict] = []
+    for src_abs, dest_set in graph.edges.items():
+        for dest_abs in dest_set:
+            edge = {
+                "from": _format_path_for_export(src_abs, base_dir),
+                "to": _format_path_for_export(dest_abs, base_dir),
+            }
+            if include_absolute:
+                edge["from_abs"] = str(src_abs)
+                edge["to_abs"] = str(dest_abs)
+            payload_edges.append(edge)
+
+    payload_alias: Dict[str, Dict[str, Optional[str]]] = {}
+    for file_abs, alias_map_for_file in alias_map.items():
+        file_key = _format_path_for_export(file_abs, base_dir)
+        payload_alias[file_key] = {}
+        for alias, target_abs in alias_map_for_file.items():
+            payload_alias[file_key][alias] = (
+                _format_path_for_export(target_abs, base_dir) if target_abs else None
+            )
+
+    result = {
+        "version": 1,
+        "base_dir": str(base_dir.resolve()) if base_dir else None,
+        "nodes": payload_nodes,
+        "edges": payload_edges,
+        "alias_map": payload_alias,
+    }
+    return result
+
+
+def export_import_graph_json(
+    graph: ImportGraph,
+    alias_map: AliasResolutionMap,
+    base_dir: Optional[Path] = None,
+    include_absolute: bool = False,
+    indent: int = 2,
+) -> str:
+    """Serialize the import dependency graph to a JSON string."""
+    data = export_import_graph(graph, alias_map, base_dir=base_dir, include_absolute=include_absolute)
+    return json.dumps(data, indent=indent)
