@@ -35,7 +35,7 @@
 
 ## Phase 4 – Tracing/Docs/Tests (Backlog)
 - Wire TRACE logs across graph/validator/flattener: effective paths, per-import probes, alias→path maps, cycle stacks, collisions.
-- Tests: precedence; E0441 probe contents vs E0446 load errors; alias-usage tracking; path-identity resolution.
+- Tests: precedence; E0441 probe contents vs E0446 load errors; alias-usage tracking; path-identity resolution; import graph export.
 - Docs: update import orchestration, search path policy (ASDL_PATH-only), and troubleshooting; README added under `import_/`.
 
 ## Actionable Checklist
@@ -50,3 +50,4 @@
 - [ ] Update docs and add focused tests.
 - [ ] Prepend importing file directory to search roots (per import).
 - [ ] Add `E0447` ambiguous import diagnostic and tests.
+ - [x] Add JSON export for dependency graph (relative path support) with unit test.

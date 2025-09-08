@@ -77,6 +77,13 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - Diagnostics: Added `E0446` for load/parse failures; `FileLoader` emits `E0441` for not found, `E0442` for cycles (resolved-stack fix), `E0446` for parse.
 - Behavior: Precedence is local-over-import with shadowing warning; determinism sorting intentionally skipped for now.
 
+### 2025-09-08 – Import Graph Export & Cycle Detection Consolidation
+- Added dependency graph JSON export helpers: `export_import_graph` and `export_import_graph_json` (relative paths with optional absolute).
+- Implemented path normalization: coordinator and graph builder resolve `main_file_path` to absolute for consistent identity.
+- Consolidated cycle detection: removed builder pre-check; `FileLoader` is the single source of E0442.
+- Added unit test: `tests/unit_tests/elaborator/test_import_graph_export.py` validating relative path export.
+- Generator readability: set `SPICEGenerator.indent` to two spaces; generator unit tests now pass.
+
 ## Logging System Phase 1 – Implemented
 **Branch**: `feature/logging_system_phase1`
 
