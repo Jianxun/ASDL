@@ -47,6 +47,14 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
   - Resolver: `EnvVarResolver` (separate from `VariableResolver`)
   - Wired in `Elaborator` for module/instance parameters and for module `spice_template`
 
+### 2025-09-08 – Elaborator Diagnostics Migration (XCCSS) and Tests
+- Decision: Merge import-phase diagnostics under Elaborator `E` codes (no separate `I` component). Updated design doc to reflect `E04xx` (Reference) and `E06xx` (Style) for import.
+- Implemented: Centralized Elaborator diagnostics in `src/asdl/elaborator/diagnostics.py` with XCCSS codes and legacy mapping.
+  - Added: E0101–E0105, E0301–E0302, E0402, E0501–E0502; documented E0441–E0446, E0601–E0602 in design doc.
+  - Refactored: `pattern_expander.py`, `variable_resolver.py`, `elaborator.py` now use `create_elaborator_diagnostic()` with template params.
+  - Tests: Added per-code unit tests under `tests/unit_tests/elaborator/` and removed overlapping legacy diagnostic tests. Elaborator unit tests: all passing.
+- Follow-ups: Migrate import resolver call sites to the new `E04xx/E06xx` codes with a thin compatibility layer; add per-code import tests; address generator/integration test failures separately; consider skipping archived example tests.
+
 ## Logging System Phase 1 – Implemented
 **Branch**: `feature/logging_system_phase1`
 
@@ -130,7 +138,7 @@ spice_template: |
 
 ## Project Status: Production Ready 🎉
 - **All Major Components**: Parser, Elaborator, Validator, Generator, Import System - all working correctly
-- **Test Coverage**: 136/136 unit tests passing (100% success rate)
+- **Test Coverage**: Elaborator unit tests passing after XCCSS migration. Integration/generator suites have failures pending refactor alignment.
 - **Core Functionality**: `test.asdl` compiles cleanly into simulation-legal netlist
 - **Architecture**: Stable and well-organized with clear separation of concerns
 - **Documentation**: Comprehensive design documents and implementation guides available

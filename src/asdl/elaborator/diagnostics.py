@@ -20,6 +20,44 @@ from ..diagnostics import Diagnostic, DiagnosticSeverity
 
 # Diagnostic definitions for the Elaborator component
 ELABORATOR_DIAGNOSTICS: Dict[str, Tuple[str, str]] = {
+    # Syntax (E01xx) — pattern syntax issues
+    "E0101": (
+        "Empty Literal Pattern",
+        "Pattern in '{name}' is empty.",
+    ),
+    "E0102": (
+        "Single-Item Pattern",
+        "Pattern in '{name}' contains only a single item.",
+    ),
+    "E0103": (
+        "Empty Pattern Item",
+        "Pattern in '{name}' contains only empty items.",
+    ),
+    "E0104": (
+        "Invalid Bus Range",
+        "Bus range '{name}' has identical MSB and LSB.",
+    ),
+    "E0105": (
+        "Mixed Pattern Types",
+        "'{name}' contains both a literal ('<>') and bus ('[]') pattern.",
+    ),
+
+    # Semantic (E03xx) — pattern semantics
+    "E0301": (
+        "Pattern Count Mismatch",
+        "Pattern item counts must match: {expected} vs {found}.",
+    ),
+    "E0302": (
+        "Unmatched Net Pattern",
+        "Net pattern '{net_name}' requires matching port pattern or instance pattern.",
+    ),
+
+    # Reference (E04xx)
+    "E0402": (
+        "Undefined Variable",
+        "Parameter '{param_name}' in instance '{instance_name}' references undefined variable '{var_name}'. Available: {available}",
+    ),
+
     # Type (E05xx) — environment variable handling
     "E0501": (
         "Environment Variable Not Found",
@@ -64,6 +102,20 @@ def create_elaborator_diagnostic(
         suggestion: Optional suggestion text
         **template_params: Named parameters to fill into the message template
     """
+    # Backward-compatibility mapping from legacy short-form codes
+    LEGACY_MAP = {
+        "E100": "E0101",
+        "E101": "E0102",
+        "E104": "E0104",
+        "E105": "E0301",
+        "E106": "E0302",
+        "E107": "E0103",
+        "E108": "E0402",
+        "E103": "E0105",
+    }
+    if code in LEGACY_MAP:
+        code = LEGACY_MAP[code]
+
     if code not in ELABORATOR_DIAGNOSTICS:
         title = "Unknown Elaborator Diagnostic"
         details_template = "Diagnostic code {code} is not defined."

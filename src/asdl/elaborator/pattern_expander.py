@@ -3,6 +3,7 @@ import re
 
 from ..data_structures import Locatable
 from ..diagnostics import Diagnostic, DiagnosticSeverity
+from .diagnostics import create_elaborator_diagnostic
 
 
 class PatternExpander:
@@ -79,6 +80,7 @@ class PatternExpander:
                     "Empty Literal Pattern",
                     f"Pattern in '{name}' is empty.",
                     locatable,
+                    name=name,
                 )
             )
             return [name], diagnostics
@@ -93,6 +95,7 @@ class PatternExpander:
                     "Empty Pattern Item",
                     f"Pattern in '{name}' contains only empty items.",
                     locatable,
+                    name=name,
                 )
             )
 
@@ -103,6 +106,7 @@ class PatternExpander:
                     "Single Item Pattern",
                     f"Pattern in '{name}' contains only a single item.",
                     locatable,
+                    name=name,
                 )
             )
 
@@ -134,6 +138,7 @@ class PatternExpander:
                     "Invalid Bus Range",
                     f"Bus range '{name}' has identical MSB and LSB.",
                     locatable,
+                    name=name,
                 )
             )
             return [], diagnostics
@@ -181,6 +186,8 @@ class PatternExpander:
                             "E105",
                             "Pattern Count Mismatch",
                             f"Pattern item counts must match: {len(port_items)} vs {len(net_items)}",
+                            expected=len(port_items) if port_items else 0,
+                            found=len(net_items) if net_items else 0,
                         )
                     )
                     continue
@@ -196,6 +203,8 @@ class PatternExpander:
                                     "E105",
                                     "Pattern Count Mismatch",
                                     f"Instance pattern count {len(instance_items)} doesn't match port pattern count {len(port_items)}",
+                                    expected=len(instance_items) if instance_items else 0,
+                                    found=len(port_items) if port_items else 0,
                                 )
                             )
                             continue
@@ -248,6 +257,7 @@ class PatternExpander:
                             "E106",
                             "Unmatched Net Pattern",
                             f"Net pattern '{net_name}' requires matching port pattern or instance pattern",
+                            net_name=net_name,
                         )
                     )
             else:
@@ -315,12 +325,11 @@ class PatternExpander:
         title: str,
         details: str,
         locatable: Optional[Locatable] = None,
+        **template_params,
     ) -> Diagnostic:
         """Helper to create a diagnostic object with location info."""
-        return Diagnostic(
-            code=code,
-            title=title,
-            details=details,
-            severity=DiagnosticSeverity.ERROR, # Defaulting to ERROR for now
+        return create_elaborator_diagnostic(
+            code,
             location=locatable,
+            **template_params,
         )

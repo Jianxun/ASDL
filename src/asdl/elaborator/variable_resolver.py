@@ -2,6 +2,7 @@ from typing import List, Tuple, Dict, Any, Optional
 
 from ..data_structures import Instance, Locatable
 from ..diagnostics import Diagnostic, DiagnosticSeverity
+from .diagnostics import create_elaborator_diagnostic
 
 
 class VariableResolver:
@@ -128,13 +129,15 @@ class VariableResolver:
         # This helps catch typos in variable names. Be conservative to avoid
         # flagging legitimate literal strings (e.g., device/source names).
         if self._looks_like_variable_reference(str_value, variables):
+            available = ", ".join(variables.keys()) if variables else "none"
             diagnostics.append(
-                self._create_diagnostic(
+                create_elaborator_diagnostic(
                     "E108",
-                    "Undefined Variable",
-                    f"Parameter '{param_name}' in instance '{instance_name}' references undefined variable '{str_value}'. "
-                    f"Available variables: {', '.join(variables.keys()) if variables else 'none'}",
-                    locatable,
+                    location=locatable,
+                    param_name=param_name,
+                    instance_name=instance_name,
+                    var_name=str_value,
+                    available=available,
                 )
             )
         
@@ -175,11 +178,5 @@ class VariableResolver:
         details: str,
         locatable: Optional[Locatable] = None,
     ) -> Diagnostic:
-        """Helper to create a diagnostic object with location info."""
-        return Diagnostic(
-            code=code,
-            title=title,
-            details=details,
-            severity=DiagnosticSeverity.ERROR,
-            location=locatable,
-        )
+        """Deprecated: use create_elaborator_diagnostic directly."""
+        return create_elaborator_diagnostic(code, location=locatable)

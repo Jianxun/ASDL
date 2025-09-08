@@ -35,10 +35,9 @@ The new XCCSS system addresses these issues with the following goals:
 | Prefix | Component | Responsibility |
 |--------|-----------|----------------|
 | **P** | Parser | YAML parsing, document structure validation |
-| **E** | Elaborator | Pattern expansion, parameter resolution |
+| **E** | Elaborator | Import resolution, pattern expansion, parameter resolution |
 | **V** | Validator | Semantic validation, cross-reference checking |
 | **G** | Generator | Code generation, output formatting |
-| **I** | Importer | Import resolution, dependency management |
 | **S** | Schema | Schema validation, type checking |
 
 ### Category Classification
@@ -176,10 +175,26 @@ Diagnostic.create("P0201", location=loc, section="file_info")
 
 | New Code | Category | Description |
 |----------|----------|-------------|
-| E0101 | Syntax | Empty Pattern |
-| E0102 | Syntax | Single-Item Pattern |  
+| E0101 | Syntax | Empty Literal Pattern |
+| E0102 | Syntax | Single-Item Pattern |
+| E0103 | Syntax | Empty Pattern Item |
+| E0104 | Syntax | Invalid Bus Range |
+| E0105 | Syntax | Mixed Pattern Types |
 | E0301 | Semantic | Pattern Count Mismatch |
+| E0302 | Semantic | Unmatched Net Pattern |
+| E0303 | Semantic | Instance/Port Pattern Mismatch |
 | E0401 | Reference | Undefined Parameter |
+| E0402 | Reference | Undefined Variable |
+| E0441 | Reference | Import File Not Found |
+| E0442 | Reference | Circular Import Detected |
+| E0443 | Reference | Module Not Found in Import |
+| E0444 | Reference | Import Alias Not Found / Invalid Model Alias Reference |
+| E0445 | Reference | Model Alias Collision |
+| E0446 | Reference | Import File Load/Parse Failure |
+| E0501 | Type | Environment Variable Not Found |
+| E0502 | Type | Invalid Environment Variable Format |
+| E0601 | Style | Unused Import Alias |
+| E0602 | Style | Unused Model Alias |
 
 ## Benefits and Trade-offs
 

@@ -4,6 +4,7 @@ from dataclasses import replace
 
 from ..data_structures import ASDLFile, Module, Port, Locatable, Instance
 from ..diagnostics import Diagnostic, DiagnosticSeverity
+from .diagnostics import create_elaborator_diagnostic
 from .pattern_expander import PatternExpander
 from .variable_resolver import VariableResolver
 from .env_var_resolver import EnvVarResolver
@@ -283,12 +284,7 @@ class Elaborator:
         title: str,
         details: str,
         locatable: Optional[Locatable] = None,
+        **template_params,
     ) -> Diagnostic:
-        """Helper to create a diagnostic object with location info."""
-        return Diagnostic(
-            code=code,
-            title=title,
-            details=details,
-            severity=DiagnosticSeverity.ERROR, # Defaulting to ERROR for now
-            location=locatable,
-        )
+        """Helper to create a diagnostic object with location info (delegates to factory)."""
+        return create_elaborator_diagnostic(code, location=locatable, **template_params)

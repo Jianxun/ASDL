@@ -1,50 +1,11 @@
 # ASDL Import System – Import Phase Todos
 
-## Current Status
-- Phase 1.2 MVP complete; enhancements through 1.2.6 shipped (2025-08-25)
-- Core components integrated; imports resolve via `ASDL_PATH` (CLI `--search-path` removed); diagnostics E0441–E0445 active
-- Quality warnings added: I0601 (unused import), I0602 (unused model_alias)
-
-## Recent Enhancements
-- E0443/E0444 post-load validation of qualified instance references
-- E0441 includes explicit probe paths
-- CLI netlist gated: generation skipped when ERROR diagnostics exist
-- Unit tests updated; CLI toy integration test scaffolded
-
-## Remaining Work
-- Config file support for search paths (asdl.config.yaml)
-- Additional integration tests (toy variants, transitive scenarios)
-- Prune unreachable modules based on top/--top; deterministic module order
-- Documentation: user guide, import tutorial, ASDL_PATH best practices
-
-## Tracing & Logging (Next Session)
-- [ ] Structured tracing for import resolution
-  - [ ] Log search paths (ASDL_PATH, CLI --search-path) and probe order
-  - [ ] Log per-import alias resolution → absolute path mapping
-  - [ ] Log circular detection stack transitions
-- [ ] Model resolution trace
-  - [ ] Show how qualified refs `alias.module` are stripped and mapped via `model_alias`
-  - [ ] Emit a per-file alias table in verbose mode
-- [ ] CLI verbosity
-  - [ ] `--verbose` shows tracing; `--trace-imports` for focused import logs
-  - [ ] Optional `--trace-id` to group logs per run
-- [ ] Tests
-  - [ ] Unit: path resolver probe lists
-  - [ ] Integration: trace output contains expected lines for toy example
-
-## Tests
-- Unit: E0443/E0444 reference validation
-- Unit: E0441 probe paths in missing import diagnostics
-- Unit: Alias resolver validations and collisions
-- Integration: CLI toy netlist (complete and extend)
-
-## Notes
-- Simplicity-first: direct file path imports; ASDL_PATH resolution
-- Model names normalized during flattening; aliases applied pre-elaboration
-
----
 
 ## Analysis: Current Issues and Decisions
+
+### Diagnostic Consolidation (agreed)
+- Import-phase diagnostics are merged under the Elaborator component using `E`-prefixed XCCSS codes. There is no separate `I` Importer component.
+- Reference/category mapping remains the same: not-found, circular, alias/module resolution use `E04xx` (Reference); style/linting uses `E06xx` (Style).
 
 ### Identified brittleness/gaps
 - Module precedence mismatch: docs expect local modules to override imported; current code lets imported override local in flattening.
@@ -71,7 +32,7 @@
 ### Phase 1 – Behavior and diagnostics (low risk)
 - Change flatten precedence to prefer local modules; warn on conflicts.
 - Stabilize module order (sorted names) and imported traversal.
-- Fix qualified model-alias usage tracking bug; optionally re-enable unused import/alias warnings (I0601/I0602).
+- Fix qualified model-alias usage tracking bug; optionally re-enable unused import/alias warnings (E0601/E0602).
 - Split diagnostics: keep E0441 strictly for "file not found" with explicit probe candidates; introduce E0446 for load/parse failures.
 - Single cycle detection: rely on `FileLoader` to emit E0442; remove duplicate detection in orchestrator.
 
@@ -104,7 +65,7 @@
 - [ ] Remove CLI `--search-path` and related plumbing; keep programmatic `search_paths` API.
 - [ ] Flip flatten precedence to local-over-import; emit conflict warning.
 - [ ] Stabilize hoist/merge order; add unit tests for determinism.
-- [ ] Fix qualified alias usage tracking; consider enabling I0601/I0602.
+- [ ] Fix qualified alias usage tracking; consider enabling E0601/E0602.
 - [ ] Split diagnostics: strict E0441 with probe list; new E0446 for load/parse failures.
 - [ ] Use `alias_resolution_map` with absolute paths end-to-end; stop indexing by raw strings.
 - [ ] Drop `imports`/`model_alias` in flattened artifact; add flag to retain for debug.
