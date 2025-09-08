@@ -6,7 +6,7 @@ the FileLoader while avoiding duplicate circular checks outside the loader.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Set
 
 from ...data_structures import ASDLFile
 from ...diagnostics import Diagnostic
@@ -91,7 +91,29 @@ class DependencyGraphBuilder:
         alias_map.setdefault(current_path, {})
 
         for import_alias, import_path in current_file.imports.items():
-            resolved_path = self.path_resolver.resolve_file_path(import_path, search_paths)
+            # Effective roots: [dir(current_file)] + configured search_paths
+            importer_root = current_path.parent
+            effective_roots: List[Path] = [importer_root] + list(search_paths)
+
+            # Probe all candidates across effective roots
+            candidates: List[Path] = []
+            seen: Set[Path] = set()
+            for root in effective_roots:
+                candidate_path = (root / import_path).resolve()
+                if candidate_path.exists() and candidate_path.is_file():
+                    if candidate_path not in seen:
+                        candidates.append(candidate_path)
+                        seen.add(candidate_path)
+
+            if len(candidates) > 1:
+                diagnostics.append(
+                    self.diagnostics.create_ambiguous_import_error(import_alias, import_path, candidates)
+                )
+                # Record unresolved due to ambiguity
+                alias_map[current_path][import_alias] = None
+                continue
+
+            resolved_path = candidates[0] if candidates else None
             alias_map[current_path][import_alias] = resolved_path
             try:
                 log.trace(f"Resolve alias '{import_alias}': '{import_path}' -> {resolved_path}")
@@ -100,9 +122,17 @@ class DependencyGraphBuilder:
 
             if resolved_path is None:
                 # File not found with explicit probe list
-                probe_paths = self.path_resolver.get_probe_paths(import_path, search_paths)
+                # Build probe list using effective roots
+                probe_paths = [(root / import_path).resolve() for root in effective_roots]
                 diag = self.diagnostics.create_file_not_found_error(import_alias, import_path, probe_paths)
                 diagnostics.append(diag)
+                continue
+
+            # Check for circular dependency before using cache
+            if resolved_path in loading_stack + [current_path]:
+                cycle_stack = loading_stack + [current_path, resolved_path]
+                diagnostics.append(self.diagnostics.create_circular_import_error(cycle_stack))
+                # Do not proceed to load in cycle
                 continue
 
             # Add edge in graph

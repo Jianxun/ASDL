@@ -15,10 +15,14 @@
 - Precedence: local modules must override imported on conflicts and emit a shadowing warning.
 - Diagnostics: E0441 strictly for "not found" with explicit probe candidates; introduce E0446 for load/parse failures.
 - Post-hoist metadata (Phase 3): drop `imports`/`model_alias` by default; optional debug retention.
+- Relative paths: prepend the importing file's directory to the effective search roots per import, ahead of `ASDL_PATH` and fallback. Keep first-match-wins only when a single candidate exists.
+- Ambiguity policy: if multiple candidate files match an import, emit a hard error (new `E0447` Ambiguous Import Resolution) listing candidates and how to disambiguate.
 
 ## Phase 1 – Remaining Work
 - CLI: remove `--search-path` flag and plumbing (retain programmatic `search_paths`).
 - Optional: re-enable unused warnings with `E0601`/`E0602` behind a flag.
+- Implement importer-relative root: add `dir(importing_file)` to the front of effective roots during resolution.
+- Implement ambiguity detection and `E0447` when >1 candidate file exists for an import.
 
 ## Phase 2 – Path Identity Cleanup (Backlog)
 - Maintain `alias_resolution_map: file→{alias→resolved_abs_path}` and use it consistently end-to-end.
@@ -44,3 +48,5 @@
 - [ ] Drop `imports`/`model_alias` in flattened artifact; add debug-retain flag.
 - [x] Add tracing helpers for paths, probe candidates, alias maps, cycles, collisions.
 - [ ] Update docs and add focused tests.
+- [ ] Prepend importing file directory to search roots (per import).
+- [ ] Add `E0447` ambiguous import diagnostic and tests.

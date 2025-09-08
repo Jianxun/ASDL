@@ -263,3 +263,37 @@ class ImportDiagnostics:
             severity=DiagnosticSeverity.WARNING,
             suggestion="Remove the unused model_alias entry or update instances to use it."
         )
+
+    def create_ambiguous_import_error(
+        self,
+        import_alias: str,
+        import_path: str,
+        candidate_paths: List[Path]
+    ) -> Diagnostic:
+        """
+        Create E0447 diagnostic for ambiguous import resolution.
+
+        Args:
+            import_alias: Import alias being resolved
+            import_path: Relative path specified in imports
+            candidate_paths: List of matching files found across search roots
+
+        Returns:
+            Diagnostic with E0447 error code
+        """
+        candidates_list = "\n".join(f"  - {p}" for p in candidate_paths)
+        details = (
+            f"Ambiguous import resolution for alias '{import_alias}' and path '{import_path}'.\n\n"
+            f"Multiple matching files were found:\n{candidates_list}"
+        )
+        suggestion = (
+            "Disambiguate by adjusting ASDL_PATH or using a more specific relative path. "
+            "Ensure only one intended copy is present in the effective search roots."
+        )
+        return Diagnostic(
+            code="E0447",
+            title="Ambiguous Import Resolution",
+            details=details,
+            severity=DiagnosticSeverity.ERROR,
+            suggestion=suggestion
+        )
