@@ -12,6 +12,8 @@ from .module_resolver import ModuleResolver
 from .alias_resolver import AliasResolver
 from .diagnostics import ImportDiagnostics
 from .import_resolver import ImportResolver
+from .types import ImportGraph, GraphNode, AliasResolutionMap
+from .policies import PrecedencePolicy, FlattenOptions
 
 __all__ = [
     'PathResolver',
@@ -20,4 +22,9 @@ __all__ = [
     'AliasResolver',
     'ImportDiagnostics',
     'ImportResolver'
+    , 'ImportGraph'
+    , 'GraphNode'
+    , 'AliasResolutionMap'
+    , 'PrecedencePolicy'
+    , 'FlattenOptions'
 ]

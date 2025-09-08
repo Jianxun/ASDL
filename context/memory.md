@@ -66,6 +66,17 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - Removed legacy `tests/unit_tests/elaborator/import_/` tests.
 - Result: elaborator test suite green (47 passed).
 
+### 2025-09-08 – Import System Refactor (Modularization)
+- Split `import_resolver.py` into modular components under `src/asdl/elaborator/import_/`:
+  - `dependency_graph.py` (graph + alias map; loader-driven cycle detection)
+  - `reference_validator.py` (qualified refs E0443/E0444; fixed alias-usage tracking)
+  - `flattener.py` (rewrite + merge; local-wins precedence with warning; optional metadata drop)
+  - `types.py` (ImportGraph, GraphNode, AliasResolutionMap), `policies.py` (PrecedencePolicy, FlattenOptions)
+  - `coordinator.py` new orchestrator; `import_resolver.py` now a compatibility wrapper
+  - `tracing.py` added logging helpers; `README.md` documents module relationships
+- Diagnostics: Added `E0446` for load/parse failures; `FileLoader` emits `E0441` for not found, `E0442` for cycles (resolved-stack fix), `E0446` for parse.
+- Behavior: Precedence is local-over-import with shadowing warning; determinism sorting intentionally skipped for now.
+
 ## Logging System Phase 1 – Implemented
 **Branch**: `feature/logging_system_phase1`
 

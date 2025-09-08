@@ -79,6 +79,9 @@ class FileLoader:
         
         if loading_stack is None:
             loading_stack = []
+        else:
+            # Normalize stack paths for reliable identity checks
+            loading_stack = [p.resolve() for p in loading_stack]
         
         # Check for circular dependency
         if normalized_path in loading_stack:
@@ -131,11 +134,11 @@ class FileLoader:
         try:
             return self.parser.parse_file(str(file_path))
         except Exception as e:
-            # Handle unexpected parser errors
+            # Handle unexpected parser errors (load/parse failures)
             diagnostic = Diagnostic(
-                code="E0441",
-                title="Import File Loading Error", 
-                details=f"Failed to load import file '{file_path}': {e}",
+                code="E0446",
+                title="Import File Load/Parse Failure", 
+                details=f"Failed to load or parse import file '{file_path}': {e}",
                 severity=DiagnosticSeverity.ERROR
             )
             return None, [diagnostic]
