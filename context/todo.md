@@ -28,7 +28,8 @@ The original combined todo list has been split for clarity. Please refer to the 
   - ✅ **Phase 1: Elaborator Pattern Expansion** - **COMPLETE** (2 failures → 0 failures)
   - ✅ **Phase 2: Parser Port Validation** - **COMPLETE** (6 failures → 0 failures)
   - ✅ **Phase 3: Validator Tests** - **COMPLETE** (2 failures → 0 failures)
-  - **Current Status**: ✅ **136 passed, 0 failed** (100% success rate) - **ALL TESTS PASSING**
+  - ✅ **Import Diagnostics Consolidation** - **COMPLETE** (migrated `import_/` tests to per-code E044x files; elaborator suite 47 passed)
+  - **Current Status**: ✅ **All component unit tests green**
 - **Continue validator refactor follow-ups**:
   - Migrate any integration tests expecting legacy V00x/V30x to new V-codes
   - Add missing validator diagnostics and per-code unit tests as needed

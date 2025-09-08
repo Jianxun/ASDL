@@ -55,6 +55,17 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
   - Tests: Added per-code unit tests under `tests/unit_tests/elaborator/` and removed overlapping legacy diagnostic tests. Elaborator unit tests: all passing.
 - Follow-ups: Migrate import resolver call sites to the new `E04xx/E06xx` codes with a thin compatibility layer; add per-code import tests; address generator/integration test failures separately; consider skipping archived example tests.
 
+### 2025-09-08 – Import Diagnostics Tests Consolidation (E04xx)
+- Consolidated import tests under elaborator unit tests with per-code files:
+  - `tests/unit_tests/elaborator/test_E0441_import_file_not_found.py`
+  - `tests/unit_tests/elaborator/test_E0442_circular_import_detected.py`
+  - `tests/unit_tests/elaborator/test_E0443_module_not_found_in_import.py`
+  - `tests/unit_tests/elaborator/test_E0444_import_alias_not_found.py`
+  - `tests/unit_tests/elaborator/test_E0445_model_alias_collision.py`
+  - Infrastructure/flow moved to: `test_import_resolver_flow.py`, `test_path_resolver.py`
+- Removed legacy `tests/unit_tests/elaborator/import_/` tests.
+- Result: elaborator test suite green (47 passed).
+
 ## Logging System Phase 1 – Implemented
 **Branch**: `feature/logging_system_phase1`
 
