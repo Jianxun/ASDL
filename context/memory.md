@@ -47,6 +47,12 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
   - Resolver: `EnvVarResolver` (separate from `VariableResolver`)
   - Wired in `Elaborator` for module/instance parameters and for module `spice_template`
 
+### 2025-09-08 – Import Stage 4 Diagnostic Split & Validation Wiring
+- Implemented E0448 (Invalid Qualified Reference) and aligned style warnings to E0601/E0602.
+- `ReferenceValidator` now emits E0448 for malformed instance references; `AliasResolver` uses alias map with absolute paths and emits E0443 for missing modules.
+- Parser continues to validate model_alias format with P0503; tests reflect this separation of concerns.
+- Elaborator unit tests updated and expanded: 54 elaborator tests; full suite now 143 passed.
+
 ### 2025-09-08 – Elaborator Diagnostics Migration (XCCSS) and Tests
 - Decision: Merge import-phase diagnostics under Elaborator `E` codes (no separate `I` component). Updated design doc to reflect `E04xx` (Reference) and `E06xx` (Style) for import.
 - Implemented: Centralized Elaborator diagnostics in `src/asdl/elaborator/diagnostics.py` with XCCSS codes and legacy mapping.

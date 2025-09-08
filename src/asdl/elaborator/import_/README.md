@@ -32,7 +32,7 @@ This package implements the import-resolution phase of the Elaborator. It discov
 
 - `reference_validator.py`
   - `ReferenceValidator` checks qualified instance references and delegates model-alias checks to `AliasResolver`.
-  - Emits `E0443` (module not found in import), `E0444` (unknown import alias or invalid alias reference).
+  - Emits `E0443` (module not found in import), `E0444` (unknown import alias), `E0448` (invalid qualified reference format).
   - Fixes alias-usage tracking to avoid the prior loop scoping bug.
 
 - `flattener.py`
@@ -56,7 +56,7 @@ This package implements the import-resolution phase of the Elaborator. It discov
   - Utility for three-step module lookup (local → model_alias → qualified). Kept for compatibility and potential reuse.
 
 - `diagnostics.py`
-  - Structured constructors for import-related diagnostics (`E0441–E0446`, `E0601/E0602`).
+  - Structured constructors for import-related diagnostics (`E0441–E0448`, `E0601/E0602`).
 
 - `tracing.py`
   - Centralized logging helpers (search paths, probe candidates, alias maps, merge conflicts).

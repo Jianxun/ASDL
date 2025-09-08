@@ -4,7 +4,7 @@
 - Search-path policy implemented: `ASDL_PATH` only with fallback `["."]`; CLI/config paths ignored in resolver.
 - Diagnostics split: E0441 strictly for "not found" (with probe candidates); E0446 implemented for load/parse failures.
 - Basic DEBUG logs present; tracing helpers added (probe candidates, alias maps, collisions) — wiring expansion pending.
-- `alias_resolution_map` created/used with absolute paths in validation/graph (path-identity cleanup partially complete).
+- `alias_resolution_map` created/used with absolute paths in validation/graph (path-identity cleanup partially complete). ReferenceValidator and AliasResolver now use alias map to resolve modules.
 - Flattening precedence flipped to local-wins with shadowing warning (conflict warned with E0601-style code).
 - Single-source cycle detection: delegated to `FileLoader` (no duplicate check in orchestrator/graph).
 - Determinism sorting intentionally skipped (per decision) for now.
@@ -20,7 +20,7 @@
 
 ## Phase 1 – Remaining Work
 - CLI: remove `--search-path` flag and plumbing (retain programmatic `search_paths`).
-- Optional: re-enable unused warnings with `E0601`/`E0602` behind a flag.
+- Optional: enable unused warnings with `E0601`/`E0602` behind a flag (helpers implemented).
 - Implement importer-relative root: add `dir(importing_file)` to the front of effective roots during resolution.
 - Implement ambiguity detection and `E0447` when >1 candidate file exists for an import.
 
@@ -44,10 +44,10 @@
 - [x] Flip flatten precedence to local-over-import; emit conflict warning.
 - [x] Fix qualified alias usage tracking; optionally enable `E0601`/`E0602`.
 - [x] Split diagnostics: strict E0441 with probe candidates; add E0446 for load/parse failures.
-- [ ] Use `alias_resolution_map` with absolute paths end-to-end; stop indexing by raw strings.
+- [x] Use `alias_resolution_map` with absolute paths end-to-end; stop indexing by raw strings (implemented in validation).
 - [ ] Drop `imports`/`model_alias` in flattened artifact; add debug-retain flag.
 - [x] Add tracing helpers for paths, probe candidates, alias maps, cycles, collisions.
-- [ ] Update docs and add focused tests.
+- [x] Update docs and add focused tests (E0448, E0601, E0602 tests added; docs updated).
 - [ ] Prepend importing file directory to search roots (per import).
 - [ ] Add `E0447` ambiguous import diagnostic and tests.
  - [x] Add JSON export for dependency graph (relative path support) with unit test.

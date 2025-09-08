@@ -11,17 +11,18 @@ import re
 
 from ...data_structures import ASDLFile
 from ...diagnostics import Diagnostic, DiagnosticSeverity
+from .diagnostics import ImportDiagnostics
 
 
 class AliasResolver:
     """Handles model_alias resolution and validation."""
-    
+
     # Pattern for validating qualified references (import_alias.module_name)
     QUALIFIED_REFERENCE_PATTERN = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*$')
-    
-    def __init__(self):
+
+    def __init__(self, diagnostics: Optional[ImportDiagnostics] = None):
         """Initialize alias resolver."""
-        pass
+        self.diagnostics = diagnostics or ImportDiagnostics()
     
     def parse_qualified_reference(self, qualified_ref: str) -> Optional[Tuple[str, str]]:
         """
@@ -48,9 +49,11 @@ class AliasResolver:
             return None
     
     def validate_model_aliases(
-        self, 
-        main_file: ASDLFile, 
-        loaded_files: Dict[Path, ASDLFile]
+        self,
+        main_file: ASDLFile,
+        loaded_files: Dict[Path, ASDLFile],
+        alias_resolution_map: Dict[Path, Dict[str, Optional[Path]]],
+        main_file_path: Path,
     ) -> List[Diagnostic]:
         """
         Validate all model_alias entries in the main file.
@@ -78,13 +81,7 @@ class AliasResolver:
             # Parse qualified reference
             parsed = self.parse_qualified_reference(qualified_ref)
             if parsed is None:
-                diagnostics.append(Diagnostic(
-                    code="E0444",
-                    title="Invalid Model Alias Reference",
-                    details=f"Model alias '{local_alias}' has invalid qualified reference '{qualified_ref}'. Expected format: 'import_alias.module_name'.",
-                    severity=DiagnosticSeverity.ERROR,
-                    suggestion="Use format 'import_alias.module_name' for model alias references."
-                ))
+                diagnostics.append(self.diagnostics.create_invalid_model_alias_format_error(local_alias, qualified_ref))
                 continue
                 
             import_alias, module_name = parsed
@@ -102,33 +99,24 @@ class AliasResolver:
             
             # Validate import alias exists
             if not main_file.imports or import_alias not in main_file.imports:
-                diagnostics.append(Diagnostic(
-                    code="E0444",
-                    title="Import Alias Not Found",
-                    details=f"Model alias '{local_alias}' references unknown import alias '{import_alias}'. Import alias must be declared in imports section.",
-                    severity=DiagnosticSeverity.ERROR,
-                    suggestion=f"Add '{import_alias}: path/to/file.asdl' to the imports section, or fix the reference in model alias."
-                ))
+                diagnostics.append(self.diagnostics.create_import_alias_not_found_error(import_alias, qualified_ref, list(main_file.imports.keys()) if main_file.imports else []))
                 continue
             
-            # Validate target module exists in imported file
-            import_path = main_file.imports[import_alias]
-            import_path_obj = Path(import_path)
-            
-            imported_file = loaded_files.get(import_path_obj)
-            if imported_file is None:
-                # File not loaded - this should be handled by orchestrator
-                # For now, skip this validation
-                continue
-                
-            if not imported_file.modules or module_name not in imported_file.modules:
-                diagnostics.append(Diagnostic(
-                    code="E0444",
-                    title="Module Not Found in Import",
-                    details=f"Model alias '{local_alias}' references module '{module_name}' which does not exist in imported file '{import_path}'.",
-                    severity=DiagnosticSeverity.ERROR,
-                    suggestion=f"Check that module '{module_name}' exists in '{import_path}', or fix the reference in model alias."
-                ))
+            # Resolve absolute path via alias_resolution_map, then validate target module
+            resolved_map_for_main = alias_resolution_map.get(main_file_path, {})
+            resolved_path = resolved_map_for_main.get(import_alias)
+            imported_file = loaded_files.get(resolved_path) if resolved_path else None
+            available_modules: List[str] = []
+            if imported_file and imported_file.modules:
+                available_modules = list(imported_file.modules.keys())
+
+            if imported_file is None or module_name not in (imported_file.modules or {}):
+                import_file_path = resolved_path if resolved_path else Path(main_file.imports[import_alias])
+                diagnostics.append(
+                    self.diagnostics.create_module_not_found_error(
+                        module_name, import_alias, import_file_path, available_modules
+                    )
+                )
                 continue
         
         return diagnostics

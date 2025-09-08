@@ -32,8 +32,8 @@ class ReferenceValidator:
     ) -> List[Diagnostic]:
         diagnostics: List[Diagnostic] = []
 
-        # 1) Validate model_alias definitions using existing logic
-        diagnostics.extend(self.alias_resolver.validate_model_aliases(main_file, loaded_files))
+        # 1) Validate model_alias definitions using existing logic (now with alias map)
+        diagnostics.extend(self.alias_resolver.validate_model_aliases(main_file, loaded_files, alias_resolution_map, main_file_path))
 
         # 2) Validate qualified references used by instances across main + imports
         files_to_scan: List[Tuple[Path, ASDLFile]] = [(main_file_path, main_file)]
@@ -67,11 +67,22 @@ class ReferenceValidator:
                         used_model_aliases.add(model_ref)
                         continue
 
-                    if not isinstance(model_ref, str) or "." not in model_ref:
+                    if not isinstance(model_ref, str):
+                        continue
+                    if "." not in model_ref:
                         continue
 
                     # Qualified reference "alias.module"
-                    alias, module_name = model_ref.split(".", 1)
+                    try:
+                        alias, module_name = model_ref.split(".", 1)
+                    except ValueError:
+                        diagnostics.append(self.diagnostics.create_invalid_qualified_reference_error(model_ref))
+                        continue
+
+                    # Basic identifier validation for format (regex lives in AliasResolver; keep simple check here)
+                    if not alias or not module_name:
+                        diagnostics.append(self.diagnostics.create_invalid_qualified_reference_error(model_ref))
+                        continue
                     if alias not in imports_for_file:
                         diagnostics.append(
                             self.diagnostics.create_import_alias_not_found_error(

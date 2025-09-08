@@ -201,14 +201,14 @@ class ImportDiagnostics:
         invalid_reference: str
     ) -> Diagnostic:
         """
-        Create E0444 diagnostic for invalid model alias format.
+        Create E0448 diagnostic for invalid model alias format.
         
         Args:
             local_alias: Local alias name
             invalid_reference: Invalid qualified reference
             
         Returns:
-            Diagnostic with E0444 error code
+            Diagnostic with E0448 error code
         """
         details = (
             f"Model alias '{local_alias}' has invalid qualified reference '{invalid_reference}'. "
@@ -221,8 +221,32 @@ class ImportDiagnostics:
         )
         
         return Diagnostic(
-            code="E0444",
+            code="E0448",
             title="Invalid Model Alias Reference",
+            details=details,
+            severity=DiagnosticSeverity.ERROR,
+            suggestion=suggestion
+        )
+
+    def create_invalid_qualified_reference_error(self, qualified_ref: str) -> Diagnostic:
+        """
+        Create E0448 diagnostic for invalid qualified reference format used by instances.
+
+        Args:
+            qualified_ref: Invalid qualified reference string
+
+        Returns:
+            Diagnostic with E0448 error code
+        """
+        details = (
+            f"Invalid qualified reference '{qualified_ref}'. Expected format: 'import_alias.module_name'."
+        )
+        suggestion = (
+            "Use the format 'import_alias.module_name' where both parts are valid identifiers."
+        )
+        return Diagnostic(
+            code="E0448",
+            title="Invalid Qualified Reference",
             details=details,
             severity=DiagnosticSeverity.ERROR,
             suggestion=suggestion
@@ -230,16 +254,16 @@ class ImportDiagnostics:
 
     def create_unused_import_warning(self, import_alias: str) -> Diagnostic:
         """
-        Create I0601 diagnostic for unused import alias.
+        Create E0601 diagnostic for unused import alias.
 
         Args:
             import_alias: Import alias that is declared but never used
 
         Returns:
-            Diagnostic with I0601 warning code
+            Diagnostic with E0601 warning code
         """
         return Diagnostic(
-            code="I0601",
+            code="E0601",
             title="Unused Import Alias",
             details=f"Import alias '{import_alias}' is declared but never referenced by any instance model or model_alias.",
             severity=DiagnosticSeverity.WARNING,
@@ -248,16 +272,16 @@ class ImportDiagnostics:
 
     def create_unused_model_alias_warning(self, local_alias: str) -> Diagnostic:
         """
-        Create I0602 diagnostic for unused model_alias entry.
+        Create E0602 diagnostic for unused model_alias entry.
 
         Args:
             local_alias: Local model alias name that is never used
 
         Returns:
-            Diagnostic with I0602 warning code
+            Diagnostic with E0602 warning code
         """
         return Diagnostic(
-            code="I0602",
+            code="E0602",
             title="Unused Model Alias",
             details=f"Model alias '{local_alias}' is declared but never used by any instance.",
             severity=DiagnosticSeverity.WARNING,

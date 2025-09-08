@@ -89,10 +89,11 @@ This document describes the import-resolution phase in the Elaborator: its pipel
 - E0441: Import file not found (includes probe candidates)
 - E0442: Circular import detected
 - E0443: Module not found in imported file
-- E0444: Import alias not found OR invalid alias reference format
+- E0444: Import alias not found
 - E0445: Model alias collides with import alias
 - E0446: Import file load/parse failure
 - E0447: Ambiguous import resolution (multiple matching files)
+- E0448: Invalid qualified reference format (e.g., bad 'alias.module')
 - E0601/E0602: Style warnings (e.g., shadowing, unused) — gated as needed
 
 ## Logging & Tracing
