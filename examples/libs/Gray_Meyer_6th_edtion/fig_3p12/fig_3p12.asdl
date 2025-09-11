@@ -1,0 +1,30 @@
+file_info:
+  top_module: cs_amplifier
+  doc: | 
+    Gray & Meyer 6th edition
+    Fig. 3.12
+    Resistive load common-source amplifier
+
+imports:
+  std: pdk_std_tile.asdl
+  analoglib: analoglib/analoglib.asdl
+
+model_alias:
+  nmos: std.MN_L1_W1_F2_SVT
+  pmos: std.MP_L1_W1_F2_SVT
+  res: analoglib.res
+
+modules:
+  cs_amplifier:
+    doc: "Resistive load common-source amplifier"
+    variables:
+      M_cs: 1
+      R_load: 10k
+    ports:
+      vdd: { dir: in, type: power }
+      vss: { dir: in, type: ground }
+      vin: { dir: in, type: signal }
+      vout: { dir: out, type: signal }
+    instances:
+      mn1: { model: nmos, mappings: { D: vout, G: vin, S: vss, B: vss }, parameters: { m: M_cs } }
+      rd: { model: res, mappings: { plus: vdd, minus: vout }, parameters: { value: R_load } }

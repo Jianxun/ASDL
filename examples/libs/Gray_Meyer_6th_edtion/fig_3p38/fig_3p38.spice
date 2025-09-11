@@ -1,0 +1,31 @@
+* SPICE netlist generated from ASDL
+* Design: Gray & Meyer 6th edition
+Fig. 3.38
+Resistive load common-source cascode amplifier
+
+* Top module: cs_cascode_amplifier
+* Author: None
+* Date: None
+* Revision: None
+
+* Hierarchical module subcircuit definitions
+* Resistive load common-source cascode amplifier
+* .subckt cs_cascode_amplifier vdd vss vin vout vbias
+  X_mn_cs v_mid vin vss vss nfet_03v3 L=0.28u W=3u nf=2 m=1
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  X_mn_cascode vout vbias v_mid vss nfet_03v3 L=0.28u W=3u nf=2 m=2
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  r_load vdd vout 10k
+
+* .ends
+
+
+.end
