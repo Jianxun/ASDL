@@ -20,14 +20,14 @@ export default function TransistorNode({ data, selected }: NodeProps<TransistorN
       <div style={{ position: 'absolute', bottom: 6, left: 8, fontSize: 11, color: '#374151' }}>{data.flavor.toUpperCase()}</div>
 
       {/* Provide both source and target handles for bidirectional connectivity */}
-      <Handle id="D" type="source" position={drainPos} style={{ width: 2, height: 2, opacity: 0 }} />
-      <Handle id="D" type="target" position={drainPos} style={{ width: 2, height: 2, opacity: 0 }} />
+      <Handle id="D" type="source" position={drainPos} style={{ width: 2, height: 2, opacity: 1 }} />
+      <Handle id="D" type="target" position={drainPos} style={{ width: 2, height: 2, opacity: 1 }} />
 
-      <Handle id="G" type="source" position={gatePos} style={{ width: 2, height: 2, opacity: 0 }} />
-      <Handle id="G" type="target" position={gatePos} style={{ width: 2, height: 2, opacity: 0 }} />
+      <Handle id="G" type="source" position={gatePos} style={{ width: 2, height: 2, opacity: 1 }} />
+      <Handle id="G" type="target" position={gatePos} style={{ width: 2, height: 2, opacity: 1 }} />
 
-      <Handle id="S" type="source" position={sourcePos} style={{ width: 2, height: 2, opacity: 0 }} />
-      <Handle id="S" type="target" position={sourcePos} style={{ width: 2, height: 2, opacity: 0 }} />
+      <Handle id="S" type="source" position={sourcePos} style={{ width: 2, height: 2, opacity: 1 }} />
+      <Handle id="S" type="target" position={sourcePos} style={{ width: 2, height: 2, opacity: 1 }} />
     </div>
   )
 }
