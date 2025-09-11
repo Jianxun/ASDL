@@ -2,10 +2,6 @@ import type { NodeProps } from 'reactflow'
 import { Handle, Position } from 'reactflow'
 import type { TransistorNodeData } from './types'
 
-function EdgeTick({ x, y, width, height }: { x: number; y: number; width: number; height: number }) {
-  return <rect x={x} y={y} width={width} height={height} fill="#111827" rx={1} ry={1} />
-}
-
 export default function TransistorNode({ data, selected }: NodeProps<TransistorNodeData>) {
   const isPmos = data.flavor === 'pmos'
 
@@ -13,17 +9,11 @@ export default function TransistorNode({ data, selected }: NodeProps<TransistorN
   const sourcePos: Position = isPmos ? Position.Top : Position.Bottom
   const gatePos: Position = Position.Left
 
-  const grid = data.gridSize ?? 16
-  const width = 6 * grid
-  const height = 6 * grid
-
+  // Use full-size container so it matches React Flow node style width/height
   return (
-    <div style={{ position: 'relative', width, height, boxSizing: 'border-box', border: selected ? '2px solid #2563eb' : '1px solid #9ca3af', borderRadius: 6, background: '#fff' }}>
-      <svg width={width} height={height} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <EdgeTick x={width / 2 - 2} y={2} width={4} height={8} />
-        <EdgeTick x={width / 2 - 2} y={height - 10} width={4} height={8} />
-        <EdgeTick x={2} y={height / 2 - 2} width={8} height={4} />
-      </svg>
+    <div style={{ position: 'relative', width: '100%', height: '100%', boxSizing: 'border-box', border: selected ? '2px solid #2563eb' : '1px solid #9ca3af', borderRadius: 6, background: '#fff' }}>
+      {/* External SVG so artwork can be edited without touching source code */}
+      <img src={isPmos ? '/pmos.svg' : '/nmos.svg'} alt={isPmos ? 'PMOS' : 'NMOS'} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', top: 6, left: 8, fontSize: 12, color: '#111827' }}>{data.name}</div>
       <div style={{ position: 'absolute', bottom: 6, left: 8, fontSize: 11, color: '#374151' }}>{data.flavor.toUpperCase()}</div>
 
