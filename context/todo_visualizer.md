@@ -73,9 +73,15 @@ Acceptance:
 
 ---
 ## Notes
-- Only `PortNode` uses small filled circles; transistor terminals have invisible handles with visible tick marks
+- Only `PortNode` uses small filled circles; transistor terminals use invisible handles (no circles)
 - Positions in JSON are grid centers; React Flow uses top-left computed from grid-aligned sizes
 - Port node box is 2×grid; dot is 1×grid centered; handles on box edges align to grid
-- Transistor node size is 6×6 grid (configurable), with centered ticks; handles align to grid
+- Transistor node size is 8×6 grid (configurable); handles align to grid
 - Start with gate on left for both NMOS/PMOS; revisit later if needed
 - Ignore legacy jsPlumb prototype; this is a clean slate
+
+### Implemented Additions (2025-09-11)
+- CLI `asdlc visualize` default top module, stable `{basename}.{module}.sch.json`, merge prior positions
+- Inline JSON to app (`?data=`), fallback to `/graph.json`; print host only
+- MOSFET nodes use external SVGs via Vite asset imports (`src/assets`)
+- Edge stroke style aligned to SVG: `#111827`, width `2`, round caps/joins

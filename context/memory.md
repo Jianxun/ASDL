@@ -145,8 +145,22 @@ spice_template: |
 
 ### 2025-09-11 – Visualizer Implementation Progress (Phase 0–2)
 - Phase 0 complete: Vite + React TS scaffold in `prototype/visualizer_react_flow`, base canvas with grid, minimap, controls, step edges, snap grid
-- Phase 1 complete: `TransistorNode` (NMOS/PMOS; invisible handles with tick marks) and `PortNode` (small filled circle, left/right); wired via `nodeTypes`
+- Phase 1 complete: `TransistorNode` (NMOS/PMOS) and `PortNode`; handles positioned (D/G/S and P), with nodes sized via grid units (transistor 8×6 grid, port 2×2 grid)
 - Phase 2 complete: Manhattan routing via `ConnectionLineType.Step`; `isValidConnection` permits same-node different-handle connections (e.g., diode-connected D–G) and blocks identical same-handle loops; multi-edges allowed
+
+### 2025-09-11 – Visualizer CLI & UX Iteration
+- CLI `asdlc visualize` updates:
+  - Default module selection from `file_info.top_module` when `--module` omitted
+  - Output naming: `{basename}.{module}.sch.json` next to the input `.asdl`
+  - Position persistence: reuse coordinates from existing output file by node id
+  - CWD-independent directory resolution for Vite/public via repo-relative discovery and env overrides (`ASDL_VIS_VITE_DIR`, `ASDL_VIS_PUBLIC_DIR`)
+  - Inline JSON mode (default): pass base64 JSON via `?data=`; fall back to copying `graph.json` when `--no-inline`
+  - Launches dev server and opens browser; console prints only host (suppresses full data URL)
+- Front-end updates:
+  - Auto-load inline `?data=` payload if present; otherwise fetch `/graph.json`
+  - Save layout uses `?file=` to set the download filename
+  - MOSFET nodes render external SVGs imported via Vite asset pipeline (`src/assets/{nmos,pmos}.svg`), eliminating refresh flakiness
+  - Edge styling matches SVG stroke: color `#111827`, width `2`, rounded caps/joins
 
 ## Logging System Implementation
 **Branch**: `feature/logging_system_phase1`  
