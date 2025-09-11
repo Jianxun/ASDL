@@ -287,7 +287,7 @@ def visualize_cmd(module_name: Optional[str], in_file: str, out_file: Optional[s
         shutil.copy2(out_path, pub_graph)
         click.echo(f"Prepared visualizer input: {pub_graph}")
         url = f"http://localhost:5173/?file={out_path.name}"
-    click.echo(f"Opening visualizer at {url}")
+    click.echo("Opening visualizer at http://localhost:5173")
 
     # Poll the output briefly to detect readiness, with a timeout
     start_time = time.time()
