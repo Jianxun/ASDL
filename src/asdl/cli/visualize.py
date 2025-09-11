@@ -1,0 +1,332 @@
+import base64
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+import urllib.parse
+import webbrowser
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+import click
+
+from ..parser.asdl_parser import ASDLParser
+from ..data_structures.structures import ASDLFile, Module, PortDirection
+
+
+def _detect_flavor(model: str) -> Optional[str]:
+    last = model.split('.')[-1].lower()
+    if last.startswith('nmos'):
+        return 'nmos'
+    if last.startswith('pmos'):
+        return 'pmos'
+    return None
+
+
+def _port_side_from_dir(direction: PortDirection) -> str:
+    if direction == PortDirection.OUT:
+        return 'right'
+    # IN and IN_OUT default to left for MVP
+    return 'left'
+
+
+def _port_direction_str(direction: PortDirection) -> str:
+    if direction == PortDirection.IN:
+        return 'in'
+    if direction == PortDirection.OUT:
+        return 'out'
+    return 'bidir'
+
+
+def _reuse_positions(nodes: List[Dict], prior: Dict[str, Dict[str, int]]) -> None:
+    for n in nodes:
+        nid = n['id']
+        if nid in prior:
+            n['position'] = dict(prior[nid])
+
+
+def _autoplace(nodes: List[Dict], grid: int) -> None:
+    # Simple columns: ports left/right, transistors center
+    left_x = 4
+    right_x = 36
+    mid_x = 20
+    left_y = 6
+    right_y = 6
+    mid_y = 6
+    spacing = 3
+
+    for n in nodes:
+        if 'position' in n and n['position']:
+            continue
+        if n['type'] == 'port':
+            side = n['data'].get('side', 'left')
+            if side == 'right':
+                n['position'] = {'gx': right_x, 'gy': right_y}
+                right_y += spacing
+            else:
+                n['position'] = {'gx': left_x, 'gy': left_y}
+                left_y += spacing
+        else:
+            n['position'] = {'gx': mid_x, 'gy': mid_y}
+            mid_y += spacing
+
+
+def _build_graph_for_module(asdl: ASDLFile, module_name: str, grid_size: int,
+                            prior_layout: Optional[Dict[str, Dict[str, int]]] = None) -> Dict:
+    if module_name not in asdl.modules:
+        raise click.ClickException(f"Module not found: {module_name}")
+    mod: Module = asdl.modules[module_name]
+    if mod.ports is None:
+        ports: Dict[str, object] = {}
+    else:
+        ports = mod.ports
+
+    nodes: List[Dict] = []
+    edges: List[Dict] = []
+
+    # Port nodes
+    for pname, p in ports.items():
+        side = _port_side_from_dir(p.dir)
+        direction = _port_direction_str(p.dir)
+        nodes.append({
+            'id': pname,
+            'type': 'port',
+            'data': {'name': pname, 'side': side, 'direction': direction}
+        })
+
+    # Instance nodes (MOSFETs only for MVP)
+    if mod.instances:
+        for inst_name, inst in mod.instances.items():
+            flavor = _detect_flavor(inst.model)
+            if not flavor:
+                continue
+            nodes.append({
+                'id': inst_name,
+                'type': 'transistor',
+                'data': {'name': inst_name, 'flavor': flavor}
+            })
+
+    # Edges: build net -> endpoints
+    net_to_eps: Dict[str, List[Tuple[str, str]]] = {}
+    # Port endpoints
+    for pname in ports.keys():
+        net_to_eps.setdefault(pname, []).append((pname, 'P'))
+    # Instance endpoints from mappings
+    if mod.instances:
+        for inst_name, inst in mod.instances.items():
+            flavor = _detect_flavor(inst.model)
+            if not flavor:
+                continue
+            for pin, net in inst.mappings.items():
+                up = pin.upper()
+                if up in ('D','G','S'):
+                    net_to_eps.setdefault(net, []).append((inst_name, up))
+
+    # Emit edges with port as hub where present; always connect FROM port to device so RF can draw consistently
+    for net, eps in net_to_eps.items():
+        if len(eps) < 2:
+            continue
+        port_idx = next((i for i, (_, hid) in enumerate(eps) if hid == 'P'), None)
+        if port_idx is None:
+            # No port: connect first to others
+            hub_n, hub_h = eps[0]
+            for i, (nid, hid) in enumerate(eps[1:], start=1):
+                edges.append({'source': hub_n, 'sourceHandle': hub_h, 'target': nid, 'targetHandle': hid})
+        else:
+            port_n, port_h = eps[port_idx]
+            for i, (nid, hid) in enumerate(eps):
+                if i == port_idx:
+                    continue
+                edges.append({'source': port_n, 'sourceHandle': port_h, 'target': nid, 'targetHandle': hid})
+
+    # Positions
+    if prior_layout:
+        _reuse_positions(nodes, prior_layout)
+    _autoplace(nodes, grid_size)
+
+    return {
+        'gridSize': grid_size,
+        'nodes': nodes,
+        'edges': edges,
+    }
+
+
+def _detect_top_module(asdl: ASDLFile) -> Optional[str]:
+    try:
+        top = asdl.file_info.top_module  # type: ignore[attr-defined]
+        if isinstance(top, str) and top:
+            return top
+    except Exception:
+        pass
+    # fallback: first module key
+    if asdl.modules:
+        return next(iter(asdl.modules.keys()))
+    return None
+
+
+def _default_out_path(asdl_path: Path, module_name: str) -> Path:
+    base = asdl_path.with_suffix("")
+    return base.parent / f"{base.name}.{module_name}.sch.json"
+
+
+def _load_prior_positions_if_any(path: Path) -> Optional[Dict[str, Dict[str, int]]]:
+    if not path.exists():
+        return None
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            prior = json.load(f)
+        prior_nodes = prior.get('nodes', [])
+        return {n['id']: n.get('position', {}) for n in prior_nodes if isinstance(n, dict) and 'id' in n}
+    except Exception:
+        return None
+
+
+@click.command(name='visualize', help='Export a module-scoped visualization graph JSON (no elaboration).')
+@click.option('--module', 'module_name', required=False, default=None, help='Module name to export; defaults to file_info.top_module.')
+@click.argument('in_file', type=click.Path(exists=True, dir_okay=False))
+@click.option('--out', 'out_file', default=None, type=click.Path(dir_okay=False), help='Output graph JSON path. Defaults to {basename}.{module}.sch.json beside ASDL.')
+@click.option('--grid', 'grid_size', default=16, show_default=True, type=int, help='Grid size (pixels).')
+@click.option('--serve/--no-serve', 'serve', default=True, show_default=True, help='Serve in visualizer and launch dev server + browser.')
+@click.option('--inline/--no-inline', 'inline_mode', default=True, show_default=True, help='Pass JSON inline via URL param (no file fetch by the app).')
+@click.option('--public-dir', 'public_dir', default=None, type=click.Path(file_okay=False), help='Visualizer public directory containing graph.json.')
+@click.option('--vite-dir', 'vite_dir', default=None, type=click.Path(file_okay=False), help='Visualizer project directory (Vite).')
+def visualize_cmd(module_name: Optional[str], in_file: str, out_file: Optional[str], grid_size: int, serve: bool, inline_mode: bool, public_dir: Optional[str], vite_dir: Optional[str]) -> None:
+    parser = ASDLParser()
+    asdl, diags = parser.parse_file(in_file)
+    if asdl is None:
+        raise click.ClickException('Failed to parse ASDL file.')
+    # Determine module
+    if not module_name:
+        module_name = _detect_top_module(asdl)
+        if not module_name:
+            raise click.ClickException('No module specified and could not detect top module.')
+
+    asdl_path = Path(in_file)
+    out_path = Path(out_file) if out_file else _default_out_path(asdl_path, module_name)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Merge positions from existing output file if present
+    prior_map: Optional[Dict[str, Dict[str, int]]] = _load_prior_positions_if_any(out_path)
+
+    graph = _build_graph_for_module(asdl, module_name, grid_size, prior_map)
+    with open(out_path, 'w', encoding='utf-8') as f:
+        json.dump(graph, f, indent=2)
+    click.echo(f"Wrote graph JSON: {out_path}")
+
+    if not serve:
+        return
+
+    # Resolve visualizer directories (CWD-independent)
+    def _resolve_dirs(pub: Optional[str], vite: Optional[str]) -> Tuple[Path, Path]:
+        # 1) env overrides
+        env_vite = os.environ.get('ASDL_VIS_VITE_DIR')
+        env_pub = os.environ.get('ASDL_VIS_PUBLIC_DIR')
+        if vite is None and env_vite:
+            vite_path = Path(env_vite)
+        else:
+            vite_path = Path(vite) if vite else None
+        if pub is None and env_pub:
+            pub_path = Path(env_pub)
+        else:
+            pub_path = Path(pub) if pub else None
+
+        # 2) try relative to repository root from this file
+        repo_root = None
+        here = Path(__file__).resolve()
+        for p in here.parents:
+            if (p / 'prototype' / 'visualizer_react_flow').exists():
+                repo_root = p
+                break
+        if vite_path is None and repo_root is not None:
+            vite_path = repo_root / 'prototype' / 'visualizer_react_flow'
+        if pub_path is None and repo_root is not None:
+            pub_path = repo_root / 'prototype' / 'visualizer_react_flow' / 'public'
+
+        # 3) final fallback: current working directory
+        if vite_path is None:
+            vite_path = Path.cwd() / 'prototype' / 'visualizer_react_flow'
+        if pub_path is None:
+            pub_path = Path.cwd() / 'prototype' / 'visualizer_react_flow' / 'public'
+
+        return pub_path, vite_path
+
+    pub_dir, vite_project = _resolve_dirs(public_dir, vite_dir)
+    if not vite_project.exists():
+        raise click.ClickException(f"Visualizer project directory not found: {vite_project}")
+
+    env = os.environ.copy()
+    # Start the dev server
+    try:
+        proc = subprocess.Popen(
+            ['npm', 'run', 'dev'],
+            cwd=str(vite_project),
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+    except FileNotFoundError as e:
+        raise click.ClickException("Failed to launch Vite dev server. Ensure Node.js and npm are installed.") from e
+
+    # Best-effort wait for server to be ready, then open browser
+    if inline_mode:
+        try:
+            payload = json.dumps(graph, separators=(',', ':')).encode('utf-8')
+            b64 = base64.b64encode(payload).decode('ascii')
+            qb64 = urllib.parse.quote(b64)
+            url = f"http://localhost:5173/?file={out_path.name}&data={qb64}"
+        except Exception:
+            # Fallback to file-based serving
+            inline_mode = False
+    if not inline_mode:
+        # Copy to visualizer public/graph.json for auto-load
+        pub_dir.mkdir(parents=True, exist_ok=True)
+        pub_graph = pub_dir / 'graph.json'
+        shutil.copy2(out_path, pub_graph)
+        click.echo(f"Prepared visualizer input: {pub_graph}")
+        url = f"http://localhost:5173/?file={out_path.name}"
+    click.echo("Opening visualizer at http://localhost:5173")
+
+    # Poll the output briefly to detect readiness, with a timeout
+    start_time = time.time()
+    opened = False
+    while time.time() - start_time < 5.0:
+        line = proc.stdout.readline() if proc.stdout else ''
+        if 'Local:' in line or 'http://' in line:
+            webbrowser.open(url)
+            opened = True
+            break
+        time.sleep(0.1)
+    if not opened:
+        # Open anyway; Vite typically starts on 5173
+        webbrowser.open(url)
+
+    # Stream logs until user stops (Ctrl+C)
+    try:
+        while True:
+            if proc.stdout is None:
+                proc.wait()
+                break
+            out_line = proc.stdout.readline()
+            if out_line == '' and proc.poll() is not None:
+                break
+            if out_line:
+                sys.stdout.write(out_line)
+                sys.stdout.flush()
+    except KeyboardInterrupt:
+        click.echo("\nStopping visualizer server...")
+        try:
+            proc.terminate()
+        except Exception:
+            pass
+        try:
+            proc.wait(timeout=5)
+        except Exception:
+            try:
+                proc.kill()
+            except Exception:
+                pass
+
+

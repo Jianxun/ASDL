@@ -134,6 +134,34 @@ spice_template: |
 - Document ASDL_PATH usage and best practices in docs
 - Plan refactor: migrate legacy E10x elaborator diagnostics to XCCSS helper
 
+### 2025-09-11 – Visualizer (React Flow) MVP Decision & Plan
+- Decision: Build a new MVP visualizer using React Flow v12 (clean slate, ignore jsPlumb prototype)
+- Constraints:
+  - Ports: small filled circles only for ASDL IO pins (not transistor terminals)
+  - Routing: Manhattan (orthogonal) wiring
+  - Orientation: NMOS drain ↑/source ↓; PMOS drain ↓/source ↑; gate on left for both (MVP)
+- Plan (Phases 0–6): Scaffold, custom `TransistorNode` and `PortNode`, orthogonal routing via `step` edges, toolbar/inspector, optional custom Manhattan edge, persistence, polish
+- Reference: React Flow API `ReactFlow`, `Handle`, `Background`, `Controls`, `MiniMap`, `useNodesState`, `useEdgesState`, `addEdge`, `IsValidConnection`, `DefaultEdgeOptions`, `ConnectionLineType`, `BaseEdge` ([reactflow.dev/api-reference](https://reactflow.dev/api-reference))
+
+### 2025-09-11 – Visualizer Implementation Progress (Phase 0–2)
+- Phase 0 complete: Vite + React TS scaffold in `prototype/visualizer_react_flow`, base canvas with grid, minimap, controls, step edges, snap grid
+- Phase 1 complete: `TransistorNode` (NMOS/PMOS) and `PortNode`; handles positioned (D/G/S and P), with nodes sized via grid units (transistor 8×6 grid, port 2×2 grid)
+- Phase 2 complete: Manhattan routing via `ConnectionLineType.Step`; `isValidConnection` permits same-node different-handle connections (e.g., diode-connected D–G) and blocks identical same-handle loops; multi-edges allowed
+
+### 2025-09-11 – Visualizer CLI & UX Iteration
+- CLI `asdlc visualize` updates:
+  - Default module selection from `file_info.top_module` when `--module` omitted
+  - Output naming: `{basename}.{module}.sch.json` next to the input `.asdl`
+  - Position persistence: reuse coordinates from existing output file by node id
+  - CWD-independent directory resolution for Vite/public via repo-relative discovery and env overrides (`ASDL_VIS_VITE_DIR`, `ASDL_VIS_PUBLIC_DIR`)
+  - Inline JSON mode (default): pass base64 JSON via `?data=`; fall back to copying `graph.json` when `--no-inline`
+  - Launches dev server and opens browser; console prints only host (suppresses full data URL)
+- Front-end updates:
+  - Auto-load inline `?data=` payload if present; otherwise fetch `/graph.json`
+  - Save layout uses `?file=` to set the download filename
+  - MOSFET nodes render external SVGs imported via Vite asset pipeline (`src/assets/{nmos,pmos}.svg`), eliminating refresh flakiness
+  - Edge styling matches SVG stroke: color `#111827`, width `2`, rounded caps/joins
+
 ## Logging System Implementation
 **Branch**: `feature/logging_system_phase1`  
 **Scope**: Phase 1 – Structured Logging Foundation (see `doc/logging/logging_system_design.md`)
@@ -178,3 +206,15 @@ spice_template: |
 **Follow-ups**:
 - Add tracing to log effective search roots and probe candidates
 - Update docs and examples to export `ASDL_PATH` (see `examples/setup.sh`)
+
+### 2025-09-11 – Visualizer JSON IO and Grid Alignment
+- Implemented front-end JSON load/save with grid-quantized positions; center-based positioning ensures anchors fall on grid.
+- Added auto-load of `prototype/visualizer_react_flow/public/graph.json` on startup; Save button downloads current layout.
+- Node sizing and handles:
+  - `TransistorNode`: grid-aware dimensions (default 6×6 grid), ticks centered; box-sizing border-box for exact size.
+  - `PortNode`: node box 2×grid, dot 1×grid centered; handles on box edges; labels placed opposite wire entry.
+- Routing and ports:
+  - Ports labeled and oriented; inputs accept from right, outputs drive left; edges emitted from ports in exporter for consistent routing.
+- New CLI: `asdl visualize` to export module-scoped graph JSON without elaboration:
+  - Detect `nmos*`/`pmos*` from `instance.model`; emit D/G/S endpoints and P for ports.
+  - Net-to-endpoint mapping with port-preferred hub; reuse positions from prior JSON; simple auto-placement otherwise.
