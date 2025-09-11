@@ -12,7 +12,8 @@ modules:
   ota_5t_nin:
     doc: "Classic 5-transistor OTA: NMOS differential pair, PMOS mirror load, NMOS tail."
     ports:
-      vin_<p,n>: { dir: in, type: signal }
+      vin_p: { dir: in, type: signal }
+      vin_n: { dir: in, type: signal }
       vout: { dir: out, type: signal }
       vdd:  { dir: in, type: power }
       vss:  { dir: in, type: ground }

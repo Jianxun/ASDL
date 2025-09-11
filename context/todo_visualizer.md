@@ -1,37 +1,87 @@
-# Visualizer Todo List
+# Visualizer (React Flow) – MVP Plan
 
-## Current Sprint: Minimal Visualizer (Phases 1-6)
+## Constraints (agreed)
+- Ports: small filled circles are only for ASDL IO pins, not for transistor terminals
+- Routing: use Manhattan (orthogonal) wiring
+- Orientation: NMOS drain ↑, source ↓; PMOS drain ↓, source ↑
 
-### Status Snapshot
-- Phase 1: Basic HTML & Canvas ✅
-- Phase 2: Basic Node Rendering ✅
-- Phase 3: Named Port System ✅
-- Phase 4: Port-to-Port Connections ✅
-- Phase 5: Dynamic Loading & "Save Layout" ✅
-- Phase 6: Testing & Polish ⬜
-
-### Phase 6 Tasks
-- [ ] 6.1 Browser compatibility
-  - [ ] Test in Chrome, Firefox, Safari
-  - [ ] Verify zoom/pan works consistently
-  - [ ] Check for console errors
-- [ ] 6.2 Code cleanup
-  - [ ] Remove any leftover verbose code from original `app.js`
-  - [ ] Add minimal comments
-  - [ ] Keep total visualizer source ≤ 100 lines
+Reference: React Flow API v12 [reactflow.dev/api-reference](https://reactflow.dev/api-reference)
 
 ---
-## Next Sprint: Interactive Features Enhancement
-- [ ] Node dragging with connection preservation (persistence)
-- [ ] Hover tool-tips for components & connections
-- [ ] Visual distinction for differential vs single-ended nets
+## Phase 0 – Scaffold & Base Canvas
+- [X] Create `prototype/visualizer_react_flow/` with Vite (React + TS)
+- [X] Add dependencies: `reactflow`, `zustand`, `tailwindcss` (or CSS Modules), `eslint`, `prettier`
+- [X] Canvas: `<ReactFlow />` with `<Background />`, `<Controls />`, `<MiniMap />`
+- [X] State: `useNodesState`/`useEdgesState`, `addEdge` on `onConnect`
+- [X] Defaults: `defaultEdgeOptions={ type: 'step' }`, `connectionLineType='step'`, grid snap enabled
 
-## Advanced Visualization (Backlog)
-- [ ] Model-based component styling (nmos, pmos, resistor, …)
-- [ ] Connection labels showing net names
-- [ ] Legend explaining symbols & connection types
-- [ ] Export canvas as PNG/SVG
+Acceptance:
+- [X] Pan/zoom/grid work; dummy nodes connect with orthogonal step edges
 
 ---
-## Done (Archive)
-See `context/done.md` for completed visualizer milestones. 
+## Phase 1 – Node Types: Transistor and Port
+- [X] `TransistorNode`: rectangle; terminals D/G/S positioned by flavor
+  - NMOS: D=Top, S=Bottom, G=Left
+  - PMOS: D=Bottom, S=Top, G=Left
+  - Use `Handle` components for D/G/S but style handles invisible; render custom tick marks on edges so only IO ports show circles
+- [X] `PortNode` (ASDL IO pin): small filled circle with a single `Handle`
+  - Side: `left` or `right`; Direction: `in` | `out` | `bidir`
+
+Acceptance:
+- [X] NMOS/PMOS anchors follow orientation; Port nodes render as solid dots; connections possible
+
+---
+## Phase 2 – Manhattan Routing & Connection Rules
+- [X] Use built‑in `step` edges for orthogonal routing (`defaultEdgeOptions` + `connectionLineType`)
+- [X] Enable `snapToGrid` with tuned `snapGrid`
+- [X] `isValidConnection` allowing same‑node different‑handle connections; still blocks identical handle loops; allow multi‑edges per terminal
+
+Acceptance:
+- [X] All connections appear orthogonal; invalid connects rejected
+
+---
+## Phase 3 – Toolbar & Inspector
+- [ ] Toolbar: add NMOS, PMOS, Port(L), Port(R); zoom fit; delete selected
+- [ ] Inspector: edit selected node props (name, flavor, W/L; port label/side)
+- [ ] State: Zustand for UI; sync to React Flow via `setNodes`/`updateNodeInternals`
+
+Acceptance:
+- [ ] Add/edit/delete elements; visual updates are immediate
+
+---
+## Phase 4 – Custom Manhattan Edge (optional)
+- [ ] Implement `ManhattanEdge` using `BaseEdge` to improve elbow placement
+- [ ] Simple router: horizontal‑first/vertical‑first with optional rounded corners
+
+Acceptance:
+- [ ] Edge detours look cleaner than default `step` in common cases
+
+---
+## Phase 5 – Persistence & Session Restore
+- [X] Export/import `{ nodes, edges }` JSON with grid-quantized positions (center-based)
+- [ ] Autosave to `localStorage`; `fitView` after import
+
+Acceptance:
+- [ ] Reload restores prior graph; manual round‑trip works
+
+---
+## Phase 6 – Quality & Polish
+- [ ] Undo/redo, copy/duplicate, multi‑select
+- [ ] Helper lines/snaplines; dark mode theme
+- [ ] Tooltips on handles; net highlight on hover
+- [ ] Minimal tests (Vitest + RTL) for node/edge behaviors
+
+---
+## Notes
+- Only `PortNode` uses small filled circles; transistor terminals use invisible handles (no circles)
+- Positions in JSON are grid centers; React Flow uses top-left computed from grid-aligned sizes
+- Port node box is 2×grid; dot is 1×grid centered; handles on box edges align to grid
+- Transistor node size is 8×6 grid (configurable); handles align to grid
+- Start with gate on left for both NMOS/PMOS; revisit later if needed
+- Ignore legacy jsPlumb prototype; this is a clean slate
+
+### Implemented Additions (2025-09-11)
+- CLI `asdlc visualize` default top module, stable `{basename}.{module}.sch.json`, merge prior positions
+- Inline JSON to app (`?data=`), fallback to `/graph.json`; print host only
+- MOSFET nodes use external SVGs via Vite asset imports (`src/assets`)
+- Edge stroke style aligned to SVG: `#111827`, width `2`, round caps/joins
