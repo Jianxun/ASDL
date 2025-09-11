@@ -9,22 +9,22 @@ Reference: React Flow API v12 [reactflow.dev/api-reference](https://reactflow.de
 
 ---
 ## Phase 0 – Scaffold & Base Canvas
-- [ ] Create `prototype/visualizer_react_flow/` with Vite (React + TS)
-- [ ] Add dependencies: `reactflow`, `zustand`, `tailwindcss` (or CSS Modules), `eslint`, `prettier`
-- [ ] Canvas: `<ReactFlow />` with `<Background />`, `<Controls />`, `<MiniMap />`
-- [ ] State: `useNodesState`/`useEdgesState`, `addEdge` on `onConnect`
-- [ ] Defaults: `defaultEdgeOptions={ type: 'step' }`, `connectionLineType='step'`, grid snap enabled
+- [X] Create `prototype/visualizer_react_flow/` with Vite (React + TS)
+- [X] Add dependencies: `reactflow`, `zustand`, `tailwindcss` (or CSS Modules), `eslint`, `prettier`
+- [X] Canvas: `<ReactFlow />` with `<Background />`, `<Controls />`, `<MiniMap />`
+- [X] State: `useNodesState`/`useEdgesState`, `addEdge` on `onConnect`
+- [X] Defaults: `defaultEdgeOptions={ type: 'step' }`, `connectionLineType='step'`, grid snap enabled
 
 Acceptance:
 - [ ] Pan/zoom/grid work; dummy nodes connect with orthogonal step edges
 
 ---
 ## Phase 1 – Node Types: Transistor and Port
-- [ ] `TransistorNode`: rectangle; terminals D/G/S positioned by flavor
+- [X] `TransistorNode`: rectangle; terminals D/G/S positioned by flavor
   - NMOS: D=Top, S=Bottom, G=Left
   - PMOS: D=Bottom, S=Top, G=Left
   - Use `Handle` components for D/G/S but style handles invisible; render custom tick marks on edges so only IO ports show circles
-- [ ] `PortNode` (ASDL IO pin): small filled circle with a single `Handle`
+- [X] `PortNode` (ASDL IO pin): small filled circle with a single `Handle`
   - Side: `left` or `right`; Direction: `in` | `out` | `bidir`
 
 Acceptance:
@@ -32,9 +32,9 @@ Acceptance:
 
 ---
 ## Phase 2 – Manhattan Routing & Connection Rules
-- [ ] Use built‑in `step` edges for orthogonal routing (`defaultEdgeOptions` + `connectionLineType`)
-- [ ] Enable `snapToGrid` with tuned `snapGrid`
-- [ ] `isValidConnection` to block self‑loops; allow multi‑edges per terminal to represent nets
+- [X] Use built‑in `step` edges for orthogonal routing (`defaultEdgeOptions` + `connectionLineType`)
+- [X] Enable `snapToGrid` with tuned `snapGrid`
+- [X] `isValidConnection` allowing same‑node different‑handle connections; still blocks identical handle loops; allow multi‑edges per terminal
 
 Acceptance:
 - [ ] All connections appear orthogonal; invalid connects rejected

@@ -143,6 +143,11 @@ spice_template: |
 - Plan (Phases 0–6): Scaffold, custom `TransistorNode` and `PortNode`, orthogonal routing via `step` edges, toolbar/inspector, optional custom Manhattan edge, persistence, polish
 - Reference: React Flow API `ReactFlow`, `Handle`, `Background`, `Controls`, `MiniMap`, `useNodesState`, `useEdgesState`, `addEdge`, `IsValidConnection`, `DefaultEdgeOptions`, `ConnectionLineType`, `BaseEdge` ([reactflow.dev/api-reference](https://reactflow.dev/api-reference))
 
+### 2025-09-11 – Visualizer Implementation Progress (Phase 0–2)
+- Phase 0 complete: Vite + React TS scaffold in `prototype/visualizer_react_flow`, base canvas with grid, minimap, controls, step edges, snap grid
+- Phase 1 complete: `TransistorNode` (NMOS/PMOS; invisible handles with tick marks) and `PortNode` (small filled circle, left/right); wired via `nodeTypes`
+- Phase 2 complete: Manhattan routing via `ConnectionLineType.Step`; `isValidConnection` permits same-node different-handle connections (e.g., diode-connected D–G) and blocks identical same-handle loops; multi-edges allowed
+
 ## Logging System Implementation
 **Branch**: `feature/logging_system_phase1`  
 **Scope**: Phase 1 – Structured Logging Foundation (see `doc/logging/logging_system_design.md`)
