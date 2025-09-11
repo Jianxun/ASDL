@@ -134,6 +134,15 @@ spice_template: |
 - Document ASDL_PATH usage and best practices in docs
 - Plan refactor: migrate legacy E10x elaborator diagnostics to XCCSS helper
 
+### 2025-09-11 – Visualizer (React Flow) MVP Decision & Plan
+- Decision: Build a new MVP visualizer using React Flow v12 (clean slate, ignore jsPlumb prototype)
+- Constraints:
+  - Ports: small filled circles only for ASDL IO pins (not transistor terminals)
+  - Routing: Manhattan (orthogonal) wiring
+  - Orientation: NMOS drain ↑/source ↓; PMOS drain ↓/source ↑; gate on left for both (MVP)
+- Plan (Phases 0–6): Scaffold, custom `TransistorNode` and `PortNode`, orthogonal routing via `step` edges, toolbar/inspector, optional custom Manhattan edge, persistence, polish
+- Reference: React Flow API `ReactFlow`, `Handle`, `Background`, `Controls`, `MiniMap`, `useNodesState`, `useEdgesState`, `addEdge`, `IsValidConnection`, `DefaultEdgeOptions`, `ConnectionLineType`, `BaseEdge` ([reactflow.dev/api-reference](https://reactflow.dev/api-reference))
+
 ## Logging System Implementation
 **Branch**: `feature/logging_system_phase1`  
 **Scope**: Phase 1 – Structured Logging Foundation (see `doc/logging/logging_system_design.md`)
