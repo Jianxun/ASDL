@@ -7,11 +7,10 @@
       "data": {
         "name": "vin_p",
         "side": "left",
-        "direction": "in",
-        "gridSize": 16
+        "direction": "in"
       },
       "position": {
-        "gx": 0,
+        "gx": 16,
         "gy": 12
       }
     },
@@ -21,12 +20,11 @@
       "data": {
         "name": "vin_n",
         "side": "left",
-        "direction": "in",
-        "gridSize": 16
+        "direction": "in"
       },
       "position": {
-        "gx": 17,
-        "gy": 13
+        "gx": 31,
+        "gy": 12
       }
     },
     {
@@ -35,12 +33,11 @@
       "data": {
         "name": "vout",
         "side": "right",
-        "direction": "out",
-        "gridSize": 16
+        "direction": "out"
       },
       "position": {
-        "gx": 33,
-        "gy": 8
+        "gx": 42,
+        "gy": 3
       }
     },
     {
@@ -49,12 +46,11 @@
       "data": {
         "name": "vdd",
         "side": "left",
-        "direction": "in",
-        "gridSize": 16
+        "direction": "in"
       },
       "position": {
-        "gx": 3,
-        "gy": -3
+        "gx": 4,
+        "gy": -7
       }
     },
     {
@@ -63,12 +59,11 @@
       "data": {
         "name": "vss",
         "side": "left",
-        "direction": "in",
-        "gridSize": 16
+        "direction": "in"
       },
       "position": {
-        "gx": -3,
-        "gy": 38
+        "gx": 2,
+        "gy": 28
       }
     },
     {
@@ -77,12 +72,11 @@
       "data": {
         "name": "ibias",
         "side": "left",
-        "direction": "in",
-        "gridSize": 16
+        "direction": "in"
       },
       "position": {
-        "gx": -5,
-        "gy": 22
+        "gx": 4,
+        "gy": 18
       }
     },
     {
@@ -90,12 +84,11 @@
       "type": "transistor",
       "data": {
         "name": "mp_ref",
-        "flavor": "pmos",
-        "gridSize": 16
+        "flavor": "pmos"
       },
       "position": {
-        "gx": 11,
-        "gy": 2
+        "gx": 23,
+        "gy": -2
       }
     },
     {
@@ -103,12 +96,11 @@
       "type": "transistor",
       "data": {
         "name": "mp_mirror",
-        "flavor": "pmos",
-        "gridSize": 16
+        "flavor": "pmos"
       },
       "position": {
-        "gx": 26,
-        "gy": 2
+        "gx": 38,
+        "gy": -2
       }
     },
     {
@@ -116,11 +108,10 @@
       "type": "transistor",
       "data": {
         "name": "mn_in_p",
-        "flavor": "nmos",
-        "gridSize": 16
+        "flavor": "nmos"
       },
       "position": {
-        "gx": 11,
+        "gx": 23,
         "gy": 12
       }
     },
@@ -129,12 +120,11 @@
       "type": "transistor",
       "data": {
         "name": "mn_in_n",
-        "flavor": "nmos",
-        "gridSize": 16
+        "flavor": "nmos"
       },
       "position": {
-        "gx": 26,
-        "gy": 13
+        "gx": 38,
+        "gy": 12
       }
     },
     {
@@ -142,12 +132,11 @@
       "type": "transistor",
       "data": {
         "name": "mn_diode",
-        "flavor": "nmos",
-        "gridSize": 16
+        "flavor": "nmos"
       },
       "position": {
-        "gx": 3,
-        "gy": 32
+        "gx": 12,
+        "gy": 23
       }
     },
     {
@@ -155,123 +144,106 @@
       "type": "transistor",
       "data": {
         "name": "mn_tail",
-        "flavor": "nmos",
-        "gridSize": 16
+        "flavor": "nmos"
       },
       "position": {
-        "gx": 18,
-        "gy": 30
+        "gx": 30,
+        "gy": 21
       }
     }
   ],
   "edges": [
     {
-      "id": "e0",
       "source": "vin_p",
       "sourceHandle": "P",
       "target": "mn_in_p",
       "targetHandle": "G"
     },
     {
-      "id": "e1",
       "source": "vin_n",
       "sourceHandle": "P",
       "target": "mn_in_n",
       "targetHandle": "G"
     },
     {
-      "id": "e2",
       "source": "vout",
       "sourceHandle": "P",
       "target": "mp_mirror",
       "targetHandle": "D"
     },
     {
-      "id": "e3",
       "source": "vout",
       "sourceHandle": "P",
       "target": "mn_in_n",
       "targetHandle": "D"
     },
     {
-      "id": "e4",
       "source": "vdd",
       "sourceHandle": "P",
       "target": "mp_ref",
       "targetHandle": "S"
     },
     {
-      "id": "e5",
       "source": "vdd",
       "sourceHandle": "P",
       "target": "mp_mirror",
       "targetHandle": "S"
     },
     {
-      "id": "e6",
       "source": "vss",
       "sourceHandle": "P",
       "target": "mn_diode",
       "targetHandle": "S"
     },
     {
-      "id": "e7",
       "source": "vss",
       "sourceHandle": "P",
       "target": "mn_tail",
       "targetHandle": "S"
     },
     {
-      "id": "e8",
       "source": "ibias",
       "sourceHandle": "P",
       "target": "mn_diode",
       "targetHandle": "D"
     },
     {
-      "id": "e9",
       "source": "ibias",
       "sourceHandle": "P",
       "target": "mn_diode",
       "targetHandle": "G"
     },
     {
-      "id": "e10",
       "source": "ibias",
       "sourceHandle": "P",
       "target": "mn_tail",
       "targetHandle": "G"
     },
     {
-      "id": "e11",
       "source": "mp_ref",
       "sourceHandle": "D",
       "target": "mp_ref",
       "targetHandle": "G"
     },
     {
-      "id": "e12",
       "source": "mp_ref",
       "sourceHandle": "D",
       "target": "mp_mirror",
       "targetHandle": "G"
     },
     {
-      "id": "e13",
       "source": "mp_ref",
       "sourceHandle": "D",
       "target": "mn_in_p",
       "targetHandle": "D"
     },
     {
-      "id": "e14",
       "source": "mn_in_p",
       "sourceHandle": "S",
       "target": "mn_in_n",
       "targetHandle": "S"
     },
     {
-      "id": "e15",
       "source": "mn_in_p",
       "sourceHandle": "S",
       "target": "mn_tail",

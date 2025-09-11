@@ -143,11 +143,24 @@ export default function App() {
     URL.revokeObjectURL(url)
   }, [nodes, edges, gridSize])
 
-  // Auto-load graph.json from public on startup (best-effort)
+  // Auto-load data from URL (inline base64 JSON) or fall back to public/graph.json
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
+        const params = new URLSearchParams(window.location.search)
+        const b64 = params.get('data')
+        if (b64) {
+          try {
+            const decoded = atob(b64)
+            const g = JSON.parse(decoded) as GraphFile
+            if (!cancelled) handleLoadJson(g)
+            return
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to parse inline data param:', e)
+          }
+        }
         const resp = await fetch('/graph.json', { cache: 'no-store' })
         if (!resp.ok) return
         const g = (await resp.json()) as GraphFile

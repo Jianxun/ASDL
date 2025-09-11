@@ -10,8 +10,8 @@
         "direction": "in"
       },
       "position": {
-        "gx": 4,
-        "gy": 6
+        "gx": 16,
+        "gy": 12
       }
     },
     {
@@ -23,8 +23,8 @@
         "direction": "in"
       },
       "position": {
-        "gx": 4,
-        "gy": 9
+        "gx": 31,
+        "gy": 12
       }
     },
     {
@@ -36,8 +36,8 @@
         "direction": "out"
       },
       "position": {
-        "gx": 36,
-        "gy": 6
+        "gx": 42,
+        "gy": 3
       }
     },
     {
@@ -50,7 +50,7 @@
       },
       "position": {
         "gx": 4,
-        "gy": 12
+        "gy": -7
       }
     },
     {
@@ -62,8 +62,8 @@
         "direction": "in"
       },
       "position": {
-        "gx": 4,
-        "gy": 15
+        "gx": 2,
+        "gy": 28
       }
     },
     {
@@ -87,8 +87,8 @@
         "flavor": "pmos"
       },
       "position": {
-        "gx": 20,
-        "gy": 6
+        "gx": 23,
+        "gy": -2
       }
     },
     {
@@ -99,8 +99,8 @@
         "flavor": "pmos"
       },
       "position": {
-        "gx": 20,
-        "gy": 9
+        "gx": 38,
+        "gy": -2
       }
     },
     {
@@ -111,7 +111,7 @@
         "flavor": "nmos"
       },
       "position": {
-        "gx": 20,
+        "gx": 23,
         "gy": 12
       }
     },
@@ -123,8 +123,8 @@
         "flavor": "nmos"
       },
       "position": {
-        "gx": 20,
-        "gy": 15
+        "gx": 38,
+        "gy": 12
       }
     },
     {
@@ -135,8 +135,8 @@
         "flavor": "nmos"
       },
       "position": {
-        "gx": 20,
-        "gy": 18
+        "gx": 12,
+        "gy": 23
       }
     },
     {
@@ -147,7 +147,7 @@
         "flavor": "nmos"
       },
       "position": {
-        "gx": 20,
+        "gx": 30,
         "gy": 21
       }
     }

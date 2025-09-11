@@ -1,9 +1,11 @@
+import base64
 import json
 import os
 import shutil
 import subprocess
 import sys
 import time
+import urllib.parse
 import webbrowser
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -186,10 +188,11 @@ def _load_prior_positions_if_any(path: Path) -> Optional[Dict[str, Dict[str, int
 @click.argument('in_file', type=click.Path(exists=True, dir_okay=False))
 @click.option('--out', 'out_file', default=None, type=click.Path(dir_okay=False), help='Output graph JSON path. Defaults to {basename}.{module}.sch.json beside ASDL.')
 @click.option('--grid', 'grid_size', default=16, show_default=True, type=int, help='Grid size (pixels).')
-@click.option('--serve/--no-serve', 'serve', default=True, show_default=True, help='Copy to visualizer public and launch dev server + browser.')
-@click.option('--public-dir', 'public_dir', default='prototype/visualizer_react_flow/public', show_default=True, type=click.Path(file_okay=False), help='Visualizer public directory containing graph.json.')
-@click.option('--vite-dir', 'vite_dir', default='prototype/visualizer_react_flow', show_default=True, type=click.Path(file_okay=False), help='Visualizer project directory (Vite).')
-def visualize_cmd(module_name: Optional[str], in_file: str, out_file: Optional[str], grid_size: int, serve: bool, public_dir: str, vite_dir: str) -> None:
+@click.option('--serve/--no-serve', 'serve', default=True, show_default=True, help='Serve in visualizer and launch dev server + browser.')
+@click.option('--inline/--no-inline', 'inline_mode', default=True, show_default=True, help='Pass JSON inline via URL param (no file fetch by the app).')
+@click.option('--public-dir', 'public_dir', default=None, type=click.Path(file_okay=False), help='Visualizer public directory containing graph.json.')
+@click.option('--vite-dir', 'vite_dir', default=None, type=click.Path(file_okay=False), help='Visualizer project directory (Vite).')
+def visualize_cmd(module_name: Optional[str], in_file: str, out_file: Optional[str], grid_size: int, serve: bool, inline_mode: bool, public_dir: Optional[str], vite_dir: Optional[str]) -> None:
     parser = ASDLParser()
     asdl, diags = parser.parse_file(in_file)
     if asdl is None:
@@ -215,15 +218,41 @@ def visualize_cmd(module_name: Optional[str], in_file: str, out_file: Optional[s
     if not serve:
         return
 
-    # Copy to visualizer public/graph.json for auto-load
-    pub_dir = Path(public_dir)
-    pub_dir.mkdir(parents=True, exist_ok=True)
-    pub_graph = pub_dir / 'graph.json'
-    shutil.copy2(out_path, pub_graph)
-    click.echo(f"Prepared visualizer input: {pub_graph}")
+    # Resolve visualizer directories (CWD-independent)
+    def _resolve_dirs(pub: Optional[str], vite: Optional[str]) -> Tuple[Path, Path]:
+        # 1) env overrides
+        env_vite = os.environ.get('ASDL_VIS_VITE_DIR')
+        env_pub = os.environ.get('ASDL_VIS_PUBLIC_DIR')
+        if vite is None and env_vite:
+            vite_path = Path(env_vite)
+        else:
+            vite_path = Path(vite) if vite else None
+        if pub is None and env_pub:
+            pub_path = Path(env_pub)
+        else:
+            pub_path = Path(pub) if pub else None
 
-    # Launch Vite dev server and open browser to use precise download filename
-    vite_project = Path(vite_dir)
+        # 2) try relative to repository root from this file
+        repo_root = None
+        here = Path(__file__).resolve()
+        for p in here.parents:
+            if (p / 'prototype' / 'visualizer_react_flow').exists():
+                repo_root = p
+                break
+        if vite_path is None and repo_root is not None:
+            vite_path = repo_root / 'prototype' / 'visualizer_react_flow'
+        if pub_path is None and repo_root is not None:
+            pub_path = repo_root / 'prototype' / 'visualizer_react_flow' / 'public'
+
+        # 3) final fallback: current working directory
+        if vite_path is None:
+            vite_path = Path.cwd() / 'prototype' / 'visualizer_react_flow'
+        if pub_path is None:
+            pub_path = Path.cwd() / 'prototype' / 'visualizer_react_flow' / 'public'
+
+        return pub_path, vite_path
+
+    pub_dir, vite_project = _resolve_dirs(public_dir, vite_dir)
     if not vite_project.exists():
         raise click.ClickException(f"Visualizer project directory not found: {vite_project}")
 
@@ -242,7 +271,22 @@ def visualize_cmd(module_name: Optional[str], in_file: str, out_file: Optional[s
         raise click.ClickException("Failed to launch Vite dev server. Ensure Node.js and npm are installed.") from e
 
     # Best-effort wait for server to be ready, then open browser
-    url = f"http://localhost:5173/?file={out_path.name}"
+    if inline_mode:
+        try:
+            payload = json.dumps(graph, separators=(',', ':')).encode('utf-8')
+            b64 = base64.b64encode(payload).decode('ascii')
+            qb64 = urllib.parse.quote(b64)
+            url = f"http://localhost:5173/?file={out_path.name}&data={qb64}"
+        except Exception:
+            # Fallback to file-based serving
+            inline_mode = False
+    if not inline_mode:
+        # Copy to visualizer public/graph.json for auto-load
+        pub_dir.mkdir(parents=True, exist_ok=True)
+        pub_graph = pub_dir / 'graph.json'
+        shutil.copy2(out_path, pub_graph)
+        click.echo(f"Prepared visualizer input: {pub_graph}")
+        url = f"http://localhost:5173/?file={out_path.name}"
     click.echo(f"Opening visualizer at {url}")
 
     # Poll the output briefly to detect readiness, with a timeout
