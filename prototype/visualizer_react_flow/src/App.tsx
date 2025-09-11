@@ -136,7 +136,9 @@ export default function App() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'graph_layout.json'
+    const params = new URLSearchParams(window.location.search)
+    const fname = params.get('file') || 'graph_layout.json'
+    a.download = fname
     a.click()
     URL.revokeObjectURL(url)
   }, [nodes, edges, gridSize])
