@@ -218,3 +218,23 @@ spice_template: |
 - New CLI: `asdl visualize` to export module-scoped graph JSON without elaboration:
   - Detect `nmos*`/`pmos*` from `instance.model`; emit D/G/S endpoints and P for ports.
   - Net-to-endpoint mapping with port-preferred hub; reuse positions from prior JSON; simple auto-placement otherwise.
+
+### 2025-01-27 – Visualizer React Flow MVP Complete & PR Created
+- **Status**: ✅ **COMPLETE** - React Flow MVP implementation finished and pull request created
+- **Pull Request**: [#14](https://github.com/Jianxun/ASDL/pull/14) - "feat(visualizer): React Flow MVP implementation with CLI integration"
+- **Final Fix**: Made transistor handles visible (opacity: 0 → 1) for better UX
+- **Implementation Scope**: 
+  - Complete React Flow application with custom node types (TransistorNode, PortNode)
+  - Full CLI integration with `asdlc visualize` command
+  - Manhattan routing, grid-based layout, SVG assets via Vite
+  - Position persistence, CWD-independence, inline JSON mode
+  - 13 commits with conventional commit format
+- **Ready for Review**: Production-ready visualizer MVP ready for integration into main branch
+
+### 2025-09-11 – Git Branch Cleanup
+- Pruned remotes and cleaned local branches
+- Deleted merged local branches: `feature/visualizer_react_flow_mvp`, `feature/import_refactor_paths`
+- Fixed broken upstream on `feature/import_refactor_paths` by removing tracking; branch then deleted as it was merged
+- Current branches:
+  - `main` (tracks `origin/main`)
+  - `feature/import_refactor_phase1` (tracks `origin/main`; ahead 7, behind 18)
