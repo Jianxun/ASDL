@@ -1,16 +1,28 @@
 import 'reactflow/dist/style.css'
 import ReactFlow, { Background, Controls, MiniMap, useEdgesState, useNodesState, addEdge, ConnectionLineType } from 'reactflow'
-import type { Connection, DefaultEdgeOptions } from 'reactflow'
+import type { Connection, DefaultEdgeOptions, Node, Edge, NodeTypes } from 'reactflow'
+import TransistorNode from './graph/TransistorNode'
+import PortNode from './graph/PortNode'
+import type { TransistorNodeData, PortNodeData } from './graph/types'
 import { useCallback } from 'react'
 
 const defaultEdgeOptions: DefaultEdgeOptions = { type: 'step' }
 
 export default function App() {
-  const [nodes, , onNodesChange] = useNodesState([
-    { id: 'a', position: { x: 100, y: 100 }, data: { label: 'A' }, type: 'default' },
-    { id: 'b', position: { x: 400, y: 200 }, data: { label: 'B' }, type: 'default' }
-  ])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  const nodeTypes: NodeTypes = {
+    transistor: TransistorNode,
+    port: PortNode,
+  }
+
+  const initialNodes: Array<Node<TransistorNodeData | PortNodeData>> = [
+    { id: 'M1', type: 'transistor', position: { x: 200, y: 160 }, data: { name: 'M1', flavor: 'nmos' } },
+    { id: 'M2', type: 'transistor', position: { x: 480, y: 160 }, data: { name: 'M2', flavor: 'pmos' } },
+    { id: 'VIN', type: 'port', position: { x: 100, y: 200 }, data: { name: 'vin', side: 'right' } },
+    { id: 'VOUT', type: 'port', position: { x: 720, y: 200 }, data: { name: 'vout', side: 'left' } },
+  ]
+
+  const [nodes, , onNodesChange] = useNodesState(initialNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Array<Edge>>([])
 
   const onConnect = useCallback((connection: Connection) => {
     setEdges((eds) => addEdge(connection, eds))
@@ -29,6 +41,7 @@ export default function App() {
         fitView
         snapToGrid
         snapGrid={[16, 16]}
+        nodeTypes={nodeTypes}
       >
         <Background gap={16} size={1} />
         <MiniMap />
