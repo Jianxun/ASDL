@@ -8,6 +8,7 @@ from .validate import validate_cmd
 from .elaborate import elaborate_cmd
 from .netlist import netlist_cmd
 from .schema import schema_cmd
+from .visualize import visualize_cmd
 
 
 @click.group(help="ASDL compiler CLI: parse → elaborate → validate → netlist")
@@ -36,3 +37,4 @@ cli.add_command(validate_cmd)
 cli.add_command(elaborate_cmd)
 cli.add_command(netlist_cmd)
 cli.add_command(schema_cmd)
+cli.add_command(visualize_cmd)
