@@ -1,0 +1,83 @@
+{
+    "gridSize": 16,
+    "nodes": [
+      {
+        "id": "M1",
+        "type": "transistor",
+        "data": {
+          "name": "M1",
+          "flavor": "nmos"
+        },
+        "position": {
+          "gx": 15,
+          "gy": 17
+        }
+      },
+      {
+        "id": "M2",
+        "type": "transistor",
+        "data": {
+          "name": "M2",
+          "flavor": "pmos"
+        },
+        "position": {
+          "gx": 15,
+          "gy": 3
+        }
+      },
+      {
+        "id": "VIN",
+        "type": "port",
+        "data": {
+          "name": "vin",
+          "side": "right"
+        },
+        "position": {
+          "gx": 8,
+          "gy": 12
+        }
+      },
+      {
+        "id": "VOUT",
+        "type": "port",
+        "data": {
+          "name": "vout",
+          "side": "left"
+        },
+        "position": {
+          "gx": 26,
+          "gy": 13
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e0",
+        "source": "VIN",
+        "sourceHandle": "P",
+        "target": "M1",
+        "targetHandle": "G"
+      },
+      {
+        "id": "e1",
+        "source": "VIN",
+        "sourceHandle": "P",
+        "target": "M2",
+        "targetHandle": "G"
+      },
+      {
+        "id": "e2",
+        "source": "M1",
+        "sourceHandle": "D",
+        "target": "VOUT",
+        "targetHandle": "P"
+      },
+      {
+        "id": "e3",
+        "source": "M2",
+        "sourceHandle": "D",
+        "target": "VOUT",
+        "targetHandle": "P"
+      }
+    ]
+  }

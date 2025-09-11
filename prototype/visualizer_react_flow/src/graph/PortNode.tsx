@@ -16,6 +16,8 @@ export default function PortNode({ data, selected }: NodeProps<PortNodeData>) {
         }}
         title={data.name}
       />
+      {/* Bidirectional handle so edges can connect in either direction */}
+      <Handle id="P" type="source" position={position} style={{ width: 10, height: 10, opacity: 0 }} />
       <Handle id="P" type="target" position={position} style={{ width: 10, height: 10, opacity: 0 }} />
     </div>
   )

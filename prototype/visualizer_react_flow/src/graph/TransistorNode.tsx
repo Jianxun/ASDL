@@ -23,9 +23,15 @@ export default function TransistorNode({ data, selected }: NodeProps<TransistorN
       <div style={{ position: 'absolute', top: 6, left: 8, fontSize: 12, color: '#111827' }}>{data.name}</div>
       <div style={{ position: 'absolute', bottom: 6, left: 8, fontSize: 11, color: '#374151' }}>{data.flavor.toUpperCase()}</div>
 
+      {/* Provide both source and target handles for bidirectional connectivity */}
       <Handle id="D" type="source" position={drainPos} style={{ width: 1, height: 1, opacity: 0 }} />
+      <Handle id="D" type="target" position={drainPos} style={{ width: 1, height: 1, opacity: 0 }} />
+
       <Handle id="G" type="source" position={gatePos} style={{ width: 1, height: 1, opacity: 0 }} />
+      <Handle id="G" type="target" position={gatePos} style={{ width: 1, height: 1, opacity: 0 }} />
+
       <Handle id="S" type="source" position={sourcePos} style={{ width: 1, height: 1, opacity: 0 }} />
+      <Handle id="S" type="target" position={sourcePos} style={{ width: 1, height: 1, opacity: 0 }} />
     </div>
   )
 }
