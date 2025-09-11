@@ -1,6 +1,6 @@
 import 'reactflow/dist/style.css'
 import ReactFlow, { Background, Controls, MiniMap, useEdgesState, useNodesState, addEdge, ConnectionLineType } from 'reactflow'
-import type { Connection, DefaultEdgeOptions, Node, Edge, NodeTypes } from 'reactflow'
+import type { Connection, DefaultEdgeOptions, Node, Edge, NodeTypes, IsValidConnection } from 'reactflow'
 import TransistorNode from './graph/TransistorNode'
 import PortNode from './graph/PortNode'
 import type { TransistorNodeData, PortNodeData } from './graph/types'
@@ -28,6 +28,14 @@ export default function App() {
     setEdges((eds) => addEdge(connection, eds))
   }, [setEdges])
 
+  const isValidConnection: IsValidConnection = useCallback((c) => {
+    // Allow same-node connections if handles differ (e.g., diode-connected D-G)
+    if (c.source && c.target && c.source === c.target) {
+      return c.sourceHandle !== c.targetHandle
+    }
+    return true
+  }, [])
+
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
       <ReactFlow
@@ -38,6 +46,7 @@ export default function App() {
         onConnect={onConnect}
         defaultEdgeOptions={defaultEdgeOptions}
         connectionLineType={ConnectionLineType.Step}
+        isValidConnection={isValidConnection}
         fitView
         snapToGrid
         snapGrid={[16, 16]}
