@@ -24,6 +24,14 @@ def _port_side_from_dir(direction: PortDirection) -> str:
     return 'left'
 
 
+def _port_direction_str(direction: PortDirection) -> str:
+    if direction == PortDirection.IN:
+        return 'in'
+    if direction == PortDirection.OUT:
+        return 'out'
+    return 'bidir'
+
+
 def _reuse_positions(nodes: List[Dict], prior: Dict[str, Dict[str, int]]) -> None:
     for n in nodes:
         nid = n['id']
@@ -73,10 +81,11 @@ def _build_graph_for_module(asdl: ASDLFile, module_name: str, grid_size: int,
     # Port nodes
     for pname, p in ports.items():
         side = _port_side_from_dir(p.dir)
+        direction = _port_direction_str(p.dir)
         nodes.append({
             'id': pname,
             'type': 'port',
-            'data': {'name': pname, 'side': side}
+            'data': {'name': pname, 'side': side, 'direction': direction}
         })
 
     # Instance nodes (MOSFETs only for MVP)
