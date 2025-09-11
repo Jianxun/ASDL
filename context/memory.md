@@ -192,3 +192,15 @@ spice_template: |
 **Follow-ups**:
 - Add tracing to log effective search roots and probe candidates
 - Update docs and examples to export `ASDL_PATH` (see `examples/setup.sh`)
+
+### 2025-09-11 – Visualizer JSON IO and Grid Alignment
+- Implemented front-end JSON load/save with grid-quantized positions; center-based positioning ensures anchors fall on grid.
+- Added auto-load of `prototype/visualizer_react_flow/public/graph.json` on startup; Save button downloads current layout.
+- Node sizing and handles:
+  - `TransistorNode`: grid-aware dimensions (default 6×6 grid), ticks centered; box-sizing border-box for exact size.
+  - `PortNode`: node box 2×grid, dot 1×grid centered; handles on box edges; labels placed opposite wire entry.
+- Routing and ports:
+  - Ports labeled and oriented; inputs accept from right, outputs drive left; edges emitted from ports in exporter for consistent routing.
+- New CLI: `asdl visualize` to export module-scoped graph JSON without elaboration:
+  - Detect `nmos*`/`pmos*` from `instance.model`; emit D/G/S endpoints and P for ports.
+  - Net-to-endpoint mapping with port-preferred hub; reuse positions from prior JSON; simple auto-placement otherwise.

@@ -16,7 +16,7 @@ Reference: React Flow API v12 [reactflow.dev/api-reference](https://reactflow.de
 - [X] Defaults: `defaultEdgeOptions={ type: 'step' }`, `connectionLineType='step'`, grid snap enabled
 
 Acceptance:
-- [ ] Pan/zoom/grid work; dummy nodes connect with orthogonal step edges
+- [X] Pan/zoom/grid work; dummy nodes connect with orthogonal step edges
 
 ---
 ## Phase 1 – Node Types: Transistor and Port
@@ -28,7 +28,7 @@ Acceptance:
   - Side: `left` or `right`; Direction: `in` | `out` | `bidir`
 
 Acceptance:
-- [ ] NMOS/PMOS anchors follow orientation; Port nodes render as solid dots; connections possible
+- [X] NMOS/PMOS anchors follow orientation; Port nodes render as solid dots; connections possible
 
 ---
 ## Phase 2 – Manhattan Routing & Connection Rules
@@ -37,7 +37,7 @@ Acceptance:
 - [X] `isValidConnection` allowing same‑node different‑handle connections; still blocks identical handle loops; allow multi‑edges per terminal
 
 Acceptance:
-- [ ] All connections appear orthogonal; invalid connects rejected
+- [X] All connections appear orthogonal; invalid connects rejected
 
 ---
 ## Phase 3 – Toolbar & Inspector
@@ -58,7 +58,7 @@ Acceptance:
 
 ---
 ## Phase 5 – Persistence & Session Restore
-- [ ] Export/import `{ nodes, edges }` JSON (use `useReactFlow().toObject()` when suitable)
+- [X] Export/import `{ nodes, edges }` JSON with grid-quantized positions (center-based)
 - [ ] Autosave to `localStorage`; `fitView` after import
 
 Acceptance:
@@ -74,5 +74,8 @@ Acceptance:
 ---
 ## Notes
 - Only `PortNode` uses small filled circles; transistor terminals have invisible handles with visible tick marks
+- Positions in JSON are grid centers; React Flow uses top-left computed from grid-aligned sizes
+- Port node box is 2×grid; dot is 1×grid centered; handles on box edges align to grid
+- Transistor node size is 6×6 grid (configurable), with centered ticks; handles align to grid
 - Start with gate on left for both NMOS/PMOS; revisit later if needed
 - Ignore legacy jsPlumb prototype; this is a clean slate
