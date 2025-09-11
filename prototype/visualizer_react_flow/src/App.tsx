@@ -7,7 +7,10 @@ import type { TransistorNodeData, PortNodeData } from './graph/types'
 import { DEFAULT_GRID_SIZE, type GraphEdge, type GraphFile, type GraphNode } from './graph/types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-const defaultEdgeOptions: DefaultEdgeOptions = { type: 'step' }
+const defaultEdgeOptions: DefaultEdgeOptions = {
+  type: 'step',
+  style: { stroke: '#111827', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+}
 
 export default function App() {
   const nodeTypes: NodeTypes = {
@@ -75,6 +78,7 @@ export default function App() {
       target: e.target,
       targetHandle: e.targetHandle,
       type: 'step',
+      style: { stroke: '#111827', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
     }))
   }, [])
 
@@ -189,6 +193,7 @@ export default function App() {
         onConnect={onConnect}
         defaultEdgeOptions={defaultEdgeOptions}
         connectionLineType={ConnectionLineType.Step}
+        connectionLineStyle={{ stroke: '#111827', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}
         isValidConnection={isValidConnection}
         fitView
         snapToGrid
