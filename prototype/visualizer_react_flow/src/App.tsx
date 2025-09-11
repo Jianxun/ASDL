@@ -42,7 +42,7 @@ export default function App() {
   }
 
   // Node sizes aligned to grid (multiples of gridSize)
-  const TRANSISTOR_W = useMemo(() => 8 * gridSize, [gridSize]) // 8 columns
+  const TRANSISTOR_W = useMemo(() => 6 * gridSize, [gridSize]) // 8 columns
   const TRANSISTOR_H = useMemo(() => 6 * gridSize, [gridSize]) // 6 rows
   const PORT_SIZE = useMemo(() => 2 * gridSize, [gridSize]) // box is 2 grid to align handles; dot drawn smaller within
 
