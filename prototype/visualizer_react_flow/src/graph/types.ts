@@ -5,6 +5,7 @@ export interface TransistorNodeData {
   flavor: TransistorFlavor
   w?: string
   l?: string
+  gridSize?: number
 }
 
 export type PortSide = 'left' | 'right'
@@ -14,6 +15,7 @@ export interface PortNodeData {
   name: string
   side: PortSide
   direction?: PortDirection
+  gridSize?: number
 }
 
 // JSON graph file schema for import/export

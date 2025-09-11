@@ -41,14 +41,31 @@ export default function App() {
     return Math.round(p / gridSize)
   }
 
+  // Node sizes aligned to grid (multiples of gridSize)
+  const TRANSISTOR_W = useMemo(() => 8 * gridSize, [gridSize]) // 8 columns
+  const TRANSISTOR_H = useMemo(() => 6 * gridSize, [gridSize]) // 6 rows
+  const PORT_SIZE = useMemo(() => 2 * gridSize, [gridSize]) // box is 2 grid to align handles; dot drawn smaller within
+
   const toReactFlowNodes = useCallback((gnodes: Array<GraphNode>): Array<Node<TransistorNodeData | PortNodeData>> => {
-    return gnodes.map((n) => ({
-      id: n.id,
-      type: n.type,
-      position: { x: pixelFromGrid(n.position.gx), y: pixelFromGrid(n.position.gy) },
-      data: n.data as TransistorNodeData | PortNodeData,
-    }))
-  }, [gridSize])
+    return gnodes.map((n) => {
+      const isPort = n.type === 'port'
+      const width = isPort ? PORT_SIZE : TRANSISTOR_W
+      const height = isPort ? PORT_SIZE : TRANSISTOR_H
+      // Interpret gx,gy as CENTER coordinates; convert to top-left for React Flow
+      const cx = pixelFromGrid(n.position.gx)
+      const cy = pixelFromGrid(n.position.gy)
+      const x = Math.round(cx - width / 2)
+      const y = Math.round(cy - height / 2)
+      const data = { ...(n.data as any), gridSize } as TransistorNodeData | PortNodeData
+      return {
+        id: n.id,
+        type: n.type,
+        position: { x, y },
+        data,
+        style: { width, height },
+      }
+    })
+  }, [gridSize, PORT_SIZE, TRANSISTOR_W, TRANSISTOR_H])
 
   const toReactFlowEdges = useCallback((gedges: Array<GraphEdge>): Array<Edge> => {
     return gedges.map((e, idx) => ({
@@ -93,12 +110,20 @@ export default function App() {
   const handleSaveJson = useCallback(() => {
     const exported: GraphFile = {
       gridSize,
-      nodes: nodes.map((n) => ({
-        id: n.id,
-        type: String(n.type) as any,
-        data: n.data as any,
-        position: { gx: gridFromPixel(n.position.x), gy: gridFromPixel(n.position.y) },
-      })),
+      nodes: nodes.map((n) => {
+        const isPort = n.type === 'port'
+        const width = isPort ? PORT_SIZE : TRANSISTOR_W
+        const height = isPort ? PORT_SIZE : TRANSISTOR_H
+        // Convert from top-left back to CENTER grid units
+        const cx = n.position.x + width / 2
+        const cy = n.position.y + height / 2
+        return {
+          id: n.id,
+          type: String(n.type) as any,
+          data: n.data as any,
+          position: { gx: gridFromPixel(cx), gy: gridFromPixel(cy) },
+        }
+      }),
       edges: edges.map((e) => ({
         id: e.id,
         source: e.source,

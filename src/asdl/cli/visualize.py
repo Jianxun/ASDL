@@ -116,25 +116,22 @@ def _build_graph_for_module(asdl: ASDLFile, module_name: str, grid_size: int,
                 if up in ('D','G','S'):
                     net_to_eps.setdefault(net, []).append((inst_name, up))
 
-    # Emit edges: hub=port if present else first
+    # Emit edges with port as hub where present; always connect FROM port to device so RF can draw consistently
     for net, eps in net_to_eps.items():
         if len(eps) < 2:
             continue
-        hub_idx = 0
-        for i, (nid, hid) in enumerate(eps):
-            if hid == 'P':
-                hub_idx = i
-                break
-        hub_n, hub_h = eps[hub_idx]
-        for i, (nid, hid) in enumerate(eps):
-            if i == hub_idx:
-                continue
-            edges.append({
-                'source': hub_n,
-                'sourceHandle': hub_h,
-                'target': nid,
-                'targetHandle': hid,
-            })
+        port_idx = next((i for i, (_, hid) in enumerate(eps) if hid == 'P'), None)
+        if port_idx is None:
+            # No port: connect first to others
+            hub_n, hub_h = eps[0]
+            for i, (nid, hid) in enumerate(eps[1:], start=1):
+                edges.append({'source': hub_n, 'sourceHandle': hub_h, 'target': nid, 'targetHandle': hid})
+        else:
+            port_n, port_h = eps[port_idx]
+            for i, (nid, hid) in enumerate(eps):
+                if i == port_idx:
+                    continue
+                edges.append({'source': port_n, 'sourceHandle': port_h, 'target': nid, 'targetHandle': hid})
 
     # Positions
     if prior_layout:
