@@ -243,6 +243,20 @@ spice_template: |
   - Detect `nmos*`/`pmos*` from `instance.model`; emit D/G/S endpoints and P for ports.
   - Net-to-endpoint mapping with port-preferred hub; reuse positions from prior JSON; simple auto-placement otherwise.
 
+### 2025-09-12 – Visualizer Schema v2 and Primitive Mapping
+- CLI `asdl visualize` now exports ALL instances (not just MOSFETs):
+  - Instance nodes use schema: `{ id, type: 'instance', model, pin_list, position }`
+  - `pin_list` contains all mapped pins; MOS pins get optional role hints (drain/gate/source/bulk) when detectable
+  - Ports remain unchanged (legacy-compatible `type: 'port'` with `data` and `position`)
+  - Edges connect every instance pin; ports use handle id `P`
+- Visualizer (React Flow) updated:
+  - Added `InstanceNode` (generic block with per-pin handles), `ResistorNode` (PLUS/MINUS top/bottom), and `CapacitorNode` (PLUS/MINUS top/bottom)
+  - Exact model mapping renders primitives: `nmos`, `pmos`, `res`, `cap`; others render as generic blocks
+  - Loader classifies nodes from schema v2, preserves grid-centered positions, and save exports updated positions
+  - Assets added under `prototype/visualizer_react_flow/src/assets/`
+- Output naming and placement preserved: `{basename}.{module}.sch.json` next to the ASDL file
+- Docs updated in `prototype/visualizer_react_flow/README.md` to describe schema v2 and mapping
+
 ### 2025-01-27 – Visualizer React Flow MVP Complete & PR Created
 - **Status**: ✅ **COMPLETE** - React Flow MVP implementation finished and pull request created
 - **Pull Request**: [#14](https://github.com/Jianxun/ASDL/pull/14) - "feat(visualizer): React Flow MVP implementation with CLI integration"
@@ -255,10 +269,9 @@ spice_template: |
   - 13 commits with conventional commit format
 - **Ready for Review**: Production-ready visualizer MVP ready for integration into main branch
 
-### 2025-09-11 – Git Branch Cleanup
-- Pruned remotes and cleaned local branches
-- Deleted merged local branches: `feature/visualizer_react_flow_mvp`, `feature/import_refactor_paths`
-- Fixed broken upstream on `feature/import_refactor_paths` by removing tracking; branch then deleted as it was merged
-- Current branches:
-  - `main` (tracks `origin/main`)
-  - `feature/import_refactor_phase1` (tracks `origin/main`; ahead 7, behind 18)
+### 2025-09-11 – Comprehensive Git Branch Cleanup
+- **Local cleanup**: Deleted merged local branches: `feature/visualizer_react_flow_mvp`, `feature/import_refactor_paths`, `feature/import_refactor_phase1`
+- **Remote cleanup**: Deleted remote branch `origin/feature/import_refactor_phase1` (fully merged)
+- **Upstream fixes**: Fixed broken upstream on `feature/import_refactor_paths` by removing tracking
+- **Final state**: Clean repository with only `main` branch (tracks `origin/main`)
+- **Gitignore updates**: Added `.vite/` to local `.gitignore` in `prototype/visualizer_react_flow/`

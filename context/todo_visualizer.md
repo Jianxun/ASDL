@@ -85,3 +85,9 @@ Acceptance:
 - Inline JSON to app (`?data=`), fallback to `/graph.json`; print host only
 - MOSFET nodes use external SVGs via Vite asset imports (`src/assets`)
 - Edge stroke style aligned to SVG: `#111827`, width `2`, round caps/joins
+
+### Implemented Additions (2025-09-12)
+- CLI exports all instances with `model` and `pin_list`; ports unchanged
+- Visualizer supports schema v2, classifies nodes, and renders primitives by exact model (`nmos`, `pmos`, `res`, `cap`)
+- Added `InstanceNode`, `ResistorNode`, `CapacitorNode`; assets `res.svg`, `cap.svg`
+- README updated with schema and flow
