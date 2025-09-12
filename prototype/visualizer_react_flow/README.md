@@ -1,69 +1,51 @@
-# React + TypeScript + Vite
+## Visualizer (React Flow)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interactive schematic viewer for ASDL modules using React Flow v12. The CLI exports a graph JSON; the app renders primitive symbols (NMOS, PMOS, resistor, capacitor) by exact model match or a generic block for other instances.
 
-Currently, two official plugins are available:
+### Export and serve
+- Export: `asdl visualize <file.asdl> [--module <name>] [--no-serve] [--inline/--no-inline]`
+- Output: `{basename}.{module}.sch.json` next to the ASDL file
+- Serve: by default the CLI launches Vite at `http://localhost:5173`
+- Inline mode: JSON passed via `?data=`; otherwise copied to `public/graph.json`
+- Env overrides: `ASDL_VIS_VITE_DIR`, `ASDL_VIS_PUBLIC_DIR`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### JSON schema (v2)
+Two node kinds:
+- Port node (legacy-compatible):
+```json
+{
+  "id": "vin",
+  "type": "port",
+  "data": { "name": "vin", "side": "left", "direction": "in" },
+  "position": { "gx": 6, "gy": 6 }
+}
 ```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Instance node (generic for all instances):
+```json
+{
+  "id": "mn1",
+  "type": "instance",
+  "model": "nmos",
+  "pin_list": { "D": {}, "G": {}, "S": {} },
+  "position": { "gx": 20, "gy": 6 }
+}
 ```
+Notes:
+- `pin_list` keys are pin names; optional per-pin metadata: `role`, `type`, `dir`.
+- Edges use handle ids matching pins: ports use `P`; instances use each pin key.
+
+### Primitive symbols (exact model match)
+- `nmos` → NMOS symbol
+- `pmos` → PMOS symbol
+- `res` → Resistor symbol (handles: PLUS top, MINUS bottom)
+- `cap` → Capacitor symbol (handles: PLUS top, MINUS bottom)
+Any other `model` renders as a generic block with per-pin handles.
+
+### Layout and persistence
+- Grid-based coordinates in `position.gx/gy` represent node centers
+- Auto-placement provides initial layout; drag to arrange
+- Save Layout downloads JSON with updated positions; replace the exported file to persist positions across runs
+
+### Development
+- Start app: `npm install && npm run dev`
+- Typical flow: run CLI export → adjust layout in browser → Save Layout
