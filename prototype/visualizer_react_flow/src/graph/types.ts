@@ -18,19 +18,39 @@ export interface PortNodeData {
   gridSize?: number
 }
 
-// JSON graph file schema for import/export
-export interface GridPosition {
-  gx: number
-  gy: number
+export interface InstanceNodeData {
+  name: string
+  model: string
+  pins?: string[]
+  gridSize?: number
 }
 
-export type VisualizerNodeType = 'transistor' | 'port'
+export interface ResistorNodeData {
+  name: string
+  gridSize?: number
+}
 
-export interface GraphNode<TData = TransistorNodeData | PortNodeData> {
+export interface CapacitorNodeData {
+  name: string
+  gridSize?: number
+}
+
+// JSON graph file schema (v2)
+export interface GridPosition { gx: number; gy: number }
+
+export interface PinMeta { dir?: PortDirection; type?: string; role?: string }
+
+// Port nodes keep existing shape via React state, but file schema uses GraphNodeV2
+export interface GraphNodeV2 {
   id: string
-  type: VisualizerNodeType
-  data: TData
+  type?: 'port' | 'instance'
+  model?: string
+  // For ports, loader constructs from existing data; for instances, required
+  pin_list?: Record<string, PinMeta>
+  // Position in grid units (center)
   position: GridPosition
+  // Backward compat: allow existing data for ports/transistors (ignored for v2)
+  data?: any
 }
 
 export interface GraphEdge {
@@ -43,7 +63,7 @@ export interface GraphEdge {
 
 export interface GraphFile {
   gridSize?: number
-  nodes: Array<GraphNode>
+  nodes: Array<GraphNodeV2>
   edges?: Array<GraphEdge>
 }
 

@@ -96,16 +96,31 @@ def _build_graph_for_module(asdl: ASDLFile, module_name: str, grid_size: int,
             'data': {'name': pname, 'side': side, 'direction': direction}
         })
 
-    # Instance nodes (MOSFETs only for MVP)
+    # Instance nodes (export ALL instances; UI decides symbol vs block)
     if mod.instances:
         for inst_name, inst in mod.instances.items():
+            # Build pin_list from mappings; add MOS roles when detectable
+            pin_list: Dict[str, Dict[str, str]] = {}
             flavor = _detect_flavor(inst.model)
-            if not flavor:
-                continue
+            for pin in inst.mappings.keys():
+                up = pin.upper()
+                meta: Dict[str, str] = {}
+                if flavor in ('nmos', 'pmos'):
+                    if up == 'D':
+                        meta['role'] = 'drain'
+                    elif up == 'G':
+                        meta['role'] = 'gate'
+                    elif up == 'S':
+                        meta['role'] = 'source'
+                    elif up in ('B', 'BODY', 'BULK'):
+                        meta['role'] = 'bulk'
+                pin_list[up] = meta
+
             nodes.append({
                 'id': inst_name,
-                'type': 'transistor',
-                'data': {'name': inst_name, 'flavor': flavor}
+                'type': 'instance',
+                'model': inst.model,
+                'pin_list': pin_list,
             })
 
     # Edges: build net -> endpoints
@@ -113,16 +128,12 @@ def _build_graph_for_module(asdl: ASDLFile, module_name: str, grid_size: int,
     # Port endpoints
     for pname in ports.keys():
         net_to_eps.setdefault(pname, []).append((pname, 'P'))
-    # Instance endpoints from mappings
+    # Instance endpoints from mappings (use ALL pins)
     if mod.instances:
         for inst_name, inst in mod.instances.items():
-            flavor = _detect_flavor(inst.model)
-            if not flavor:
-                continue
             for pin, net in inst.mappings.items():
                 up = pin.upper()
-                if up in ('D','G','S'):
-                    net_to_eps.setdefault(net, []).append((inst_name, up))
+                net_to_eps.setdefault(net, []).append((inst_name, up))
 
     # Emit edges with port as hub where present; always connect FROM port to device so RF can draw consistently
     for net, eps in net_to_eps.items():
