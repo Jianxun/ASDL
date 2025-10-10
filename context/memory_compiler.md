@@ -48,6 +48,18 @@
 - Pass hook: `src/asdl/ir/passes.py` provides a no-op `run_passes` placeholder.
 - Tests: fixture-based IR tests added under `tests/unit_tests/ir/` (port order, CLI smoke for textual and xDSL engines).
 
+## Netlist IR (Phase 0 – minimal lowering and emitter)
+- Dialect: `netlist` added under `src/asdl/ir/netlist_dialect/` with:
+  - Ops: `netlist.module{ sym_name, ports: ArrayAttr<StringAttr>, parameters: DictAttr }`
+  - Ops: `netlist.instance{ sym_name, model_ref, pin_map: DictAttr(port->net), pin_order: ArrayAttr<StringAttr>, parameters: DictAttr }`
+- Lowering: `asdl_ast_to_netlist_module(asdl_file)` builds a `builtin.module` of `netlist.module` ops and nested `netlist.instance` ops.
+  - `pin_map` preserves named connectivity; `pin_order` aligns to callee port order to support positional emitters.
+  - Parameters are not propagated yet (next step); imports/model aliases unresolved by design in Phase 0.
+- Textual netlist emitter: `emit_netlist_text(builtin_module, dialect=...)` in `src/asdl/ir/netlist_text.py`.
+  - Dialects: `ngspice` (positional pins; `.subckt` / `.ends`) and `neutral` (named pins `pin=net`).
+  - CLI: `asdlc ir-dump --engine xdsl --lower netlist-text --sim {ngspice|neutral} file.asdl`.
+  - Example (ngspice): `Xmn_in_p vd vin_p tail vss nmos`.
+
 ## Decisions Captured
 - Preserve declared port order across AST → IR → SPICE.
 - Defer PatternExpansionPass to next phase; Phase 0 focuses on AST plumbing and IR dump.

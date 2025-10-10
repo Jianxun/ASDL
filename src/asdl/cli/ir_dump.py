@@ -11,7 +11,8 @@ from ..parser import ASDLParser
 from ..diagnostics import Diagnostic
 from .helpers import diagnostics_to_jsonable, has_error, print_human_diagnostics
 from ..ir import build_textual_ir, register_asdl_dialect
-from ..ir.converter import asdl_ast_to_xdsl_module, print_xdsl_module
+from ..ir.converter import asdl_ast_to_xdsl_module, asdl_ast_to_netlist_module, print_xdsl_module
+from ..ir.netlist_text import emit_netlist_text
 from ..ir.passes import run_passes
 
 
@@ -22,8 +23,12 @@ from ..ir.passes import run_passes
 @click.option("--json", "json_output", is_flag=True, help="Emit machine-readable JSON to stdout (diagnostics)")
 @click.option("--engine", type=click.Choice(["textual", "xdsl"]), default="textual", show_default=True,
               help="Select IR engine: minimal textual (default) or xDSL dialect")
+@click.option("--lower", type=click.Choice(["none", "netlist", "netlist-text"]), default="none", show_default=True,
+              help="When using xdsl engine, optionally lower/emit another form before printing")
+@click.option("--sim", "sim_dialect", type=click.Choice(["ngspice", "neutral"]), default="ngspice", show_default=True,
+              help="Simulator dialect for netlist-text emission")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose logs (INFO level)")
-def ir_dump_cmd(input: Path, verify: bool, run_passes: tuple[str, ...], json_output: bool, engine: str, verbose: bool) -> None:
+def ir_dump_cmd(input: Path, verify: bool, run_passes: tuple[str, ...], json_output: bool, engine: str, lower: str, sim_dialect: str, verbose: bool) -> None:
     exit_code = 0
     diagnostics: List[Diagnostic] = []
 
@@ -51,11 +56,20 @@ def ir_dump_cmd(input: Path, verify: bool, run_passes: tuple[str, ...], json_out
             click.echo(textual)
         else:
             # xDSL engine
-            mod = asdl_ast_to_xdsl_module(asdl_file)
-            if run_passes:
-                run_passes(None, mod, run_passes)
-            textual = print_xdsl_module(mod)
-            click.echo(textual)
+            if lower == "netlist-text":
+                mod = asdl_ast_to_netlist_module(asdl_file)
+                if run_passes:
+                    run_passes(None, mod, run_passes)
+                click.echo(emit_netlist_text(mod, dialect=sim_dialect))
+            else:
+                if lower == "netlist":
+                    mod = asdl_ast_to_netlist_module(asdl_file)
+                else:
+                    mod = asdl_ast_to_xdsl_module(asdl_file)
+                if run_passes:
+                    run_passes(None, mod, run_passes)
+                textual = print_xdsl_module(mod)
+                click.echo(textual)
 
     except click.ClickException as e:
         exit_code = 1

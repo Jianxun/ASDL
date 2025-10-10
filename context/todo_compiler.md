@@ -19,6 +19,13 @@
   - [X] Tests: assert strict port order preservation in IR dump
   - [ ] Deliverable: IR prints and verifies on fixtures (parity approximate; minor diffs allowed)
 
+### Netlist IR (Phase 0 mini)
+- [X] Dialect scaffold: `netlist.module`, `netlist.instance` with `pin_map` and `pin_order`
+- [X] Lowering: AST→Netlist IR (modules + instances; no nets yet)
+- [X] CLI: `asdlc ir-dump --engine xdsl --lower netlist` and `--lower netlist-text`
+- [X] Emitter: neutral textual netlist with `--sim {ngspice, neutral}` (default ngspice)
+- [ ] Propagate instance/module parameters into Netlist IR and emitter
+
 ## Backlog – Generator Improvements
 - [ ] Enhanced error handling for malformed ASDL files
 - [ ] Support for additional SPICE device types

@@ -29,3 +29,26 @@ def test_ir_dump_smoke_xdsl_engine(tmp_path: Path) -> None:
     out = result.output
     assert "module" in out
 
+
+def test_ir_dump_lower_netlist(tmp_path: Path) -> None:
+    if register_asdl_dialect is None:
+        return  # skip if xDSL not installed
+    fixture = Path(__file__).resolve().parents[2] / "fixtures" / "ir" / "single_inst.yml"
+    runner = CliRunner()
+    result = runner.invoke(
+        asdl_cli,
+        [
+            "ir-dump",
+            "--verify",
+            "--engine",
+            "xdsl",
+            "--lower",
+            "netlist",
+            str(fixture),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    out = result.output
+    assert "netlist.module" in out
+    assert "netlist.instance" in out
+
