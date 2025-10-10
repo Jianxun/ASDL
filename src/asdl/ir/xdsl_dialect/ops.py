@@ -9,27 +9,20 @@ try:  # Optional dependency: only import if xdsl is installed
         IRDLOperation,
         irdl_op_definition,
         attr_def,
-        Operand,
-        VarOperand,
-        Region,
-        AttrSizedOperandSegments,
+        region_def,
+        var_operand_def,
     )
     from xdsl.dialects.builtin import ArrayAttr, StringAttr, DictionaryAttr
-    from .attrs import PortAttr
 except Exception:  # pragma: no cover - exercised only if optional dep missing
     Operation = object  # type: ignore
     def irdl_op_definition(cls):  # type: ignore
         return cls
     def attr_def(arg):  # type: ignore
         return None
-    class Operand:  # type: ignore
-        pass
-    class VarOperand:  # type: ignore
-        pass
-    class Region:  # type: ignore
-        pass
-    class AttrSizedOperandSegments:  # type: ignore
-        pass
+    def region_def():  # type: ignore
+        return None
+    def var_operand_def():  # type: ignore
+        return None
     class ArrayAttr:  # type: ignore
         pass
     class StringAttr:  # type: ignore
@@ -45,11 +38,11 @@ class ModuleOp(IRDLOperation):  # type: ignore[misc]
     name = "asdl.module"
     # Single region with one block (entry);
     # ports are represented as an array attribute for stable ordering
-    ports = attr_def(ArrayAttr[PortAttr])
+    ports = attr_def(ArrayAttr[StringAttr])
     parameters = attr_def(DictionaryAttr)
     variables = attr_def(DictionaryAttr)
     sym_name = attr_def(StringAttr)
-    region: Region
+    body = region_def()
 
 
 @irdl_op_definition
@@ -66,7 +59,7 @@ class InstanceOp(IRDLOperation):  # type: ignore[misc]
     parameters = attr_def(DictionaryAttr)
     pins = attr_def(ArrayAttr[StringAttr])
     # Operands reference wires in pin order
-    operands: VarOperand
+    operands = var_operand_def()
 
 
 __all__ = [

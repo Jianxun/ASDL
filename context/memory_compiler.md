@@ -35,6 +35,19 @@
     - `endmodule`
 - Port order invariant preserved by iterating the dict as-is; no sorting.
 
+## xDSL Engine (Phase 0 status)
+- Dialect stubs added under `src/asdl/ir/xdsl_dialect/`:
+  - Ops: `asdl.module`, `asdl.instance`, `asdl.wire` (minimal attributes)
+  - Attrs: `asdl.port`, `asdl.range`, `asdl.expr` (placeholders)
+- CLI: `asdlc ir-dump --engine {textual,xdsl}`; textual default remains.
+- Converter: `src/asdl/ir/converter.py` builds `builtin.module` containing `asdl.module` with:
+  - attributes: `sym_name`, empty `parameters`/`variables`, `ports` as `ArrayAttr<StringAttr>` preserving order
+  - a single empty body region (entry block)
+- Printing (current xDSL version):
+  - Example output: `builtin.module { "asdl.module"() ({ ^bb0: }) {sym_name = "prim", parameters = {}, variables = {}, ports = ["a", "b", "c"]} : () -> () }`
+- Pass hook: `src/asdl/ir/passes.py` provides a no-op `run_passes` placeholder.
+- Tests: fixture-based IR tests added under `tests/unit_tests/ir/` (port order, CLI smoke for textual and xDSL engines).
+
 ## Decisions Captured
 - Preserve declared port order across AST → IR → SPICE.
 - Defer PatternExpansionPass to next phase; Phase 0 focuses on AST plumbing and IR dump.

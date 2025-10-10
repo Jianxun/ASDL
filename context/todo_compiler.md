@@ -15,7 +15,7 @@
   - [ ] Add SPICE parity normalizer stub (diff stability)
   - [X] Tests: create fixture ASDLs under `tests/fixtures/ir/`
   - [ ] Tests: golden textual IR for small fixture(s)
-  - [ ] Tests: dialect printing/parsing round-trip on fixtures
+  - [X] Tests: dialect printing/parsing round-trip on fixtures (smoke via CLI xdsl)
   - [X] Tests: assert strict port order preservation in IR dump
   - [ ] Deliverable: IR prints and verifies on fixtures (parity approximate; minor diffs allowed)
 

@@ -51,10 +51,10 @@ def ir_dump_cmd(input: Path, verify: bool, run_passes: tuple[str, ...], json_out
             click.echo(textual)
         else:
             # xDSL engine
-            mlctx, mod = asdl_ast_to_xdsl_module(asdl_file)
+            mod = asdl_ast_to_xdsl_module(asdl_file)
             if run_passes:
-                run_passes(mlctx, mod, run_passes)
-            textual = print_xdsl_module(mlctx, mod)
+                run_passes(None, mod, run_passes)
+            textual = print_xdsl_module(mod)
             click.echo(textual)
 
     except click.ClickException as e:
