@@ -1,0 +1,72 @@
+* SPICE netlist generated from ASDL
+* Design: Testbench for the OTA 5-transistor
+* Top module: tb
+* Author: None
+* Date: None
+* Revision: None
+
+* Hierarchical module subcircuit definitions
+* Classic 5-transistor OTA: NMOS differential pair, PMOS mirror load, NMOS tail.
+.subckt ota_5t_nin vin_p vin_n vout vdd vss ibias
+  X_mp_ref vd vd vdd vdd pfet_03v3 L=0.28u W=3u nf=2 m=2
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  X_mp_mirror vout vd vdd vdd pfet_03v3 L=0.28u W=3u nf=2 m=2
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  X_mn_in_p vd vin_p tail vss nfet_03v3 L=0.28u W=3u nf=2 m=1
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  X_mn_in_n vout vin_n tail vss nfet_03v3 L=0.28u W=3u nf=2 m=1
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  X_mn_diode ibias ibias vss vss nfet_03v3 L=0.28u W=3u nf=2 m=1
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  X_mn_tail tail ibias vss vss nfet_03v3 L=0.28u W=3u nf=2 m=2
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+.ends
+
+* Testbench for the OTA 5-transistor
+* .subckt tb 
+  X_dut vin vout vout vdd vss ibias ota_5t_nin
+  vsrc_vdd vdd vss DC {{VDD}}
+
+  vsrc_vss vss GND DC 0
+
+  isrc_bias ibias vss DC -50u
+
+  vsrc_in vin vss DC 1.8
+
+  .include /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/ngspice/design.ngspice
+.lib /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/ngspice/sm141064.ngspice typical
+
+  .control
+save all
+dc vsrc_in 0 {{VDD}} 0.01
+write results.raw
+.endc
+
+* .ends
+
+
+.end

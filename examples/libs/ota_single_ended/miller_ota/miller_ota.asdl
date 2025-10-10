@@ -1,0 +1,68 @@
+file_info:
+  top_module: miller_ota
+  doc: >
+    Two-stage Miller-compensated OTA: 
+    NMOS diff pair first stage, PMOS mirror load, NMOS second stage with PMOS current source load
+    Miller capacitor between first and second stage.
+
+imports:
+  analoglib: analoglib.asdl
+
+model_alias:
+  nmos: analoglib.nmos
+  pmos: analoglib.pmos
+  cap: analoglib.cap
+  res: analoglib.res
+
+modules:
+  miller_ota:
+    doc: >
+      Classic two-stage OTA with Miller compensation. 
+      First stage: NMOS differential pair with PMOS mirror active load. 
+      Second stage: NMOS common-source with PMOS current source load biased from the same mirror. 
+      Compensation capacitor between first-stage node v1 and output vout.
+    ports:
+      vin_p: { dir: in, type: signal }
+      vin_n: { dir: in, type: signal }
+      vout: { dir: out, type: signal }
+      vdd:  { dir: in, type: power }
+      vss:  { dir: in, type: ground }
+      ibias: { dir: in, type: bias }
+    internal_nets:
+      - tail   # tail node of the differential pair (NMOS current sink)
+      - vd     # diode node / gate of PMOS current mirror (bias for PMOS loads)
+      - v1     # first-stage output / second-stage input
+      - vcomp  # series network node for Miller cap zeroing resistor
+    variables:
+      M_in: 1
+      M_load: 2
+      M_dio: 1
+      M_tail: 2
+      M_2nd: 4
+      M_sink2: 4
+    instances:
+      mp_ref: 
+        doc: "PMOS current mirror for first-stage active load and second-stage current source"
+        model: pmos
+        mappings: { D: vd, G: vd, S: vdd, B: vdd }
+        parameters: { m: M_load }
+      
+      mp_mirror1: { model: pmos, mappings: { D: v1, G: vd, S: vdd, B: vdd }, parameters: { m: M_load } }
+
+      # NMOS differential pair (first stage)
+      mn_in_p: { model: nmos, mappings: { D: vd,  G: vin_p, S: tail, B: vss }, parameters: { m: M_in } }
+      mn_in_n: { model: nmos, mappings: { D: v1,  G: vin_n, S: tail, B: vss }, parameters: { m: M_in } }
+
+      # NMOS tail bias (uses ibias as diode/gate reference)
+      mn_diode: { model: nmos, mappings: { D: ibias, G: ibias, S: vss, B: vss }, parameters: { m: M_dio } }
+      mn_tail:  { model: nmos, mappings: { D: tail,  G: ibias, S: vss, B: vss }, parameters: { m: M_tail } }
+
+      # Second stage: PMOS common-source with NMOS current sink load
+      mp_2nd:     { model: pmos, mappings: { D: vout, G: v1, S: vdd, B: vdd }, parameters: { m: M_2nd } }
+      mn_sink2:   { model: nmos, mappings: { D: vout, G: ibias, S: vss, B: vss }, parameters: { m: M_sink2 } }
+
+      # Miller compensation network with zeroing resistor in series
+      Rz: { model: res, mappings: { plus: vout, minus: vcomp }, parameters: { value: 1k } }
+      Cc: { model: cap, mappings: { plus: vcomp, minus: v1 }, parameters: { value: 1p } }
+
+

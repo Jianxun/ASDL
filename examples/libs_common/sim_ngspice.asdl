@@ -3,7 +3,7 @@ file_info:
     NGSPICE simulator control wrapper for ASDL
 
 modules:
-  sim_dc:
+  dc:
     doc: |
       NGSPICE simulation library for ASDL
       
@@ -20,7 +20,7 @@ modules:
       write {raw_file}
       .endc
 
-  sim_tran:
+  tran:
     doc: |
       NGSPICE transient simulation control
       
@@ -37,7 +37,7 @@ modules:
       write {raw_file}
       .endc
 
-  sim_op:
+  op:
     doc: |
       NGSPICE operating point analysis control
       
@@ -49,7 +49,7 @@ modules:
       show all > {log_file}
       .endc
 
-  sim_ac:
+  ac:
     doc: |
       NGSPICE AC analysis control
       

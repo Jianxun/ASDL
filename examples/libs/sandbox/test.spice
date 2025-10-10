@@ -1,0 +1,39 @@
+* Design: Test ASDL file
+* Top module: top
+* Author: Jianxun Zhu
+* Date: 2025-09-27
+* Revision: None
+
+* Hierarchical module subcircuit definitions
+* .subckt top 
+* NMOS transistor
+X_mn1 D G S B NMOS_UNIT m=2
+
+* NMOS transistor
+X_mn_in_p out_p in_p GND GND NMOS_UNIT m=2
+
+* NMOS transistor
+X_mn_in_n out_n in_n GND GND NMOS_UNIT m=2
+
+vg G GND DC 0.7
+
+vs S GND DC 0
+
+vb B GND DC 0
+
+vd D GND DC 1.8
+
+.include /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/ngspice/design.ngspice
+.lib /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/ngspice/sm141064.ngspice typical
+.include /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/ngspice/std_analog.ngspice
+
+.control
+save all
+dc vg 0 1.8 0.01
+write results.raw
+.endc
+
+* .ends
+
+
+.end

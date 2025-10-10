@@ -1,14 +1,35 @@
 file_info:
-  top_module: 
+  top_module: differential_pair
   doc: | 
     Gray & Meyer 6th edition
     Fig. 3.50
+    Resistive load common-source amplifier
 
 imports:
   std: pdk_std_tile.asdl
+  analoglib: analoglib/analoglib.asdl
 
 model_alias:
   nmos: std.MN_L1_W1_F2_SVT
   pmos: std.MP_L1_W1_F2_SVT
+  res: analoglib.res
 
 modules:
+  differential_pair:
+    doc: "Resistive load differential pair"
+    variables:
+      M: 1
+      R_load: 10k
+    ports:
+      vdd: { dir: in, type: power }
+      vss: { dir: in, type: ground }
+      vin_p: { dir: in, type: signal }
+      vin_n: { dir: in, type: signal }
+      vout_p: { dir: out, type: signal }
+      vout_n: { dir: out, type: signal }
+      tail: { dir: in_out, type: signal }
+    instances:
+      mn_p: { model: nmos, mappings: { D: vout_n, G: vin_p, S: tail, B: vss }, parameters: { m: M } }
+      mn_n: { model: nmos, mappings: { D: vout_p, G: vin_n, S: tail, B: vss }, parameters: { m: M } }
+      rd_p: { model: res, mappings: { plus: vdd, minus: vout_p }, parameters: { value: R_load } }
+      rd_n: { model: res, mappings: { plus: vdd, minus: vout_n }, parameters: { value: R_load } }

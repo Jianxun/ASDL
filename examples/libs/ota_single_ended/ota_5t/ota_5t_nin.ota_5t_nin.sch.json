@@ -81,10 +81,21 @@
     },
     {
       "id": "mp_ref",
-      "type": "transistor",
-      "data": {
-        "name": "mp_ref",
-        "flavor": "pmos"
+      "type": "instance",
+      "model": "pmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
       },
       "position": {
         "gx": 23,
@@ -93,10 +104,21 @@
     },
     {
       "id": "mp_mirror",
-      "type": "transistor",
-      "data": {
-        "name": "mp_mirror",
-        "flavor": "pmos"
+      "type": "instance",
+      "model": "pmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
       },
       "position": {
         "gx": 38,
@@ -105,10 +127,21 @@
     },
     {
       "id": "mn_in_p",
-      "type": "transistor",
-      "data": {
-        "name": "mn_in_p",
-        "flavor": "nmos"
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
       },
       "position": {
         "gx": 23,
@@ -117,10 +150,21 @@
     },
     {
       "id": "mn_in_n",
-      "type": "transistor",
-      "data": {
-        "name": "mn_in_n",
-        "flavor": "nmos"
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
       },
       "position": {
         "gx": 38,
@@ -129,10 +173,21 @@
     },
     {
       "id": "mn_diode",
-      "type": "transistor",
-      "data": {
-        "name": "mn_diode",
-        "flavor": "nmos"
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
       },
       "position": {
         "gx": 12,
@@ -141,10 +196,21 @@
     },
     {
       "id": "mn_tail",
-      "type": "transistor",
-      "data": {
-        "name": "mn_tail",
-        "flavor": "nmos"
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
       },
       "position": {
         "gx": 30,
@@ -186,8 +252,32 @@
     {
       "source": "vdd",
       "sourceHandle": "P",
+      "target": "mp_ref",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
       "target": "mp_mirror",
       "targetHandle": "S"
+    },
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "mp_mirror",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_in_p",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_in_n",
+      "targetHandle": "B"
     },
     {
       "source": "vss",
@@ -198,8 +288,20 @@
     {
       "source": "vss",
       "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
       "target": "mn_tail",
       "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_tail",
+      "targetHandle": "B"
     },
     {
       "source": "ibias",

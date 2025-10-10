@@ -1,0 +1,487 @@
+{
+  "gridSize": 16,
+  "nodes": [
+    {
+      "id": "vin_p",
+      "type": "port",
+      "data": {
+        "name": "vin_p",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": -18,
+        "gy": 2
+      }
+    },
+    {
+      "id": "vin_n",
+      "type": "port",
+      "data": {
+        "name": "vin_n",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": -18,
+        "gy": 7
+      }
+    },
+    {
+      "id": "vout",
+      "type": "port",
+      "data": {
+        "name": "vout",
+        "side": "right",
+        "direction": "out"
+      },
+      "position": {
+        "gx": 37,
+        "gy": 4
+      }
+    },
+    {
+      "id": "vdd",
+      "type": "port",
+      "data": {
+        "name": "vdd",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": -15,
+        "gy": -20
+      }
+    },
+    {
+      "id": "vss",
+      "type": "port",
+      "data": {
+        "name": "vss",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": -30,
+        "gy": 26
+      }
+    },
+    {
+      "id": "ibias",
+      "type": "port",
+      "data": {
+        "name": "ibias",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": -30,
+        "gy": 13
+      }
+    },
+    {
+      "id": "mp_ref",
+      "type": "instance",
+      "model": "pmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": -7,
+        "gy": -14
+      }
+    },
+    {
+      "id": "mp_mirror1",
+      "type": "instance",
+      "model": "pmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 2,
+        "gy": -14
+      }
+    },
+    {
+      "id": "mn_in_p",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": -7,
+        "gy": 2
+      }
+    },
+    {
+      "id": "mn_in_n",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 2,
+        "gy": 7
+      }
+    },
+    {
+      "id": "mn_diode",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": -23,
+        "gy": 20
+      }
+    },
+    {
+      "id": "mn_tail",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": -7,
+        "gy": 19
+      }
+    },
+    {
+      "id": "mp_2nd",
+      "type": "instance",
+      "model": "pmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 29,
+        "gy": -4
+      }
+    },
+    {
+      "id": "mn_sink2",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 29,
+        "gy": 19
+      }
+    },
+    {
+      "id": "Rz",
+      "type": "instance",
+      "model": "res",
+      "pin_list": {
+        "PLUS": {},
+        "MINUS": {}
+      },
+      "position": {
+        "gx": 21,
+        "gy": -11
+      }
+    },
+    {
+      "id": "Cc",
+      "type": "instance",
+      "model": "cap",
+      "pin_list": {
+        "PLUS": {},
+        "MINUS": {}
+      },
+      "position": {
+        "gx": 13,
+        "gy": -11
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "vin_p",
+      "sourceHandle": "P",
+      "target": "mn_in_p",
+      "targetHandle": "G"
+    },
+    {
+      "source": "vin_n",
+      "sourceHandle": "P",
+      "target": "mn_in_n",
+      "targetHandle": "G"
+    },
+    {
+      "source": "vout",
+      "sourceHandle": "P",
+      "target": "mp_2nd",
+      "targetHandle": "D"
+    },
+    {
+      "source": "vout",
+      "sourceHandle": "P",
+      "target": "mn_sink2",
+      "targetHandle": "D"
+    },
+    {
+      "source": "vout",
+      "sourceHandle": "P",
+      "target": "Rz",
+      "targetHandle": "PLUS"
+    },
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "mp_ref",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "mp_ref",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "mp_mirror1",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "mp_mirror1",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "mp_2nd",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "mp_2nd",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_in_p",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_in_n",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_tail",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_tail",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_sink2",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_sink2",
+      "targetHandle": "B"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "D"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "G"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_tail",
+      "targetHandle": "G"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_sink2",
+      "targetHandle": "G"
+    },
+    {
+      "source": "mp_ref",
+      "sourceHandle": "D",
+      "target": "mp_ref",
+      "targetHandle": "G"
+    },
+    {
+      "source": "mp_ref",
+      "sourceHandle": "D",
+      "target": "mp_mirror1",
+      "targetHandle": "G"
+    },
+    {
+      "source": "mp_ref",
+      "sourceHandle": "D",
+      "target": "mn_in_p",
+      "targetHandle": "D"
+    },
+    {
+      "source": "mp_mirror1",
+      "sourceHandle": "D",
+      "target": "mn_in_n",
+      "targetHandle": "D"
+    },
+    {
+      "source": "mp_mirror1",
+      "sourceHandle": "D",
+      "target": "mp_2nd",
+      "targetHandle": "G"
+    },
+    {
+      "source": "mp_mirror1",
+      "sourceHandle": "D",
+      "target": "Cc",
+      "targetHandle": "MINUS"
+    },
+    {
+      "source": "mn_in_p",
+      "sourceHandle": "S",
+      "target": "mn_in_n",
+      "targetHandle": "S"
+    },
+    {
+      "source": "mn_in_p",
+      "sourceHandle": "S",
+      "target": "mn_tail",
+      "targetHandle": "D"
+    },
+    {
+      "source": "Rz",
+      "sourceHandle": "MINUS",
+      "target": "Cc",
+      "targetHandle": "PLUS"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "gridSize": 16,
+  "nodes": [
+    {
+      "id": "vss",
+      "type": "port",
+      "data": {
+        "name": "vss",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 8,
+        "gy": 8
+      }
+    },
+    {
+      "id": "ibias",
+      "type": "port",
+      "data": {
+        "name": "ibias",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 8,
+        "gy": -5
+      }
+    },
+    {
+      "id": "iout",
+      "type": "port",
+      "data": {
+        "name": "iout",
+        "side": "right",
+        "direction": "out"
+      },
+      "position": {
+        "gx": 35,
+        "gy": -13
+      }
+    },
+    {
+      "id": "mn_diode",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 19,
+        "gy": 2
+      }
+    },
+    {
+      "id": "mn_mirror",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 26,
+        "gy": -5
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_mirror",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_mirror",
+      "targetHandle": "B"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "D"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "G"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_mirror",
+      "targetHandle": "G"
+    },
+    {
+      "source": "iout",
+      "sourceHandle": "P",
+      "target": "mn_mirror",
+      "targetHandle": "D"
+    }
+  ]
+}

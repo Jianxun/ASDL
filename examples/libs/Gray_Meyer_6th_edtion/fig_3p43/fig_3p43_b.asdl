@@ -1,0 +1,31 @@
+file_info:
+  top_module: super_source_follower_b
+  doc: | 
+    Gray & Meyer 6th edition
+    Fig. 3.28
+    Resistive load degenerated common-source amplifier
+
+imports:
+  std: pdk_std_tile.asdl
+  analoglib: analoglib/analoglib.asdl
+
+model_alias:
+  nmos: std.MN_L1_W1_F2_SVT
+  pmos: std.MP_L1_W1_F2_SVT
+  res: analoglib.res
+
+modules:
+  super_source_follower_b:
+    doc: "Super source follower amplifier"
+    variables:
+      M1: 1
+      M2: 1
+    ports:
+      vdd: { dir: in, type: power }
+      vss: { dir: in, type: ground }
+      vin: { dir: in, type: signal }
+      vout: { dir: out, type: signal }
+      ibias2: { dir: in, type: bias }
+    instances:
+      mn1: { model: nmos, mappings: { D: ibias2, G: vin, S: vout, B: vss }, parameters: { m: M1 } }
+      mn2: { model: nmos, mappings: { D: vout, G: ibias2, S: vss, B: vss }, parameters: { m: M2 } }

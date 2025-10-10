@@ -1,0 +1,200 @@
+{
+  "gridSize": 16,
+  "nodes": [
+    {
+      "id": "vdd",
+      "type": "port",
+      "data": {
+        "name": "vdd",
+        "side": "left",
+        "direction": "in",
+        "gridSize": 16
+      },
+      "position": {
+        "gx": 5,
+        "gy": -13
+      }
+    },
+    {
+      "id": "in_<p,n>",
+      "type": "port",
+      "data": {
+        "name": "in_<p,n>",
+        "side": "left",
+        "direction": "in",
+        "gridSize": 16
+      },
+      "position": {
+        "gx": 4,
+        "gy": 3
+      }
+    },
+    {
+      "id": "out_<p,n>",
+      "type": "port",
+      "data": {
+        "name": "out_<p,n>",
+        "side": "right",
+        "direction": "out",
+        "gridSize": 16
+      },
+      "position": {
+        "gx": 36,
+        "gy": -3
+      }
+    },
+    {
+      "id": "vss",
+      "type": "port",
+      "data": {
+        "name": "vss",
+        "side": "left",
+        "direction": "in",
+        "gridSize": 16
+      },
+      "position": {
+        "gx": 5,
+        "gy": 25
+      }
+    },
+    {
+      "id": "vbp",
+      "type": "port",
+      "data": {
+        "name": "vbp",
+        "side": "left",
+        "direction": "in",
+        "gridSize": 16
+      },
+      "position": {
+        "gx": 5,
+        "gy": -8
+      }
+    },
+    {
+      "id": "vbn",
+      "type": "port",
+      "data": {
+        "name": "vbn",
+        "side": "left",
+        "direction": "in",
+        "gridSize": 16
+      },
+      "position": {
+        "gx": 5,
+        "gy": 20
+      }
+    },
+    {
+      "id": "mn_in<p,n>",
+      "type": "transistor",
+      "data": {
+        "name": "mn_in<p,n>",
+        "flavor": "nmos",
+        "gridSize": 16
+      },
+      "position": {
+        "gx": 19,
+        "gy": 3
+      }
+    },
+    {
+      "id": "mn_tail",
+      "type": "transistor",
+      "data": {
+        "name": "mn_tail",
+        "flavor": "nmos",
+        "gridSize": 16
+      },
+      "position": {
+        "gx": 19,
+        "gy": 20
+      }
+    },
+    {
+      "id": "mp_load<p,n>",
+      "type": "transistor",
+      "data": {
+        "name": "mp_load<p,n>",
+        "flavor": "pmos",
+        "gridSize": 16
+      },
+      "position": {
+        "gx": 19,
+        "gy": -8
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e0",
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "mp_load<p,n>",
+      "targetHandle": "S"
+    },
+    {
+      "id": "e1",
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "mp_load<p,n>",
+      "targetHandle": "B"
+    },
+    {
+      "id": "e2",
+      "source": "in_<p,n>",
+      "sourceHandle": "P",
+      "target": "mn_in<p,n>",
+      "targetHandle": "G"
+    },
+    {
+      "id": "e3",
+      "source": "out_<p,n>",
+      "sourceHandle": "P",
+      "target": "mp_load<p,n>",
+      "targetHandle": "D"
+    },
+    {
+      "id": "e4",
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_in<p,n>",
+      "targetHandle": "B"
+    },
+    {
+      "id": "e5",
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_tail",
+      "targetHandle": "S"
+    },
+    {
+      "id": "e6",
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_tail",
+      "targetHandle": "B"
+    },
+    {
+      "id": "e7",
+      "source": "vbp",
+      "sourceHandle": "P",
+      "target": "mp_load<p,n>",
+      "targetHandle": "G"
+    },
+    {
+      "id": "e8",
+      "source": "vbn",
+      "sourceHandle": "P",
+      "target": "mn_tail",
+      "targetHandle": "G"
+    },
+    {
+      "id": "e9",
+      "source": "mn_in<p,n>",
+      "sourceHandle": "S",
+      "target": "mn_tail",
+      "targetHandle": "D"
+    }
+  ]
+}

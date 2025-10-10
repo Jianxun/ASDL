@@ -49,7 +49,7 @@
 * Testbench for the OTA 5-transistor
 * .subckt tb 
   X_dut vin vout vout vdd vss ibias ota_5t_nin
-  vsrc_vdd vdd vss DC 3.3
+  vsrc_vdd vdd vss DC 1.8
 
   vsrc_vss vss GND DC 0
 
@@ -62,7 +62,7 @@
 
   .control
 save all
-dc vsrc_in 0 3.3 0.01
+dc vsrc_in 0 1.8 0.01
 write results.raw
 .endc
 

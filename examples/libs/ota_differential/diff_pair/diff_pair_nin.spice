@@ -1,0 +1,44 @@
+* SPICE netlist generated from ASDL
+* Design: Differential pair with NMOS tail
+* Top module: diff_pair_nin
+* Author: None
+* Date: None
+* Revision: None
+
+* Hierarchical module subcircuit definitions
+* Differential pair with NMOS tail
+* .subckt diff_pair_nin vdd in_p in_n out_p out_n vss vbp vbn
+  X_mn_inp out_p in_p tail vss nfet_03v3 L=0.28u W=3u nf=2 m=4
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  X_mn_inn out_n in_n tail vss nfet_03v3 L=0.28u W=3u nf=2 m=4
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  X_mn_tail tail vbn vss vss nfet_03v3 L=0.28u W=3u nf=2 m=1
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  X_mp_loadp out_p vbp vdd vdd pfet_03v3 L=0.28u W=3u nf=2 m=1
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+  X_mp_loadn out_n vbp vdd vdd pfet_03v3 L=0.28u W=3u nf=2 m=1
++ ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' 
++ pd='2*int((nf+1)/2) * (W/nf + 0.18u)' ps='2*int((nf+2)/2) * (W/nf + 0.18u)' 
++ nrd='0.18u / W' nrs='0.18u / W' 
++ sa=0 sb=0 sd=0
+
+* .ends
+
+
+.end

@@ -18,6 +18,30 @@ file_info:
 
 
 modules:
+  nmos:
+    ports:
+      D: { dir: in_out, type: signal }
+      G: { dir: in_out, type: signal }
+      S: { dir: in_out, type: signal }
+      B: { dir: in_out, type: signal }
+    spice_template: |
+      X_{name} {D} {G} {S} {B} {mos_model} m={m}
+    parameters:
+      mos_model: NMOS_UNIT
+      m: 1
+
+  pmos:
+    ports:
+      D: { dir: in_out, type: signal }
+      G: { dir: in_out, type: signal }
+      S: { dir: in_out, type: signal }
+      B: { dir: in_out, type: signal }
+    spice_template: |
+      X_{name} {D} {G} {S} {B} {mos_model} m={m}
+    parameters:
+      mos_model: PMOS_UNIT
+      m: 1
+
   vdc:
     doc: |
       DC voltage source. Generates: <name> <plus> <minus> DC <dc>
@@ -235,6 +259,22 @@ modules:
       value: 1u
     spice_template: |
       {name} {plus} {minus} {value}
+
+
+
+  jumper:
+    doc: |
+      Jumper so separate two nets.
+      
+      Parameters:
+      - resistance: Jumper resistance (Ω). Default: 0.01Ω
+      
+      Usage: Jumper, short circuit, open circuit
+    ports:
+      a: { dir: in_out, type: signal }
+      b: { dir: in_out, type: signal }
+    spice_template: |
+      r{name} {a} {b} 0.01
 
   code_block:
     doc: |

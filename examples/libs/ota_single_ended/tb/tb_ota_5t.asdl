@@ -1,15 +1,17 @@
 file_info:
   top_module: tb
   doc: "Testbench for the OTA 5-transistor"
+  author: "Jianxun Zhu"
+  date: "2025-09-27"
 
 imports:
-  ota_5t_pin: ota_single_ended/ota_5t/ota_5t_nin.asdl
+  ota_5t_nin: ota_single_ended/ota_5t/ota_5t_nin.asdl
   analoglib: analoglib/analoglib.asdl
   simulation: simulation/sim_ngspice.asdl
   pdk: pdk_devices.asdl
 
 model_alias:
-  ota: ota_5t_pin.ota_5t_nin
+  ota: ota_5t_nin.ota_5t_nin
   pdk_model: pdk.pdk_model
 
 modules:
@@ -17,14 +19,14 @@ modules:
     doc: "Testbench for the OTA 5-transistor"
     variables:
       ibias_ref: -50u
-      vdd: 3.3
+      vdda: "{{VDD}}"
       vin_dc: 1.8
     instances:
       # DUT
       dut: {model: ota, mappings: {vin_p: vin, vin_n: vout, vout: vout, vdd: vdd, vss: vss, ibias: ibias}}
       
       # Power supplies
-      vsrc_vdd: {model: analoglib.vdc, mappings: {plus: vdd, minus: vss}, parameters: {dc: vdd}}
+      vsrc_vdd: {model: analoglib.vdc, mappings: {plus: vdd, minus: vss}, parameters: {dc: vdda}}
       vsrc_vss: {model: analoglib.vdc, mappings: {plus: vss, minus: GND}, parameters: {dc: 0}}
       
       # Bias current (PMOS bias: draw current from ibias to vdd)
@@ -33,11 +35,9 @@ modules:
       # Stimulus
       vsrc_in: {model: analoglib.vdc, mappings: {plus: vin, minus: vss}, parameters: {dc: vin_dc}}
       
-
-
       # Simulation
       pdk_model: {model: pdk_model}
-      sim: {model: simulation.sim_dc, parameters: {source: vsrc_in, from: 0, to: 3.3, step: 0.01}}
+      sim: {model: simulation.sim_dc, parameters: {source: vsrc_in, from: 0, to: vdda, step: 0.01}}
 
 
       

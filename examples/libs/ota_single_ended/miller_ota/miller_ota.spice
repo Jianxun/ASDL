@@ -1,0 +1,35 @@
+* Design: None
+* Top module: miller_ota
+* Author: None
+* Date: None
+* Revision: None
+
+* Hierarchical module subcircuit definitions
+* Classic two-stage OTA with Miller compensation.  First stage: NMOS differential pair with PMOS mirror active load.  Second stage: NMOS common-source with PMOS current source load biased from the same mirror.  Compensation capacitor between first-stage node v1 and output vout.
+
+* .subckt miller_ota vin_p vin_n vout vdd vss ibias
+* PMOS current mirror for first-stage active load and second-stage current source
+X_mp_ref vd vd vdd vdd PMOS_UNIT m=2
+
+X_mp_mirror1 v1 vd vdd vdd PMOS_UNIT m=2
+
+X_mn_in_p vd vin_p tail vss NMOS_UNIT m=1
+
+X_mn_in_n v1 vin_n tail vss NMOS_UNIT m=1
+
+X_mn_diode ibias ibias vss vss NMOS_UNIT m=1
+
+X_mn_tail tail ibias vss vss NMOS_UNIT m=2
+
+X_mp_2nd vout v1 vdd vdd PMOS_UNIT m=4
+
+X_mn_sink2 vout ibias vss vss NMOS_UNIT m=4
+
+Rz vout vcomp 1k
+
+Cc vcomp v1 1p
+
+* .ends
+
+
+.end

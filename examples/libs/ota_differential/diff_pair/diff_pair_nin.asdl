@@ -1,0 +1,43 @@
+file_info:
+  top_module: diff_pair_nin
+  doc: "Differential pair with NMOS tail"
+
+imports:
+  std: pdk_std_tile.asdl
+
+model_alias:
+  nmos: std.MN_L1_W1_F2_SVT
+  pmos: std.MP_L1_W1_F2_SVT
+
+modules:
+  diff_pair_nin:
+    doc: "Differential pair with NMOS tail"
+    ports:
+      vdd: {dir: in, type: power}
+      in_<p,n>: {dir: in, type: signal}
+      out_<p,n>: {dir: out, type: signal}
+      vss: {dir: in, type: ground}
+      vbp: {dir: in, type: bias}
+      vbn: {dir: in, type: bias}
+    variables:
+      M_diff: "{{sizing.M}}"
+      M_tail: 1
+      M_load: 1
+    internal_nets:
+      - tail
+    instances:
+      mn_in<p,n>:
+        model: nmos
+        mappings: {D: out_<n,p>, G: in_<p,n>, S: tail, B: vss}
+        parameters:
+          m: M_diff
+      mn_tail:
+        model: nmos
+        mappings: {D: tail, G: vbn, S: vss, B: vss}
+        parameters:
+          m: M_tail
+      mp_load<p,n>:
+        model: pmos
+        mappings: {D: out_<p,n>, G: vbp, S: vdd, B: vdd}
+        parameters:
+          m: M_load

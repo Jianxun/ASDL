@@ -1,0 +1,187 @@
+{
+  "gridSize": 16,
+  "nodes": [
+    {
+      "id": "vss",
+      "type": "port",
+      "data": {
+        "name": "vss",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 2,
+        "gy": 19
+      }
+    },
+    {
+      "id": "ibias",
+      "type": "port",
+      "data": {
+        "name": "ibias",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 2,
+        "gy": 7
+      }
+    },
+    {
+      "id": "iout",
+      "type": "port",
+      "data": {
+        "name": "iout",
+        "side": "right",
+        "direction": "out"
+      },
+      "position": {
+        "gx": 35,
+        "gy": -1
+      }
+    },
+    {
+      "id": "mn_diode",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 12,
+        "gy": 14
+      }
+    },
+    {
+      "id": "mn_mirror1",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 21,
+        "gy": 7
+      }
+    },
+    {
+      "id": "mn_mirror2",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 30,
+        "gy": 7
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_mirror1",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_mirror1",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_mirror2",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_mirror2",
+      "targetHandle": "B"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "D"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "G"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_mirror1",
+      "targetHandle": "G"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_mirror2",
+      "targetHandle": "G"
+    },
+    {
+      "source": "iout",
+      "sourceHandle": "P",
+      "target": "mn_mirror1",
+      "targetHandle": "D"
+    },
+    {
+      "source": "iout",
+      "sourceHandle": "P",
+      "target": "mn_mirror2",
+      "targetHandle": "D"
+    }
+  ]
+}

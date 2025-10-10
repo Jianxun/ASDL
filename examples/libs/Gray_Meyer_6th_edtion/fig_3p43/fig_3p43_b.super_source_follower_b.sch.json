@@ -1,0 +1,166 @@
+{
+  "gridSize": 16,
+  "nodes": [
+    {
+      "id": "vdd",
+      "type": "port",
+      "data": {
+        "name": "vdd",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 11,
+        "gy": -6
+      }
+    },
+    {
+      "id": "vss",
+      "type": "port",
+      "data": {
+        "name": "vss",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 11,
+        "gy": 20
+      }
+    },
+    {
+      "id": "vin",
+      "type": "port",
+      "data": {
+        "name": "vin",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 11,
+        "gy": 4
+      }
+    },
+    {
+      "id": "vout",
+      "type": "port",
+      "data": {
+        "name": "vout",
+        "side": "right",
+        "direction": "out"
+      },
+      "position": {
+        "gx": 31,
+        "gy": 10
+      }
+    },
+    {
+      "id": "ibias2",
+      "type": "port",
+      "data": {
+        "name": "ibias2",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 11,
+        "gy": -2
+      }
+    },
+    {
+      "id": "mn1",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 20,
+        "gy": 4
+      }
+    },
+    {
+      "id": "mn2",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 20,
+        "gy": 15
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn1",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn2",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn2",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vin",
+      "sourceHandle": "P",
+      "target": "mn1",
+      "targetHandle": "G"
+    },
+    {
+      "source": "vout",
+      "sourceHandle": "P",
+      "target": "mn1",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vout",
+      "sourceHandle": "P",
+      "target": "mn2",
+      "targetHandle": "D"
+    },
+    {
+      "source": "ibias2",
+      "sourceHandle": "P",
+      "target": "mn1",
+      "targetHandle": "D"
+    },
+    {
+      "source": "ibias2",
+      "sourceHandle": "P",
+      "target": "mn2",
+      "targetHandle": "G"
+    }
+  ]
+}

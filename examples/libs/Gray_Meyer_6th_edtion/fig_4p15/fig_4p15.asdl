@@ -1,8 +1,9 @@
 file_info:
-  top_module: 
+  top_module: wilson_cascode_current_mirror
   doc: | 
     Gray & Meyer 6th edition
-    Fig. 4.15
+    Fig. 4.15  
+    Wilson cascode current mirror 
 
 imports:
   std: pdk_std_tile.asdl
@@ -12,3 +13,19 @@ model_alias:
   pmos: std.MP_L1_W1_F2_SVT
 
 modules:
+  wilson_cascode_current_mirror:
+    doc: "Wilson cascode current mirror"
+    variables:
+      M_diode: 1
+      M_mirror1: 1
+    ports:
+      vss: { dir: in, type: ground }
+      ibias: { dir: in, type: signal }
+      iout: { dir: out, type: signal }
+    internal_nets: [ vbn, v_mid]
+    instances:
+      mn_mirror: { model: nmos, mappings: { D: vbn, G: vbn, S: vss, B: vss }, parameters: { m: M_mirror1 } }
+      mn_mirror_cas: { model: nmos, mappings: { D: iout, G: ibias, S: vbn, B: vss }, parameters: { m: M_mirror2 } }
+
+      mn_diode: { model: nmos, mappings: { D: v_mid, G: vbn, S: vss, B: vss }, parameters: { m: M_diode } }
+      mn_diode_cas: { model: nmos, mappings: { D: ibias, G: ibias, S: v_mid, B: vss }, parameters: { m: M_diode } }

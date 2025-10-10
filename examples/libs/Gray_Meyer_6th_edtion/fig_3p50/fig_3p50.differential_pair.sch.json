@@ -1,0 +1,242 @@
+{
+  "gridSize": 16,
+  "nodes": [
+    {
+      "id": "vdd",
+      "type": "port",
+      "data": {
+        "name": "vdd",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 5,
+        "gy": -4
+      }
+    },
+    {
+      "id": "vss",
+      "type": "port",
+      "data": {
+        "name": "vss",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 6,
+        "gy": 26
+      }
+    },
+    {
+      "id": "vin_p",
+      "type": "port",
+      "data": {
+        "name": "vin_p",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 6,
+        "gy": 15
+      }
+    },
+    {
+      "id": "vin_n",
+      "type": "port",
+      "data": {
+        "name": "vin_n",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 21,
+        "gy": 15
+      }
+    },
+    {
+      "id": "vout_p",
+      "type": "port",
+      "data": {
+        "name": "vout_p",
+        "side": "right",
+        "direction": "out"
+      },
+      "position": {
+        "gx": 34,
+        "gy": 9
+      }
+    },
+    {
+      "id": "vout_n",
+      "type": "port",
+      "data": {
+        "name": "vout_n",
+        "side": "right",
+        "direction": "out"
+      },
+      "position": {
+        "gx": 20,
+        "gy": 9
+      }
+    },
+    {
+      "id": "tail",
+      "type": "port",
+      "data": {
+        "name": "tail",
+        "side": "left",
+        "direction": "bidir"
+      },
+      "position": {
+        "gx": 35,
+        "gy": 23
+      }
+    },
+    {
+      "id": "mn_p",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 15,
+        "gy": 15
+      }
+    },
+    {
+      "id": "mn_n",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 29,
+        "gy": 15
+      }
+    },
+    {
+      "id": "rd_p",
+      "type": "instance",
+      "model": "res",
+      "pin_list": {
+        "PLUS": {},
+        "MINUS": {}
+      },
+      "position": {
+        "gx": 29,
+        "gy": 2
+      }
+    },
+    {
+      "id": "rd_n",
+      "type": "instance",
+      "model": "res",
+      "pin_list": {
+        "PLUS": {},
+        "MINUS": {}
+      },
+      "position": {
+        "gx": 15,
+        "gy": 2
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "rd_p",
+      "targetHandle": "PLUS"
+    },
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "rd_n",
+      "targetHandle": "PLUS"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_p",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_n",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vin_p",
+      "sourceHandle": "P",
+      "target": "mn_p",
+      "targetHandle": "G"
+    },
+    {
+      "source": "vin_n",
+      "sourceHandle": "P",
+      "target": "mn_n",
+      "targetHandle": "G"
+    },
+    {
+      "source": "vout_p",
+      "sourceHandle": "P",
+      "target": "mn_n",
+      "targetHandle": "D"
+    },
+    {
+      "source": "vout_p",
+      "sourceHandle": "P",
+      "target": "rd_p",
+      "targetHandle": "MINUS"
+    },
+    {
+      "source": "vout_n",
+      "sourceHandle": "P",
+      "target": "mn_p",
+      "targetHandle": "D"
+    },
+    {
+      "source": "vout_n",
+      "sourceHandle": "P",
+      "target": "rd_n",
+      "targetHandle": "MINUS"
+    },
+    {
+      "source": "tail",
+      "sourceHandle": "P",
+      "target": "mn_p",
+      "targetHandle": "S"
+    },
+    {
+      "source": "tail",
+      "sourceHandle": "P",
+      "target": "mn_n",
+      "targetHandle": "S"
+    }
+  ]
+}

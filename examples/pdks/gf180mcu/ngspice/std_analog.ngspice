@@ -1,0 +1,26 @@
+* ==================================================
+.SUBCKT NMOS_UNIT D G S B
+
+.param m=1
+
+m0 D G S B nfet_03v3 L=0.5u W=3u nf=2 m={m}
++ ad='3u * 0.18u' as='2 * 3u * 0.18u' 
++ pd='2 * (3u + 0.18u)' ps='2 * (2 * 3u + 0.18u)' 
++ nrd='0.18u / 3u' nrs='0.18u / 3u' 
++ sa=0 sb=0 sd=0
+
+.ENDS
+
+* ==================================================
+.SUBCKT PMOS_UNIT D G S B
+
+.param m=1
+
+m0 D G S B pfet_03v3 L=0.5u W=3u nf=2 m={m}
++ ad='3u * 0.18u' as='2 * 3u * 0.18u' 
++ pd='2 * (3u + 0.18u)' ps='2 * (2 * 3u + 0.18u)' 
++ nrd='0.18u / 3u' nrs='0.18u / 3u' 
++ sa=0 sb=0 sd=0
+
+.ENDS
+

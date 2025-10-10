@@ -28,6 +28,6 @@ modules:
       vout: { dir: out, type: signal }
     internal_nets: [ vs ]
     instances:
-      mn1: { model: nmos, mappings: { D: vdd, G: vin, S: vout, B: vss }, parameters: { m: M_cs } }
+      mn1: { model: nmos, mappings: { D: vout, G: vin, S: vs, B: vss }, parameters: { m: M_cs } }
       r_degen: { model: res, mappings: { plus: vs, minus: vss }, parameters: { value: R_degen } }
       r_load: { model: res, mappings: { plus: vdd, minus: vout }, parameters: { value: R_load } }

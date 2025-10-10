@@ -1,0 +1,222 @@
+{
+  "gridSize": 16,
+  "nodes": [
+    {
+      "id": "vss",
+      "type": "port",
+      "data": {
+        "name": "vss",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 8,
+        "gy": 28
+      }
+    },
+    {
+      "id": "ibias",
+      "type": "port",
+      "data": {
+        "name": "ibias",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 8,
+        "gy": 4
+      }
+    },
+    {
+      "id": "iout",
+      "type": "port",
+      "data": {
+        "name": "iout",
+        "side": "right",
+        "direction": "out"
+      },
+      "position": {
+        "gx": 33,
+        "gy": -3
+      }
+    },
+    {
+      "id": "mn_diode",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 15,
+        "gy": 21
+      }
+    },
+    {
+      "id": "mn_diode_cas",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 15,
+        "gy": 9
+      }
+    },
+    {
+      "id": "mn_mirror",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 26,
+        "gy": 14
+      }
+    },
+    {
+      "id": "mn_mirror_cas",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 26,
+        "gy": 4
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_diode",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_diode_cas",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_mirror",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_mirror",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_mirror_cas",
+      "targetHandle": "B"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_diode_cas",
+      "targetHandle": "D"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_diode_cas",
+      "targetHandle": "G"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_mirror_cas",
+      "targetHandle": "G"
+    },
+    {
+      "source": "iout",
+      "sourceHandle": "P",
+      "target": "mn_mirror_cas",
+      "targetHandle": "D"
+    },
+    {
+      "source": "mn_diode",
+      "sourceHandle": "D",
+      "target": "mn_diode",
+      "targetHandle": "G"
+    },
+    {
+      "source": "mn_diode",
+      "sourceHandle": "D",
+      "target": "mn_diode_cas",
+      "targetHandle": "S"
+    },
+    {
+      "source": "mn_diode",
+      "sourceHandle": "D",
+      "target": "mn_mirror",
+      "targetHandle": "G"
+    },
+    {
+      "source": "mn_mirror",
+      "sourceHandle": "D",
+      "target": "mn_mirror_cas",
+      "targetHandle": "S"
+    }
+  ]
+}

@@ -1,0 +1,232 @@
+{
+  "gridSize": 16,
+  "nodes": [
+    {
+      "id": "vdd",
+      "type": "port",
+      "data": {
+        "name": "vdd",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 0,
+        "gy": -11
+      }
+    },
+    {
+      "id": "vss",
+      "type": "port",
+      "data": {
+        "name": "vss",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 0,
+        "gy": 25
+      }
+    },
+    {
+      "id": "vin",
+      "type": "port",
+      "data": {
+        "name": "vin",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 13,
+        "gy": 20
+      }
+    },
+    {
+      "id": "vout",
+      "type": "port",
+      "data": {
+        "name": "vout",
+        "side": "right",
+        "direction": "out"
+      },
+      "position": {
+        "gx": 33,
+        "gy": 0
+      }
+    },
+    {
+      "id": "ibias",
+      "type": "port",
+      "data": {
+        "name": "ibias",
+        "side": "left",
+        "direction": "in"
+      },
+      "position": {
+        "gx": 0,
+        "gy": 5
+      }
+    },
+    {
+      "id": "mn_cs",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 20,
+        "gy": 20
+      }
+    },
+    {
+      "id": "mn_cascode",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 20,
+        "gy": 5
+      }
+    },
+    {
+      "id": "mn_reg",
+      "type": "instance",
+      "model": "nmos",
+      "pin_list": {
+        "D": {
+          "role": "drain"
+        },
+        "G": {
+          "role": "gate"
+        },
+        "S": {
+          "role": "source"
+        },
+        "B": {
+          "role": "bulk"
+        }
+      },
+      "position": {
+        "gx": 8,
+        "gy": 10
+      }
+    },
+    {
+      "id": "r_load",
+      "type": "instance",
+      "model": "res",
+      "pin_list": {
+        "PLUS": {},
+        "MINUS": {}
+      },
+      "position": {
+        "gx": 20,
+        "gy": -5
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "vdd",
+      "sourceHandle": "P",
+      "target": "r_load",
+      "targetHandle": "PLUS"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_cs",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_cs",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_cascode",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_reg",
+      "targetHandle": "S"
+    },
+    {
+      "source": "vss",
+      "sourceHandle": "P",
+      "target": "mn_reg",
+      "targetHandle": "B"
+    },
+    {
+      "source": "vin",
+      "sourceHandle": "P",
+      "target": "mn_cs",
+      "targetHandle": "G"
+    },
+    {
+      "source": "vout",
+      "sourceHandle": "P",
+      "target": "mn_cascode",
+      "targetHandle": "D"
+    },
+    {
+      "source": "vout",
+      "sourceHandle": "P",
+      "target": "r_load",
+      "targetHandle": "MINUS"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_cascode",
+      "targetHandle": "G"
+    },
+    {
+      "source": "ibias",
+      "sourceHandle": "P",
+      "target": "mn_reg",
+      "targetHandle": "D"
+    },
+    {
+      "source": "mn_cs",
+      "sourceHandle": "D",
+      "target": "mn_cascode",
+      "targetHandle": "S"
+    },
+    {
+      "source": "mn_cs",
+      "sourceHandle": "D",
+      "target": "mn_reg",
+      "targetHandle": "G"
+    }
+  ]
+}

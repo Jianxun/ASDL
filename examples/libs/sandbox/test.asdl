@@ -1,0 +1,49 @@
+file_info:
+  top_module: top
+  doc: "Test ASDL file"
+  author: "Jianxun Zhu"
+  date: "2025-09-27"
+
+imports:
+  analoglib: analoglib.asdl
+  sim: sim_ngspice.asdl
+  pdk: pdk.asdl
+
+model_alias:
+  nmos: analoglib.nmos
+  pmos: analoglib.pmos
+  vdc: analoglib.vdc
+
+modules:
+  top:
+    ports: {}
+    instances:
+      mn1:
+        doc: "NMOS transistor"
+        model: nmos
+        mappings: {D: D, G: G, S: S, B: B}
+        parameters: 
+          m: 2
+
+      mn_in_<p,n>:
+        doc: "NMOS transistor"
+        model: nmos
+        mappings: {D: "out_<n,p>", G: "in_<p,n>", S: GND, B: GND}
+        parameters: 
+          m: 2
+
+      # mp1:
+      #   doc: "PMOS transistor"
+      #   model: pmos
+      #   mappings: {D: D, G: G, S: S, B: B}
+      #   parameters: 
+      #     m: 2
+
+      vg: {model: vdc, mappings: {plus: G, minus: GND}, parameters: {dc: 0.7}}
+      vs: {model: vdc, mappings: {plus: S, minus: GND}, parameters: {dc: 0}}
+      vb: {model: vdc, mappings: {plus: B, minus: GND}, parameters: {dc: 0}}
+      vd: {model: vdc, mappings: {plus: D, minus: GND}, parameters: {dc: 1.8}}
+      
+      # Simulation
+      pdk_model: {model: pdk.model_card, parameters: {corner: typical}}
+      sim: {model: sim.dc, parameters: {source: vg, from: 0, to: 1.8, step: 0.01}}

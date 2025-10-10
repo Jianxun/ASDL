@@ -23,8 +23,9 @@ modules:
     ports:
       vdd: { dir: in, type: power }
       vss: { dir: in, type: ground }
+      vbias: { dir: in, type: bias }
       vin: { dir: in, type: signal }
       vout: { dir: out, type: signal }
     instances:
-      mn1: { model: nmos, mappings: { D: vout, G: vss, S: vin, B: vss }, parameters: { m: M_cg } }
+      mn1: { model: nmos, mappings: { D: vout, G: vbias, S: vin, B: vss }, parameters: { m: M_cg } }
       rd: { model: res, mappings: { plus: vdd, minus: vout }, parameters: { value: R_load } }
