@@ -42,6 +42,12 @@ def register_asdl_dialect(context: object | None = None) -> object:
         attrs=[PortAttr, RangeAttr, ExprAttr],
     )
     mlctx.register_dialect(asdl_dialect)
+    # Ensure builtin dialect is available for printing container module
+    try:  # pragma: no cover
+        from xdsl.dialects.builtin import Builtin  # type: ignore
+        mlctx.register_dialect(Builtin)
+    except Exception:
+        pass
     return mlctx
 
 
