@@ -7,6 +7,7 @@ from .diag_codes import diag_codes_cmd
 from .validate import validate_cmd
 from .elaborate import elaborate_cmd
 from .netlist import netlist_cmd
+from .render import render_cmd
 from .schema import schema_cmd
 from .visualize import visualize_cmd
 
@@ -36,5 +37,6 @@ cli.add_command(diag_codes_cmd)
 cli.add_command(validate_cmd)
 cli.add_command(elaborate_cmd)
 cli.add_command(netlist_cmd)
+cli.add_command(render_cmd)
 cli.add_command(schema_cmd)
 cli.add_command(visualize_cmd)

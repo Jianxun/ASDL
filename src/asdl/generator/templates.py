@@ -41,6 +41,10 @@ def generate_primitive_instance(
         def __missing__(self, key):
             return "{" + key + "}"
 
-    return module.spice_template.format_map(_DefaultingDict(template_data))
+    # Protect Jinja-style double braces so Python .format_map doesn't collapse them
+    template_str = module.spice_template.replace("{{", "__J2_L__").replace("}}", "__J2_R__")
+    formatted = template_str.format_map(_DefaultingDict(template_data))
+    # Restore Jinja double braces for downstream template flows and diagnostics
+    return formatted.replace("__J2_L__", "{{").replace("__J2_R__", "}}")
 
 

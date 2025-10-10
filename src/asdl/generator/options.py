@@ -17,5 +17,8 @@ class GeneratorOptions:
     """
 
     top_style: TopStyle = TopStyle.SUBCKT
+    # When true, treat generated output as a Jinja2 template and skip
+    # unresolved placeholder checks in postprocessing.
+    template_mode: bool = False
 
 

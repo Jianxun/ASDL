@@ -56,6 +56,11 @@ GENERATOR_DIAGNOSTICS: Dict[str, Tuple[str, str]] = {
         "Variable Shadows Parameter",
         "Variable '{param}' shadows parameter on instance '{instance_id}' of '{model}'. Using variable value.",
     ),
+    # Template/style warnings
+    "G0602": (
+        "Jinja Template Placeholder Detected",
+        "Detected Jinja-style placeholders {placeholders} in generated output. If you intend to produce a template, pass --template to emit a .j2 file and suppress placeholder warnings.",
+    ),
     # Informational/warning class for missing top specification
     "G0701": (
         "Missing Top Module",
@@ -71,6 +76,10 @@ def _severity_for_code(code: str) -> DiagnosticSeverity:
         return DiagnosticSeverity.ERROR
 
     category = int(code[1:3])
+    # Per-code overrides (policy exceptions)
+    if code == "G0305":
+        # Treat unresolved placeholders as a WARNING to allow orchestrator-side rendering
+        return DiagnosticSeverity.WARNING
     if 1 <= category <= 5:
         return DiagnosticSeverity.ERROR
     if 6 <= category <= 7:

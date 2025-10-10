@@ -27,7 +27,7 @@ This document defines the scope, UX, and technical plan for the ASDL command-lin
 - Usage:
   - `asdlc netlist input.yml [-o output.spice]`
 - Options:
-  - `-o, --output PATH` – output SPICE file (default: input with `.spice`)
+  - `-o, --output PATH` – output SPICE file
   - `--top MODULE` – override top module (if not specified in YAML)
   - `-I, --include PATH` – include/search paths for `!include` and file references (repeatable)
   - `--binding PATH` – device-binding overlay(s) to resolve abstract devices (repeatable; future-ready)
@@ -35,6 +35,7 @@ This document defines the scope, UX, and technical plan for the ASDL command-lin
   - `--json` – emit machine-readable summary to stdout (diagnostics + artifact paths)
   - `-v, --verbose` – verbose progress logs
   - `--strict` – treat warnings as errors
+  - `-t, --template` – emit Jinja2 template: skip unresolved placeholder checks; default output suffix `.spice.j2` (when `-o` not provided)
 
 2) `asdlc elaborate`
 - Description: Parse → elaborate only; output elaborated ASDL (YAML by default)
@@ -48,10 +49,19 @@ This document defines the scope, UX, and technical plan for the ASDL command-lin
   - `--strict` – warnings → errors
   - `--json`, `-v`, `-I`, `--binding`, `--top` as above
 
-4) `asdlc diag-codes`
+4) `asdlc render`
+- Description: Render a Jinja2 SPICE template (`.j2`) with a YAML/JSON context file
+- Usage:
+  - `asdlc render my_circuit.spice.j2 --context params.yml [-o my_circuit.spice]`
+- Options:
+  - `-c, --context PATH` – YAML or JSON context
+  - `-o, --output PATH` – explicit output name (default: strip one trailing `.j2`)
+  - `-v, --verbose` – verbose logs
+
+5) `asdlc diag-codes`
 - Description: Print known diagnostic codes, severities, and short help (from `asdl.diagnostics`)
 
-5) `asdlc version`
+6) `asdlc version`
 - Description: Print version and environment information
 
 ## Output & Contracts
@@ -185,6 +195,13 @@ asdlc elaborate examples/diff_pair_nmos.yml --format json -o build/diff_pair_ela
 
 # Show diagnostic codes
 asdlc diag-codes
+
+# Template mode: produce a Jinja2 template and render it later
+asdlc netlist examples/libs/ota_differential/diff_pair/diff_pair_nin.asdl -t
+# default output: examples/.../diff_pair_nin.spice.j2
+
+# Render template with YAML context
+asdlc render examples/.../diff_pair_nin.spice.j2 -c examples/.../params.yml -o build/diff_pair_nin.spice
 ```
 
 

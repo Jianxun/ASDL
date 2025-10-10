@@ -36,7 +36,7 @@ class SPICEGenerator:
     def __init__(self, options: Optional[GeneratorOptions] = None):
         """Initialize SPICE generator with default settings."""
         self.comment_style = "*"  # SPICE comment character
-        self.indent = "  "        # Indentation for readability
+        self.indent = ""        # Indentation for readability
         self._pending_diagnostics: List[Diagnostic] = []
         self.options = options or GeneratorOptions()
     
@@ -51,7 +51,7 @@ class SPICEGenerator:
         self._append_end(lines)
         final_spice = "\n".join(lines)
         diagnostics: List[Diagnostic] = []
-        diagnostics.extend(check_unresolved_placeholders(final_spice))
+        diagnostics.extend(check_unresolved_placeholders(final_spice, self.options))
         diagnostics.extend(self._pending_diagnostics)
         return final_spice, diagnostics
 
@@ -60,7 +60,7 @@ class SPICEGenerator:
         self._pending_diagnostics = []
 
     def _append_header(self, lines: List[str], asdl_file: ASDLFile) -> None:
-        lines.append(f"* SPICE netlist generated from ASDL")
+        #lines.append(f"* SPICE netlist generated from ASDL")
         lines.append(f"* Design: {asdl_file.file_info.doc}")
         lines.append(f"* Top module: {asdl_file.file_info.top_module}")
         lines.append(f"* Author: {asdl_file.file_info.author}")

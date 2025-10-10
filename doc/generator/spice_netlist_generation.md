@@ -17,8 +17,9 @@ This document describes the design decisions, options, and algorithms used by th
 - `TopStyle` (`src/asdl/generator/options.py`):
   - `subckt` (default): emit normal `.subckt {top} … .ends` for the top module.
   - `flat`: comment only the top wrappers while preserving the body, to enable “flat” top-level content when embedded elsewhere.
-- CLI flag (`src/asdl/cli/netlist.py`):
+- CLI flags (`src/asdl/cli/netlist.py`):
   - `--top-style {subckt,flat}` threads an instance of `GeneratorOptions` into `SPICEGenerator`.
+  - `-t, --template` enables template mode: unresolved placeholder checks are skipped and default output suffix is `.spice.j2`.
 
 ### Emission Order (Dependency Ordering)
 Implemented in `src/asdl/generator/ordering.py`.
@@ -51,14 +52,19 @@ Diagnostics are defined in `src/asdl/generator/diagnostics.py` and created via `
 - `G0102` Top Module Not Found (ERROR): top specified but absent from `modules`.
 - `G0201` Unconnected Port in Subcircuit Call (ERROR): instance missing mappings for callee ports.
 - `G0301` Cannot Generate SPICE (ERROR): module has neither `spice_template` nor `instances`.
-- `G0305` Unresolved Template Placeholder (ERROR): unresolved `{placeholder}` remains after rendering.
+- `G0305` Unresolved Template Placeholder (**WARNING**): single-brace `{placeholder}` remains after rendering.
+  - In template mode (`--template`), this check is skipped entirely.
+- `G0602` Jinja Template Placeholder Detected (**WARNING**): double-brace `{{ placeholder }}` detected in output. Suggest using `--template` to emit `.spice.j2` and suppress placeholder warnings.
 - `G0401` Unknown Model Reference (ERROR): instance references a missing module.
 - `G0601` Variable Shadows Parameter (WARNING): variable overwrites parameter during primitive rendering.
 - `G0701` Missing Top Module (WARNING): no top specified; generation proceeds as a library.
 
 ### Postprocessing
 Implemented in `src/asdl/generator/postprocess.py`.
-- Scans the final output for `{placeholder}` tokens and emits a single `G0305` diagnostic listing unique unresolved placeholders.
+- Scans the final output for placeholders and emits diagnostics:
+  - Single braces `{...}` → `G0305`.
+  - Double braces `{{...}}` → `G0602` with suggestion to use `--template`.
+  - In template mode, placeholder scanning is skipped.
 
 ### Formatting Rules
 - Comment character: `*`.
@@ -73,7 +79,7 @@ Implemented in `src/asdl/generator/postprocess.py`.
 3) Hierarchical subcircuits in dependency order (top last)
 4) Top presence diagnostics (`G0102` or `G0701`)
 5) Trailing `.end`
-6) Postprocess for unresolved placeholders (`G0305`)
+6) Postprocess for placeholders (`G0305` for `{}`, `G0602` for `{{}}`; skipped in template mode)
 
 ### Example
 Given modules `child`, `parent`, and `top` where `top` instantiates `parent`, and `parent` instantiates `child`:

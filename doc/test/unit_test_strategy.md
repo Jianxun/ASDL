@@ -23,8 +23,8 @@ The generator suite was refactored from one verbose file into focused, fast, and
 
 ### Diagnostic policy (Generator examples)
 - **Codes covered**:
-  - Errors: `G0102` (top not found), `G0201` (unconnected port), `G0301` (invalid module), `G0305` (unresolved placeholders), `G0401` (unknown model)
-  - Warning: `G0601` (variable shadows parameter)
+  - Errors: `G0102` (top not found), `G0201` (unconnected port), `G0301` (invalid module), `G0401` (unknown model)
+  - Warnings: `G0305` (unresolved single-brace placeholders), `G0601` (variable shadows parameter), `G0602` (detected Jinja `{{ }}` placeholders)
   - Info: `G0701` (no top specified)
 - **Severity expectations**:
   - 01–05 → ERROR, 06 → WARNING, 07 → INFO
