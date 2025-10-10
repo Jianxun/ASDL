@@ -4,8 +4,8 @@
 - [ ] xDSL Phase 0 – IR Bring-up
   - [X] Add optional `xdsl` extra in `pyproject.toml` (pin after local validation)
   - [ ] Scaffold dialect package under `src/asdl/ir/` (module init)
-  - [ ] Define and register `ModuleOp`, `InstanceOp`, `WireOp`
-  - [ ] Implement `PortAttr`, `RangeAttr`, `ExprAttr`
+  - [X] Define and register `ModuleOp`, `InstanceOp`, `WireOp`
+  - [X] Implement `PortAttr`, `RangeAttr`, `ExprAttr`
   - [ ] Add uniqueness verifiers (modules, instances, wires)
   - [ ] Add pin count and name matching verifiers
   - [ ] Implement AST→IR converter skeleton with locations
