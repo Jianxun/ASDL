@@ -3,7 +3,7 @@
 ## Next Sprint – Linter & Compiler Architecture Refactoring
 - [ ] xDSL Phase 0 – IR Bring-up
   - [X] Add optional `xdsl` extra in `pyproject.toml` (pin after local validation)
-  - [ ] Scaffold dialect package under `src/asdl/ir/` (module init)
+  - [X] Scaffold dialect package under `src/asdl/ir/` (module init)
   - [X] Define and register `ModuleOp`, `InstanceOp`, `WireOp`
   - [X] Implement `PortAttr`, `RangeAttr`, `ExprAttr`
   - [ ] Add uniqueness verifiers (modules, instances, wires)

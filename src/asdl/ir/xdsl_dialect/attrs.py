@@ -1,34 +1,45 @@
 from __future__ import annotations
 
-# Minimal attribute stubs to enable early registration and tests.
-# These will be expanded with parsing/printing and verifiers in later phases.
+# Minimal attribute definitions using xDSL IRDL when available. Fallbacks are no-ops
+# to keep imports working without the optional dependency installed.
 
 try:  # Optional dependency: only import if xdsl is installed
     from xdsl.ir import Attribute
-    from xdsl.irdl import IRDLOperation
-    from xdsl.irdl import attr_def
+    from xdsl.irdl import ParameterDef, irdl_attr_definition
+    from xdsl.dialects.builtin import StringAttr, IntegerAttr
 except Exception:  # pragma: no cover - exercised only if optional dep missing
     Attribute = object  # type: ignore
-    def attr_def(cls):  # type: ignore
+    def irdl_attr_definition(cls):  # type: ignore
         return cls
+    class StringAttr:  # type: ignore
+        pass
+    class IntegerAttr:  # type: ignore
+        pass
+    class ParameterDef:  # type: ignore
+        def __class_getitem__(cls, item):
+            return cls
 
 
-@attr_def
+@irdl_attr_definition
 class PortAttr(Attribute):  # type: ignore[misc]
-    # name: str, direction: str, kind: str
-    pass
+    name = "asdl.port"
+    port_name: ParameterDef[StringAttr]
+    direction: ParameterDef[StringAttr]
+    kind: ParameterDef[StringAttr]
 
 
-@attr_def
+@irdl_attr_definition
 class RangeAttr(Attribute):  # type: ignore[misc]
-    # msb: int, lsb: int
-    pass
+    name = "asdl.range"
+    msb: ParameterDef[IntegerAttr]
+    lsb: ParameterDef[IntegerAttr]
 
 
-@attr_def
+@irdl_attr_definition
 class ExprAttr(Attribute):  # type: ignore[misc]
+    name = "asdl.expr"
     # textual expression placeholder; will be resolved in later passes
-    pass
+    expr: ParameterDef[StringAttr]
 
 
 __all__ = [
