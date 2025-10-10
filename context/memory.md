@@ -55,6 +55,11 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
 - CLI: `--engine {legacy,xdsl}` (default legacy), new `asdlc ir-dump --verify --run-pass`
 - CI: Add optional extra for `xdsl`; run macOS/Ubuntu on Py 3.10/3.11 with goldens
 
+### 2025-10-10 – Port Order Invariant (Critical)
+- Decision: Preserve declared port order exactly across AST → IR → SPICE.
+- Rationale: SPICE subckt pin order defines connectivity; reordering breaks netlists.
+- Enforcement Plan: Avoid dict iteration order reliance; maintain ordered sequences when printing IR and generating SPICE; add unit tests for order stability.
+
 ### 2025-09-08 – Import Stage 4 Diagnostic Split & Validation Wiring
 - Implemented E0448 (Invalid Qualified Reference) and aligned style warnings to E0601/E0602.
 - `ReferenceValidator` now emits E0448 for malformed instance references; `AliasResolver` uses alias map with absolute paths and emits E0443 for missing modules.

@@ -2,18 +2,29 @@
 
 ## Next Sprint – Linter & Compiler Architecture Refactoring
 - [ ] xDSL Phase 0 – IR Bring-up
-  - [ ] Add optional dependency extra for `xdsl`; set up CI matrix (macOS/Ubuntu; Py 3.10/3.11)
-  - [ ] Define and register ASDL dialect ops/attrs (`ModuleOp`, `InstanceOp`, `WireOp`, `PortAttr`, `RangeAttr`, `ExprAttr`)
-  - [ ] Implement AST→IR conversion skeleton (flattened `ASDLFile` input) with locations
-  - [ ] Implement verifier skeletons (module/instance/wire uniqueness; pin count/name checks)
+  - [ ] Add optional `xdsl` extra in `pyproject.toml` (pin after local validation)
+  - [ ] Scaffold dialect package under `src/asdl/ir/` (module init)
+  - [ ] Define and register `ModuleOp`, `InstanceOp`, `WireOp`
+  - [ ] Implement `PortAttr`, `RangeAttr`, `ExprAttr`
+  - [ ] Add uniqueness verifiers (modules, instances, wires)
+  - [ ] Add pin count and name matching verifiers
+  - [ ] Implement AST→IR converter skeleton with locations
+  - [ ] Preserve declared port order in IR printing (no implicit sorting)
   - [ ] Implement `asdlc ir-dump --verify --run-pass <list>` CLI
-  - [ ] Add golden textual IR for `examples/libs/ota_single_ended/miller_ota/miller_ota.asdl`
-  - [ ] Add deterministic name canonicalizer and SPICE parity normalizer stub
+  - [ ] Add deterministic name canonicalizer helper
+  - [ ] Add SPICE parity normalizer stub (diff stability)
+  - [ ] Tests: golden textual IR for `miller_ota`
+  - [ ] Tests: dialect printing/parsing round-trip
+  - [ ] Tests: assert strict port order preservation in IR dump
+  - [ ] Deliverable: IR prints and verifies for `miller_ota`
 
 ## Backlog – Generator Improvements
 - [ ] Enhanced error handling for malformed ASDL files
 - [ ] Support for additional SPICE device types
 - [ ] Optimizations for large hierarchical designs
+
+## Backlog – IR Passes (Next Phase)
+- [ ] PatternExpansionPass scaffold and tests (Phase 1)
 
 ## Testing & Refinements
 - [ ] Thoroughly test `serialization.py` module
