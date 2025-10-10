@@ -107,17 +107,17 @@ This document is the authoritative, evolving record for refactoring `asdlc` arou
 - Add CI job to import xDSL and run a smoke test on tiny example
 
 ### Kickoff Checklist – Phase 0 (Execution)
-- Create branch `xdsl_phase0_ir_dump`
+- Continue on current branch `xdsl_refactor` (no new branch)
 - Dependency: add optional extra for `xdsl` and pin after CI green
 - Dialect: define and register `ModuleOp`, `InstanceOp`, `WireOp`, `PortAttr`, `RangeAttr`, `ExprAttr`
 - Verifier skeletons: module/instance/wire uniqueness; pin count/name checks
 - Converter: AST (flattened) → IR skeleton with locations
 - CLI: implement `asdlc ir-dump --verify --run-pass <list>`
-- Tests: golden textual IR for `miller_ota` pre‑expansion; verify passes
+- Tests: create dedicated fixture ASDL files under `tests/fixtures/ir/`; avoid referencing `examples/`
 - Helpers: deterministic name canonicalizer; SPICE parity normalizer stub
 - Diagnostics: map new verifier/analysis messages to XCCSS code scheme
 - CI: macOS + Ubuntu on Py 3.10/3.11 with `xdsl` extra; run smoke + goldens
-- Deliverable: IR prints and verifies for `miller_ota`
+- Deliverable: IR prints and verifies on fixture designs (parity is approximate initially)
 
 ### References (repo-local)
 - High-level plan and rationale: `doc/dsl_framework/xdsl_refactor_plan.md`
