@@ -47,6 +47,14 @@ ASDL (Analog System Description Language) is a comprehensive Python framework fo
   - Resolver: `EnvVarResolver` (separate from `VariableResolver`)
   - Wired in `Elaborator` for module/instance parameters and for module `spice_template`
 
+### 2025-10-09 – xDSL/IR Refactor Kickoff
+- Decisions: xDSL‑first (MLIR interop later), AST is sole editable source, ruamel round‑trip for persistence
+- Scope: Phase 0 to scaffold dialect and `asdlc ir-dump`; parity target `miller_ota` initially
+- Dialect (initial): `ModuleOp`, `InstanceOp`, `WireOp`, `PortAttr`, `RangeAttr`, `ExprAttr`; `WireOp` models nets, instances consume wires via operands
+- Passes: PatternExpansion → VariableResolution → EnvVar → Validator (analyses)
+- CLI: `--engine {legacy,xdsl}` (default legacy), new `asdlc ir-dump --verify --run-pass`
+- CI: Add optional extra for `xdsl`; run macOS/Ubuntu on Py 3.10/3.11 with goldens
+
 ### 2025-09-08 – Import Stage 4 Diagnostic Split & Validation Wiring
 - Implemented E0448 (Invalid Qualified Reference) and aligned style warnings to E0601/E0602.
 - `ReferenceValidator` now emits E0448 for malformed instance references; `AliasResolver` uses alias map with absolute paths and emits E0443 for missing modules.
