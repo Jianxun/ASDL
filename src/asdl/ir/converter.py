@@ -78,9 +78,10 @@ def print_xdsl_module(mlctx, module_op) -> str:
     from xdsl.printer import Printer  # type: ignore
 
     buf = StringIO()
-    printer = Printer(stream=buf)
+    printer = Printer(stream=buf, context=mlctx)
     printer.print_op(module_op)
-    return buf.getvalue()
+    text = buf.getvalue()
+    return text
 
 
 def _ports_to_attr(ArrayAttr, PortAttr, StringAttr, mod: Module):

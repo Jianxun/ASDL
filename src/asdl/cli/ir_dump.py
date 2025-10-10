@@ -12,6 +12,7 @@ from ..diagnostics import Diagnostic
 from .helpers import diagnostics_to_jsonable, has_error, print_human_diagnostics
 from ..ir import build_textual_ir, register_asdl_dialect
 from ..ir.converter import asdl_ast_to_xdsl_module, print_xdsl_module
+from ..ir.passes import run_passes
 
 
 @click.command("ir-dump", help="Parse → (import flatten optional) → AST→IR and print textual IR")
@@ -51,6 +52,8 @@ def ir_dump_cmd(input: Path, verify: bool, run_passes: tuple[str, ...], json_out
         else:
             # xDSL engine
             mlctx, mod = asdl_ast_to_xdsl_module(asdl_file)
+            if run_passes:
+                run_passes(mlctx, mod, run_passes)
             textual = print_xdsl_module(mlctx, mod)
             click.echo(textual)
 
