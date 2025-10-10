@@ -10,7 +10,8 @@ from ..logging_utils import get_logger, configure_logging
 from ..parser import ASDLParser
 from ..diagnostics import Diagnostic
 from .helpers import diagnostics_to_jsonable, has_error, print_human_diagnostics
-from ..ir import build_textual_ir
+from ..ir import build_textual_ir, register_asdl_dialect
+from ..ir.converter import asdl_ast_to_xdsl_module, print_xdsl_module
 
 
 @click.command("ir-dump", help="Parse → (import flatten optional) → AST→IR and print textual IR")
@@ -18,8 +19,10 @@ from ..ir import build_textual_ir
 @click.option("--verify", is_flag=True, help="Run basic verifications before printing")
 @click.option("--run-pass", "run_passes", multiple=True, help="Passes to run (reserved; no-ops in Phase 0)")
 @click.option("--json", "json_output", is_flag=True, help="Emit machine-readable JSON to stdout (diagnostics)")
+@click.option("--engine", type=click.Choice(["textual", "xdsl"]), default="textual", show_default=True,
+              help="Select IR engine: minimal textual (default) or xDSL dialect")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose logs (INFO level)")
-def ir_dump_cmd(input: Path, verify: bool, run_passes: tuple[str, ...], json_output: bool, verbose: bool) -> None:
+def ir_dump_cmd(input: Path, verify: bool, run_passes: tuple[str, ...], json_output: bool, engine: str, verbose: bool) -> None:
     exit_code = 0
     diagnostics: List[Diagnostic] = []
 
@@ -42,8 +45,14 @@ def ir_dump_cmd(input: Path, verify: bool, run_passes: tuple[str, ...], json_out
             if not asdl_file.modules:
                 raise click.ClickException("Verify failed: no modules in AST.")
 
-        textual = build_textual_ir(asdl_file)
-        click.echo(textual)
+        if engine == "textual":
+            textual = build_textual_ir(asdl_file)
+            click.echo(textual)
+        else:
+            # xDSL engine
+            mlctx, mod = asdl_ast_to_xdsl_module(asdl_file)
+            textual = print_xdsl_module(mlctx, mod)
+            click.echo(textual)
 
     except click.ClickException as e:
         exit_code = 1
