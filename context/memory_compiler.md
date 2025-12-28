@@ -70,3 +70,46 @@
 - Plan xDSL dialect skeleton (`ModuleOp`, `InstanceOp`, `WireOp`, `PortAttr`...) with ordered port list attribute.
 
 
+
+## Passes Organization and Pipeline (Reorg Plan)
+
+### Directory layout
+```text
+src/asdl/passes/
+  base.py
+  elaboration/
+    import_resolution.py
+    top_override.py
+    env_vars.py
+    port_patterns.py
+    instance_patterns.py
+    variables.py
+  verification/
+    uniqueness.py
+    pin_interface.py
+  netlist/
+    canonicalize.py
+    spice_parity.py
+  utils/
+    diagnostics.py
+    naming.py
+```
+
+### Pass API
+- Each pass: `run(asdl_file) -> (asdl_file, diagnostics)`; do not mutate inputs.
+- `PassManager` in `passes/base.py` runs an ordered list of passes.
+
+### Pipeline order (elaboration)
+1. ImportResolutionPass (adapter over existing `elaborator/import_`)
+2. TopModuleOverridePass (optional)
+3. EnvVarSubstitutionPass (module params, `spice_template`)
+4. PortPatternExpansionPass
+5. InstanceAndMappingPatternExpansionPass
+6. EnvVarSubstitutionPass (instance params)
+7. VariableReferenceResolutionPass
+
+### Reuse vs refactor
+- Reuse logic: `EnvVarResolver`, `PatternExpander`, `VariableResolver` (wrapped as passes).
+- Keep `elaborator/import_/` intact; provide a thin adapter pass.
+- Centralize diagnostics via pass results; avoid raising exceptions in passes.
+- Do not remove legacy `elaborator/`, `generator/`, `validator/` until callers are flipped.

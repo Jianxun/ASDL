@@ -26,6 +26,16 @@
 - [X] Emitter: neutral textual netlist with `--sim {ngspice, neutral}` (default ngspice)
 - [ ] Propagate instance/module parameters into Netlist IR and emitter
 
+### Passes Reorganization (Elaboration/Verification)
+- [ ] Scaffold passes base and directory layout under `src/asdl/passes/`
+- [ ] Copy import system to `passes/elaboration/imports` adapter, preserving behavior
+- [ ] Copy `EnvVarResolver` to `passes/elaboration/env_vars`
+- [ ] Copy `PatternExpander` and split into `port_patterns` and `instance_patterns` passes
+- [ ] Copy `VariableResolver` to `passes/elaboration/variables`
+- [ ] Introduce `PassManager` in `passes/base.py` with ordered run
+- [ ] Create verification passes: uniqueness and pin interface
+- [ ] Plan `generator`/`validator` deprecation and new homes for code
+
 ## Backlog – Generator Improvements
 - [ ] Enhanced error handling for malformed ASDL files
 - [ ] Support for additional SPICE device types
