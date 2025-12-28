@@ -28,59 +28,15 @@ modules:
       M_tail: 2
     instances:
       # PMOS current mirror load (diode-connected ref + mirrored active load)
-      mp_ref: 
-        model: pmos
-        mappings: 
-          D: vd
-          G: vd
-          S: vdd
-          B: vdd
-        parameters:
-          m: M_load
-    
-      mp_mirror: 
-        model: pmos
-        mappings: 
-          D: vout
-          G: vd
-          S: vdd
-          B: vdd
-        parameters: { m: M_load }
+      mp_ref: { model: pmos, mappings: { D: vd, G: vd, S: vdd, B: vdd }, parameters: { m: M_load } }
+      mp_mirror: { model: pmos, mappings: { D: vout, G: vd, S: vdd, B: vdd }, parameters: { m: M_load } }
       
       # NMOS differential pair
-      mn_in_p: 
-        model: nmos
-        mappings: 
-          D: vd
-          G: vin_p
-          S: tail
-          B: vss
-        parameters: { m: M_in }
-      mn_in_n: 
-        model: nmos
-        mappings: 
-          D: vout
-          G: vin_n
-          S: tail
-          B: vss
-        parameters: { m: M_in }
+      mn_in_p: { model: nmos, mappings: { D: vd, G: vin_p, S: tail, B: vss }, parameters: { m: M_in } }
+      mn_in_n: { model: nmos, mappings: { D: vout, G: vin_n, S: tail, B: vss }, parameters: { m: M_in } }
 
       # NMOS tail bias
-      mn_diode: 
-        model: nmos
-        mappings: 
-          D: ibias
-          G: ibias
-          S: vss
-          B: vss
-        parameters: { m: M_dio }
-      mn_tail: 
-        model: nmos
-        mappings: 
-          D: tail
-          G: ibias
-          S: vss
-          B: vss
-        parameters: { m: M_tail }
+      mn_diode: { model: nmos, mappings: { D: ibias, G: ibias, S: vss, B: vss }, parameters: { m: M_dio } }
+      mn_tail: { model: nmos, mappings: { D: tail, G: ibias, S: vss, B: vss }, parameters: { m: M_tail } }
 
 

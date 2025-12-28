@@ -1,158 +1,107 @@
-# ASDL - Analog Structured Description Language
+# ASDL — Analog Structured Description Language
 
-An intermediate representation for analog circuits that bridges the gap between human-friendly schematics and machine-friendly netlists.
+An intermediate representation and toolchain for analog circuits. ASDL bridges human-friendly schematics and machine-friendly netlists, with a CLI (`asdlc`) that compiles designs end‑to‑end and an interactive schematic visualizer.
 
 ## Overview
 
-ASDL (Analog Structured Description Language) is a YAML-based format designed to capture not only the topological information of analog circuits but also their structural hierarchy and design intent. This makes it an ideal intermediate representation for:
+ASDL is a YAML-based format and Python toolkit for describing analog circuits with hierarchy and design intent. The toolchain parses, elaborates, validates, and generates SPICE netlists, and can export interactive schematic graphs for visualization.
 
-- **Human designers**: More readable and editable than raw netlists
-- **AI/ML systems**: Structured format suitable for training analog circuit design models  
-- **EDA tools**: Standardized input/output format for circuit generation and optimization
-
-## Key Features
-
-- **Human-readable YAML syntax** with circuit hierarchy preservation
-- **Design intent capture** through structured parameters and notes
-- **Modular design** with reusable circuit building blocks
-- **Pattern expansion** for symmetric circuit generation (`MN_{P,N}` → `MN_P`, `MN_N`)
-- **Parameter substitution** system (`${M.diff}` style templating)
-- **Multiple output formats** (SPICE, Spectre, Verilog-AMS)
-
-## Project Structure
-
-```
-ASDL/
-├── README.md              # This file
-├── venv/                  # Virtual environment (not committed)
-├── context/               # Project context tracking
-│   ├── memory.md          # Project state and decisions
-│   └── todo.md            # Task tracking
-├── src/asdl/              # Main source code
-│   ├── __init__.py
-│   ├── parser.py          # YAML parsing and validation
-│   ├── resolver.py        # Parameter and pattern resolution
-│   ├── generator.py       # Netlist generation
-│   └── utils.py           # Utility functions
-├── tests/                 # Test suite
-├── doc/                   # Documentation
-│   ├── asdl_syntax.md     # ASDL syntax guide
-│   └── ASDL_schema.md     # Complete schema documentation
-├── examples/              # Example ASDL circuits
-│   ├── ota_two_stg.yaml   # Two-stage Miller OTA
-│   ├── ota.yaml           # Single-ended OTA variants
-│   └── 311.asdl.yaml     # Other analog circuits
-└── requirements.txt       # Python dependencies
-```
+### Big‑picture capabilities (asdlc)
+- Parse ASDL with precise location tracking
+- Resolve imports via `ASDL_PATH` (aliasing, cycle detection)
+- Elaborate designs: pattern expansion, parameter resolution, environment variables (`${VAR}`)
+- Validate with structured diagnostics (file:line:column)
+- Generate LVS‑friendly SPICE netlists
+- Export schematic JSON and launch a React Flow visualizer with position persistence
+- Structured logging: `-v`, `--debug`, `--trace`, `--log-file`; env overrides
 
 ## Quick Start
 
-### Setup
-
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd ASDL
-   ```
-
-2. Create and activate virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-### Basic Usage
-
-```python
-from asdl import ASDLParser, SPICEGenerator
-
-# Parse ASDL file
-parser = ASDLParser()
-circuit = parser.parse_file('examples/ota_two_stg.yaml')
-
-# Generate SPICE netlist
-generator = SPICEGenerator()
-netlist = generator.generate(circuit)
-
-# Write to file
-with open('ota_two_stg.sp', 'w') as f:
-    f.write(netlist)
-```
-
-## ASDL Syntax Overview
-
-ASDL uses YAML with specific conventions for analog circuit description:
-
-### Basic Module Structure
-```yaml
-modules:
-  diff_pair_nmos:
-    nets: {in_{p,n}: in, out_{p,n}: out, tail: io}
-    parameters: {M: 2}
-    circuits:
-      - {<<: *NMOS, name: MN_{P,N}, S: tail, D: out_{p,n}, G: in_{p,n}, M: ${M}}
-```
-
-### Key Features
-- **Pattern expansion**: `{p,n}` creates multiple variants
-- **Parameter substitution**: `${M}` references parameters
-- **YAML anchors**: `<<: *NMOS` for device templates
-- **Hierarchical nets**: Support for `internal`, `in`, `out`, `io` roles
-
-## Example Circuits
-
-The repository includes several example circuits:
-
-- **`ota_two_stg.yaml`**: Complete two-stage Miller OTA with bias generation
-- **`ota.yaml`**: Various single-ended OTA configurations  
-- **`311.asdl.yaml`**: Additional analog building blocks
-
-## Development
-
-### Running Tests
+### 1) Environment
 ```bash
-pytest tests/
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-### Code Style
-The project follows PEP 8 guidelines with Black formatting:
+Set environment variables (paths tailored to your setup):
 ```bash
-black src/ tests/
-flake8 src/ tests/
+export ASDL_PATH=examples/libs:examples/libs_common
+export PDK_ROOT=examples/pdks/gf180mcu
+```
+Tip: see `examples/setup.sh` for a ready-made setup snippet.
+
+### 2) Typical CLI usage
+```bash
+# Elaborate and validate (prints diagnostics and summary)
+asdlc elaborate examples/libs/ota_single_ended/tb/tb_ota_5t.asdl --debug
+
+# Generate SPICE netlist (writes .spice next to the source by default)
+asdlc netlist   examples/libs/ota_single_ended/tb/tb_ota_5t.asdl
+
+# Visualize a module as an interactive schematic
+asdlc visualize examples/libs/ota_single_ended/tb/tb_ota_5t.asdl --module tb_ota_5t
 ```
 
-### Adding New Features
-1. Write tests first (test-driven development)
-2. Implement functionality
-3. Update documentation
-4. Update context files (`context/memory.md`, `context/todo.md`)
+## CLI commands
+- `asdlc elaborate <file.asdl> [--module <name>] [--debug|--trace]`
+  - Parses, resolves imports via `ASDL_PATH`, expands patterns, resolves parameters and environment variables, and validates the design.
+
+- `asdlc netlist <file.asdl> [--module <name>]`
+  - Generates an LVS-friendly SPICE netlist for the selected module.
+
+- `asdlc visualize <file.asdl> [--module <name>]`
+  - Exports `{basename}.{module}.sch.json` alongside the `.asdl` file and launches a React Flow visualizer. Existing node positions are reused.
+
+## Project structure
+```
+ASDL/
+├── context/                           # Project context: status, todos, decisions
+├── doc/                               # Design docs (diagnostics, elaborator, schema, CLI)
+├── examples/                          # Example ASDL designs and PDK stubs
+├── prototype/
+│   └── visualizer_react_flow/         # React Flow visualizer app
+├── scripts/                           # Utility scripts
+├── src/asdl/                          # Main source code (installed as 'asdl')
+│   ├── cli/                           # CLI entrypoints and orchestration
+│   ├── parser/                        # Parsing, file info, error reporting
+│   ├── elaborator/                    # Pattern/param/env-var resolution, import system
+│   ├── validator/                     # Modular validation rules and runner
+│   ├── generator/                     # SPICE netlist generation
+│   ├── data_structures/               # Core types and enums
+│   └── logging_utils.py               # Structured logging helpers
+├── tests/                             # Unit and integration tests
+├── pyproject.toml                     # Packaging and tooling config (defines 'asdlc')
+└── requirements.txt                   # Python dependencies
+```
+
+## Visualizer
+- CLI: `asdlc visualize <file.asdl> [--module <name>]`
+- Output: `{basename}.{module}.sch.json` saved next to the source `.asdl`
+- Frontend: React Flow with grid/minimap/controls and Manhattan routing
+- Nodes: transistors (NMOS/PMOS), ports, generic instances, resistors, capacitors
+- Positions are grid‑quantized and persisted across sessions (if a previous JSON exists)
+
+## Testing & Development
+```bash
+pytest tests/                # Run tests
+```
+
+Guidelines
+- Use the project virtual environment (`venv/`) for all commands
+- PEP 8 style; type hints encouraged
+- Logging controlled by CLI flags or env vars (`ASDL_LOG_LEVEL`, `ASDL_LOG_FILE`, `ASDL_LOG_FORMAT`)
 
 ## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Follow test-driven development practices
-4. Update documentation and context files
-5. Submit a pull request
-
-## Goals and Vision
-
-ASDL aims to become a standard intermediate representation for analog circuit design, enabling:
-
-- **AI-driven circuit design**: Training datasets for machine learning models
-- **Design automation**: Automated circuit generation and optimization
-- **Cross-tool compatibility**: Standardized format across EDA tools
-- **Design knowledge preservation**: Capturing and sharing design intent
+1. Fork the repository and create a feature branch
+2. Write tests first (TDD), then implement functionality
+3. Update docs and context files under `context/`
+4. Submit a pull request with a clear description
 
 ## License
 
-[Specify license here]
+MIT License (see `pyproject.toml` classifiers)
 
 ## Contact
 
-[Contact information] 
+[Add contact information]

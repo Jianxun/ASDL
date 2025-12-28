@@ -1,0 +1,26 @@
+file_info:
+  top_module: top
+  doc: "Top with single instance for netlist IR tests"
+
+modules:
+  prim:
+    doc: "Primitive module with two ports"
+    ports:
+      a: {dir: in, type: signal}
+      b: {dir: out, type: signal}
+    spice_template: |
+      R{name} a b 1k
+
+  top:
+    doc: "Top module instantiating prim and wiring to ports"
+    ports:
+      a: {dir: in, type: signal}
+      b: {dir: out, type: signal}
+    instances:
+      u1:
+        model: prim
+        mappings:
+          a: a
+          b: b
+
+

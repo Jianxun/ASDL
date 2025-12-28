@@ -13,7 +13,7 @@ def build_subckt(
     module_name: str,
     asdl_file: ASDLFile,
     diagnostics: List,
-    indent: str = "  ",
+    indent: str = "",
     *,
     comment_top_wrappers: bool = False,
 ) -> str:

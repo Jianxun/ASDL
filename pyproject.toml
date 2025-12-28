@@ -32,6 +32,9 @@ dev = [
     "black>=22.0.0",
     "flake8>=4.0.0",
 ]
+xdsl = [
+    "xdsl"
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
