@@ -34,3 +34,6 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 ## Decision log
 - 2025-12-28: xDSL refactor adopted layered stack (ruamel → formatter → pydantic shape gate → lowering → xDSL semantic core → passes/emit); semantic meaning lives only in xDSL.
 - 2025-12-28: For any ordered data, use YAML lists; uniqueness enforced by verification passes (no reliance on dict order/keys).
+- 2025-12-28: ADR-0001 — Reserved view names limited to `nominal` (alias `nom`) and `dummy`; reserved view kinds are `subckt`, `subckt_ref`, `primitive`, `dummy`; `pex` is a `subckt_ref` specialization.
+- 2025-12-28: ADR-0002 — Pattern expansion and binding semantics: flat ordered lists, left-to-right duplication, named-only binding, strict length rule, scalar-only implicit broadcast, collision and malformed-pattern errors.
+- 2025-12-28: ADR-0003 — SelectView compiler pass validates all views post-config/view_order, selects one per module, defaults to `nominal`, reserves `dummy` for blackout; exclusivity enforced by selection not schema.
