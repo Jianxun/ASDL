@@ -1,28 +1,28 @@
 # ADR-0001: Reserved view names and kinds
 
-- Status: Proposed
+- Status: Superseded
 - Date: 2025-12-28
+- Superseded by: `agents/scratchpads/spec_ast.md` and `agents/scratchpads/spec_asdl_ir.md` (canonical v0 view kinds)
 
 ## Context
 - The ASDL refactor makes views first-class; selection operates on `(module, view)`.
-- We need minimal, enforceable reserves for names and kinds while keeping authors free to define additional views.
-- PEX should be modeled as an external netlist specialization, not a separate primitive.
+- Initial reserve set did not include `behav`; revised specs promote `behav` as a canonical v0 kind and formalize dummy/subckt_ref constraints.
 
-## Decision
+## Superseded Decision (for history)
 - Reserved view names: `nominal` (canonical default; `nom` alias accepted) and `dummy`. All other view names are user-defined.
-- Reserved view kinds: `subckt`, `subckt_ref`, `primitive`, `dummy`.
-  - `pex` is a specialization of `subckt_ref` (external netlist) with explicit port→pin mapping.
-- Multiple views may coexist on a module; exclusivity is resolved during view selection, not at schema level.
+- Reserved view kinds (superseded): `subckt`, `subckt_ref`, `primitive`, `dummy`; `pex` as `subckt_ref` specialization.
+
+## Current Decision (per spec v0)
+- Reserved view names remain: `nominal` (alias `nom` optionally) and `dummy`.
+- Canonical v0 view kinds: `{subckt, subckt_ref, primitive, dummy, behav}`; `behav` is supported for externally evaluated models.
+- Dummy is restricted in v0 to empty or a single `weak_gnd` mode; structural/template dummy is deferred to v0.1+.
+- `subckt_ref` assumes identity pin_map when omitted; explicit pin_map required for positional external pin orders.
+- Multiple views may coexist; exclusivity is resolved by the SelectView pass, not the schema.
 
 ## Consequences
-- Schema and pydantic models must encode views with:
-  - name (free string, except the two reserved)
-  - kind enum restricted to {subckt, subckt_ref, primitive, dummy}
-  - `subckt_ref` covers PEX/external netlists; no separate `pex` kind.
-- View selection/config logic must treat `nominal` as the default, recognize `dummy`, and allow user-defined names otherwise.
-- Documentation and scratchpads must align to this reserved set; earlier broader reserved lists are superseded.
+- Contract/task/spec work must follow the canonical v0 kind set from the specs, not the superseded set.
+- ADR-0001 is retained for provenance; consult the specs for authoritative rules.
 
 ## Alternatives
-- Broader reserved vocabulary (e.g., behav/pex/blackbox) — rejected to reduce rigidity and keep user-defined views flexible.
-- No reserved names — rejected; `nominal` default and `dummy` blackout need stable handling across tools.
+- n/a (superseded by specs)
 
