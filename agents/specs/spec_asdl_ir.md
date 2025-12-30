@@ -77,6 +77,9 @@ A compiler-facing structural IR that:
 - `type: StringAttr`
 - `src: LocAttr?`
 
+**Verifier**
+- `dir` ∈ {`"in"`, `"out"`, `"in_out"`}
+
 ---
 
 ### 2.5 `asdl.view` (nested symbol)
@@ -98,9 +101,7 @@ Supported `kind` (v0):
 - `kind=subckt`: `asdl.net*` (optional), `asdl.instance*`
 - `kind=primitive`: `asdl.template*`
 - `kind=subckt_ref`: exactly one `asdl.subckt_ref`
-- `kind=dummy`: either:
-  - empty region (meaning “default dummy semantics”), OR
-  - explicit content (see below)
+- `kind=dummy`: `asdl.dummy_mode?`
 - `kind=behav`: exactly one `asdl.behav_model`
 
 **Verifier (v0)**
@@ -108,9 +109,15 @@ Supported `kind` (v0):
 - `subckt_ref`: exactly one `asdl.subckt_ref`; no instances/templates
 - `behav`: exactly one `asdl.behav_model`; no instances/templates
 - `dummy`: allowed forms:
-  - empty region → default dummy semantics applied in lowering
-  - exactly one `asdl.dummy_mode`
-  - forbidden: instances/templates/behav in `dummy` (v0)
+  - any number of `asdl.var*`
+  - zero or one `asdl.dummy_mode`
+  - forbidden: `asdl.instance`, `asdl.template`, `asdl.behav_model`, `asdl.subckt_ref`
+- coupling rule (v0):
+  - if `kind=="dummy"`, then `sym_name` MUST be `"dummy"`
+  - no other view kind may use the name `"dummy"`
+
+**Dummy default semantics**
+- Default dummy semantics apply when no `asdl.dummy_mode` is present, regardless of `asdl.var*`.
 
 ---
 
@@ -238,11 +245,12 @@ Supported `kind` (v0):
 - produces a resolved `(instance → selected_view)` mapping for downstream passes
 - default view selection:
   - if instance specifies `view`: use it
-  - else select `nominal` (or `nom` alias if accepted by tooling)
+  - else select `nominal`
   - else error (if no nominal exists and no override provided)
-- `dummy` view name and/or kind reserved for blackout/fallback use
+- `dummy` view name and kind are strictly coupled (see `asdl.view` verifier)
 - `behav` views participate like any other view; backend specificity is handled during lowering, not selection
 
+(IR operates on canonical `nominal` only; `nom` alias normalization must occur before IR emission.)
 (Exact “view_order/config overlay” mechanics are outside `asdl.ir` v0 but the pass exists as an architectural boundary.)
 
 ### 4.4 Lowering/Emission Passes
@@ -251,8 +259,8 @@ Supported `kind` (v0):
   - error if an entry point is required and `top` missing
   - `subckt`: wrap selected top as `.subckt/.ends`
   - `flat`: emit without wrapper
-- implement default dummy behavior when dummy view is empty:
-  - default weak ties to GND via backend-specific primitive expansion
+- implement default dummy behavior when no `asdl.dummy_mode` is present:
+  - default weak ties to GND via backend-specific primitive expansion when no `asdl.dummy_mode` is present
   - if dummy explicitly authored via `asdl.dummy_mode`, respect author intent
 - Parsing/IR construction do not require `top`; any action that elaborates/netlists/emits **must error** if `top` is not specified.
 

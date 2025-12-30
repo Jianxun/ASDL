@@ -63,7 +63,11 @@ A **loss-minimizing, schema-validated AST** for authoring ASDL in YAML/JSON.
 - `dummy` is reserved for blackout/fallback handling.
 - `nom` MAY be accepted as an alias for `nominal` at the importer/linter layer (not required in AST).
 
-(These are naming reserves; they do not by themselves enforce exclusivity.)
+(Normalization: if `nom` is accepted, it MUST be normalized to `nominal` **before IR emission**. IR operates on canonical `nominal` only.)
+
+**Coupling rule (v0)**:
+- If `kind == "dummy"`, the view name MUST be `"dummy"`.
+- No other view kind may use the name `"dummy"`.
 
 ---
 
@@ -107,18 +111,16 @@ Represents an externally defined subcircuit implementation (including PEX).
 - `kind: "primitive"`
 - `templates: Dict[str, str]`
   - backend key → template string
+  - **must be non-empty**
 
 ### `DummyViewDecl`
 - `kind: "dummy"`
-- Allowed shapes in v0:
-  - **Empty** (no body) → default dummy behavior applied by lowering (backend-defined weak ties).
-  - **Exactly one implementation** with:
-    - `mode: "weak_gnd"`
-    - `params: Optional[Dict[str, Any]]`
-- Forbidden in v0:
-  - structural instances inside `dummy`
-  - templates inside `dummy`
-- Author-defined structural/template dummy implementations are deferred to v0.1+.
+- `mode: Optional[Literal["weak_gnd"]]`
+- `params: Optional[Dict[str, ParamValue]]`
+- Notes (v0):
+  - If `mode` is omitted, default dummy behavior applies.
+  - `mode="weak_gnd"` is the only supported dummy mode.
+  - Structural/template-based dummy implementations are deferred to v0.1+.
 
 ### `BehavViewDecl`
 - `kind: "behav"`
@@ -168,10 +170,6 @@ External netlist handle (uninterpreted in AST; resolved by tooling/backends).
 
 ---
 
-## `DummyImplDecl` (author-defined dummy behavior; optional)
-v0 restriction: **only** `mode: "weak_gnd"` with optional params (e.g. resistance value).
-Structural or template-based dummy implementations are deferred to v0.1+.
-
 Parsing/validation do not require `top`; any action that elaborates/netlists/emits **must error** if `top` is not specified.
 
 ---
@@ -191,7 +189,8 @@ Parsing/validation do not require `top`; any action that elaborates/netlists/emi
 - `ModuleDecl.port_order` must exist.
 - `ViewDecl.kind` must be one of supported kinds.
 - `InstanceDecl.conns` must be a mapping (named-only).
-- `PrimitiveViewDecl.templates` must exist and be a map.
+- `PrimitiveViewDecl.templates` must exist and be a **non-empty** map.
+- If `ViewDecl.kind == "dummy"`, the view name MUST be `"dummy"`; no other view kind may use the name `"dummy"`.
 
 ## Deferred to IR verification / passes
 - Reference existence & namespace resolution
