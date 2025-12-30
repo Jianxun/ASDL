@@ -11,5 +11,6 @@
 - `agents/roles/`: role briefs (Architect, Executor, Explorer).
 - `agents/adr/`: architecture decision records.
 - `agents/scratchpads/`: task/idea scratchpads (e.g., `xDSL_refactor.md`).
+- `agents/specs/`: canonical specs (e.g., `spec_ast.md`, `spec_asdl_ir.md` for v0 AST/IR).
 - `scripts/`: helper scripts (e.g., schema generation, visualizer start).
 - `syntax-highlighter/`: VSCode extension assets for ASDL syntax.
