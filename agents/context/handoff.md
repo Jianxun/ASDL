@@ -6,6 +6,7 @@
 - Branch `refactor-prep` created; ADR/spec edits committed previously. Current working tree has pending spec/context edits (to commit).
 - Direction approved: clean rewrite pre-MVP with Pydantic v2 AST + locatable diagnostics, new xDSL IR; no backward-compatibility constraints.
 - Tasks board updated with executor-ready rewrite tasks (T-010..T-015); earlier design tasks superseded.
+- T-010 implementation started: new `src/asdl/ast/` Pydantic v2 AST models and `tests/unit_tests/ast` validation tests added; `pytest tests/unit_tests/ast` passing.
 
 ## Last verified status
 - Context files present; specs and ADRs aligned; no automated checks.
@@ -19,3 +20,4 @@
 - Legacy `context/todo_*.md` likely stale; avoid mixing with new board until reconciled.
 - Dummy default semantics are backend-defined; lock deterministic defaults during implementation.
 - Legacy generator/validator depend on old dataclasses; cleanup sequencing matters (T-015).
+- Persistent `.git/index.lock` failures when creating branches; needs Architect investigation.
