@@ -6,7 +6,7 @@
 - Branch `refactor-prep` created; ADR/spec edits committed previously. Current working tree has pending spec/context edits (to commit).
 - Direction approved: clean rewrite pre-MVP with Pydantic v2 AST + locatable diagnostics, new xDSL IR; no backward-compatibility constraints.
 - Tasks board updated with executor-ready rewrite tasks (T-010..T-015); earlier design tasks superseded.
-- T-010 implementation started: new `src/asdl/ast/` Pydantic v2 AST models and `tests/unit_tests/ast` validation tests added; `pytest tests/unit_tests/ast` passing.
+- T-010 done: new `src/asdl/ast/` Pydantic v2 AST models and `tests/unit_tests/ast` validation tests added; `pytest tests/unit_tests/ast` passing; PR https://github.com/Jianxun/ASDL/pull/18 opened.
 
 ## Last verified status
 - Context files present; specs and ADRs aligned; no automated checks.

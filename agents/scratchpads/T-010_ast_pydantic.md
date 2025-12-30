@@ -25,6 +25,7 @@
 ## Progress log
 - 2025-01-05: Marked task In Progress; set up plan and scratchpad.
 - 2025-01-05: Implemented Pydantic v2 AST models under `src/asdl/ast/` and added unit tests.
+- 2025-01-05: Committed `e7c7f9e` and opened PR https://github.com/Jianxun/ASDL/pull/18.
 
 ## Patch summary
 - `src/asdl/ast/models.py`: new Pydantic v2 AST models with discriminated `ViewDecl` and validators.
