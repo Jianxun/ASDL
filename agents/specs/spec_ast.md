@@ -75,6 +75,7 @@ A **loss-minimizing, schema-validated AST** for authoring ASDL in YAML/JSON.
 ### Fields
 - `dir: Literal["in","out","in_out"]`
 - `type: Optional[str]` (default `"signal"`)
+- `metadata: Optional[Dict[str, Any]]`
 
 ---
 
@@ -144,6 +145,7 @@ Represents an externally defined subcircuit implementation (including PEX).
 ### `ParamValue`
 - `int | float | bool | str`
   - Strings may be literals or raw expressions; AST does not interpret.
+  - Note: Pydantic unions can coerce `bool` to `int` depending on ordering/config; treat this as a known caveat until strict types are required.
 
 ---
 
