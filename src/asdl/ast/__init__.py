@@ -15,6 +15,8 @@ from .models import (
     SubcktViewDecl,
     ViewDecl,
 )
+from .location import Locatable, LocationIndex
+from .parser import parse_file, parse_string
 
 
 def model_json_schema() -> dict:
@@ -22,6 +24,8 @@ def model_json_schema() -> dict:
 
 
 __all__ = [
+    "Locatable",
+    "LocationIndex",
     "ParamValue",
     "AsdlDocument",
     "ImportDecl",
@@ -38,4 +42,6 @@ __all__ = [
     "SubcktRefDecl",
     "BehavModelDecl",
     "model_json_schema",
+    "parse_file",
+    "parse_string",
 ]
