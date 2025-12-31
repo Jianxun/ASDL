@@ -23,6 +23,7 @@
 - 2025-01-07: Read spec + context; set T-016 status to In Progress.
 - 2025-01-07: Implemented diagnostics core package, collector, renderers, and centralized codes.
 - 2025-01-07: Added diagnostics unit tests and ran `pytest tests/unit_tests/diagnostics`.
+- 2025-01-07: Opened PR https://github.com/Jianxun/ASDL/pull/19.
 
 ## Patch summary
 - `src/asdl/diagnostics/core.py`: added core diagnostic types and sorting helpers.
@@ -41,4 +42,4 @@
 - None.
 
 ## Next steps
-1. Mark T-016 done and update handoff once review is complete.
+1. Await Architect review on PR https://github.com/Jianxun/ASDL/pull/19.
