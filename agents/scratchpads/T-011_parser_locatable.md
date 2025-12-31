@@ -20,13 +20,13 @@
 6. Add `tests/unit_tests/parser` to cover YAML syntax error, invalid root type, missing required field, nested field error, and location mapping.
 
 ## Progress log
-- 2025-xx-xx: Task assigned (T-011). Branch creation failed due to `.git` permission error; no code changes yet.
-- 2025-xx-xx: User clarified this is a breaking change; no backward compatibility required.
-- 2025-xx-xx: Created fresh `feature/T-011-parser-locatable` branch; blocker cleared.
-- 2025-xx-xx: Added LocationIndex/Locatable, parser entrypoints, diagnostics mapping, and parser tests; ran pytest.
-- 2025-xx-xx: Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/20.
-- 2025-xx-xx: Addressed review notes (file-not-found diagnostics + exclusive end spans); reran parser tests.
-- 2025-xx-xx: Added required no-span notes for diagnostics without locations; reran parser tests.
+- 2025-12-30: Task assigned (T-011). Branch creation failed due to `.git` permission error; no code changes yet.
+- 2025-12-30: User clarified this is a breaking change; no backward compatibility required.
+- 2025-12-30: Created fresh `feature/T-011-parser-locatable` branch; blocker cleared.
+- 2025-12-30: Added LocationIndex/Locatable, parser entrypoints, diagnostics mapping, and parser tests; ran pytest.
+- 2025-12-30: Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/20.
+- 2025-12-30: Addressed review notes (file-not-found diagnostics + exclusive end spans); reran parser tests.
+- 2025-12-30: Added required no-span notes for diagnostics without locations; reran parser tests.
 
 ## Patch summary
 - `src/asdl/ast/location.py`: implement Locatable + LocationIndex with YAML path mapping and plain-data conversion.
