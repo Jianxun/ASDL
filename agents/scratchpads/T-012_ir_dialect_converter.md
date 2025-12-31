@@ -37,5 +37,4 @@
 - None yet.
 
 ## Next steps
-1. Push branch `feature/T-012-ir-dialect` and open PR referencing T-012 + scratchpad.
-2. Await review/approval.
+1. Await review/approval on PR https://github.com/Jianxun/ASDL/pull/21.
