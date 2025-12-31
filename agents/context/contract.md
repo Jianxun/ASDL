@@ -18,11 +18,13 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - `agents/context/codebase_map.md`: navigation reference; update when files move or new subsystems appear.
 - `agents/context/lessons.md`: durable lessons/best practices; ADRs go in `agents/adr/` and are referenced here.
 - Ordering rule for schema: if order matters, model as YAML lists; uniqueness is enforced by verification passes, not by dict key uniqueness.
+- Diagnostic schema is centralized (code, severity, message, primary span, labels, notes, help, fix-its, source); locations use file + line/col spans; all pipeline stages emit diagnostics via this contract.
 
 ## Invariants
 - xDSL is the single source of semantic truth; pydantic is a shape/type gate only.
 - Preserve declared port/pin ordering end-to-end (AST → IR → SPICE); deterministic outputs.
 - Lowering must not crash on bad designs; verifiers/passes emit diagnostics instead.
+- No user-facing errors via raw exceptions; emit diagnostics through the shared diagnostic core.
 - Use project venv at `venv/` for all commands/tests.
 - Keep contract/map/tasks/handoff aligned with repository reality; update after merges or major decisions.
 - Legacy `context/todo_*.md` remain unchanged until explicitly migrated.
