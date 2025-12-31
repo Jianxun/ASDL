@@ -4,7 +4,7 @@
 Rebuild netlist/SPICE emission to consume xDSL IR (or add a short-lived IR→legacy adapter).
 
 ## References
-- `agents/specs/spec_asdl_ir.md`
+- `docs/specs/spec_asdl_ir.md`
 
 ## Notes
 - Preserve port ordering and named-only connectivity.

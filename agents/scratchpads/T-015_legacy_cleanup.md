@@ -4,7 +4,7 @@
 Remove legacy dataclass AST/parsing code and update imports/tests to use the new Pydantic AST.
 
 ## References
-- `agents/specs/spec_ast.md`
+- `docs/specs/spec_ast.md`
 
 ## Notes
 - Delete or relocate deprecated modules under `src/asdl/data_structures/` and old parser components.

@@ -1,15 +1,15 @@
 # T-010 — AST Pydantic v2
 
 ## Task summary
-- Implement Pydantic v2 AST models aligned with `agents/specs/spec_ast.md`.
+- Implement Pydantic v2 AST models aligned with `docs/specs/spec_ast.md`.
 - Enforce AST hard requirements (non-empty templates, dummy name/kind coupling, conns mapping).
 - Add `model_json_schema` export.
 - Add focused unit tests for validation edge cases.
 - Verify: `pytest tests/unit_tests/ast`.
 
 ## Read
-- `agents/specs/spec_ast.md`
-- `agents/specs/spec_asdl_ir.md`
+- `docs/specs/spec_ast.md`
+- `docs/specs/spec_asdl_ir.md`
 - `agents/context/contract.md`
 - `agents/context/tasks.md`
 - `agents/context/handoff.md`

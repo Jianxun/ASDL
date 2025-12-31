@@ -1,8 +1,9 @@
 # Codebase Map
 
 ## Directories
-- `src/asdl/`: main compiler code (parser, elaborator, validator, generator, import system, diagnostics, CLI).
-- `tests/`: pytest suites (unit/integration) with fixtures.
+- `src/asdl/`: active refactor code (currently `ast/` only).
+- `legacy/`: archived code and tests for reference only.
+- `legacy/tests/`: archived pytest suites and fixtures.
 - `doc/`: design docs (parser, elaborator, diagnostic system, CLI, schema, logging, xDSL plans, etc.).
 - `examples/`: ASDL libraries and test circuits; includes PDK samples.
 - `prototype/visualizer_react_flow/`: React Flow visualizer MVP.
@@ -11,6 +12,6 @@
 - `agents/roles/`: role briefs (Architect, Executor, Explorer).
 - `agents/adr/`: architecture decision records.
 - `agents/scratchpads/`: task/idea scratchpads (e.g., `xDSL_refactor.md`).
-- `agents/specs/`: canonical specs (e.g., `spec_ast.md`, `spec_asdl_ir.md` for v0 AST/IR).
+- `docs/specs/`: canonical specs (e.g., `docs/specs/spec_ast.md`, `docs/specs/spec_asdl_ir.md` for v0 AST/IR).
 - `scripts/`: helper scripts (e.g., schema generation, visualizer start).
 - `syntax-highlighter/`: VSCode extension assets for ASDL syntax.

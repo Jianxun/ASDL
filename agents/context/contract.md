@@ -4,9 +4,9 @@
 ASDL (Analog Structured Description Language) is a Python framework for analog circuit design: parse YAML ASDL, elaborate/validate, and emit SPICE/netlist artifacts. A major refactor is underway to adopt xDSL as the single semantic core while keeping ruamel+pydantic as front-end shape gate.
 
 ## System boundaries / components
-- CLI and tooling under `src/asdl/` (parser, elaborator, validator, generator, import system, diagnostics).
+- Active refactor surface under `src/asdl/ast/`; other pipeline modules are archived under `legacy/src/asdl/`.
 - xDSL refactor work tracked via `agents/context` and `agents/scratchpads/` (e.g., `xDSL_refactor.md`).
-- Docs under `doc/`; examples under `examples/`; tests under `tests/`.
+- Docs under `doc/`; examples under `examples/`; archived tests under `legacy/tests/`.
 - Visualization prototypes under `prototype/visualizer_react_flow/` (React Flow) and `prototype/visualization/` (jsPlumb legacy).
 - Context/state under `agents/context`; roles under `agents/roles`; ADRs under `agents/adr/`.
 - Legacy todos in `context/todo_*.md` are frozen pre-xDSL; new tasks will live in `agents/context/tasks.md`.
@@ -34,7 +34,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 ## Decision log
 - 2025-12-28: xDSL refactor adopted layered stack (ruamel → formatter → pydantic shape gate → lowering → xDSL semantic core → passes/emit); semantic meaning lives only in xDSL.
 - 2025-12-28: For any ordered data, use YAML lists; uniqueness enforced by verification passes (no reliance on dict order/keys).
-- 2025-12-28: ADR-0001 — Superseded by `spec_ast.md` / `spec_asdl_ir.md`; canonical v0 view kinds are `{subckt, subckt_ref, primitive, dummy, behav}`, reserved view names are `nominal` (alias `nom`) and `dummy`; dummy restricted to empty or `weak_gnd` in v0; `subckt_ref` assumes identity pin_map when omitted.
+- 2025-12-28: ADR-0001 — Superseded by `docs/specs/spec_ast.md` / `docs/specs/spec_asdl_ir.md`; canonical v0 view kinds are `{subckt, subckt_ref, primitive, dummy, behav}`, reserved view names are `nominal` (alias `nom`) and `dummy`; dummy restricted to empty or `weak_gnd` in v0; `subckt_ref` assumes identity pin_map when omitted.
 - 2025-12-28: ADR-0002 — Pattern expansion and binding semantics: flat ordered lists, left-to-right duplication, named-only binding, strict length rule, scalar-only implicit broadcast, collision and malformed-pattern errors.
 - 2025-12-28: ADR-0003 — SelectView compiler pass validates all views post-config/view_order, selects one per module, defaults to `nominal`, reserves `dummy` for blackout; exclusivity enforced by selection not schema.
 - 2025-12-29: Approved clean rewrite: Pydantic v2 AST with locatable diagnostics (ruamel LocationIndex) and no backward-compatibility constraints before MVP.
+- 2025-12-30: Archived all non-AST code/tests under `legacy/`; active refactor surface is `src/asdl/ast/`.
