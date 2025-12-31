@@ -16,14 +16,14 @@ class SourcePos:
 @dataclass(frozen=True)
 class SourceSpan:
     file: str
-    start: Optional[SourcePos]
-    end: Optional[SourcePos]
+    start: SourcePos
+    end: SourcePos
     byte_start: Optional[int] = None
     byte_end: Optional[int] = None
 
     def __post_init__(self) -> None:
-        if (self.start is None) != (self.end is None):
-            raise ValueError("start and end must be both set or both None")
+        if self.start is None or self.end is None:
+            raise ValueError("SourceSpan requires start and end positions")
 
 
 class Severity(str, Enum):
@@ -75,7 +75,7 @@ def _file_sort_key(span: Optional[SourceSpan]) -> Tuple[int, str]:
 
 
 def _span_sort_key(span: Optional[SourceSpan]) -> Tuple[int, int, int]:
-    if span and span.start:
+    if span:
         return (0, span.start.line, span.start.col)
     return (1, 0, 0)
 

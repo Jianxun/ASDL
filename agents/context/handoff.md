@@ -8,7 +8,7 @@
 - Tasks board updated with executor-ready rewrite tasks (T-010..T-015); earlier design tasks superseded.
 - T-010 implementation started: new `src/asdl/ast/` Pydantic v2 AST models and `tests/unit_tests/ast` validation tests added; `pytest tests/unit_tests/ast` passing.
 - T-011 planning complete; blocked on feature branch creation due to `.git` permission error (cannot lock ref). Task is a breaking rewrite; legacy parser should not be reused.
-- T-016 diagnostic core implemented on `feature/T-016-diagnostic-core` with new diagnostics package, renderers, and unit tests; PR opened: https://github.com/Jianxun/ASDL/pull/19.
+- T-016 diagnostic core implemented on `feature/T-016-diagnostic-core` with new diagnostics package, renderers, and unit tests; SourceSpan now requires start/end (no file-only spans); PR opened: https://github.com/Jianxun/ASDL/pull/19.
 - All non-AST code/tests archived under `legacy/`; active refactor code is only `src/asdl/ast/` and CLI scaffolding will be rebuilt.
 
 ## Last verified status

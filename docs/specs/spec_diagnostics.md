@@ -10,7 +10,7 @@ Diagnostics are the only user-facing error channel. Raw exceptions are reserved 
 ## Conventions
 - **Line/column are 1-based** for all spans and locations.
 - `start` is **inclusive**, `end` is **exclusive**.
-- A missing location should still emit a diagnostic (fallback to file-only or unknown).
+- A missing location should still emit a diagnostic (omit `primary_span` and include a note).
 - Diagnostics must be **deterministically ordered** (see Ordering section).
 
 ---
@@ -88,7 +88,7 @@ Example: `PARSE-001`, `AST-014`, `PASS-203`.
 ## Ordering (Determinism)
 Diagnostics are sorted before rendering:
 1. `file` (lexicographic; missing file sorts last)
-2. `start.line`, `start.col` (missing span sorts last within a file)
+2. `start.line`, `start.col` (diagnostics without `primary_span` sort last)
 3. `severity` (fatal > error > warning > info)
 4. `code`
 5. `message`
@@ -106,7 +106,7 @@ Recommended format (v0):
   help: <help>
 ```
 - Labels, notes, help, and fix-its are optional.
-- If no span exists, omit `:<line>:<col>` and display `<file>: <severity> <code>: <message>`.
+- If no span exists, display `<severity> <code>: <message>`.
 
 ---
 

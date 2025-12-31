@@ -6,30 +6,22 @@ from typing import Iterable, List, Optional
 from .core import Diagnostic, FixIt, Label, Note, SourcePos, SourceSpan, sort_diagnostics
 
 
-def _span_coords(span: SourceSpan) -> Optional[str]:
-    if not span.start or not span.end:
-        return None
+def _span_coords(span: SourceSpan) -> str:
     return f"{span.start.line}:{span.start.col}-{span.end.line}:{span.end.col}"
 
 
 def _format_label(label: Label) -> str:
     coords = _span_coords(label.span)
-    if label.message and coords:
-        return f"  {label.message} ({coords})"
-    if coords:
-        return f"  ({coords})"
     if label.message:
-        return f"  {label.message}"
-    return "  (unknown)"
+        return f"  {label.message} ({coords})"
+    return f"  ({coords})"
 
 
 def _format_fixit(fixit: FixIt) -> str:
     coords = _span_coords(fixit.span)
     replacement = fixit.replacement.replace("\n", "\\n")
     message = f"{fixit.message} " if fixit.message else ""
-    if coords:
-        return f"  fix-it: {message}({coords}) => {replacement}"
-    return f"  fix-it: {message}=> {replacement}"
+    return f"  fix-it: {message}({coords}) => {replacement}"
 
 
 def render_text(diagnostics: Iterable[Diagnostic]) -> str:
@@ -43,10 +35,7 @@ def _render_text_diagnostic(diagnostic: Diagnostic) -> List[str]:
     span = diagnostic.primary_span
     severity = diagnostic.severity.value
     if span and span.file:
-        if span.start:
-            header = f"{span.file}:{span.start.line}:{span.start.col}: {severity} {diagnostic.code}: {diagnostic.message}"
-        else:
-            header = f"{span.file}: {severity} {diagnostic.code}: {diagnostic.message}"
+        header = f"{span.file}:{span.start.line}:{span.start.col}: {severity} {diagnostic.code}: {diagnostic.message}"
     else:
         header = f"{severity} {diagnostic.code}: {diagnostic.message}"
 

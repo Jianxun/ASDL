@@ -24,6 +24,7 @@
 - 2025-01-07: Implemented diagnostics core package, collector, renderers, and centralized codes.
 - 2025-01-07: Added diagnostics unit tests and ran `pytest tests/unit_tests/diagnostics`.
 - 2025-01-07: Opened PR https://github.com/Jianxun/ASDL/pull/19.
+- 2025-01-07: Tightened SourceSpan to require start/end; updated spec and tests accordingly.
 
 ## Patch summary
 - `src/asdl/diagnostics/core.py`: added core diagnostic types and sorting helpers.
@@ -33,7 +34,8 @@
 - `src/asdl/diagnostics/__init__.py`: exported diagnostics API.
 - `tests/unit_tests/diagnostics/test_sorting.py`: tests for ordering rules.
 - `tests/unit_tests/diagnostics/test_renderers.py`: tests for text/JSON renderers.
-- `agents/context/tasks.md`: marked T-016 In Progress.
+- `agents/context/tasks.md`: updated T-016 status and PR link.
+- `docs/specs/spec_diagnostics.md`: clarified missing-span behavior and text rendering.
 
 ## Verification
 - `venv/bin/python -m pytest tests/unit_tests/diagnostics`
