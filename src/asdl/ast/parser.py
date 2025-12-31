@@ -14,13 +14,39 @@ from .models import AsdlDocument, AstBaseModel
 PARSE_YAML_ERROR = "PARSE-001"
 PARSE_ROOT_ERROR = "PARSE-002"
 PARSE_VALIDATION_ERROR = "PARSE-003"
+PARSE_FILE_ERROR = "PARSE-004"
 
 
 def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]:
     file_path = Path(filepath)
     if not file_path.exists():
-        raise FileNotFoundError(f"ASDL file not found: {filepath}")
-    content = file_path.read_text(encoding="utf-8")
+        return (
+            None,
+            [
+                Diagnostic(
+                    code=PARSE_FILE_ERROR,
+                    severity=Severity.ERROR,
+                    message=f"ASDL file not found: {filepath}",
+                    primary_span=None,
+                    source="parser",
+                )
+            ],
+        )
+    try:
+        content = file_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return (
+            None,
+            [
+                Diagnostic(
+                    code=PARSE_FILE_ERROR,
+                    severity=Severity.ERROR,
+                    message=f"Failed to read ASDL file '{filepath}': {exc}",
+                    primary_span=None,
+                    source="parser",
+                )
+            ],
+        )
     return parse_string(content, file_path=file_path)
 
 

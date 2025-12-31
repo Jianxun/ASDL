@@ -166,7 +166,7 @@ def _loc_from_line_col(line_col: Tuple[int, int], file_label: str, length: int) 
         end_col = start_col
     else:
         end_line = start_line
-        end_col = start_col + max(length - 1, 0)
+        end_col = start_col + length
     return Locatable(
         file=file_label,
         start_line=start_line,

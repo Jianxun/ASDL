@@ -25,6 +25,7 @@
 - 2025-xx-xx: Created fresh `feature/T-011-parser-locatable` branch; blocker cleared.
 - 2025-xx-xx: Added LocationIndex/Locatable, parser entrypoints, diagnostics mapping, and parser tests; ran pytest.
 - 2025-xx-xx: Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/20.
+- 2025-xx-xx: Addressed review notes (file-not-found diagnostics + exclusive end spans); reran parser tests.
 
 ## Patch summary
 - `src/asdl/ast/location.py`: implement Locatable + LocationIndex with YAML path mapping and plain-data conversion.
