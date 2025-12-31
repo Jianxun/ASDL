@@ -15,6 +15,7 @@ PARSE_YAML_ERROR = "PARSE-001"
 PARSE_ROOT_ERROR = "PARSE-002"
 PARSE_VALIDATION_ERROR = "PARSE-003"
 PARSE_FILE_ERROR = "PARSE-004"
+NO_SPAN_NOTE = "No source span available."
 
 
 def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]:
@@ -28,6 +29,7 @@ def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]
                     severity=Severity.ERROR,
                     message=f"ASDL file not found: {filepath}",
                     primary_span=None,
+                    notes=[NO_SPAN_NOTE],
                     source="parser",
                 )
             ],
@@ -43,6 +45,7 @@ def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]
                     severity=Severity.ERROR,
                     message=f"Failed to read ASDL file '{filepath}': {exc}",
                     primary_span=None,
+                    notes=[NO_SPAN_NOTE],
                     source="parser",
                 )
             ],
@@ -113,6 +116,7 @@ def _validation_errors_to_diagnostics(
         prefer_key = entry.get("type") == "extra_forbidden"
         location = location_index.lookup_with_fallback(loc, prefer_key=prefer_key)
         span = location.to_source_span() if location else None
+        notes = None if span is not None else [NO_SPAN_NOTE]
         message = entry.get("msg", "Validation error")
         path_str = _format_path(loc)
         diagnostics.append(
@@ -121,6 +125,7 @@ def _validation_errors_to_diagnostics(
                 severity=Severity.ERROR,
                 message=f"{message} at {path_str}",
                 primary_span=span,
+                notes=notes,
                 source="parser",
             )
         )
