@@ -11,6 +11,8 @@ from .ast import (
     DummyViewDecl,
     ImportDecl,
     InstanceDecl,
+    LocationIndex,
+    Locatable,
     ModuleDecl,
     NetDecl,
     ParamValue,
@@ -21,10 +23,14 @@ from .ast import (
     SubcktViewDecl,
     ViewDecl,
     model_json_schema,
+    parse_file,
+    parse_string,
 )
 
 __version__ = "0.1.0"
 __all__ = [
+    "Locatable",
+    "LocationIndex",
     "ParamValue",
     "AsdlDocument",
     "ImportDecl",
@@ -41,4 +47,6 @@ __all__ = [
     "SubcktRefDecl",
     "BehavModelDecl",
     "model_json_schema",
+    "parse_file",
+    "parse_string",
 ]
