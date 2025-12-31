@@ -10,13 +10,14 @@
 - T-011 implementation complete on `feature/T-011-parser-locatable`: new ruamel parser + LocationIndex + diagnostics mapping + parser tests; legacy parser not reused. PR: https://github.com/Jianxun/ASDL/pull/20.
 - T-016 diagnostic core merged to `main` with new diagnostics package, renderers, and unit tests; SourceSpan now requires start/end (no file-only spans).
 - All non-AST code/tests archived under `legacy/`; active refactor code is only `src/asdl/ast/` and CLI scaffolding will be rebuilt.
+- T-012 completed on branch `feature/T-012-ir-dialect`: new `src/asdl/ir` dialect + converter, IR tests added, `agents/context/codebase_map.md` updated.
 
 ## Last verified status
-- `pytest tests/unit_tests/parser` passing.
+- `venv/bin/python -m pytest tests/unit_tests/ir` passing.
 
 ## Next steps (1–3)
-1. Await review for PR https://github.com/Jianxun/ASDL/pull/20.
-2. Proceed to T-012 after review approval.
+1. Push branch `feature/T-012-ir-dialect` and open PR referencing T-012 + scratchpad.
+2. Await Architect review for T-012 PR.
 
 ## Risks / unknowns
 - Legacy `context/todo_*.md` likely stale; avoid mixing with new board until reconciled.
