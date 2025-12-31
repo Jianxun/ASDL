@@ -8,15 +8,16 @@
 - Tasks board updated with executor-ready rewrite tasks (T-010..T-015); earlier design tasks superseded.
 - T-010 implementation started: new `src/asdl/ast/` Pydantic v2 AST models and `tests/unit_tests/ast` validation tests added; `pytest tests/unit_tests/ast` passing.
 - T-011 planning complete; blocked on feature branch creation due to `.git` permission error (cannot lock ref). Task is a breaking rewrite; legacy parser should not be reused.
+- T-016 diagnostic core implemented on `feature/T-016-diagnostic-core` with new diagnostics package, renderers, and unit tests.
 - All non-AST code/tests archived under `legacy/`; active refactor code is only `src/asdl/ast/` and CLI scaffolding will be rebuilt.
 
 ## Last verified status
-- Context files present; specs and ADRs aligned; no automated checks.
+- `pytest tests/unit_tests/diagnostics` passing.
 
 ## Next steps (1–3)
-1. Fix `.git` permissions or create the `feature/T-011-parser-locatable` branch for the executor.
-2. Implement T-011 parser + LocationIndex rewrite and add `tests/unit_tests/parser_v2`.
-3. Run `pytest tests/unit_tests/parser_v2` once implementation is complete.
+1. Push `feature/T-016-diagnostic-core` and open PR referencing T-016 and `agents/scratchpads/T-016_diagnostic_core.md`.
+2. Fix `.git` permissions or create the `feature/T-011-parser-locatable` branch for the executor.
+3. Implement T-011 parser + LocationIndex rewrite and add `tests/unit_tests/parser_v2`.
 
 ## Risks / unknowns
 - Legacy `context/todo_*.md` likely stale; avoid mixing with new board until reconciled.
