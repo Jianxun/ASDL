@@ -1,7 +1,7 @@
 # Handoff
 
 ## Current state
-- Refactor specs are canonical: `docs/specs/spec_ast.md` (pydantic AST) and `docs/specs/spec_asdl_ir.md` (xDSL IR) supersede ADR-0001 for view kinds (now {subckt, subckt_ref, primitive, dummy, behav}) and tighten dummy/subckt_ref/alias rules.
+- Refactor specs are canonical: `docs/specs/spec_ast.md` (pydantic AST) and `docs/specs/spec_asdl_cir.md` (xDSL IR) supersede ADR-0001 for view kinds (now {subckt, subckt_ref, primitive, dummy, behav}) and tighten dummy/subckt_ref/alias rules.
 - ADR-0001 marked superseded; ADR-0002/0003 remain active. Contract updated accordingly.
 - Branch `refactor-prep` created; ADR/spec edits committed previously. Current working tree has pending spec/context edits (to commit).
 - Direction approved: clean rewrite pre-MVP with Pydantic v2 AST + locatable diagnostics, new xDSL IR; no backward-compatibility constraints.

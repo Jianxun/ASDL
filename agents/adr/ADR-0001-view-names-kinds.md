@@ -2,7 +2,7 @@
 
 - Status: Superseded
 - Date: 2025-12-28
-- Superseded by: `docs/specs/spec_ast.md` and `docs/specs/spec_asdl_ir.md` (canonical v0 view kinds)
+- Superseded by: `docs/specs/spec_ast.md` and `docs/specs/spec_asdl_cir.md` (canonical v0 view kinds)
 
 ## Context
 - The ASDL refactor makes views first-class; selection operates on `(module, view)`.

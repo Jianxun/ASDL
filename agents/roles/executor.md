@@ -71,6 +71,7 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
 3. After the user/Architect names the task, set that `T-00X` to **In Progress** in tasks.md.
 4. Create a feature branch from `main` for this task before making changes (use a descriptive slug, e.g., `feature/T-022-api-introspect`).
 5. Create `agents/scratchpads/T-00X.md` if it doesn’t exist.
+6. After reading the necessary files. Explain your understanding of the task before implementation.
 
 ---
 

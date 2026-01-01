@@ -17,7 +17,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - `agents/context/handoff.md`: succinct current state, last verified status, next 1–3 steps, risks.
 - `agents/context/codebase_map.md`: navigation reference; update when files move or new subsystems appear.
 - `agents/context/lessons.md`: durable lessons/best practices; ADRs go in `agents/adr/` and are referenced here.
-- Ordering rule for schema: if order matters, model as YAML lists; uniqueness is enforced by verification passes, not by dict key uniqueness.
+- Tier-1 net-first authoring uses YAML map order for `nets:` (and `exports:`) when order matters, including port order from `$`-prefixed net keys; the parser must preserve source order. Internal IR uses explicit lists; uniqueness is enforced by verification passes, not by dict key uniqueness.
 - Diagnostic schema is centralized (code, severity, message, primary span, labels, notes, help, fix-its, source); locations use file + line/col spans; all pipeline stages emit diagnostics via this contract.
 
 ## Invariants
@@ -34,9 +34,10 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Spot-check that contract reflects current architecture (xDSL core, ordering-as-lists rule) and that codebase_map lists active subsystems.
 
 ## Decision log
+- 2026-01-01: Tier-1 net-first authoring schema infers ports only from `$`-prefixed net keys in `nets:`; inline pin bindings never create ports. Port order follows YAML source order of `$` nets. LHS `*` is invalid without an explicit domain (`<...>` or `[...]`).
 - 2025-12-28: xDSL refactor adopted layered stack (ruamel → formatter → pydantic shape gate → lowering → xDSL semantic core → passes/emit); semantic meaning lives only in xDSL.
 - 2025-12-28: For any ordered data, use YAML lists; uniqueness enforced by verification passes (no reliance on dict order/keys).
-- 2025-12-28: ADR-0001 — Superseded by `docs/specs/spec_ast.md` / `docs/specs/spec_asdl_ir.md`; canonical v0 view kinds are `{subckt, subckt_ref, primitive, dummy, behav}`, reserved view names are `nominal` (alias `nom`) and `dummy`; dummy restricted to empty or `weak_gnd` in v0; `subckt_ref` assumes identity pin_map when omitted.
+- 2025-12-28: ADR-0001 — Superseded by `docs/specs/spec_ast.md` / `docs/specs/spec_asdl_cir.md`; canonical v0 view kinds are `{subckt, subckt_ref, primitive, dummy, behav}`, reserved view names are `nominal` (alias `nom`) and `dummy`; dummy restricted to empty or `weak_gnd` in v0; `subckt_ref` assumes identity pin_map when omitted.
 - 2025-12-28: ADR-0002 — Pattern expansion and binding semantics: flat ordered lists, left-to-right duplication, named-only binding, strict length rule, scalar-only implicit broadcast, collision and malformed-pattern errors.
 - 2025-12-28: ADR-0003 — SelectView compiler pass validates all views post-config/view_order, selects one per module, defaults to `nominal`, reserves `dummy` for blackout; exclusivity enforced by selection not schema.
 - 2025-12-29: Approved clean rewrite: Pydantic v2 AST with locatable diagnostics (ruamel LocationIndex) and no backward-compatibility constraints before MVP.

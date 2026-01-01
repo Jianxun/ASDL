@@ -4,7 +4,7 @@
 Implement core IR passes: alias expansion, link/resolve, and SelectView.
 
 ## References
-- `docs/specs/spec_asdl_ir.md`
+- `docs/specs/spec_asdl_cir.md`
 
 ## Notes
 - Enforce default `nominal` view selection and dummy name/kind coupling.
