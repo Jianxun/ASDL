@@ -14,3 +14,4 @@
 - `agents/scratchpads/`: task/idea scratchpads (e.g., `xDSL_refactor.md`).
 - `docs/specs/`: canonical specs (e.g., `docs/specs/spec_ast.md`, `docs/specs/spec_asdl_cir.md` for v0 AST/IR).
 - `scripts/`: helper scripts (e.g., schema generation, visualizer start).
+- `syntax-highlighter/`: VSCode extension assets for ASDL syntax.
