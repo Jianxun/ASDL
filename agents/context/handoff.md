@@ -9,15 +9,17 @@
 - T-010 implementation started: new `src/asdl/ast/` Pydantic v2 AST models and `tests/unit_tests/ast` validation tests added; `pytest tests/unit_tests/ast` passing.
 - T-011 implementation complete on `feature/T-011-parser-locatable`: new ruamel parser + LocationIndex + diagnostics mapping + parser tests; legacy parser not reused. PR: https://github.com/Jianxun/ASDL/pull/20.
 - T-016 diagnostic core merged to `main` with new diagnostics package, renderers, and unit tests; SourceSpan now requires start/end (no file-only spans).
-- All non-AST code/tests archived under `legacy/`; active refactor code is only `src/asdl/ast/` and CLI scaffolding will be rebuilt.
+- All non-refactor code/tests archived under `legacy/`; active refactor code is `src/asdl/ast/`, `src/asdl/diagnostics/`, and `src/asdl/ir/`.
 - Port order is first-class and must propagate through NFIR/CIR/NLIR into emission; MVP passes are minimal/no-op.
+- T-020 completed: IR dialect/converter sources restored under `src/asdl/ir/` and renamed to `asdl_cir` ops/attrs; IR tests added under `tests/unit_tests/ir/`.
+- PR opened for T-020: https://github.com/Jianxun/ASDL/pull/24.
 
 ## Last verified status
-- `pytest tests/unit_tests/parser` passing.
+- `pytest tests/unit_tests/ir` passing.
 
 ## Next steps (1–3)
-1. Await review for PR https://github.com/Jianxun/ASDL/pull/20.
-2. Proceed to T-020 and T-021 after review approval.
+1. Await review for PR https://github.com/Jianxun/ASDL/pull/20 and PR https://github.com/Jianxun/ASDL/pull/24.
+2. Proceed to T-021 (AST net-first MVP parser/AST rewrite).
 3. Use ADR-0004 guidance when implementing T-024 (NLIR dialect/lowering).
 
 ## Risks / unknowns

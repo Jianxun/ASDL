@@ -1,7 +1,7 @@
 """
 ASDL - Analog Structured Description Language
 
-Active refactor surface is `asdl.ast`. Everything else is archived under `legacy/`.
+Active refactor surface is `asdl.ast`, `asdl.diagnostics`, and `asdl.ir`.
 """
 
 from .ast import (
