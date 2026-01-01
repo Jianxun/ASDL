@@ -2,23 +2,30 @@ from asdl.ast import parse_string
 from asdl.diagnostics import Severity
 
 
-def _basic_yaml(*, include_port_order: bool = True, port_dir: str = "in") -> str:
-    lines = [
-        "modules:",
-        "  my_mod:",
-        "    ports:",
-        "      a:",
-        f"        dir: {port_dir}",
-    ]
-    if include_port_order:
-        lines.append("    port_order: [a]")
-    lines.extend(
-        [
-            "    views:",
-            "      nominal:",
-            "        kind: subckt",
+def _basic_yaml(*, include_ref: bool = True, instance_name: str = "M1") -> str:
+    if include_ref:
+        lines = [
+            "modules:",
+            "  my_mod:",
+            "    instances:",
+            f"      {instance_name}:",
+            "        ref: my_dev",
+            "    nets:",
+            "      $VIN:",
+            f"        - inst: {instance_name}",
+            "          pin: G",
         ]
-    )
+    else:
+        lines = [
+            "modules:",
+            "  my_mod:",
+            "    instances:",
+            f"      {instance_name}: {{}}",
+            "    nets:",
+            "      $VIN:",
+            f"        - inst: {instance_name}",
+            "          pin: G",
+        ]
     return "\n".join(lines)
 
 
@@ -34,9 +41,13 @@ def test_parse_string_success_attaches_locations() -> None:
     assert module_loc is not None
     assert (module_loc.start_line, module_loc.start_col) == (3, 5)
 
-    port_loc = document.modules["my_mod"].ports["a"]._loc
-    assert port_loc is not None
-    assert (port_loc.start_line, port_loc.start_col) == (5, 9)
+    instance_loc = document.modules["my_mod"].instances["M1"]._loc
+    assert instance_loc is not None
+    assert (instance_loc.start_line, instance_loc.start_col) == (5, 9)
+
+    endpoint_loc = document.modules["my_mod"].nets["$VIN"][0]._loc
+    assert endpoint_loc is not None
+    assert (endpoint_loc.start_line, endpoint_loc.start_col) == (8, 11)
 
 
 def test_parse_string_invalid_root_type() -> None:
@@ -52,7 +63,7 @@ def test_parse_string_invalid_root_type() -> None:
 
 
 def test_parse_string_missing_required_field_location() -> None:
-    yaml_content = _basic_yaml(include_port_order=False)
+    yaml_content = _basic_yaml(include_ref=False)
 
     document, diagnostics = parse_string(yaml_content)
 
@@ -60,13 +71,25 @@ def test_parse_string_missing_required_field_location() -> None:
     assert diagnostics
     diag = diagnostics[0]
     assert diag.code == "PARSE-003"
-    assert "port_order" in diag.message
+    assert "ref" in diag.message
     assert diag.primary_span is not None
-    assert (diag.primary_span.start.line, diag.primary_span.start.col) == (3, 5)
+    assert (diag.primary_span.start.line, diag.primary_span.start.col) == (4, 11)
 
 
-def test_parse_string_invalid_enum_location() -> None:
-    yaml_content = _basic_yaml(port_dir="sideways")
+def test_parse_string_invalid_name_location() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  my_mod:",
+            "    instances:",
+            "      M1:",
+            "        ref: my_dev",
+            "    nets:",
+            "      VSS*:",
+            "        - inst: M1",
+            "          pin: S",
+        ]
+    )
 
     document, diagnostics = parse_string(yaml_content)
 
@@ -75,4 +98,4 @@ def test_parse_string_invalid_enum_location() -> None:
     diag = diagnostics[0]
     assert diag.code == "PARSE-003"
     assert diag.primary_span is not None
-    assert (diag.primary_span.start.line, diag.primary_span.start.col) == (5, 14)
+    assert (diag.primary_span.start.line, diag.primary_span.start.col) == (7, 7)

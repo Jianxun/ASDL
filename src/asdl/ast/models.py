@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, Dict, List, Optional, Union, Literal
+from typing import Annotated, Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
 ParamValue = Union[int, float, bool, str]
+
+Name = Annotated[str, Field(pattern=r"^[^*<>\[\]]+$")]
+NetName = Annotated[str, Field(pattern=r"^\$?[^*<>\[\]]+$")]
+Ports = Annotated[List[Name], Field(min_length=1)]
+Endpoints = Annotated[List["EndpointDecl"], Field(min_length=1)]
 
 
 class AstBaseModel(BaseModel):
@@ -16,137 +21,63 @@ class AstBaseModel(BaseModel):
         return self
 
 
-class ImportDecl(AstBaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
-
-    from_: str = Field(alias="from")
-    items: Optional[List[str]] = None
-
-
-class PortDecl(AstBaseModel):
-    dir: Literal["in", "out", "in_out"]
-    type: Optional[str] = "signal"
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class NetDecl(AstBaseModel):
-    type: Optional[str] = None
-    doc: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+class EndpointDecl(AstBaseModel):
+    inst: Name
+    pin: Name
 
 
 class InstanceDecl(AstBaseModel):
-    model: str
-    view: Optional[str] = None
-    conns: Dict[str, str]
+    ref: Name
     params: Optional[Dict[str, ParamValue]] = None
-    doc: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class SubcktRefDecl(AstBaseModel):
-    cell: str
-    include: Optional[str] = None
-    section: Optional[str] = None
-    backend: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class BehavModelDecl(AstBaseModel):
-    model_kind: str
-    ref: str
-    backend: Optional[str] = None
-    params: Optional[Dict[str, ParamValue]] = None
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class ViewDeclBase(AstBaseModel):
-    doc: Optional[str] = None
-    variables: Optional[Dict[str, str]] = None
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class SubcktViewDecl(ViewDeclBase):
-    kind: Literal["subckt"]
-    instances: Optional[Dict[str, InstanceDecl]] = None
-    nets: Optional[Dict[str, NetDecl]] = None
-
-
-class SubcktRefViewDecl(ViewDeclBase):
-    kind: Literal["subckt_ref"]
-    ref: SubcktRefDecl
-    pin_map: Optional[Dict[str, str]] = None
-
-
-class PrimitiveViewDecl(ViewDeclBase):
-    kind: Literal["primitive"]
-    templates: Dict[str, str]
-
-    @field_validator("templates")
-    @classmethod
-    def templates_must_be_non_empty(cls, value: Dict[str, str]) -> Dict[str, str]:
-        if not value:
-            raise ValueError("templates must be a non-empty map")
-        return value
-
-
-class DummyViewDecl(ViewDeclBase):
-    kind: Literal["dummy"]
-    mode: Optional[Literal["weak_gnd"]] = None
-    params: Optional[Dict[str, ParamValue]] = None
-
-
-class BehavViewDecl(ViewDeclBase):
-    kind: Literal["behav"]
-    model: BehavModelDecl
-
-
-ViewDecl = Annotated[
-    Union[SubcktViewDecl, SubcktRefViewDecl, PrimitiveViewDecl, DummyViewDecl, BehavViewDecl],
-    Field(discriminator="kind"),
-]
 
 
 class ModuleDecl(AstBaseModel):
-    doc: Optional[str] = None
-    ports: Dict[str, PortDecl]
-    port_order: List[str]
-    views: Dict[str, ViewDecl]
-    metadata: Optional[Dict[str, Any]] = None
+    instances: Optional[Dict[Name, InstanceDecl]] = None
+    nets: Optional[Dict[NetName, Endpoints]] = None
 
-    @model_validator(mode="after")
-    def validate_dummy_coupling(self) -> "ModuleDecl":
-        for name, view in self.views.items():
-            if view.kind == "dummy" and name != "dummy":
-                raise ValueError("dummy view kind requires view name 'dummy'")
-            if name == "dummy" and view.kind != "dummy":
-                raise ValueError("view name 'dummy' is reserved for kind 'dummy'")
-        return self
+
+class DeviceBackendDecl(AstBaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    template: str
+    params: Optional[Dict[str, ParamValue]] = None
+
+
+class DeviceDecl(AstBaseModel):
+    ports: Ports
+    params: Optional[Dict[str, ParamValue]] = None
+    backends: Dict[Name, DeviceBackendDecl]
+
+    @field_validator("backends")
+    @classmethod
+    def backends_must_be_non_empty(
+        cls, value: Dict[str, DeviceBackendDecl]
+    ) -> Dict[str, DeviceBackendDecl]:
+        if not value:
+            raise ValueError("backends must be a non-empty map")
+        return value
 
 
 class AsdlDocument(AstBaseModel):
-    doc: Optional[str] = None
-    top: Optional[str] = None
-    top_mode: Optional[Literal["subckt", "flat"]] = None
-    imports: Optional[Dict[str, ImportDecl]] = None
-    aliases: Optional[Dict[str, str]] = None
-    modules: Dict[str, ModuleDecl]
+    top: Optional[Name] = None
+    modules: Optional[Dict[Name, ModuleDecl]] = None
+    devices: Optional[Dict[Name, DeviceDecl]] = None
+
+    @model_validator(mode="after")
+    def validate_document(self) -> "AsdlDocument":
+        if not self.modules and not self.devices:
+            raise ValueError("ASDL document must define at least one module or device")
+        if self.modules and len(self.modules) > 1 and not self.top:
+            raise ValueError("top is required when multiple modules are defined")
+        return self
 
 
 __all__ = [
     "ParamValue",
     "AsdlDocument",
-    "ImportDecl",
     "ModuleDecl",
-    "PortDecl",
-    "ViewDecl",
-    "SubcktViewDecl",
-    "SubcktRefViewDecl",
-    "PrimitiveViewDecl",
-    "DummyViewDecl",
-    "BehavViewDecl",
+    "DeviceDecl",
+    "DeviceBackendDecl",
     "InstanceDecl",
-    "NetDecl",
-    "SubcktRefDecl",
-    "BehavModelDecl",
+    "EndpointDecl",
 ]

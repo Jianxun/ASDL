@@ -114,6 +114,10 @@ def _validation_errors_to_diagnostics(
     for entry in error.errors():
         loc = entry.get("loc", ())
         prefer_key = entry.get("type") == "extra_forbidden"
+        if not prefer_key and loc:
+            last = loc[-1]
+            if isinstance(last, str) and last == "[key]":
+                prefer_key = True
         location = location_index.lookup_with_fallback(loc, prefer_key=prefer_key)
         span = location.to_source_span() if location else None
         notes = None if span is not None else [NO_SPAN_NOTE]
