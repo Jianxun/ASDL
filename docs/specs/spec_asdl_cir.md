@@ -1,6 +1,7 @@
-# Spec B — xDSL Dialect `asdl.ir` v0 (Revised: named-only conns; add subckt_ref/dummy/behav; SelectView contract)
+# Spec B — ASDL_CIR (xDSL Dialect `asdl_cir`) v0 (Revised: named-only conns; add subckt_ref/dummy/behav; SelectView contract)
 
 ## Purpose
+IR ID: **ASDL_CIR** (formerly `asdl.ir`).
 A compiler-facing structural IR that:
 - normalizes connectivity into explicit named edges,
 - supports deterministic name resolution and ERC-like verifications,
@@ -13,18 +14,18 @@ A compiler-facing structural IR that:
 ## 1) Symbols and Containment
 
 ### Symbols
-- `asdl.module` is a symbol addressable by name (qualified string allowed).
-- `asdl.view` is a nested symbol within `asdl.module`.
+- `asdl_cir.module` is a symbol addressable by name (qualified string allowed).
+- `asdl_cir.view` is a nested symbol within `asdl_cir.module`.
 
 ### Symbol Tables
-- `asdl.design` owns a symbol table of `asdl.module`.
-- `asdl.module` owns a symbol table of its `asdl.view`.
+- `asdl_cir.design` owns a symbol table of `asdl_cir.module`.
+- `asdl_cir.module` owns a symbol table of its `asdl_cir.view`.
 
 ---
 
 ## 2) Ops
 
-### 2.1 `asdl.design`
+### 2.1 `asdl_cir.design`
 **Role**: top-level compilation unit container.
 
 **Attributes**
@@ -35,14 +36,14 @@ A compiler-facing structural IR that:
 - `src: LocAttr?`
 
 **Region**
-- contains: `asdl.import*`, `asdl.module*`
+- contains: `asdl_cir.import*`, `asdl_cir.module*`
 
 **Verifier (v0)**
 - module symbol names unique.
 
 ---
 
-### 2.2 `asdl.import`
+### 2.2 `asdl_cir.import`
 **Attributes**
 - `as_name: StringAttr`
 - `from: StringAttr`
@@ -54,7 +55,7 @@ A compiler-facing structural IR that:
 
 ---
 
-### 2.3 `asdl.module` (symbol)
+### 2.3 `asdl_cir.module` (symbol)
 **Attributes**
 - `sym_name: StringAttr`
 - `doc: StringAttr?`
@@ -62,7 +63,7 @@ A compiler-facing structural IR that:
 - `src: LocAttr?`
 
 **Region**
-- contains: `asdl.port*`, `asdl.view*`
+- contains: `asdl_cir.port*`, `asdl_cir.view*`
 
 **Verifier**
 - port names unique
@@ -70,7 +71,7 @@ A compiler-facing structural IR that:
 
 ---
 
-### 2.4 `asdl.port`
+### 2.4 `asdl_cir.port`
 **Attributes**
 - `name: StringAttr`
 - `dir: StringAttr`
@@ -82,7 +83,7 @@ A compiler-facing structural IR that:
 
 ---
 
-### 2.5 `asdl.view` (nested symbol)
+### 2.5 `asdl_cir.view` (nested symbol)
 Supported `kind` (v0):
 - `subckt`       — internal structural implementation
 - `subckt_ref`   — external structural implementation reference
@@ -97,31 +98,31 @@ Supported `kind` (v0):
 - `src: LocAttr?`
 
 **Region**
-- Common: `asdl.var*` (optional)
-- `kind=subckt`: `asdl.net*` (optional), `asdl.instance*`
-- `kind=primitive`: `asdl.template*`
-- `kind=subckt_ref`: exactly one `asdl.subckt_ref`
-- `kind=dummy`: `asdl.dummy_mode?`
-- `kind=behav`: exactly one `asdl.behav_model`
+- Common: `asdl_cir.var*` (optional)
+- `kind=subckt`: `asdl_cir.net*` (optional), `asdl_cir.instance*`
+- `kind=primitive`: `asdl_cir.template*`
+- `kind=subckt_ref`: exactly one `asdl_cir.subckt_ref`
+- `kind=dummy`: `asdl_cir.dummy_mode?`
+- `kind=behav`: exactly one `asdl_cir.behav_model`
 
 **Verifier (v0)**
 - `primitive`: ≥1 template; no instances
-- `subckt_ref`: exactly one `asdl.subckt_ref`; no instances/templates
-- `behav`: exactly one `asdl.behav_model`; no instances/templates
+- `subckt_ref`: exactly one `asdl_cir.subckt_ref`; no instances/templates
+- `behav`: exactly one `asdl_cir.behav_model`; no instances/templates
 - `dummy`: allowed forms:
-  - any number of `asdl.var*`
-  - zero or one `asdl.dummy_mode`
-  - forbidden: `asdl.instance`, `asdl.template`, `asdl.behav_model`, `asdl.subckt_ref`
+  - any number of `asdl_cir.var*`
+  - zero or one `asdl_cir.dummy_mode`
+  - forbidden: `asdl_cir.instance`, `asdl_cir.template`, `asdl_cir.behav_model`, `asdl_cir.subckt_ref`
 - coupling rule (v0):
   - if `kind=="dummy"`, then `sym_name` MUST be `"dummy"`
   - no other view kind may use the name `"dummy"`
 
 **Dummy default semantics**
-- Default dummy semantics apply when no `asdl.dummy_mode` is present, regardless of `asdl.var*`.
+- Default dummy semantics apply when no `asdl_cir.dummy_mode` is present, regardless of `asdl_cir.var*`.
 
 ---
 
-### 2.6 `asdl.net` (optional)
+### 2.6 `asdl_cir.net` (optional)
 **Attributes**
 - `name: StringAttr`
 - `net_type: StringAttr?`
@@ -133,7 +134,7 @@ Supported `kind` (v0):
 
 ---
 
-### 2.7 `asdl.instance`
+### 2.7 `asdl_cir.instance`
 **Role**: structural instance statement with **named-only** connectivity.
 
 **Attributes**
@@ -141,7 +142,7 @@ Supported `kind` (v0):
 - `ref: SymbolRefAttr` (module reference; may be unresolved pre-link)
 - `view: StringAttr?` (optional override)
 - `params: DictAttr?`
-- `conns: ArrayAttr<asdl.conn>`  (**named-only**)
+- `conns: ArrayAttr<asdl_cir.conn>`  (**named-only**)
 - `doc: StringAttr?`
 - `src: LocAttr?`
 
@@ -152,7 +153,7 @@ Supported `kind` (v0):
 
 ---
 
-### 2.8 `asdl.template`
+### 2.8 `asdl_cir.template`
 **Attributes**
 - `backend: StringAttr`
 - `text: StringAttr`
@@ -160,15 +161,15 @@ Supported `kind` (v0):
 
 ---
 
-### 2.9 `asdl.var`
+### 2.9 `asdl_cir.var`
 **Attributes**
 - `name: StringAttr`
-- `expr: asdl.expr`
+- `expr: asdl_cir.expr`
 - `src: LocAttr?`
 
 ---
 
-### 2.10 `asdl.subckt_ref`
+### 2.10 `asdl_cir.subckt_ref`
 **Role**: external structural implementation handle.
 
 **Attributes**
@@ -188,7 +189,7 @@ Supported `kind` (v0):
 
 ---
 
-### 2.11 `asdl.behav_model`
+### 2.11 `asdl_cir.behav_model`
 **Attributes**
 - `backend: StringAttr?`
 - `model_kind: StringAttr`
@@ -198,7 +199,7 @@ Supported `kind` (v0):
 
 ---
 
-### 2.12 `asdl.dummy_mode` (optional helper op)
+### 2.12 `asdl_cir.dummy_mode` (optional helper op)
 **Role**: explicit dummy semantics without authoring full topology.
 
 **Attributes**
@@ -210,11 +211,11 @@ Supported `kind` (v0):
 
 ## 3) Dialect Attributes
 
-### 3.1 `asdl.conn` (Attr)
+### 3.1 `asdl_cir.conn` (Attr)
 - `port: StringAttr`
 - `net: StringAttr`
 
-### 3.2 `asdl.expr` (Attr)
+### 3.2 `asdl_cir.expr` (Attr)
 - `text: StringAttr` (raw expression string)
 
 ---
@@ -223,7 +224,7 @@ Supported `kind` (v0):
 
 ### 4.1 Link/Resolve Pass
 - resolves `SymbolRefAttr` references using:
-  - `asdl.import` namespace bindings
+  - `asdl_cir.import` namespace bindings
   - module/view symbol tables
   - `aliases` expansion (if supported) before resolution
 - alias rules (v0):
@@ -247,11 +248,11 @@ Supported `kind` (v0):
   - if instance specifies `view`: use it
   - else select `nominal`
   - else error (if no nominal exists and no override provided)
-- `dummy` view name and kind are strictly coupled (see `asdl.view` verifier)
+- `dummy` view name and kind are strictly coupled (see `asdl_cir.view` verifier)
 - `behav` views participate like any other view; backend specificity is handled during lowering, not selection
 
 (IR operates on canonical `nominal` only; `nom` alias normalization must occur before IR emission.)
-(Exact “view_order/config overlay” mechanics are outside `asdl.ir` v0 but the pass exists as an architectural boundary.)
+(Exact “view_order/config overlay” mechanics are outside `asdl_cir` v0 but the pass exists as an architectural boundary.)
 
 ### 4.4 Lowering/Emission Passes
 - choose backend templates or external refs
@@ -259,14 +260,14 @@ Supported `kind` (v0):
   - error if an entry point is required and `top` missing
   - `subckt`: wrap selected top as `.subckt/.ends`
   - `flat`: emit without wrapper
-- implement default dummy behavior when no `asdl.dummy_mode` is present:
-  - default weak ties to GND via backend-specific primitive expansion when no `asdl.dummy_mode` is present
-  - if dummy explicitly authored via `asdl.dummy_mode`, respect author intent
+- implement default dummy behavior when no `asdl_cir.dummy_mode` is present:
+  - default weak ties to GND via backend-specific primitive expansion when no `asdl_cir.dummy_mode` is present
+  - if dummy explicitly authored via `asdl_cir.dummy_mode`, respect author intent
 - Parsing/IR construction do not require `top`; any action that elaborates/netlists/emits **must error** if `top` is not specified.
 
 ---
 
 ## 5) Invariants
-- IR connectivity is **named-only** (`asdl.conn` list). No positional binding exists in IR.
+- IR connectivity is **named-only** (`asdl_cir.conn` list). No positional binding exists in IR.
 - `port_order` is mandatory and canonical for modules (even though conns are named-only).
-- Backend quirks are localized to lowering/templates, not to `asdl.ir` semantics.
+- Backend quirks are localized to lowering/templates, not to `asdl_cir` semantics.

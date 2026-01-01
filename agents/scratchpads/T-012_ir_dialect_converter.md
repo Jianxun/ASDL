@@ -1,10 +1,10 @@
 # T-012 — xDSL Dialect + AST→IR
 
 ## Goal
-Implement the `asdl.ir` xDSL dialect and AST→IR converter per `docs/specs/spec_asdl_ir.md`.
+Implement the `asdl_cir` xDSL dialect and AST→IR converter per `docs/specs/spec_asdl_cir.md`.
 
 ## References
-- `docs/specs/spec_asdl_ir.md`
+- `docs/specs/spec_asdl_cir.md`
 - `docs/specs/spec_ast.md`
 
 ## Notes

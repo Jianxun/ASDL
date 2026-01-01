@@ -1,0 +1,50 @@
+# top module name
+top: ota
+
+# modules that render into a hierarchical subckt definition
+modules:
+  ota:
+    instances:
+      suffix <P,N>:
+        MP_FOLD: pmos_unit m=2
+        MP_CAS: pmos_unit m=1
+        MN_CAS: nmos_unit m=1
+        MN_CS: nmos_unit m=1
+        MN_IN: nmos_unit m=1
+        MN_STG2: nmos_unit m=4
+        MP_STG2: pmos_unit m=4
+
+      MTAIL: nmos_unit m=2
+
+    nets:
+      
+      VFOLD<P,N>: MP_FOLD<P,N>.D MN_IN<P,N>.D
+      # input diff pair
+      $VIN<P,N>: MN_IN<P,N>.G
+      VTAIL: MN_IN<P,N>.S
+
+      # bias
+      VBN: MTAIL.G, MN_CS<P,N>.G, MN_STG2<P,N>.G
+      VCAS_N: MN_CAS<P,N>.G
+      VCAS_P: MP_CAS<P,N>.G
+      VCMFB_OUT<P,N>: MP_CAS<P,N>.G, MP_STG2<P,N>.G
+      VCMFB: MP_FOLD<P,N>.G, MP_STG2<P,N>.G
+
+      # signal path
+      VOUT_STG1<P,N>: MN_CAS<P,N>.D MP_CAS<P,N>.D MP_STG2<P,N>.G
+      $VOUT<P,N>: MP_STG2<P,N>.D MN_STG2<P,N>.D
+
+      
+      $VSS: MTAIL.S MN_CS<P,N>.S MN_STG2<P,N>.S
+      $VDD: MP_FOLD<P,N>.S MP_STG2<P,N>.S
+
+# devices that render into a single line based on the templates
+devices:
+  res:
+    ports: [P, N]
+    templates:
+      sim.ngspice: 'R{inst} {P} {N} {value}'
+      sim.spectre: '{inst} ({P} {N}) resistor r={value}'
+      lvs.klayout: 'R{inst} {P} {N} {value}'
+    parameters:
+      value: 1k

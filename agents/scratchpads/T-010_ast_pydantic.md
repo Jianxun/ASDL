@@ -9,7 +9,7 @@
 
 ## Read
 - `docs/specs/spec_ast.md`
-- `docs/specs/spec_asdl_ir.md`
+- `docs/specs/spec_asdl_cir.md`
 - `agents/context/contract.md`
 - `agents/context/tasks.md`
 - `agents/context/handoff.md`
