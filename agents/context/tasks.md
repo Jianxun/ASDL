@@ -1,7 +1,7 @@
 # Tasks
 
 ## Active OKR(s)
-- MVP net-first stack skeleton: ASDL_A → ASDL_NFIR → ASDL_CIR → ASDL_NLIR_E → emit.
+- MVP net-first stack skeleton: ASDL_A → ASDL_NFIR → ASDL_CIR → ASDL_NLIR_U/E (`asdl_nlir`) → emit.
 
 ## Current Sprint
 - T-020 | Status: Ready | Owner: Executor | DoD: Rename core xDSL dialect to `asdl_cir` in code/tests; update converter usage and IR text expectations to match ASDL_CIR naming; keep semantics unchanged. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-020_cir_rename.md`.
@@ -9,10 +9,10 @@
 - T-022 | Status: Ready | Owner: Executor | DoD: Implement ASDL_NFIR dialect + AST→NFIR converter for MVP explicit nets/instances; endpoints are explicit; add NFIR dialect tests. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-022_nfir_dialect_converter.md`.
 
 ## Backlog
-- T-023 | Status: Backlog | Owner: Executor | DoD: Implement ASDL_NFIR → ASDL_CIR lowering for MVP; invert nets into named-only instance conns; derive port order from `$` nets; add conversion tests. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-023_nfir_to_cir.md`.
-- T-024 | Status: Backlog | Owner: Executor | DoD: Implement ASDL_NLIR (U/E) dialect(s) + ASDL_CIR → ASDL_NLIR_U lowering; ASDL_NLIR_U → ASDL_NLIR_E is identity in MVP; add tests. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-024_nlir_dialect_lowering.md`.
-- T-025 | Status: Backlog | Owner: Executor | DoD: Minimal netlist emitter from ASDL_NLIR_E; add golden tests for simple circuits. | Verify: `pytest tests/unit_tests/netlist`. | Links: scratchpad `agents/scratchpads/T-025_netlist_emitter_mvp.md`.
-- T-026 | Status: Backlog | Owner: Executor | DoD: End-to-end MVP pipeline test: parse ASDL_A → NFIR → CIR → NLIR_E → emit; validate output determinism. | Verify: `pytest tests/unit_tests/e2e`. | Links: scratchpad `agents/scratchpads/T-026_e2e_mvp.md`.
+- T-023 | Status: Backlog | Owner: Executor | DoD: Implement ASDL_NFIR → ASDL_CIR lowering for MVP; invert nets into named-only instance conns; preserve `port_order` as a first-class attribute (no recompute); add conversion tests. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-023_nfir_to_cir.md`.
+- T-024 | Status: Backlog | Owner: Executor | DoD: Implement ASDL_NLIR dialect (`asdl_nlir` with `elab_state` u/e) + ASDL_CIR → ASDL_NLIR_U lowering; preserve `port_order`; ASDL_NLIR_U → ASDL_NLIR_E is identity in MVP; add tests. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-024_nlir_dialect_lowering.md`.
+- T-025 | Status: Backlog | Owner: Executor | DoD: Minimal netlist emitter from ASDL_NLIR_E; preserve port order in emitted netlists; add golden tests for simple circuits. | Verify: `pytest tests/unit_tests/netlist`. | Links: scratchpad `agents/scratchpads/T-025_netlist_emitter_mvp.md`.
+- T-026 | Status: Backlog | Owner: Executor | DoD: End-to-end MVP pipeline test: parse ASDL_A → NFIR → CIR → NLIR_E → emit; validate output determinism and port order propagation. | Verify: `pytest tests/unit_tests/e2e`. | Links: scratchpad `agents/scratchpads/T-026_e2e_mvp.md`.
 - T-013 | Status: Blocked | Owner: Executor | DoD: Implement IR passes (alias expansion, link/resolve, SelectView) per `docs/specs/spec_asdl_cir.md` with diagnostics; add pass-level tests for default view selection and dummy coupling. | Verify: `pytest tests/unit_tests/passes`. | Links: scratchpad `agents/scratchpads/T-013_ir_passes.md`. (Blocked: view system deferred.)
 - T-014 | Status: Backlog | Owner: Executor | DoD: Full netlist/SPICE emission from ASDL_NLIR_E with backend templates; preserve port order and named-only conns; add golden netlist tests for simple designs. | Verify: `pytest tests/unit_tests/netlist`. | Links: scratchpad `agents/scratchpads/T-014_netlist_emission.md`.
 - T-015 | Status: Backlog | Owner: Executor | DoD: Remove remaining legacy dataclass AST/parsing modules and update imports/exports to new AST; ensure package exports and docs reference new AST (legacy pipeline and tests already archived under `legacy/`). | Verify: `pytest`. | Links: scratchpad `agents/scratchpads/T-015_legacy_cleanup.md`.

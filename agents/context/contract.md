@@ -40,5 +40,6 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2025-12-28: ADR-0001 — Superseded by `docs/specs/spec_ast.md` / `docs/specs/spec_asdl_cir.md`; canonical v0 view kinds are `{subckt, subckt_ref, primitive, dummy, behav}`, reserved view names are `nominal` (alias `nom`) and `dummy`; dummy restricted to empty or `weak_gnd` in v0; `subckt_ref` assumes identity pin_map when omitted.
 - 2025-12-28: ADR-0002 — Pattern expansion and binding semantics: flat ordered lists, left-to-right duplication, named-only binding, strict length rule, scalar-only implicit broadcast, collision and malformed-pattern errors.
 - 2025-12-28: ADR-0003 — SelectView compiler pass validates all views post-config/view_order, selects one per module, defaults to `nominal`, reserves `dummy` for blackout; exclusivity enforced by selection not schema.
+- 2026-01-01: ADR-0004 — ASDL_NLIR uses a single `asdl_nlir` dialect with explicit `elab_state` ("u"/"e"); ASDL_NLIR_U/E remain semantic IR IDs.
 - 2025-12-29: Approved clean rewrite: Pydantic v2 AST with locatable diagnostics (ruamel LocationIndex) and no backward-compatibility constraints before MVP.
 - 2025-12-30: Archived all non-AST code/tests under `legacy/`; active refactor surface is `src/asdl/ast/`.

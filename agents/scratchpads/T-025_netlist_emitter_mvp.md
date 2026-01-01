@@ -8,6 +8,7 @@ Emit deterministic netlist text from ASDL_NLIR_E for a minimal subset.
 
 ## Notes
 - MVP: no backend templates, only structural emission for simple examples.
+- Preserve `port_order` in emitted netlists.
 
 ## File hints
 - `src/asdl/netlist/`

@@ -9,6 +9,7 @@ Lower net-first IR into canonical ASDL_CIR by inverting nets into named-only ins
 
 ## Notes
 - Ports derived from `$` nets with source order.
+- Preserve `port_order` as a first-class attribute from NFIR; do not recompute.
 
 ## File hints
 - `src/asdl/ir/converter.py`
