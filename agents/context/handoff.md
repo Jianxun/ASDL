@@ -13,7 +13,7 @@
 - Port order is first-class and must propagate through NFIR/CIR/NLIR into emission; MVP passes are minimal/no-op.
 - T-020 completed: IR dialect/converter sources restored under `src/asdl/ir/` and renamed to `asdl_cir` ops/attrs; IR tests added under `tests/unit_tests/ir/`.
 - PR opened for T-020: https://github.com/Jianxun/ASDL/pull/24.
-- T-021 completed on branch `feature/T-021-ast-net-first`: AST rewritten to explicit net/instance schema, parser diagnostics updated for key errors, and parser/AST tests added.
+- T-021 completed on branch `feature/T-021-ast-net-first`: AST rewritten to explicit net/instance schema, parser diagnostics updated for key errors, and parser/AST tests added. PR: https://github.com/Jianxun/ASDL/pull/25.
 
 ## Last verified status
 - `pytest tests/unit_tests/parser tests/unit_tests/ast` passing.
