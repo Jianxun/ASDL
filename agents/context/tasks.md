@@ -4,7 +4,7 @@
 - MVP net-first stack skeleton: ASDL_A → ASDL_NFIR → ASDL_CIR → ASDL_NLIR_U/E (`asdl_nlir`) → emit.
 
 ## Current Sprint
-- T-020 | Status: Ready | Owner: Executor | DoD: Rename core xDSL dialect to `asdl_cir` in code/tests; update converter usage and IR text expectations to match ASDL_CIR naming; keep semantics unchanged. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-020_cir_rename.md`.
+- T-020 | Status: Done | Owner: Executor | DoD: Rename core xDSL dialect to `asdl_cir` in code/tests; update converter usage and IR text expectations to match ASDL_CIR naming; keep semantics unchanged. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-020_cir_rename.md`.
 - T-021 | Status: Ready | Owner: Executor | DoD: Rewrite ASDL_A (Tier-1) AST + parser for net-first explicit schema (explicit instances/nets only; no pattern sugar/imports/exports/inline binds); ports inferred only from `$` net keys; add parser/AST tests for MVP constraints. | Verify: `pytest tests/unit_tests/parser`. | Links: scratchpad `agents/scratchpads/T-021_ast_net_first_mvp.md`.
 - T-022 | Status: Ready | Owner: Executor | DoD: Implement ASDL_NFIR dialect + AST→NFIR converter for MVP explicit nets/instances; endpoints are explicit; add NFIR dialect tests. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-022_nfir_dialect_converter.md`.
 
