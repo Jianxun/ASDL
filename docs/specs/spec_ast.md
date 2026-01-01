@@ -1,203 +1,147 @@
-# Spec A — Pydantic AST (Schema-Facing) v0 (Revised: named-only conns; add subckt_ref/dummy semantics)
+# Spec A — ASDL_A (Tier-1 Authoring AST) v0.3 (Net-First)
 
 ## Purpose
-A **loss-minimizing, schema-validated AST** for authoring ASDL in YAML/JSON.
-- Validates **shape/types/enums** only.
-- Preserves raw strings for expressions/templates.
-- Does **not** perform semantic resolution (imports, symbol lookup, ERC, view selection).
-- View kinds for v0 are canonical: `{subckt, subckt_ref, primitive, dummy, behav}`. Earlier ADR-0001 reserved-kind sets are superseded by this spec; `behav` is supported for externally evaluated models.
+A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
+- Validates **shape/types** only.
+- Preserves **raw strings** for inline instance expressions, endpoint lists, and templates.
+- Does **not** perform semantic resolution (imports, symbol lookup, domain expansion, ERC).
+- Represents the net-first authoring surface: **modules + devices + optional `top`**.
 
 ## Conventions
-- **Plural nouns** for collections: `imports`, `aliases`, `modules`, `ports`, `views`, `instances`, `templates`, `variables`, `nets`.
-- **Named-only binding**: all connections are explicit `port → net` mappings. **Positional connections are forbidden.**
+- **Plural nouns** for collections: `modules`, `devices`, `instances`, `nets`, `exports`, `backends`, `params`.
+- Ordered mappings preserve source order when it matters (notably `nets` and `exports`).
+- Names are raw strings with existing naming rules; validation is deferred.
+- Comments/docstrings/groups are YAML comments and are **not** represented in AST fields.
 
 ---
 
 ## Top-Level: `AsdlDocument`
 
 ### Fields
-- `doc: Optional[str]`
-  - Document docstring for auto-doc generation.
 - `top: Optional[str]`
-  - Entry module name (prefer fully-qualified, e.g. `"my_lib.top"`).
-  - **Not inferred.** If a compilation action needs an entry and `top` is missing, the driver errors.
-- `top_mode: Optional[Literal["subckt","flat"]]`
-  - Controls presentation of selected top at emission time:
-    - `subckt`: emit `.subckt/.ends`
-    - `flat`: emit without wrapper (testbench use)
-  - Meaningful only when `top` is set.
-- `imports: Optional[Dict[str, ImportDecl]]`
-  - Namespace imports. Key is the local namespace alias.
-- `aliases: Optional[Dict[str, str]]`
-  - Optional *pure textual aliases* for module references (e.g. `"n": "std.nmos"`).
-  - Expansion rules (v0):
-    1. Expanded **before** import/symbol resolution.
-    2. **One-step only** (no chaining).
-    3. RHS must expand to a qualified module name (or permitted local name).
-  - Chaining or unresolved alias RHS is a validation error.
-- `modules: Dict[str, ModuleDecl]`
-  - Keyed by **qualified module name** (recommended), e.g. `"std.nmos"`.
+  - Entry module name.
+  - Required if **multiple modules** exist; otherwise optional.
+- `modules: Optional[Dict[str, ModuleDecl]]`
+  - Map of module name → module definition.
+- `devices: Optional[Dict[str, DeviceDecl]]`
+  - Map of device name → device definition.
 
----
-
-## `ImportDecl`
-### Fields
-- `from: str`
-  - Locator for imported unit (path/URI/package id), uninterpreted in AST.
-- `items: Optional[List[str]]`
-  - Optional selection list (omit if not supported).
+### Notes
+- At least one of `modules` or `devices` must be present.
+- Recommended: a name must not appear in both `modules` and `devices`.
 
 ---
 
 ## `ModuleDecl`
 
 ### Fields
-- `doc: Optional[str]`
-- `ports: Dict[str, PortDecl]`
-- `port_order: List[str]` (mandatory)
-- `views: Dict[str, ViewDecl]`
-- `metadata: Optional[Dict[str, Any]]`
+- `instances: Optional[InstancesBlock]`
+- `nets: Optional[NetsBlock]`
+- `exports: Optional[ExportsBlock]`
 
-### Reserved view names
-- `nominal` is the canonical default view name.
-- `dummy` is reserved for blackout/fallback handling.
-- `nom` MAY be accepted as an alias for `nominal` at the importer/linter layer (not required in AST).
-
-(Normalization: if `nom` is accepted, it MUST be normalized to `nominal` **before IR emission**. IR operates on canonical `nominal` only.)
-
-**Coupling rule (v0)**:
-- If `kind == "dummy"`, the view name MUST be `"dummy"`.
-- No other view kind may use the name `"dummy"`.
+### Notes
+- Connectivity is net-first: `nets` own endpoint lists.
+- Module ports are derived from `$`-prefixed net names (plus forwarded ports from `exports`).
 
 ---
 
-## `PortDecl`
+## `InstancesBlock`
+Single authoring style for MVP: flat map.
+
+### Style A — flat map
+```yaml
+instances:
+  MN_IN<P,N>: nfet_3p3 m=8 (B:$VSS)
+  MP_LOAD<P,N>: pfet_3p3 m=2 (B:$VDD)
+```
+
+### AST shape
+- `InstancesBlock` is an ordered mapping: `Dict[str, InstanceExpr]`.
+
+#### `InstanceExpr`
+- **Type**: `str` (raw inline instance expression).
+- **Grammar (opaque at AST)**:
+  ```
+  <TypeName> <ParamTokens...> ( <PinBind>... )?
+  ```
+- `ParamTokens` are preserved as raw text.
+- Inline pin-bindings are preserved as raw text; conflicts are resolved later.
+
+---
+
+## `NetsBlock`
+
+### AST shape
+- `NetsBlock` is an ordered mapping: `Dict[str, EndpointListExpr]`.
+
+#### `EndpointListExpr`
+- **Type**: `str` (raw whitespace-separated endpoint tokens).
+- Example:
+  ```yaml
+  nets:
+    $VIN<P,N>: MN_IN<P,N>.G
+    VSS: MN_CS*.S MTAIL.S
+  ```
+
+### Notes
+- `$` on the net name marks an **exported port**.
+- Port order is the appearance order of `$` nets in `nets`, followed by forwarded ports from `exports`.
+- `*`, `<...>`, and `[...]` pattern/domain markers are preserved as raw tokens for later expansion.
+
+---
+
+## `ExportsBlock`
+
+### AST shape
+- Mapping: `Dict[str, List[str]]`
+  - Key: instance name (must resolve to a module instance later).
+  - Value: list of glob patterns (`*` wildcard), with optional `-` negation.
+
+### Notes
+- `$` prefix in patterns is optional.
+- Only exported child ports are eligible for forwarding.
+- No renaming is supported in `exports` (use explicit `nets` entries for renames).
+
+---
+
+## `DeviceDecl`
+
 ### Fields
-- `dir: Literal["in","out","in_out"]`
-- `type: Optional[str]` (default `"signal"`)
-- `metadata: Optional[Dict[str, Any]]`
-
----
-
-## `ViewDecl` (discriminated union by `kind`)
-Supported kinds (v0):
-- `subckt`       — internal structural implementation
-- `subckt_ref`   — external structural implementation reference (PEX/external netlist)
-- `primitive`    — compiler leaf rendered by backend templates
-- `dummy`        — reserved fallback; may be explicitly authored or default-lowered
-- `behav`        — externally evaluated behavioral model (VA/ROM/ML surrogate)
-
-### Common fields (all kinds)
-- `kind: Literal["subckt","subckt_ref","primitive","dummy","behav"]`
-- `doc: Optional[str]`
-- `variables: Optional[Dict[str, str]]`  (raw expression strings)
-- `metadata: Optional[Dict[str, Any]]`
-
-### `SubcktViewDecl`
-- `kind: "subckt"`
-- `instances: Optional[Dict[str, InstanceDecl]]`
-- `nets: Optional[Dict[str, NetDecl]]`
-
-### `SubcktRefViewDecl`
-Represents an externally defined subcircuit implementation (including PEX).
-- `kind: "subckt_ref"`
-- `ref: SubcktRefDecl`
-  - The external handle (include/lib/cell name).
-- `pin_map: Optional[Dict[str, str]]`
-  - Optional explicit mapping from **module port name → external pin name/index**.
-  - If omitted, **identity mapping by port name** is assumed.
-  - If the external subckt uses positional pins, `pin_map` **must** be explicit.
-
-### `PrimitiveViewDecl`
-- `kind: "primitive"`
-- `templates: Dict[str, str]`
-  - backend key → template string
-  - **must be non-empty**
-
-### `DummyViewDecl`
-- `kind: "dummy"`
-- `mode: Optional[Literal["weak_gnd"]]`
+- `ports: List[str]`
+  - Ordered port list.
 - `params: Optional[Dict[str, ParamValue]]`
-- Notes (v0):
-  - If `mode` is omitted, default dummy behavior applies.
-  - `mode="weak_gnd"` is the only supported dummy mode.
-  - Structural/template-based dummy implementations are deferred to v0.1+.
-
-### `BehavViewDecl`
-- `kind: "behav"`
-- `model: BehavModelDecl`
-- Selection: participates in SelectView like any other view (default `nominal` rules apply). Backend specificity, if any, is handled during lowering, not during selection. Multiple `behav` views may exist if they have distinct names.
-
----
-
-## `InstanceDecl`
-### Fields
-- `model: str`
-  - Qualified module name or alias.
-- `view: Optional[str]`
-  - Optional view override in referenced module.
-- `conns: Dict[str, str]`  (**named-only; positional forbidden**)
-  - Map from **port name → net name**.
-- `params: Optional[Dict[str, ParamValue]]`
-- `doc: Optional[str]`
-- `metadata: Optional[Dict[str, Any]]`
+  - Default parameter values.
+- `backends: Dict[str, DeviceBackendDecl]`
+  - Backend-specific template entries; must be non-empty.
 
 ### `ParamValue`
 - `int | float | bool | str`
-  - Strings may be literals or raw expressions; AST does not interpret.
-  - Note: Pydantic unions can coerce `bool` to `int` depending on ordering/config; treat this as a known caveat until strict types are required.
 
 ---
 
-## `NetDecl` (optional)
+## `DeviceBackendDecl`
+
 ### Fields
-- `type: Optional[str]`
-- `doc: Optional[str]`
-- `metadata: Optional[Dict[str, Any]]`
-
----
-
-## `SubcktRefDecl`
-External netlist handle (uninterpreted in AST; resolved by tooling/backends).
-### Fields (v0 minimal)
-- `cell: str`
-  - External subckt/cell name to instantiate (often equals module name, but not required).
-- `include: Optional[str]`
-  - Path/URI for `.include`/library reference.
-- `section: Optional[str]`
-  - Optional library section/corner identifier.
-- `backend: Optional[str]`
-  - Optional specificity (e.g. `"lvs.netgen"`, `"sim.spectre"`); if omitted, applies generally.
-- `metadata: Optional[Dict[str, Any]]`
-
----
-
-Parsing/validation do not require `top`; any action that elaborates/netlists/emits **must error** if `top` is not specified.
-
----
-
-## `BehavModelDecl`
-### Fields
-- `model_kind: str`   (e.g. `"veriloga"`, `"table"`, `"ml_surrogate"`)
-- `ref: str`          (path/URI/registry key)
-- `backend: Optional[str]`
-- `params: Optional[Dict[str, ParamValue]]`
-- `metadata: Optional[Dict[str, Any]]`
+- `template: str` (required)
+- `params: Optional[Dict[str, ParamValue]]` (optional override of shared defaults)
+- Additional keys are permitted and treated as raw values available as `{placeholders}`
+  in `template` (e.g., `model`).
 
 ---
 
 ## Hard Requirements (AST-level)
-- `modules` must exist and be a map.
-- `ModuleDecl.port_order` must exist.
-- `ViewDecl.kind` must be one of supported kinds.
-- `InstanceDecl.conns` must be a mapping (named-only).
-- `PrimitiveViewDecl.templates` must exist and be a **non-empty** map.
-- If `ViewDecl.kind == "dummy"`, the view name MUST be `"dummy"`; no other view kind may use the name `"dummy"`.
+- `top` is required if more than one module exists.
+- `backends` must be a **non-empty** map for each device.
+- `DeviceBackendDecl.template` must exist and be a string.
+- `InstancesBlock` entries must be `InstanceExpr` strings.
+- `NetsBlock` values must be `EndpointListExpr` strings.
+
+---
 
 ## Deferred to IR verification / passes
-- Reference existence & namespace resolution
-- Alias expansion validity (one-step, no chaining, qualified RHS)
-- Port binding correctness, missing/extra conns
-- `dummy` default behavior materialization
-- `subckt_ref` include/cell resolution and pin-map validation
-- Expression correctness / backend compatibility
+- Name resolution (module/device lookup, instance refs).
+- Domain and wildcard expansion (`*`, `<...>`, `[...]`).
+- Inline pin-bind parsing and conflict detection vs `nets`.
+- Export forwarding resolution and collision checks.
+- Endpoint uniqueness checks (an endpoint bound to multiple nets).
+- Template placeholder validity and backend-specific constraints.
