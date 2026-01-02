@@ -18,7 +18,7 @@
 - `venv/bin/pytest tests/unit_tests/e2e`
 
 ## Next steps (1-3)
-1. Open PR for T-034 and proceed to CLI pipeline task T-036 once approved.
+1. Await review on PR https://github.com/Jianxun/ASDL/pull/30 (T-034); proceed to CLI pipeline task T-036 once approved.
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.

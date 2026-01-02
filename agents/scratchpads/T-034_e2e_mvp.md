@@ -28,6 +28,7 @@
 - 2026-01-02: Created feature branch and set T-034 to In Progress.
 - 2026-01-02: Implemented MVP pipeline orchestrator with xDSL pass pipeline.
 - 2026-01-02: Added end-to-end pipeline test and verified pytest targets.
+- 2026-01-02: Opened PR https://github.com/Jianxun/ASDL/pull/30.
 
 ## Patch summary
 - `src/asdl/ir/pipeline.py`: add MVP pipeline entrypoint with verify/convert passes and diagnostics handling.

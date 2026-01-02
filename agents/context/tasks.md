@@ -4,7 +4,7 @@
 - See `agents/context/okrs.md`.
 
 ## Current Sprint
-- T-034 | Status: Done | Owner: Executor | DoD: Implement MVP pipeline orchestrator in `src/asdl/ir/pipeline.py` using xDSL PassManager; wrap NFIR->IFIR conversion as a pass; gate verification passes via options; return IFIR design + diagnostics; align with `docs/specs_mvp/spec_pipeline_mvp.md`. Add end-to-end test that uses the pipeline entrypoint (no direct converter calls) to parse AST -> NFIR -> IFIR -> emit; validate determinism and top handling. | Verify: `pytest tests/unit_tests/ir` and `pytest tests/unit_tests/e2e`. | Links: scratchpad `agents/scratchpads/T-034_e2e_mvp.md`.
+- T-034 | Status: Done | Owner: Executor | DoD: Implement MVP pipeline orchestrator in `src/asdl/ir/pipeline.py` using xDSL PassManager; wrap NFIR->IFIR conversion as a pass; gate verification passes via options; return IFIR design + diagnostics; align with `docs/specs_mvp/spec_pipeline_mvp.md`. Add end-to-end test that uses the pipeline entrypoint (no direct converter calls) to parse AST -> NFIR -> IFIR -> emit; validate determinism and top handling. | Verify: `pytest tests/unit_tests/ir` and `pytest tests/unit_tests/e2e`. | Links: scratchpad `agents/scratchpads/T-034_e2e_mvp.md`, PR https://github.com/Jianxun/ASDL/pull/30.
 
 ## Backlog
 - T-035 | Status: Backlog | Owner: Architect | DoD: Decide how to map NFIR `src`/AST locations into IFIR conversion diagnostics; emit span-aware diagnostics (or document why spans are unavailable) for NFIR->IFIR conversion errors; update unit tests as needed. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-035_ifir_diagnostics_spans.md`.
