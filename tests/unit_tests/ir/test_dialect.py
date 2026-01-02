@@ -1,137 +1,128 @@
+import io
+
 import pytest
 
 pytest.importorskip("xdsl")
 
+from xdsl.context import Context
+from xdsl.dialects import builtin
 from xdsl.dialects.builtin import DictionaryAttr, StringAttr
-from xdsl.ir import Block, Region
+from xdsl.parser import Parser
+from xdsl.printer import Printer
 from xdsl.utils.exceptions import VerifyException
 
-from asdl.ir.xdsl_dialect import (
-    ConnAttr,
+from asdl.ir.nfir import (
+    ASDL_NFIR,
+    BackendOp,
     DesignOp,
-    ImportOp,
+    DeviceOp,
+    EndpointAttr,
     InstanceOp,
     ModuleOp,
-    PortOp,
-    SubcktRefOp,
-    ViewOp,
+    NetOp,
 )
 
 
-def test_design_rejects_duplicate_import_alias() -> None:
-    design = DesignOp(
-        region=Region(
-            Block(
-                [
-                    ImportOp(as_name="lib", from_="a"),
-                    ImportOp(as_name="lib", from_="b"),
-                ]
-            )
-        )
-    )
-
-    with pytest.raises(VerifyException):
-        design.verify()
+def _print_op(op) -> str:
+    stream = io.StringIO()
+    printer = Printer(stream=stream)
+    printer.print_op(op)
+    return stream.getvalue()
 
 
-def test_module_port_order_requires_permutation() -> None:
+def test_module_port_order_requires_net() -> None:
     module = ModuleOp(
-        "m",
-        ["a"],
-        region=Region(
-            Block(
-                [
-                    PortOp(name="a", dir="in", type_="signal"),
-                    PortOp(name="b", dir="out", type_="signal"),
-                ]
-            )
-        ),
+        name="m",
+        port_order=["a"],
+        region=[NetOp(name="b", endpoints=[])],
     )
 
     with pytest.raises(VerifyException):
         module.verify()
 
 
-def test_view_primitive_requires_template() -> None:
-    view = ViewOp("nominal", "primitive", region=Region(Block()))
-
-    with pytest.raises(VerifyException):
-        view.verify()
-
-
-def test_view_dummy_name_coupling() -> None:
-    wrong_name = ViewOp("nominal", "dummy", region=Region(Block()))
-    wrong_kind = ViewOp("dummy", "subckt", region=Region(Block()))
-
-    with pytest.raises(VerifyException):
-        wrong_name.verify()
-    with pytest.raises(VerifyException):
-        wrong_kind.verify()
-
-
-def test_instance_conn_ports_unique() -> None:
-    instance = InstanceOp(
-        name="u1",
-        ref="m",
-        conns=[ConnAttr("a", "n1"), ConnAttr("a", "n2")],
-    )
-
-    with pytest.raises(VerifyException):
-        instance.verify()
-
-
-def test_subckt_ref_pin_map_matches_ports() -> None:
-    subckt_ref = SubcktRefOp(
-        cell="X",
-        pin_map=DictionaryAttr({"a": StringAttr("1")}),
-    )
-    view = ViewOp("nominal", "subckt_ref", region=Region(Block([subckt_ref])))
+def test_endpoint_requires_instance() -> None:
     module = ModuleOp(
-        "m",
-        ["a", "b"],
-        region=Region(
-            Block(
-                [
-                    PortOp(name="a", dir="in", type_="signal"),
-                    PortOp(name="b", dir="out", type_="signal"),
-                    view,
-                ]
+        name="m",
+        port_order=["a"],
+        region=[
+            NetOp(
+                name="a",
+                endpoints=[EndpointAttr(StringAttr("u1"), StringAttr("P"))],
             )
-        ),
-    )
-    design = DesignOp(region=Region(Block([module])))
-
-    with pytest.raises(VerifyException):
-        design.verify()
-
-
-def test_primitive_rejects_instances() -> None:
-    instance = InstanceOp(
-        name="u1",
-        ref="m",
-        conns=[ConnAttr("a", "n1")],
-    )
-    view = ViewOp("nominal", "primitive", region=Region(Block([instance])))
-
-    with pytest.raises(VerifyException):
-        view.verify()
-
-
-def test_subckt_ref_requires_single_op() -> None:
-    subckt_ref_a = SubcktRefOp(cell="X")
-    subckt_ref_b = SubcktRefOp(cell="Y")
-    view = ViewOp(
-        "nominal",
-        "subckt_ref",
-        region=Region(Block([subckt_ref_a, subckt_ref_b])),
+        ],
     )
 
     with pytest.raises(VerifyException):
-        view.verify()
+        module.verify()
 
 
-def test_behav_requires_model() -> None:
-    view = ViewOp("nominal", "behav", region=Region(Block()))
+def test_endpoint_unique_across_nets() -> None:
+    module = ModuleOp(
+        name="m",
+        port_order=["a", "b"],
+        region=[
+            NetOp(
+                name="a",
+                endpoints=[EndpointAttr(StringAttr("u1"), StringAttr("P"))],
+            ),
+            NetOp(
+                name="b",
+                endpoints=[EndpointAttr(StringAttr("u1"), StringAttr("P"))],
+            ),
+            InstanceOp(name="u1", ref="leaf"),
+        ],
+    )
 
     with pytest.raises(VerifyException):
-        view.verify()
+        module.verify()
+
+
+def test_device_requires_unique_backends() -> None:
+    device = DeviceOp(
+        name="d",
+        ports=["P"],
+        region=[
+            BackendOp(name="ngspice", template="T"),
+            BackendOp(name="ngspice", template="T2"),
+        ],
+    )
+
+    with pytest.raises(VerifyException):
+        device.verify()
+
+
+def test_design_roundtrip_print_parse() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=["VIN"],
+        region=[
+            NetOp(
+                name="VIN",
+                endpoints=[EndpointAttr(StringAttr("M1"), StringAttr("G"))],
+            ),
+            InstanceOp(
+                name="M1",
+                ref="nfet",
+                params=DictionaryAttr({"m": StringAttr("2")}),
+            ),
+        ],
+    )
+    device = DeviceOp(
+        name="nfet",
+        ports=["D", "G", "S"],
+        region=[
+            BackendOp(name="ngspice", template="M{inst} {D} {G} {S} {model}")
+        ],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    text = _print_op(design)
+    ctx = Context()
+    ctx.load_dialect(builtin.Builtin)
+    ctx.load_dialect(ASDL_NFIR)
+    parsed_module = Parser(ctx, text).parse_module()
+    parsed_design = next(
+        op for op in parsed_module.body.block.ops if isinstance(op, DesignOp)
+    )
+    assert _print_op(parsed_design) == text
