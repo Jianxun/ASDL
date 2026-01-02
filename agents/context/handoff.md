@@ -18,7 +18,8 @@
 - `venv/bin/pytest tests/unit_tests/e2e`
 
 ## Next steps (1-3)
-1. Await review on PR https://github.com/Jianxun/ASDL/pull/30 (T-034); proceed to CLI pipeline task T-036 once approved.
+1. Start CLI pipeline task T-036 (now unblocked) to run MVP pipeline end-to-end and emit ngspice output.
+2. Triage T-035 on IFIR diagnostic span mapping once CLI work lands.
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.
