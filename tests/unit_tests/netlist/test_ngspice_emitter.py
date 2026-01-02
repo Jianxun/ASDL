@@ -99,3 +99,84 @@ def test_emit_ngspice_requires_top_when_multiple_modules() -> None:
     assert len(diagnostics) == 1
     assert diagnostics[0].severity is Severity.ERROR
     assert diagnostics[0].code == format_code("EMIT", 1)
+
+
+def test_emit_ngspice_requires_template_placeholders() -> None:
+    backend = BackendOp(
+        name="ngspice",
+        template="{name} {conns} {model}",
+        props=_dict_attr({"model": "nfet"}),
+    )
+    device = DeviceOp(name="nfet", ports=["D"], region=[backend])
+    instance = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("VOUT"))],
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["VOUT"],
+        region=[NetOp(name="VOUT"), instance],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = emit_ngspice(design)
+
+    assert netlist is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.ERROR
+    assert diagnostics[0].code == format_code("EMIT", 7)
+
+
+def test_emit_ngspice_reports_malformed_template() -> None:
+    backend = BackendOp(
+        name="ngspice",
+        template="{name} {conns",
+    )
+    device = DeviceOp(name="nfet", ports=["D"], region=[backend])
+    instance = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("VOUT"))],
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["VOUT"],
+        region=[NetOp(name="VOUT"), instance],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = emit_ngspice(design)
+
+    assert netlist is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.ERROR
+    assert diagnostics[0].code == format_code("EMIT", 8)
+
+
+def test_emit_ngspice_ignores_reserved_prop_collisions() -> None:
+    backend = BackendOp(
+        name="ngspice",
+        template="R{name} {conns} {params}",
+        props=_dict_attr({"name": "OVERRIDE"}),
+    )
+    device = DeviceOp(name="res", ports=["P"], region=[backend])
+    instance = InstanceOp(
+        name="R1",
+        ref="res",
+        conns=[ConnAttr(StringAttr("P"), StringAttr("VOUT"))],
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["VOUT"],
+        region=[NetOp(name="VOUT"), instance],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = emit_ngspice(design)
+
+    assert netlist is not None
+    assert "RR1 VOUT" in netlist
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.WARNING
+    assert diagnostics[0].code == format_code("EMIT", 9)

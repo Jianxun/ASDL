@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import string
 from typing import Dict, Iterable, List, Optional, Tuple
 
 from xdsl.dialects.builtin import DictionaryAttr, StringAttr
@@ -16,6 +17,11 @@ UNKNOWN_REFERENCE = format_code("EMIT", 3)
 MISSING_BACKEND = format_code("EMIT", 4)
 MISSING_CONN = format_code("EMIT", 5)
 UNKNOWN_CONN_PORT = format_code("EMIT", 6)
+MISSING_PLACEHOLDER = format_code("EMIT", 7)
+MALFORMED_TEMPLATE = format_code("EMIT", 8)
+RESERVED_PLACEHOLDER = format_code("EMIT", 9)
+
+REQUIRED_PLACEHOLDERS = {"name", "conns", "params"}
 
 
 @dataclass(frozen=True)
@@ -187,15 +193,21 @@ def _emit_instance(
     )
     diagnostics.extend(param_diags)
 
-    props = _dict_attr_to_strings(backend.props)
+    template = backend.template.data
+    if not _validate_template(template, ref_name, diagnostics):
+        return None, True
+
+    props = _filter_props(
+        _dict_attr_to_strings(backend.props),
+        diagnostics,
+        device_name=ref_name,
+    )
     template_values = {
         "name": instance.name_attr.data,
         "conns": conn_str,
         "params": params_str,
     }
     template_values.update(props)
-
-    template = backend.template.data
     try:
         rendered = template.format_map(template_values)
     except KeyError as exc:
@@ -203,6 +215,15 @@ def _emit_instance(
             _diagnostic(
                 UNKNOWN_REFERENCE,
                 f"Backend template for '{ref_name}' references unknown placeholder '{exc.args[0]}'",
+                Severity.ERROR,
+            )
+        )
+        return None, True
+    except ValueError as exc:
+        diagnostics.append(
+            _diagnostic(
+                MALFORMED_TEMPLATE,
+                f"Backend template for '{ref_name}' is malformed: {exc}",
                 Severity.ERROR,
             )
         )
@@ -258,6 +279,73 @@ def _select_backend(device: DeviceOp, backend_name: str) -> Optional[BackendOp]:
         if isinstance(op, BackendOp) and op.name_attr.data == backend_name:
             return op
     return None
+
+
+def _validate_template(
+    template: str, device_name: str, diagnostics: List[Diagnostic]
+) -> bool:
+    try:
+        placeholders = _template_field_roots(template)
+    except ValueError as exc:
+        diagnostics.append(
+            _diagnostic(
+                MALFORMED_TEMPLATE,
+                f"Backend template for '{device_name}' is malformed: {exc}",
+                Severity.ERROR,
+            )
+        )
+        return False
+    missing = REQUIRED_PLACEHOLDERS - placeholders
+    if missing:
+        missing_list = ", ".join(sorted(missing))
+        diagnostics.append(
+            _diagnostic(
+                MISSING_PLACEHOLDER,
+                (
+                    f"Backend template for '{device_name}' is missing required "
+                    f"placeholders: {missing_list}"
+                ),
+                Severity.ERROR,
+            )
+        )
+        return False
+    return True
+
+
+def _template_field_roots(template: str) -> set[str]:
+    formatter = string.Formatter()
+    fields: set[str] = set()
+    for _, field_name, _, _ in formatter.parse(template):
+        if not field_name:
+            continue
+        root = field_name.split(".", 1)[0].split("[", 1)[0]
+        if root:
+            fields.add(root)
+    return fields
+
+
+def _filter_props(
+    props: Dict[str, str],
+    diagnostics: List[Diagnostic],
+    *,
+    device_name: str,
+) -> Dict[str, str]:
+    filtered: Dict[str, str] = {}
+    for key, value in props.items():
+        if key in REQUIRED_PLACEHOLDERS:
+            diagnostics.append(
+                _diagnostic(
+                    RESERVED_PLACEHOLDER,
+                    (
+                        f"Backend props for '{device_name}' attempt to override "
+                        f"reserved placeholder '{key}'"
+                    ),
+                    Severity.WARNING,
+                )
+            )
+            continue
+        filtered[key] = value
+    return filtered
 
 
 def _dict_attr_to_strings(values: Optional[DictionaryAttr]) -> Dict[str, str]:

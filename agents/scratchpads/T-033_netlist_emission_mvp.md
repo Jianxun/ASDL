@@ -30,6 +30,7 @@
 - 2026-01-02: Initialized task, set status to In Progress, created/updated scratchpad structure.
 - 2026-01-02: Implemented IFIR dialect and ngspice emitter; added netlist tests; ran netlist pytest.
 - 2026-01-02: Opened PR https://github.com/Jianxun/ASDL/pull/29.
+- 2026-01-02: Added template placeholder validation, malformed-template diagnostics, and prop collision warnings; extended netlist tests; reran netlist pytest.
 
 ## Patch summary
 - `src/asdl/ir/ifir/dialect.py`: add IFIR dialect ops/attrs with verifiers.
@@ -37,6 +38,8 @@
 - `src/asdl/emit/ngspice.py`: implement ngspice emission from IFIR with diagnostics.
 - `src/asdl/emit/__init__.py`: export emitter entry point.
 - `tests/unit_tests/netlist/test_ngspice_emitter.py`: add golden tests for emission/top handling.
+- `src/asdl/emit/ngspice.py`: enforce required placeholders, catch malformed templates, and guard reserved props.
+- `tests/unit_tests/netlist/test_ngspice_emitter.py`: add template validation and prop collision coverage.
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/netlist`
@@ -45,4 +48,4 @@
 - None yet.
 
 ## Next steps
-- Read emission spec and existing emit scaffolding to finalize implementation plan.
+- Await Architect review on PR https://github.com/Jianxun/ASDL/pull/29.
