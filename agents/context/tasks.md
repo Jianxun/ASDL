@@ -8,7 +8,6 @@
 
 ## Backlog
 - T-035 | Status: Backlog | Owner: Architect | DoD: Decide how to map NFIR `src`/AST locations into IFIR conversion diagnostics; emit span-aware diagnostics (or document why spans are unavailable) for NFIR->IFIR conversion errors; update unit tests as needed. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-035_ifir_diagnostics_spans.md`.
-- T-036 | Status: Done | Owner: Executor | DoD: Implement CLI command under `src/asdl/cli/` that runs the MVP pipeline end-to-end via `src/asdl/ir/pipeline.py` and emits ngspice output (no direct converter calls); expose `--verify` toggle, deterministic diagnostics, and default output `{asdl_basename}.spice`; add CLI-level tests. Blocked on T-034 completion. | Verify: `pytest tests/unit_tests/cli`. | Links: scratchpad `agents/scratchpads/T-036_cli_pipeline.md`, PR https://github.com/Jianxun/ASDL/pull/31.
 
 ## Exploration candidates (informal)
 - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.
@@ -18,6 +17,7 @@
 - Codebase map gaps: navigation audit for future Executors.
 
 ## Done
+- T-036 | Status: Done | Owner: Executor | DoD: Implement CLI command under `src/asdl/cli/` that runs the MVP pipeline end-to-end via `src/asdl/ir/pipeline.py` and emits ngspice output (no direct converter calls); expose `--verify` toggle, deterministic diagnostics, and default output `{asdl_basename}.spice`; add CLI-level tests. Blocked on T-034 completion. | Verify: `pytest tests/unit_tests/cli`. | Links: scratchpad `agents/scratchpads/T-036_cli_pipeline.md`, PR https://github.com/Jianxun/ASDL/pull/31.
 - T-033 | Status: Done | Owner: Executor | DoD: Implement ngspice emitter from IFIR per MVP emission spec (top handling, named conns, device param merge/validation, backend template rendering); add golden tests. | Verify: `pytest tests/unit_tests/netlist`. | Links: scratchpad `agents/scratchpads/T-033_netlist_emission_mvp.md`, PR https://github.com/Jianxun/ASDL/pull/29.
 - T-032 | Status: Done | Owner: Executor | DoD: Implement xDSL `asdl_ifir` dialect per MVP spec and NFIR->IFIR conversion (invert nets to named conns, explicit nets, preserve `port_order`); add unit tests. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-032_ifir_mvp.md`, PR https://github.com/Jianxun/ASDL/pull/28.
 - T-031 | Status: Done | Owner: Executor | DoD: Implement xDSL `asdl_nfir` dialect per MVP spec; update AST->NFIR converter to parse instance expr into ref+params, extract `port_order` from `$` nets, and carry devices/backends; add unit tests. | Verify: `pytest tests/unit_tests/ir` and `pytest tests/unit_tests/parser`. | Links: scratchpad `agents/scratchpads/T-031_nfir_mvp.md`, PR https://github.com/Jianxun/ASDL/pull/27.

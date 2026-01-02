@@ -31,12 +31,14 @@
 - 2026-01-02: Read CLI MVP spec + executor role; switched to `feature/T-036-cli-pipeline`; set T-036 to In Progress.
 - 2026-01-02: Implemented click-based `asdlc netlist` CLI, added console script entry, and wrote CLI tests for success/error paths.
 - 2026-01-02: Pushed `feature/T-036-cli-pipeline` and opened PR https://github.com/Jianxun/ASDL/pull/31.
+- 2026-01-02: Addressed Architect review feedback (stderr assertion + tasks.md placement) and re-ran CLI tests.
 
 ## Patch summary
 - `src/asdl/cli/__init__.py`: added click CLI group and `netlist` command wired to parser, pipeline, and ngspice emitter.
 - `pyproject.toml`: added `asdlc` console script entrypoint.
 - `tests/unit_tests/cli/test_netlist.py`: added CLI tests for default output, `--top-as-subckt` + `-o`, and missing input errors.
 - `agents/context/codebase_map.md`: noted new `src/asdl/cli/` directory.
+- `agents/context/tasks.md`: moved T-036 into Done section.
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/cli`

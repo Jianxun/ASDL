@@ -96,4 +96,6 @@ def test_cli_netlist_missing_input_file(tmp_path: Path) -> None:
     result = runner.invoke(cli, ["netlist", str(missing_path)])
 
     assert result.exit_code == 1
-    assert "PARSE-004" in result.output
+    stderr = getattr(result, "stderr", "")
+    combined = f"{result.output}{stderr}"
+    assert "PARSE-004" in combined
