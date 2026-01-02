@@ -10,9 +10,9 @@
 - Not verified after MVP spec updates.
 
 ## Next steps (1-3)
-1. Implement ASDL_NFIR dialect and AST->NFIR conversion per MVP spec (T-027).
-2. Implement ASDL_IFIR dialect and NFIR->IFIR conversion per MVP spec (T-028).
-3. Implement ngspice emitter from IFIR per MVP emission spec (T-029).
+1. Rewrite AST models + parser for MVP spec (T-030).
+2. Implement ASDL_NFIR dialect and AST->NFIR conversion per MVP spec (T-031).
+3. Implement ASDL_IFIR dialect and NFIR->IFIR conversion per MVP spec (T-032).
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.

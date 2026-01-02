@@ -1,4 +1,4 @@
-# T-030 - End-to-End MVP Pipeline Test
+# T-034 - End-to-End MVP Pipeline Test
 
 ## Goal
 Add an end-to-end MVP test covering AST -> NFIR -> IFIR -> ngspice emission.

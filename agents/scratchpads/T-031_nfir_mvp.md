@@ -1,4 +1,4 @@
-# T-027 - ASDL_NFIR MVP Dialect + Conversion
+# T-031 - ASDL_NFIR MVP Dialect + Conversion
 
 ## Goal
 Implement the MVP ASDL_NFIR dialect and AST->NFIR conversion per `docs/specs_mvp/spec_asdl_nfir_mvp.md`.

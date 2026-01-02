@@ -1,4 +1,4 @@
-# T-029 - ngspice Emission from IFIR (MVP)
+# T-033 - ngspice Emission from IFIR (MVP)
 
 ## Goal
 Implement ngspice emission from IFIR per `docs/specs_mvp/spec_netlist_emission_mvp.md`.

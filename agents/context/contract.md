@@ -5,7 +5,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 
 ## System boundaries / components
 - Active refactor surface under `src/asdl/ast/` and `src/asdl/ir/`; other pipeline modules are archived under `legacy/src/asdl/`.
-- xDSL refactor work tracked via `agents/context` and `agents/scratchpads/` (e.g., `xDSL_refactor.md`).
+- xDSL refactor work tracked via `agents/context` and `agents/scratchpads/` (e.g., `T-030_ast_parser_mvp.md`).
 - Docs under `docs/`; MVP specs under `docs/specs_mvp/`; full specs under `docs/specs/`.
 - Examples under `examples/`; archived tests under `legacy/tests/`.
 - Visualization prototypes under `prototype/visualizer_react_flow/` (React Flow) and `prototype/visualization/` (jsPlumb legacy).
