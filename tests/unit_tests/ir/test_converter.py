@@ -2,44 +2,84 @@ import pytest
 
 pytest.importorskip("xdsl")
 
-from asdl.ast import (
-    AsdlDocument,
-    InstanceDecl,
-    ModuleDecl,
-    PortDecl,
-    SubcktViewDecl,
-)
+from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
+from asdl.diagnostics import Severity
 from asdl.ir import convert_document
-from asdl.ir.xdsl_dialect import InstanceOp, ModuleOp, ViewOp
+from asdl.ir.nfir import BackendOp, DesignOp, DeviceOp, InstanceOp, ModuleOp, NetOp
 
 
-def test_converter_normalizes_nominal() -> None:
+def test_convert_document_to_nfir() -> None:
     doc = AsdlDocument(
+        top="top",
         modules={
-            "m": ModuleDecl(
-                ports={"a": PortDecl(dir="in")},
-                port_order=["a"],
-                views={
-                    "nom": SubcktViewDecl(
-                        kind="subckt",
-                        instances={
-                            "u1": InstanceDecl(
-                                model="leaf",
-                                view="nom",
-                                conns={"a": "n1"},
-                            )
-                        },
+            "top": ModuleDecl(
+                instances={"M1": "nfet_3p3 m=2"},
+                nets={
+                    "$VIN": "M1.G",
+                    "VSS": "M1.S",
+                },
+            )
+        },
+        devices={
+            "nfet_3p3": DeviceDecl(
+                ports=["D", "G", "S"],
+                params={"w": "1u"},
+                backends={
+                    "ngspice": DeviceBackendDecl(
+                        template="M{inst} {D} {G} {S} {model}",
+                        params={"m": 1},
+                        model="nfet",
                     )
                 },
             )
-        }
+        },
     )
 
-    design = convert_document(doc)
-    module = next(op for op in design.body.block.ops if isinstance(op, ModuleOp))
-    view = next(op for op in module.body.block.ops if isinstance(op, ViewOp))
-    instance = next(op for op in view.body.block.ops if isinstance(op, InstanceOp))
+    design, diagnostics = convert_document(doc)
+    assert diagnostics == []
+    assert isinstance(design, DesignOp)
+    assert design.top is not None
+    assert design.top.data == "top"
 
-    assert view.sym_name.data == "nominal"
-    assert instance.view is not None
-    assert instance.view.data == "nominal"
+    module = next(op for op in design.body.block.ops if isinstance(op, ModuleOp))
+    nets = [op for op in module.body.block.ops if isinstance(op, NetOp)]
+    instances = [op for op in module.body.block.ops if isinstance(op, InstanceOp)]
+    assert [item.data for item in module.port_order.data] == ["VIN"]
+    assert {net.name_attr.data for net in nets} == {"VIN", "VSS"}
+    assert len(instances) == 1
+    instance = instances[0]
+    assert instance.ref.data == "nfet_3p3"
+    assert instance.params is not None
+    assert instance.params.data["m"].data == "2"
+
+    device = next(op for op in design.body.block.ops if isinstance(op, DeviceOp))
+    backend = next(op for op in device.body.block.ops if isinstance(op, BackendOp))
+    assert device.sym_name.data == "nfet_3p3"
+    assert backend.name_attr.data == "ngspice"
+    assert backend.template.data == "M{inst} {D} {G} {S} {model}"
+    assert backend.params is not None
+    assert backend.params.data["m"].data == "1"
+    assert backend.props is not None
+    assert backend.props.data["model"].data == "nfet"
+
+
+def test_convert_document_rejects_invalid_instance_params() -> None:
+    doc = AsdlDocument(
+        modules={"m": ModuleDecl(instances={"M1": "nfet_3p3 badtoken"})}
+    )
+
+    design, diagnostics = convert_document(doc)
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "IR-001"
+    assert diagnostics[0].severity is Severity.ERROR
+
+
+def test_convert_document_rejects_invalid_endpoints() -> None:
+    doc = AsdlDocument(modules={"m": ModuleDecl(nets={"$VIN": "M1G"})})
+
+    design, diagnostics = convert_document(doc)
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "IR-002"
+    assert diagnostics[0].severity is Severity.ERROR

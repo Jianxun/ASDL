@@ -21,6 +21,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - `agents/context/lessons.md`: durable lessons/best practices; ADRs go in `agents/adr/` and are referenced here.
 - Net-first authoring uses YAML map order for `nets:` when order matters, including port order from `$`-prefixed net keys; the parser must preserve source order. Internal IR uses explicit lists; uniqueness is enforced by verification passes, not by dict key uniqueness.
 - Diagnostic schema is centralized (code, severity, message, primary span, labels, notes, help, fix-its, source); locations use file + line/col spans; all pipeline stages emit diagnostics via this contract.
+- AST->NFIR converter returns `(DesignOp | None, diagnostics)`; invalid instance or endpoint tokens emit `IR-001`/`IR-002` with `Severity.ERROR` and return `None`.
 
 ## Invariants
 - xDSL is the single source of semantic truth; pydantic is a shape/type gate only.

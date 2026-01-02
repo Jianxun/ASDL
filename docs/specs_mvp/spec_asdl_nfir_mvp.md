@@ -101,6 +101,12 @@ list extraction.
 
 ---
 
+## Diagnostics (AST -> NFIR conversion)
+- `IR-001`: invalid instance param token (not `key=value`); conversion returns no design.
+- `IR-002`: invalid endpoint token (not `inst.pin`); conversion returns no design.
+
+---
+
 ## Invariants (v0)
 - Net names are unique within a module.
 - Instance names are unique within a module.
