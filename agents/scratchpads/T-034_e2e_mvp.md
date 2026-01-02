@@ -45,6 +45,4 @@
 - None yet.
 
 ## Next steps
-1. Inspect existing pipeline/pass code and tests.
-2. Implement pipeline orchestrator per spec.
-3. Add e2e pipeline test and run verifies.
+1. Await Architect review on PR https://github.com/Jianxun/ASDL/pull/30.
