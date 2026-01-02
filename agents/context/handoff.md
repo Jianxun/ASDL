@@ -7,15 +7,15 @@
 - New OKR tracking lives in `agents/context/okrs.md`.
 - AST models + parser updated to MVP net-first schema; parser/AST tests refreshed.
 - ASDL_NFIR dialect + AST->NFIR conversion implemented with unit tests.
+- ASDL_IFIR dialect + NFIR->IFIR conversion implemented with unit tests.
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ir`
 - `venv/bin/pytest tests/unit_tests/parser`
 
 ## Next steps (1-3)
-1. Implement ASDL_IFIR dialect and NFIR->IFIR conversion per MVP spec (T-032).
-2. Implement ngspice emitter from IFIR per MVP emission spec (T-033).
-3. Add end-to-end MVP pipeline test (T-034).
+1. Implement ngspice emitter from IFIR per MVP emission spec (T-033).
+2. Add end-to-end MVP pipeline test (T-034).
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.

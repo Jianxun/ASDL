@@ -28,6 +28,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Preserve declared port/pin ordering end-to-end (AST -> NFIR -> IFIR -> emit); deterministic outputs.
 - Lowering must not crash on bad designs; verifiers/passes emit diagnostics instead.
 - No user-facing errors via raw exceptions; emit diagnostics through the shared diagnostic core.
+- Converters MUST NOT silently drop endpoints, connections, or nets; any missing references must emit diagnostics.
+- Converters MUST NOT raise `ValueError` for malformed IR; emit diagnostics and return failure indicators instead.
 - Instance params must not introduce new device params; emit a warning and ignore unknown keys.
 - Use project venv at `venv/` for all commands/tests.
 - Keep contract/map/tasks/handoff aligned with repository reality; update after merges or major decisions.
