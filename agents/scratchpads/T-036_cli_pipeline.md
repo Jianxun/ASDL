@@ -1,21 +1,48 @@
 # T-036 - CLI Netlist via MVP Pipeline
 
-## Goal
-Implement `asdlc netlist` to run the MVP pipeline and emit ngspice output.
+## Task summary
+- DoD: Implement CLI command under `src/asdl/cli/` that runs the MVP pipeline end-to-end via `src/asdl/ir/pipeline.py` and emits ngspice output (no direct converter calls); expose `--verify` toggle, deterministic diagnostics, and default output `{asdl_basename}.spice`; add CLI-level tests. Blocked on T-034 completion.
+- Verify: `pytest tests/unit_tests/cli`
 
-## DoD
-- `asdlc netlist <file.asdl>` uses `src/asdl/ir/pipeline.py` (no direct converter calls).
-- Supports `-o/--output`, `--verify/--no-verify`, and `--top-as-subckt`.
-- Default output name is `{asdl_basename}.spice` in the input file directory.
-- Diagnostics use shared contract and are deterministic; exit code is 1 on error diagnostics.
-- Behavior aligns with `docs/specs_mvp/spec_cli_mvp.md`.
-- CLI tests cover success and error cases.
-
-## Files likely touched
-- `src/asdl/cli/`
-- `src/asdl/ir/pipeline.py`
+## Read
+- `agents/roles/executor.md`
+- `agents/context/lessons.md`
+- `agents/context/contract.md`
+- `agents/context/tasks.md`
+- `agents/context/handoff.md`
 - `docs/specs_mvp/spec_cli_mvp.md`
-- `tests/unit_tests/cli/`
+- `src/asdl/diagnostics/core.py`
+- `src/asdl/diagnostics/renderers.py`
+- `src/asdl/diagnostics/collector.py`
+- `src/asdl/diagnostics/codes.py`
+- `src/asdl/ir/pipeline.py`
+- `src/asdl/ast/parser.py`
+- `src/asdl/emit/ngspice.py`
+- `tests/unit_tests/e2e/test_pipeline_mvp.py`
+- `pyproject.toml`
 
-## Verify
-- `pytest tests/unit_tests/cli`
+## Plan
+- Inspect existing CLI entrypoints, diagnostic utilities, and pipeline entry usage.
+- Implement `asdlc netlist` per spec (flags, output naming, verification toggle, top-as-subckt pass-through).
+- Add CLI tests for success/error paths and deterministic diagnostics ordering.
+- Run `pytest tests/unit_tests/cli` and record results.
+
+## Progress log
+- 2026-01-02: Read CLI MVP spec + executor role; switched to `feature/T-036-cli-pipeline`; set T-036 to In Progress.
+- 2026-01-02: Implemented click-based `asdlc netlist` CLI, added console script entry, and wrote CLI tests for success/error paths.
+
+## Patch summary
+- `src/asdl/cli/__init__.py`: added click CLI group and `netlist` command wired to parser, pipeline, and ngspice emitter.
+- `pyproject.toml`: added `asdlc` console script entrypoint.
+- `tests/unit_tests/cli/test_netlist.py`: added CLI tests for default output, `--top-as-subckt` + `-o`, and missing input errors.
+- `agents/context/codebase_map.md`: noted new `src/asdl/cli/` directory.
+
+## Verification
+- `venv/bin/pytest tests/unit_tests/cli`
+
+## Blockers / Questions
+- None.
+
+## Next steps
+- Commit changes, push branch, and open PR for T-036.
+- Update `agents/context/handoff.md` and `agents/context/tasks.md` once PR is ready.

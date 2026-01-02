@@ -1,7 +1,7 @@
 # Codebase Map
 
 ## Directories
-- `src/asdl/`: active refactor code (`ast/`, `diagnostics/`, `ir/`).
+- `src/asdl/`: active refactor code (`ast/`, `diagnostics/`, `ir/`, `cli/`).
 - `legacy/`: archived code and tests for reference only.
 - `legacy/tests/`: archived pytest suites and fixtures.
 - `docs/`: design docs (parser, elaborator, diagnostic system, CLI, schema, logging, xDSL plans, etc.).
