@@ -35,6 +35,8 @@ Verify:
 - Added IFIR dialect/conversion unit tests.
 - Ran `venv/bin/pytest tests/unit_tests/ir`.
 - Opened PR https://github.com/Jianxun/ASDL/pull/28.
+- Addressed review feedback: add diagnostics in NFIR->IFIR conversion and enforce flat SymbolRefAttr.
+- Updated IFIR tests and reran `venv/bin/pytest tests/unit_tests/ir`.
 
 ## Patch summary
 - `agents/context/tasks.md`: mark T-032 as In Progress.
@@ -43,12 +45,16 @@ Verify:
 - `src/asdl/ir/ifir/dialect.py`: add IFIR ops/attrs/verifiers and dialect registration.
 - `src/asdl/ir/ifir/__init__.py`: export IFIR dialect surface.
 - `src/asdl/ir/converters/nfir_to_ifir.py`: add NFIR->IFIR conversion.
+- `src/asdl/ir/converters/nfir_to_ifir.py`: return diagnostics instead of raising and flag unknown endpoints.
 - `src/asdl/ir/converters/__init__.py`: export NFIR->IFIR conversion.
 - `src/asdl/ir/__init__.py`: export NFIR->IFIR conversion.
 - `tests/unit_tests/ir/test_ifir_dialect.py`: add IFIR dialect tests.
+- `tests/unit_tests/ir/test_ifir_dialect.py`: add flat SymbolRefAttr test.
 - `tests/unit_tests/ir/test_ifir_converter.py`: add NFIR->IFIR conversion test.
+- `tests/unit_tests/ir/test_ifir_converter.py`: add unknown endpoint diagnostics test.
 
 ## Verification
+- `venv/bin/pytest tests/unit_tests/ir`
 - `venv/bin/pytest tests/unit_tests/ir`
 
 ## Blockers / Questions

@@ -6,7 +6,7 @@ pytest.importorskip("xdsl")
 
 from xdsl.context import Context
 from xdsl.dialects import builtin
-from xdsl.dialects.builtin import StringAttr
+from xdsl.dialects.builtin import StringAttr, SymbolRefAttr
 from xdsl.parser import Parser
 from xdsl.printer import Printer
 from xdsl.utils.exceptions import VerifyException
@@ -138,3 +138,14 @@ def test_design_rejects_missing_top_module() -> None:
 
     with pytest.raises(VerifyException):
         design.verify()
+
+
+def test_instance_requires_flat_symbol_ref() -> None:
+    instance = InstanceOp(
+        name="u1",
+        ref=SymbolRefAttr("leaf", ["nested"]),
+        conns=[],
+    )
+
+    with pytest.raises(VerifyException):
+        instance.verify()

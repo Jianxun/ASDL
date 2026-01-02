@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
 from xdsl.dialects.builtin import ArrayAttr, SymbolRefAttr
 
+from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.ir.ifir import (
     BackendOp,
     ConnAttr,
@@ -22,31 +23,72 @@ from asdl.ir.nfir import (
     NetOp as NfirNetOp,
 )
 
+INVALID_NFIR_DESIGN = format_code("IR", 3)
+INVALID_NFIR_DEVICE = format_code("IR", 4)
+UNKNOWN_ENDPOINT_INSTANCE = format_code("IR", 5)
+NO_SPAN_NOTE = "No source span available."
 
-def convert_design(design: NfirDesignOp) -> DesignOp:
+
+def convert_design(
+    design: NfirDesignOp,
+) -> Tuple[Optional[DesignOp], List[Diagnostic]]:
+    diagnostics: List[Diagnostic] = []
+    had_error = False
     modules: List[ModuleOp] = []
     devices: List[DeviceOp] = []
 
     for op in design.body.block.ops:
         if isinstance(op, NfirModuleOp):
-            modules.append(_convert_module(op))
+            module, module_diags, module_error = _convert_module(op)
+            diagnostics.extend(module_diags)
+            had_error = had_error or module_error
+            modules.append(module)
             continue
         if isinstance(op, NfirDeviceOp):
-            devices.append(_convert_device(op))
+            device, device_diags, device_error = _convert_device(op)
+            diagnostics.extend(device_diags)
+            had_error = had_error or device_error
+            devices.append(device)
             continue
-        raise ValueError("asdl_nfir.design contains non-module/device ops")
+        diagnostics.append(
+            _diagnostic(
+                INVALID_NFIR_DESIGN,
+                "asdl_nfir.design contains non-module/device ops",
+            )
+        )
+        had_error = True
 
-    return DesignOp(
+    design_op = DesignOp(
         region=[*modules, *devices],
         top=design.top,
     )
+    if had_error:
+        return None, diagnostics
+    return design_op, diagnostics
 
 
-def _convert_module(module: NfirModuleOp) -> ModuleOp:
-    nfir_nets = [op for op in module.body.block.ops if isinstance(op, NfirNetOp)]
-    nfir_instances = [
-        op for op in module.body.block.ops if isinstance(op, NfirInstanceOp)
-    ]
+def _convert_module(
+    module: NfirModuleOp,
+) -> Tuple[ModuleOp, List[Diagnostic], bool]:
+    diagnostics: List[Diagnostic] = []
+    had_error = False
+    nfir_nets: List[NfirNetOp] = []
+    nfir_instances: List[NfirInstanceOp] = []
+
+    for op in module.body.block.ops:
+        if isinstance(op, NfirNetOp):
+            nfir_nets.append(op)
+            continue
+        if isinstance(op, NfirInstanceOp):
+            nfir_instances.append(op)
+            continue
+        diagnostics.append(
+            _diagnostic(
+                INVALID_NFIR_DESIGN,
+                "asdl_nfir.module contains non-net/instance ops",
+            )
+        )
+        had_error = True
 
     net_ops: List[NetOp] = []
     conn_map: Dict[str, List[ConnAttr]] = {
@@ -59,6 +101,13 @@ def _convert_module(module: NfirModuleOp) -> ModuleOp:
         for endpoint in net.endpoints.data:
             conn_list = conn_map.get(endpoint.inst.data)
             if conn_list is None:
+                diagnostics.append(
+                    _diagnostic(
+                        UNKNOWN_ENDPOINT_INSTANCE,
+                        f"Endpoint references unknown instance '{endpoint.inst.data}'",
+                    )
+                )
+                had_error = True
                 continue
             conn_list.append(
                 ConnAttr(endpoint.pin, net.name_attr)
@@ -78,20 +127,35 @@ def _convert_module(module: NfirModuleOp) -> ModuleOp:
             )
         )
 
-    return ModuleOp(
+    return (
+        ModuleOp(
         name=module.sym_name,
         port_order=module.port_order,
         region=[*net_ops, *inst_ops],
         doc=module.doc,
         src=module.src,
+        ),
+        diagnostics,
+        had_error,
     )
 
 
-def _convert_device(device: NfirDeviceOp) -> DeviceOp:
+def _convert_device(
+    device: NfirDeviceOp,
+) -> Tuple[DeviceOp, List[Diagnostic], bool]:
+    diagnostics: List[Diagnostic] = []
+    had_error = False
     backends: List[BackendOp] = []
     for backend in device.body.block.ops:
         if not isinstance(backend, NfirBackendOp):
-            raise ValueError("asdl_nfir.device contains non-backend ops")
+            diagnostics.append(
+                _diagnostic(
+                    INVALID_NFIR_DEVICE,
+                    "asdl_nfir.device contains non-backend ops",
+                )
+            )
+            had_error = True
+            continue
         backends.append(
             BackendOp(
                 name=backend.name_attr,
@@ -102,13 +166,27 @@ def _convert_device(device: NfirDeviceOp) -> DeviceOp:
             )
         )
 
-    return DeviceOp(
+    return (
+        DeviceOp(
         name=device.sym_name,
         ports=device.ports,
         params=device.params,
         region=backends,
         doc=device.doc,
         src=device.src,
+        ),
+        diagnostics,
+        had_error,
+    )
+
+
+def _diagnostic(code: str, message: str) -> Diagnostic:
+    return Diagnostic(
+        code=code,
+        severity=Severity.ERROR,
+        message=message,
+        notes=[NO_SPAN_NOTE],
+        source="ir",
     )
 
 

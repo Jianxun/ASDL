@@ -5,6 +5,7 @@ from typing import Iterable, List, Sequence
 from xdsl.dialects.builtin import (
     ArrayAttr,
     DictionaryAttr,
+    FlatSymbolRefAttrConstr,
     LocationAttr,
     StringAttr,
     SymbolRefAttr,
@@ -217,7 +218,7 @@ class InstanceOp(IRDLOperation):
     name = "asdl_ifir.instance"
 
     name_attr = attr_def(StringAttr, attr_name="name")
-    ref = attr_def(SymbolRefAttr)
+    ref = attr_def(FlatSymbolRefAttrConstr)
     params = opt_attr_def(DictionaryAttr)
     conns = attr_def(ArrayAttr[ConnAttr])
     doc = opt_attr_def(StringAttr)

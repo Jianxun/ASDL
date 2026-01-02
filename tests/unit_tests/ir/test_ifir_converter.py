@@ -37,7 +37,8 @@ def test_convert_nfir_design_to_ifir() -> None:
     )
     design = DesignOp(region=[module, device], top="top")
 
-    ifir_design = convert_nfir_to_ifir(design)
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert diagnostics == []
     assert isinstance(ifir_design, IfirDesignOp)
     assert ifir_design.top is not None
     assert ifir_design.top.data == "top"
@@ -61,3 +62,22 @@ def test_convert_nfir_design_to_ifir() -> None:
     backend = next(op for op in ifir_device.body.block.ops if isinstance(op, IfirBackendOp))
     assert ifir_device.sym_name.data == "nfet"
     assert backend.template.data == "M{inst} {D} {G} {S} {model}"
+
+
+def test_convert_nfir_rejects_unknown_instance_endpoint() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[
+            NetOp(
+                name="VIN",
+                endpoints=[EndpointAttr(StringAttr("M1"), StringAttr("G"))],
+            ),
+        ],
+    )
+    design = DesignOp(region=[module])
+
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert ifir_design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "IR-005"
