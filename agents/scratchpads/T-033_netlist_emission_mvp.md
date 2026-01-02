@@ -29,6 +29,7 @@
 ## Progress log
 - 2026-01-02: Initialized task, set status to In Progress, created/updated scratchpad structure.
 - 2026-01-02: Implemented IFIR dialect and ngspice emitter; added netlist tests; ran netlist pytest.
+- 2026-01-02: Opened PR https://github.com/Jianxun/ASDL/pull/29.
 
 ## Patch summary
 - `src/asdl/ir/ifir/dialect.py`: add IFIR dialect ops/attrs with verifiers.
