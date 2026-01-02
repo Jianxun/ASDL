@@ -27,7 +27,7 @@ asdlc netlist <file.asdl> [-o <out.spice>] [--verify|--no-verify] [--top-as-subc
 
 ### Options
 - `-o, --output <path>`: output file path.
-  - Default: input stem with `.spice` extension in the same directory.
+  - Default: `{asdl_basename}.spice` in the same directory as the input file.
 - `--verify` / `--no-verify`:
   - Default: `--verify`.
   - Controls whether verifier passes run in the pipeline.

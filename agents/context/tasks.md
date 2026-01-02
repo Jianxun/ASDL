@@ -8,7 +8,7 @@
 
 ## Backlog
 - T-035 | Status: Backlog | Owner: Architect | DoD: Decide how to map NFIR `src`/AST locations into IFIR conversion diagnostics; emit span-aware diagnostics (or document why spans are unavailable) for NFIR->IFIR conversion errors; update unit tests as needed. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-035_ifir_diagnostics_spans.md`.
-- T-036 | Status: Backlog | Owner: Executor | DoD: Implement CLI command that runs the MVP pipeline end-to-end via `src/asdl/ir/pipeline.py` and emits ngspice output (no direct converter calls); expose a `--verify` toggle and deterministic diagnostics; add CLI-level tests. Blocked on T-034 completion. | Verify: `pytest tests/unit_tests/cli`. | Links: scratchpad `agents/scratchpads/T-036_cli_pipeline.md`.
+- T-036 | Status: Backlog | Owner: Executor | DoD: Implement CLI command under `src/asdl/cli/` that runs the MVP pipeline end-to-end via `src/asdl/ir/pipeline.py` and emits ngspice output (no direct converter calls); expose `--verify` toggle, deterministic diagnostics, and default output `{asdl_basename}.spice`; add CLI-level tests. Blocked on T-034 completion. | Verify: `pytest tests/unit_tests/cli`. | Links: scratchpad `agents/scratchpads/T-036_cli_pipeline.md`.
 
 ## Exploration candidates (informal)
 - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.
