@@ -11,7 +11,7 @@
 - T-034 | Status: Ready | Owner: Executor | DoD: End-to-end MVP pipeline test: parse AST -> NFIR -> IFIR -> emit; validate determinism and top handling. | Verify: `pytest tests/unit_tests/e2e`. | Links: scratchpad `agents/scratchpads/T-034_e2e_mvp.md`.
 
 ## Backlog
-- None.
+- T-035 | Status: Backlog | Owner: Architect | DoD: Decide how to map NFIR `src`/AST locations into IFIR conversion diagnostics; emit span-aware diagnostics (or document why spans are unavailable) for NFIR->IFIR conversion errors; update unit tests as needed. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-035_ifir_diagnostics_spans.md`.
 
 ## Done
 - None.
