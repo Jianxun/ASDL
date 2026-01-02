@@ -9,14 +9,16 @@
 - ASDL_NFIR dialect + AST->NFIR conversion implemented with unit tests.
 - ASDL_IFIR dialect + NFIR->IFIR conversion implemented with unit tests.
 - ngspice emitter from IFIR implemented with MVP netlist tests.
+- MVP pipeline orchestrator implemented with xDSL pass pipeline and an end-to-end pipeline test.
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ir`
 - `venv/bin/pytest tests/unit_tests/parser`
 - `venv/bin/pytest tests/unit_tests/netlist`
+- `venv/bin/pytest tests/unit_tests/e2e`
 
 ## Next steps (1-3)
-1. Add end-to-end MVP pipeline test (AST -> NFIR -> IFIR -> emit) (T-034).
+1. Open PR for T-034 and proceed to CLI pipeline task T-036 once approved.
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.
