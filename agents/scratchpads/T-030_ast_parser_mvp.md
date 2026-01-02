@@ -1,23 +1,44 @@
 # T-030 AST + Parser MVP Refactor
 
-## Goal
-Align `src/asdl/ast/` models + parser with `docs/specs_mvp/spec_ast_mvp.md` (net-first, minimal AST).
+## Task summary
+- DoD: Rewrite AST + parser for MVP spec `docs/specs_mvp/spec_ast_mvp.md` (AsdlDocument with only `top/modules/devices`; `ModuleDecl` with `instances`/`nets` ordered maps of raw strings; `DeviceDecl` + `DeviceBackendDecl` with required template; enforce hard requirements and forbid legacy fields like ports/views/imports/exports; update `src/asdl/ast/__init__.py` exports + JSON schema); refresh parser/location tests for new schema and add AST validation tests.
+- Verify: `pytest tests/unit_tests/parser` and `pytest tests/unit_tests/ast`.
 
-## Scope / likely files
+## Read
+- `agents/roles/executor.md`
+- `agents/context/lessons.md`
+- `agents/context/contract.md`
+- `agents/context/tasks.md`
+- `agents/context/handoff.md`
+- `docs/specs_mvp/spec_ast_mvp.md`
 - `src/asdl/ast/models.py`
-- `src/asdl/ast/parser.py`
 - `src/asdl/ast/__init__.py`
+- `src/asdl/ast/parser.py`
+- `src/asdl/ast/location.py`
+- `src/asdl/__init__.py`
 - `tests/unit_tests/parser/test_parser.py`
-- `tests/unit_tests/ast/test_models.py` (new)
 
-## Spec reminders (AST MVP)
-- AsdlDocument: only `top`, `modules`, `devices`.
-- ModuleDecl: only `instances` and `nets`.
-- InstancesBlock/NetsBlock: ordered mapping of `str -> str` (raw instance expr / endpoint list).
-- DeviceDecl: `ports` list, `params` optional, `backends` non-empty.
-- DeviceBackendDecl: `template` required; backend extras are allowed as raw values.
-- Hard requirements: `top` required if >1 module; at least one of `modules` or `devices` present; forbid imports/exports/views/ports fields.
+## Plan
+1. Inspect current AST models/parser and tests to identify required changes and stale coverage.
+2. Update AST models to match MVP spec and hard requirements; adjust exports/schema.
+3. Update parser to align with schema, preserve ordering, and update location handling.
+4. Refresh/trim parser and AST tests; remove stale cases; add MVP validation tests.
+5. Run required tests and update handoff/tasks.
 
-## Notes
-- Keep location attachment working via `_loc` on `AstBaseModel`.
-- Preserve mapping order from YAML for nets/instances.
+## Progress log
+- Initialized scratchpad with required sections.
+- Rewrote AST models and exports for MVP schema; updated top-level package exports.
+- Replaced stale parser tests; added AST model validation tests; fixed location assertions.
+- Ran required parser and AST tests.
+
+## Patch summary
+- `src/asdl/ast/models.py`: replaced legacy AST classes with MVP-only models and validators.\n+- `src/asdl/ast/__init__.py`: updated exports for MVP AST types.\n+- `src/asdl/__init__.py`: aligned top-level exports with MVP AST types.\n+- `tests/unit_tests/parser/test_parser.py`: replaced legacy parser tests with MVP cases and new location checks.\n+- `tests/unit_tests/ast/test_models.py`: added MVP AST validation tests.
+
+## Verification
+- `venv/bin/pytest tests/unit_tests/parser`\n+- `venv/bin/pytest tests/unit_tests/ast`
+
+## Blockers / Questions
+- None yet.
+
+## Next steps
+1. Inspect existing AST models/parser and tests for current schema mismatch.
