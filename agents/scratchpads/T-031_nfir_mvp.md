@@ -33,6 +33,7 @@
 - Implemented AST->NFIR conversion with instance expr parsing and port order extraction.
 - Replaced IR tests to cover NFIR dialect round-trip + converter output.
 - Verified `pytest tests/unit_tests/ir` and `pytest tests/unit_tests/parser`.
+- Opened PR https://github.com/Jianxun/ASDL/pull/27.
 
 ## Patch summary
 - `src/asdl/ir/__init__.py`: export AST->NFIR converter.
@@ -42,6 +43,8 @@
 - `src/asdl/ir/nfir/__init__.py`: NFIR dialect exports.
 - `tests/unit_tests/ir/test_dialect.py`: NFIR dialect verifier + roundtrip tests.
 - `tests/unit_tests/ir/test_converter.py`: AST->NFIR conversion tests.
+- `agents/context/handoff.md`: note NFIR completion and update next steps/tests.
+- `agents/context/tasks.md`: mark T-031 Done and add PR link.
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir`
