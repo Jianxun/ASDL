@@ -34,6 +34,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Use project venv at `venv/` for all commands/tests.
 - Keep contract/map/tasks/handoff aligned with repository reality; update after merges or major decisions.
 - Legacy `context/todo_*.md` remain unchanged until explicitly migrated.
+- Architect direct-to-main is allowed only for documentation-only commits that touch files under `agents/` and/or `docs/` exclusively; all other changes require a PR.
 
 ## Verification protocol
 - Manual check: `agents/context` contains lessons.md, contract.md, okrs.md, tasks.md, handoff.md, tasks_archived.md, codebase_map.md.
