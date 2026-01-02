@@ -34,9 +34,11 @@ Verify:
 - Implemented ASDL_IFIR dialect ops/attrs/verifiers and NFIR->IFIR conversion.
 - Added IFIR dialect/conversion unit tests.
 - Ran `venv/bin/pytest tests/unit_tests/ir`.
+- Opened PR https://github.com/Jianxun/ASDL/pull/28.
 
 ## Patch summary
 - `agents/context/tasks.md`: mark T-032 as In Progress.
+- `agents/context/tasks.md`: mark T-032 as Done and add PR link.
 - `agents/scratchpads/T-032_ifir_mvp.md`: expand with required sections and initial notes.
 - `src/asdl/ir/ifir/dialect.py`: add IFIR ops/attrs/verifiers and dialect registration.
 - `src/asdl/ir/ifir/__init__.py`: export IFIR dialect surface.
