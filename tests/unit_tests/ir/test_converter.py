@@ -59,3 +59,19 @@ def test_convert_document_to_nfir() -> None:
     assert backend.params.data["m"].data == "1"
     assert backend.props is not None
     assert backend.props.data["model"].data == "nfet"
+
+
+def test_convert_document_rejects_invalid_instance_params() -> None:
+    doc = AsdlDocument(
+        modules={"m": ModuleDecl(instances={"M1": "nfet_3p3 badtoken"})}
+    )
+
+    with pytest.raises(ValueError, match="key=value"):
+        convert_document(doc)
+
+
+def test_convert_document_rejects_invalid_endpoints() -> None:
+    doc = AsdlDocument(modules={"m": ModuleDecl(nets={"$VIN": "M1G"})})
+
+    with pytest.raises(ValueError, match="inst.pin"):
+        convert_document(doc)

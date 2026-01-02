@@ -70,6 +70,8 @@ class DesignOp(IRDLOperation):
                 device_names.add(name)
                 continue
             raise VerifyException("asdl_nfir.design region must contain only module/device ops")
+        if self.top is not None and self.top.data not in module_names:
+            raise VerifyException(f"Top module '{self.top.data}' is not defined")
 
 
 @irdl_op_definition

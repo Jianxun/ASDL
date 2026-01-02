@@ -126,3 +126,15 @@ def test_design_roundtrip_print_parse() -> None:
         op for op in parsed_module.body.block.ops if isinstance(op, DesignOp)
     )
     assert _print_op(parsed_design) == text
+
+
+def test_design_rejects_missing_top_module() -> None:
+    module = ModuleOp(
+        name="m",
+        port_order=[],
+        region=[],
+    )
+    design = DesignOp(region=[module], top="missing")
+
+    with pytest.raises(VerifyException):
+        design.verify()

@@ -35,6 +35,7 @@
 - Verified `pytest tests/unit_tests/ir` and `pytest tests/unit_tests/parser`.
 - Opened PR https://github.com/Jianxun/ASDL/pull/27.
 - Documented xDSL framework findings in `docs/code_styles/xdsl_style.md`.
+- Tightened instance/endpoint parsing to reject invalid tokens, added top-name verifier, and added negative tests.
 
 ## Patch summary
 - `src/asdl/ir/__init__.py`: export AST->NFIR converter.
@@ -47,6 +48,9 @@
 - `agents/context/handoff.md`: note NFIR completion and update next steps/tests.
 - `agents/context/tasks.md`: mark T-031 Done and add PR link.
 - `docs/code_styles/xdsl_style.md`: add xDSL framework notes for future agents.
+- `src/asdl/ir/converters/ast_to_nfir.py`: reject invalid instance/endpoint tokens.
+- `src/asdl/ir/nfir/dialect.py`: verify top module exists.
+- `tests/unit_tests/ir/test_dialect.py`: add top validation test.
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir`

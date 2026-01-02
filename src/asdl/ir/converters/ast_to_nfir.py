@@ -101,15 +101,15 @@ def _convert_backend(name: str, backend: DeviceBackendDecl) -> BackendOp:
 def _parse_instance_expr(expr: str) -> Tuple[str, Dict[str, str]]:
     tokens = expr.split()
     if not tokens:
-        return "", {}
+        raise ValueError("Instance expression must start with a model name")
     ref = tokens[0]
     params: Dict[str, str] = {}
     for token in tokens[1:]:
         if "=" not in token:
-            continue
+            raise ValueError(f"Invalid instance param token '{token}'; expected key=value")
         key, value = token.split("=", 1)
-        if not key:
-            continue
+        if not key or not value:
+            raise ValueError(f"Invalid instance param token '{token}'; expected key=value")
         params[key] = value
     return ref, params
 
@@ -117,11 +117,11 @@ def _parse_instance_expr(expr: str) -> Tuple[str, Dict[str, str]]:
 def _parse_endpoints(expr: str) -> List[EndpointAttr]:
     endpoints: List[EndpointAttr] = []
     for token in expr.split():
-        if "." not in token:
-            continue
+        if token.count(".") != 1:
+            raise ValueError(f"Invalid endpoint token '{token}'; expected inst.pin")
         inst, pin = token.split(".", 1)
         if not inst or not pin:
-            continue
+            raise ValueError(f"Invalid endpoint token '{token}'; expected inst.pin")
         endpoints.append(EndpointAttr(StringAttr(inst), StringAttr(pin)))
     return endpoints
 
