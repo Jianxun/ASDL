@@ -30,6 +30,7 @@
 - Rewrote AST models and exports for MVP schema; updated top-level package exports.
 - Replaced stale parser tests; added AST model validation tests; fixed location assertions.
 - Ran required parser and AST tests.
+- Opened PR https://github.com/Jianxun/ASDL/pull/26.
 
 ## Patch summary
 - `src/asdl/ast/models.py`: replaced legacy AST classes with MVP-only models and validators.\n+- `src/asdl/ast/__init__.py`: updated exports for MVP AST types.\n+- `src/asdl/__init__.py`: aligned top-level exports with MVP AST types.\n+- `tests/unit_tests/parser/test_parser.py`: replaced legacy parser tests with MVP cases and new location checks.\n+- `tests/unit_tests/ast/test_models.py`: added MVP AST validation tests.
@@ -41,4 +42,4 @@
 - None yet.
 
 ## Next steps
-1. Inspect existing AST models/parser and tests for current schema mismatch.
+1. Await Architect review for T-030 PR.
