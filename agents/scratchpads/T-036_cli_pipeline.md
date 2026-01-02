@@ -30,6 +30,7 @@
 ## Progress log
 - 2026-01-02: Read CLI MVP spec + executor role; switched to `feature/T-036-cli-pipeline`; set T-036 to In Progress.
 - 2026-01-02: Implemented click-based `asdlc netlist` CLI, added console script entry, and wrote CLI tests for success/error paths.
+- 2026-01-02: Pushed `feature/T-036-cli-pipeline` and opened PR https://github.com/Jianxun/ASDL/pull/31.
 
 ## Patch summary
 - `src/asdl/cli/__init__.py`: added click CLI group and `netlist` command wired to parser, pipeline, and ngspice emitter.
@@ -44,5 +45,4 @@
 - None.
 
 ## Next steps
-- Commit changes, push branch, and open PR for T-036.
-- Update `agents/context/handoff.md` and `agents/context/tasks.md` once PR is ready.
+- Wait for Architect review/approval on PR #31.
