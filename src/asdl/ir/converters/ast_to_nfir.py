@@ -6,6 +6,7 @@ from xdsl.dialects.builtin import DictionaryAttr, FileLineColLoc, IntAttr, Locat
 
 from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
 from asdl.ast.location import Locatable
+from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.ir.nfir import (
     BackendOp,
     DesignOp,
@@ -16,14 +17,23 @@ from asdl.ir.nfir import (
     NetOp,
 )
 
+INVALID_INSTANCE_EXPR = format_code("IR", 1)
+INVALID_ENDPOINT_EXPR = format_code("IR", 2)
+NO_SPAN_NOTE = "No source span available."
 
-def convert_document(document: AsdlDocument) -> DesignOp:
+
+def convert_document(document: AsdlDocument) -> Tuple[Optional[DesignOp], List[Diagnostic]]:
+    diagnostics: List[Diagnostic] = []
+    had_error = False
     modules: List[ModuleOp] = []
     devices: List[DeviceOp] = []
 
     if document.modules:
         for name, module in document.modules.items():
-            modules.append(_convert_module(name, module))
+            module_op, module_diags, module_error = _convert_module(name, module)
+            diagnostics.extend(module_diags)
+            had_error = had_error or module_error
+            modules.append(module_op)
 
     if document.devices:
         for name, device in document.devices.items():
@@ -33,10 +43,16 @@ def convert_document(document: AsdlDocument) -> DesignOp:
         region=modules + devices,
         top=document.top,
     )
-    return design
+    if had_error:
+        return None, diagnostics
+    return design, diagnostics
 
 
-def _convert_module(name: str, module: ModuleDecl) -> ModuleOp:
+def _convert_module(
+    name: str, module: ModuleDecl
+) -> Tuple[ModuleOp, List[Diagnostic], bool]:
+    diagnostics: List[Diagnostic] = []
+    had_error = False
     nets: List[NetOp] = []
     instances: List[InstanceOp] = []
     port_order: List[str] = []
@@ -48,12 +64,34 @@ def _convert_module(name: str, module: ModuleDecl) -> ModuleOp:
                 stripped_name = net_name[1:]
                 port_order.append(stripped_name)
                 net_name = stripped_name
-            endpoints = _parse_endpoints(endpoint_expr)
+            try:
+                endpoints = _parse_endpoints(endpoint_expr)
+            except ValueError as exc:
+                diagnostics.append(
+                    _diagnostic(
+                        INVALID_ENDPOINT_EXPR,
+                        f"{exc} in module '{name}'",
+                        module._loc,
+                    )
+                )
+                had_error = True
+                continue
             nets.append(NetOp(name=net_name, endpoints=endpoints))
 
     if module.instances:
         for inst_name, expr in module.instances.items():
-            ref, params = _parse_instance_expr(expr)
+            try:
+                ref, params = _parse_instance_expr(expr)
+            except ValueError as exc:
+                diagnostics.append(
+                    _diagnostic(
+                        INVALID_INSTANCE_EXPR,
+                        f"{exc} in module '{name}'",
+                        module._loc,
+                    )
+                )
+                had_error = True
+                continue
             instances.append(
                 InstanceOp(
                     name=inst_name,
@@ -65,11 +103,15 @@ def _convert_module(name: str, module: ModuleDecl) -> ModuleOp:
     ops: List[object] = []
     ops.extend(nets)
     ops.extend(instances)
-    return ModuleOp(
-        name=name,
-        port_order=port_order,
-        region=ops,
-        src=_loc_attr(module._loc),
+    return (
+        ModuleOp(
+            name=name,
+            port_order=port_order,
+            region=ops,
+            src=_loc_attr(module._loc),
+        ),
+        diagnostics,
+        had_error,
     )
 
 
@@ -145,6 +187,19 @@ def _loc_attr(loc: Optional[Locatable]) -> Optional[LocationAttr]:
     if loc is None or loc.start_line is None or loc.start_col is None:
         return None
     return FileLineColLoc(StringAttr(loc.file), IntAttr(loc.start_line), IntAttr(loc.start_col))
+
+
+def _diagnostic(code: str, message: str, loc: Optional[Locatable]) -> Diagnostic:
+    span = loc.to_source_span() if loc is not None else None
+    notes = None if span is not None else [NO_SPAN_NOTE]
+    return Diagnostic(
+        code=code,
+        severity=Severity.ERROR,
+        message=message,
+        primary_span=span,
+        notes=notes,
+        source="ir",
+    )
 
 
 __all__ = ["convert_document"]

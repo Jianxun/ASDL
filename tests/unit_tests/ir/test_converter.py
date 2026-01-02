@@ -3,6 +3,7 @@ import pytest
 pytest.importorskip("xdsl")
 
 from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
+from asdl.diagnostics import Severity
 from asdl.ir import convert_document
 from asdl.ir.nfir import BackendOp, DesignOp, DeviceOp, InstanceOp, ModuleOp, NetOp
 
@@ -34,7 +35,8 @@ def test_convert_document_to_nfir() -> None:
         },
     )
 
-    design = convert_document(doc)
+    design, diagnostics = convert_document(doc)
+    assert diagnostics == []
     assert isinstance(design, DesignOp)
     assert design.top is not None
     assert design.top.data == "top"
@@ -66,12 +68,18 @@ def test_convert_document_rejects_invalid_instance_params() -> None:
         modules={"m": ModuleDecl(instances={"M1": "nfet_3p3 badtoken"})}
     )
 
-    with pytest.raises(ValueError, match="key=value"):
-        convert_document(doc)
+    design, diagnostics = convert_document(doc)
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "IR-001"
+    assert diagnostics[0].severity is Severity.ERROR
 
 
 def test_convert_document_rejects_invalid_endpoints() -> None:
     doc = AsdlDocument(modules={"m": ModuleDecl(nets={"$VIN": "M1G"})})
 
-    with pytest.raises(ValueError, match="inst.pin"):
-        convert_document(doc)
+    design, diagnostics = convert_document(doc)
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "IR-002"
+    assert diagnostics[0].severity is Severity.ERROR

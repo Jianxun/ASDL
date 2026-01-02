@@ -36,6 +36,7 @@
 - Opened PR https://github.com/Jianxun/ASDL/pull/27.
 - Documented xDSL framework findings in `docs/code_styles/xdsl_style.md`.
 - Tightened instance/endpoint parsing to reject invalid tokens, added top-name verifier, and added negative tests.
+- Switched AST->NFIR conversion to emit diagnostics instead of raising exceptions.
 
 ## Patch summary
 - `src/asdl/ir/__init__.py`: export AST->NFIR converter.
@@ -51,6 +52,8 @@
 - `src/asdl/ir/converters/ast_to_nfir.py`: reject invalid instance/endpoint tokens.
 - `src/asdl/ir/nfir/dialect.py`: verify top module exists.
 - `tests/unit_tests/ir/test_dialect.py`: add top validation test.
+- `src/asdl/ir/converters/ast_to_nfir.py`: return diagnostics on invalid tokens.
+- `tests/unit_tests/ir/test_converter.py`: expect diagnostics for invalid tokens.
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir`
