@@ -107,6 +107,8 @@ Keep it concise. The goal is: a fresh Executor can pick up a task without reread
 ## PR review & merge policy
 
 - Every task branch must land via a GitHub PR reviewed by the Architect (use `gh pr review` + `gh pr merge` when ready).
+- Exception: if GitHub blocks self-approval (e.g., Architect is the author), merge is allowed only with explicit user approval in chat; note the approval in the PR conversation before merging.
+- Architect-authored updates to `agents/roles/` documents may be pushed directly to `main` without a PR.
 - Block PRs that lack: linked task ID, updated scratchpad/handoff, passing verify commands, and ✅ status on lint/tests (attach logs if commands were skipped).
 - Before merging:
   1. Confirm contract + DoD are satisfied and no scope creep occurred.
