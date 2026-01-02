@@ -29,22 +29,30 @@
  - Fail with diagnostics, not exceptions, for user-facing issues; only assert for programmer errors.
  - Keep diagnostic ordering deterministic to stabilize tests.
  
- ## Testing Guidance
+## Testing Guidance
  - Unit tests per op/attr verifier and per pass; include negative cases that surface diagnostics.
  - Golden-text tests for IR printers (deterministic formatting, stable attribute ordering).
  - Skip xDSL-dependent tests gracefully when the optional dependency is missing.
  - Keep fixtures small and focused; prefer one expectation per test file when tied to a diagnostic code.
  
- ## File & Layout Conventions
+## File & Layout Conventions
  - Dialects live under `src/asdl/ir/<layer>/` (e.g., `src/asdl/ir/nfir/`, `src/asdl/ir/ifir/`).
  - Converters live under `src/asdl/ir/converters/`.
  - Tests mirror package layout under `tests/unit_tests/ir/`.
  - CLI/driver glue belongs in `src/asdl/cli/` (or nearest equivalent), not inside dialect modules.
  
- ## CLI & Tooling Integration
+## CLI & Tooling Integration
  - Add `ir-dump`/`--verify`/`--run-pass` style hooks for inspection and debugging; keep outputs deterministic.
  - Default to project venv (`venv/`) for tooling and tests.
  
- ## References
- - ASDL MVP specs: `docs/specs_mvp/` (AST, NFIR, IFIR, emission)
- - Project contract and tasks: `agents/context/contract.md`, `agents/context/tasks.md`, `agents/context/okrs.md`
+## References
+- ASDL MVP specs: `docs/specs_mvp/` (AST, NFIR, IFIR, emission)
+- Project contract and tasks: `agents/context/contract.md`, `agents/context/tasks.md`, `agents/context/okrs.md`
+
+## xDSL Framework Notes (Agent Findings)
+- Use `xdsl.context.Context()` (not MLContext) and register dialects via `ctx.load_dialect(builtin.Builtin)` plus custom dialects before parsing.
+- Declarative `assembly_format` cannot place `attr-dict` directly before a region variable; use `$body attr-dict` or add a keyword (`attributes`) to avoid ambiguity.
+- `LocationAttr` is a type alias (`UnknownLoc | FileLineColLoc`); `FileLineColLoc` is constructed as `FileLineColLoc(StringAttr(file), IntAttr(line), IntAttr(col))`.
+- `attr_def(..., attr_name="name")` exposes a property named after the field (`name_attr` in our code), not `name`; use `op.name_attr` to access the attr value.
+- `DictionaryAttr` preserves insertion order from the input mapping; rely on dict order when building params for deterministic printing.
+- `Parser(ctx, text).parse_module()` returns a builtin.module wrapper; extract your top-level op from its body block.

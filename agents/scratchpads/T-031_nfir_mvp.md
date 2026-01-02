@@ -34,6 +34,7 @@
 - Replaced IR tests to cover NFIR dialect round-trip + converter output.
 - Verified `pytest tests/unit_tests/ir` and `pytest tests/unit_tests/parser`.
 - Opened PR https://github.com/Jianxun/ASDL/pull/27.
+- Documented xDSL framework findings in `docs/code_styles/xdsl_style.md`.
 
 ## Patch summary
 - `src/asdl/ir/__init__.py`: export AST->NFIR converter.
@@ -45,6 +46,7 @@
 - `tests/unit_tests/ir/test_converter.py`: AST->NFIR conversion tests.
 - `agents/context/handoff.md`: note NFIR completion and update next steps/tests.
 - `agents/context/tasks.md`: mark T-031 Done and add PR link.
+- `docs/code_styles/xdsl_style.md`: add xDSL framework notes for future agents.
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir`
