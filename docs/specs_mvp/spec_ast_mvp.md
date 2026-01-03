@@ -73,16 +73,19 @@ instances:
 ## `NetsBlock`
 
 ### AST shape
-- `NetsBlock` is an ordered mapping: `Dict[str, EndpointListExpr]`.
+- `NetsBlock` is an ordered mapping: `Dict[str, List[str]]`.
 
 #### `EndpointListExpr`
-- **Type**: `str` (raw whitespace-separated endpoint tokens).
+- **Type**: `List[str]` (raw endpoint tokens).
 - **Grammar (MVP)**: `<InstName>.<PinName>` tokens only.
 - Example:
   ```yaml
   nets:
-    $VIN: MN_IN.G
-    VSS: MN_IN.S MTAIL.S
+    $VIN:
+      - MN_IN.G
+    VSS:
+      - MN_IN.S
+      - MTAIL.S
   ```
 
 ### Notes
@@ -94,8 +97,8 @@ instances:
 ## `DeviceDecl`
 
 ### Fields
-- `ports: List[str]`
-  - Ordered port list.
+- `ports: Optional[List[str]]`
+  - Ordered port list; may be omitted for portless devices.
 - `params: Optional[Dict[str, ParamValue]]`
   - Default parameter values.
 - `backends: Dict[str, DeviceBackendDecl]`
@@ -121,6 +124,6 @@ instances:
 - `backends` must be a non-empty map for each device.
 - `DeviceBackendDecl.template` must exist and be a string.
 - `InstancesBlock` entries must be `InstanceExpr` strings.
-- `NetsBlock` values must be `EndpointListExpr` strings.
+- `NetsBlock` values must be `EndpointListExpr` lists of strings.
 - No `exports` key is permitted under `ModuleDecl` in MVP.
 - No imports/includes are permitted in the document in MVP.

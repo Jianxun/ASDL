@@ -120,21 +120,13 @@ OUT<P|N>;CLK[1:0]
 
 ---
 
-## 4. Expansion Order and Precedence
+## 4. Expansion Order and Evaluation
 
-Within a single segment:
-
-1. **Numeric ranges** (`[start:end]`)
-2. **Literal enumerations** (`<a|b|c>`)
-3. **Canonical `_` insertion**
-
-Across the whole expression:
-
-4. **Splicing** (`;`) concatenates segment expansions
-
-Notes:
-- Expansion is single-pass under this precedence (no recursive re-expansion)
-- After expansion, no pattern syntax may remain
+- Pattern operators resolve **strictly left-to-right** within a segment.
+- Each operator expands the current list and **concatenates** results in order.
+- Splicing (`;`) splits segments; segments expand left-to-right and concatenate.
+- Expansion is single-pass; no recursive re-expansion.
+- After expansion, no pattern syntax may remain.
 
 ---
 
@@ -160,7 +152,7 @@ If expansion produces duplicate atoms *within the same expanded list*:
 | Condition | Behavior |
 |---------|----------|
 | Invalid numeric range syntax | Error |
-| Empty enumeration (`<>` or `< | >`) | Error |
+| Empty enumeration (`<>` or `<|>`) | Error |
 | Empty splice segment (`a;;b`) | Error |
 | Duplicate expanded atoms | Error |
 | Unexpanded pattern remains | Error |

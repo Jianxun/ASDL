@@ -63,6 +63,7 @@ Define MVP emission rules from ASDL_IFIR into ngspice-compatible netlists.
 ### Emission
 - Render as space-joined `k=v` tokens (in deterministic order).
 - If empty, emit no params and avoid extra whitespace.
+- Template usage is explicit; there is no required params placeholder.
 
 Example merge:
 ```
@@ -76,10 +77,10 @@ result params:       w=1u l=120n m=4
 
 ## Template contract (devices)
 - Each device backend supplies a `template` string.
-- Required placeholders:
-  - `{name}`  instance name
-  - `{conns}` space-joined nets in port order
-  - `{params}` merged parameter string (may be empty)
+- Supported placeholders:
+  - `{name}` instance name
+  - `{ports}` space-joined nets in port order (may be empty)
+- `{params}` is deprecated; templates should not rely on it.
 - Additional placeholders may be populated from backend `props`.
 
 ---

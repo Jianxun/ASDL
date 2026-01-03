@@ -3,7 +3,7 @@
 ## Purpose
 A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 - Validates **shape/types** only.
-- Preserves **raw strings** for inline instance expressions, endpoint lists, and templates.
+- Preserves **raw strings** for inline instance expressions, endpoint tokens, and templates.
 - Does **not** perform semantic resolution (imports, symbol lookup, domain expansion, ERC).
 - Represents the net-first authoring surface: **modules + devices + optional `top`**.
 
@@ -72,21 +72,24 @@ instances:
 ## `NetsBlock`
 
 ### AST shape
-- `NetsBlock` is an ordered mapping: `Dict[str, EndpointListExpr]`.
+- `NetsBlock` is an ordered mapping: `Dict[str, List[str]]`.
 
 #### `EndpointListExpr`
-- **Type**: `str` (raw whitespace-separated endpoint tokens).
+- **Type**: `List[str]` (raw endpoint tokens).
 - Example:
   ```yaml
   nets:
-    $VIN<P,N>: MN_IN<P,N>.G
-    VSS: MN_CS*.S MTAIL.S
+    $VIN<P|N>:
+      - MN_IN<P|N>.G
+    VSS:
+      - MN_CS*.S
+      - MTAIL.S
   ```
 
 ### Notes
 - `$` on the net name marks an **exported port**.
 - Port order is the appearance order of `$` nets in `nets`, followed by forwarded ports from `exports`.
-- `*`, `<...>`, and `[...]` pattern/domain markers are preserved as raw tokens for later expansion.
+- `*`, `<...>`, `[...]`, and `;` pattern/domain markers are preserved as raw tokens for later expansion.
 
 ---
 
@@ -107,8 +110,8 @@ instances:
 ## `DeviceDecl`
 
 ### Fields
-- `ports: List[str]`
-  - Ordered port list.
+- `ports: Optional[List[str]]`
+  - Ordered port list; may be omitted for portless devices.
 - `params: Optional[Dict[str, ParamValue]]`
   - Default parameter values.
 - `backends: Dict[str, DeviceBackendDecl]`
@@ -134,7 +137,7 @@ instances:
 - `backends` must be a **non-empty** map for each device.
 - `DeviceBackendDecl.template` must exist and be a string.
 - `InstancesBlock` entries must be `InstanceExpr` strings.
-- `NetsBlock` values must be `EndpointListExpr` strings.
+- `NetsBlock` values must be `EndpointListExpr` lists of strings.
 
 ---
 
