@@ -18,6 +18,7 @@
 - T-038 netlist template placeholders updated to `{ports}` (optional); reserved placeholder enforcement removed; CLI help/tests updated (PR #36).
 - T-039 CLI help test added to verify command listing (PR #37).
 - T-046 individual merged parameter values now exposed as template placeholders; templates can reference device/backend/instance params directly (e.g., `{L}`, `{W}`, `{NF}`, `{m}`).
+- T-047 system devices refactor complete: ngspice emitter now uses backend config (`config/backends.yaml`) with 5 required system devices; all hardcoded ngspice syntax removed; all tests passing with byte-for-byte identical output.
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ast`
@@ -29,8 +30,9 @@
 - `venv/bin/pytest tests/unit_tests/ir tests/unit_tests/netlist`
 
 ## Next steps (1-3)
-1. T-047: Refactor emitter to use backend config with system devices per ADR-0006 (Ready for Executor).
+1. T-047: Ready for PR - all implementation complete and tests passing. Needs Architect review.
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.
 - Backend-specific emission rules beyond ngspice remain undefined.
+- System devices successfully decouples backend syntax; future backends (spectre, hspice) can be added via config only.

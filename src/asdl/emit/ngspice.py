@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 import string
 from typing import Dict, Iterable, List, Optional, Tuple
 
+import yaml
 from xdsl.dialects.builtin import DictionaryAttr, LocationAttr, StringAttr
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
+from asdl.emit.backend_config import BackendConfig, load_backend_config, validate_system_devices
 from asdl.ir.ifir import BackendOp, DesignOp, DeviceOp, InstanceOp, ModuleOp
 from asdl.ir.location import location_attr_to_span
 
@@ -28,13 +31,45 @@ REQUIRED_PLACEHOLDERS = {"name"}
 class EmitOptions:
     top_as_subckt: bool = False
     backend_name: str = "ngspice"
+    backend_config: Optional[BackendConfig] = None
 
 
 def emit_ngspice(
-    design: DesignOp, *, top_as_subckt: bool = False
+    design: DesignOp,
+    *,
+    top_as_subckt: bool = False,
+    backend_config_path: Optional[Path] = None,
 ) -> Tuple[Optional[str], List[Diagnostic]]:
-    options = EmitOptions(top_as_subckt=top_as_subckt)
-    return _emit_design(design, options)
+    diagnostics: List[Diagnostic] = []
+
+    # Load backend config
+    try:
+        config = load_backend_config("ngspice", backend_config_path)
+    except (FileNotFoundError, KeyError, yaml.YAMLError) as exc:
+        # Emit diagnostic for config loading failure
+        diagnostics.append(
+            _diagnostic(
+                MISSING_BACKEND,
+                f"Failed to load backend config: {exc}",
+                Severity.ERROR,
+            )
+        )
+        return None, diagnostics
+
+    # Validate system devices
+    validation_diags = validate_system_devices(config)
+    diagnostics.extend(validation_diags)
+    if any(d.severity == Severity.ERROR for d in validation_diags):
+        return None, diagnostics
+
+    options = EmitOptions(
+        top_as_subckt=top_as_subckt,
+        backend_name="ngspice",
+        backend_config=config,
+    )
+    netlist, emit_diags = _emit_design(design, options)
+    diagnostics.extend(emit_diags)
+    return netlist, diagnostics
 
 
 def _emit_design(
@@ -80,6 +115,18 @@ def _emit_design(
     lines: List[str] = []
     had_error = False
 
+    # Render netlist header (required)
+    header_context = {"backend": options.backend_name, "top": top_name}
+    header, header_error = _render_system_device(
+        "__netlist_header__",
+        options.backend_config,
+        header_context,
+        diagnostics,
+    )
+    if header:  # Only add non-empty headers
+        lines.append(header)
+    had_error = had_error or header_error
+
     for module in module_ops:
         is_top = module.sym_name.data == top_name
         module_lines, module_error = _emit_module(
@@ -92,6 +139,18 @@ def _emit_design(
         )
         lines.extend(module_lines)
         had_error = had_error or module_error
+
+    # Render netlist footer (required)
+    footer_context = {"backend": options.backend_name, "top": top_name}
+    footer, footer_error = _render_system_device(
+        "__netlist_footer__",
+        options.backend_config,
+        footer_context,
+        diagnostics,
+    )
+    if footer:  # Only add non-empty footers
+        lines.append(footer)
+    had_error = had_error or footer_error
 
     if had_error:
         return None, diagnostics
@@ -111,12 +170,30 @@ def _emit_module(
     had_error = False
 
     ports = [attr.data for attr in module.port_order.data]
-    header = _format_subckt_line(module.sym_name.data, ports)
-    footer = f".ends {module.sym_name.data}"
+
+    # Only emit wrapper if NOT (top without top_as_subckt)
+    # When top without top_as_subckt, comment out the wrapper
     if is_top and not options.top_as_subckt:
-        header = f"*{header}"
-        footer = f"*{footer}"
-    lines.append(header)
+        # Comment out wrapper for top module when top_as_subckt is False
+        # Inline the subckt line format
+        if ports:
+            header = f".subckt {module.sym_name.data} {' '.join(ports)}"
+        else:
+            header = f".subckt {module.sym_name.data}"
+        footer = f".ends {module.sym_name.data}"
+        lines.append(f"*{header}")
+    else:
+        # Use system device templates for wrapper
+        header_context = {"name": module.sym_name.data, "ports": " ".join(ports)}
+        header, header_error = _render_system_device(
+            "__subckt_header__",
+            options.backend_config,
+            header_context,
+            diagnostics,
+        )
+        if header is not None and header:  # Skip empty templates
+            lines.append(header)
+        had_error = had_error or header_error
 
     for op in module.body.block.ops:
         if not isinstance(op, InstanceOp):
@@ -132,7 +209,23 @@ def _emit_module(
             lines.append(line)
         had_error = had_error or inst_error
 
-    lines.append(footer)
+    # Emit footer
+    if is_top and not options.top_as_subckt:
+        # Comment out footer for top module when top_as_subckt is False
+        lines.append(f"*{footer}")
+    else:
+        # Use system device template for footer
+        footer_context = {"name": module.sym_name.data}
+        footer, footer_error = _render_system_device(
+            "__subckt_footer__",
+            options.backend_config,
+            footer_context,
+            diagnostics,
+        )
+        if footer is not None and footer:  # Skip empty templates
+            lines.append(footer)
+        had_error = had_error or footer_error
+
     return lines, had_error
 
 
@@ -150,8 +243,19 @@ def _emit_instance(
         conns, had_error = _ordered_conns(instance, port_order, diagnostics)
         if had_error:
             return None, True
-        conn_str = " ".join(conns)
-        return f"X{instance.name_attr.data} {conn_str} {ref_name}", False
+
+        # Use __subckt_call__ system device
+        call_context = {
+            "name": instance.name_attr.data,
+            "ports": " ".join(conns),
+            "ref": ref_name,
+        }
+        return _render_system_device(
+            "__subckt_call__",
+            options.backend_config,
+            call_context,
+            diagnostics,
+        )
 
     if ref_name not in devices:
         diagnostics.append(
@@ -340,6 +444,81 @@ def _template_field_roots(template: str) -> set[str]:
     return fields
 
 
+def _render_system_device(
+    device_name: str,
+    config: BackendConfig,
+    context: Dict[str, str],
+    diagnostics: List[Diagnostic],
+) -> Tuple[Optional[str], bool]:
+    """Render a system device template with the given context.
+
+    Args:
+        device_name: System device name (e.g., "__subckt_header__")
+        config: Backend configuration containing system device templates
+        context: Template placeholder values (e.g., {"name": "amp", "ports": "in out"})
+        diagnostics: List to append any diagnostics
+
+    Returns:
+        (rendered_string, had_error) tuple
+    """
+    if device_name not in config.system_devices:
+        diagnostics.append(
+            _diagnostic(
+                MISSING_BACKEND,
+                f"System device '{device_name}' not defined in backend config",
+                Severity.ERROR,
+            )
+        )
+        return None, True
+
+    sys_device = config.system_devices[device_name]
+    template = sys_device.template
+
+    # Validate template placeholders
+    try:
+        placeholders = _template_field_roots(template)
+    except ValueError as exc:
+        diagnostics.append(
+            _diagnostic(
+                MALFORMED_TEMPLATE,
+                f"System device '{device_name}' template is malformed: {exc}",
+                Severity.ERROR,
+            )
+        )
+        return None, True
+
+    # Render template
+    try:
+        rendered = template.format_map(context)
+    except KeyError as exc:
+        diagnostics.append(
+            _diagnostic(
+                UNKNOWN_REFERENCE,
+                f"System device '{device_name}' template references unknown placeholder '{exc.args[0]}'",
+                Severity.ERROR,
+            )
+        )
+        return None, True
+    except ValueError as exc:
+        diagnostics.append(
+            _diagnostic(
+                MALFORMED_TEMPLATE,
+                f"System device '{device_name}' template is malformed: {exc}",
+                Severity.ERROR,
+            )
+        )
+        return None, True
+
+    # Whitespace collapsing: if {ports} is in placeholders and context["ports"] is empty, collapse whitespace
+    should_collapse = False
+    if "ports" in placeholders and context.get("ports", "") == "":
+        should_collapse = True
+    if should_collapse:
+        rendered = " ".join(rendered.split())
+
+    return rendered, False
+
+
 def _dict_attr_to_strings(values: Optional[DictionaryAttr]) -> Dict[str, str]:
     if values is None:
         return {}
@@ -392,12 +571,6 @@ def _merge_params(
 
     tokens = [f"{key}={merged[key]}" for key in order if key in merged]
     return merged, " ".join(tokens), diagnostics
-
-
-def _format_subckt_line(name: str, ports: List[str]) -> str:
-    if ports:
-        return f".subckt {name} {' '.join(ports)}"
-    return f".subckt {name}"
 
 
 def _diagnostic(

@@ -1,0 +1,12 @@
+ngspice:
+  system_devices:
+    __subckt_header__:
+      template: ".subckt {name} {ports}"
+    __subckt_footer__:
+      template: ".ends {name}"
+    __subckt_call__:
+      template: "X{name} {ports} {ref}"
+    __netlist_header__:
+      template: ""
+    __netlist_footer__:
+      template: ""
