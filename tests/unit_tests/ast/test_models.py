@@ -30,6 +30,13 @@ def test_device_decl_requires_non_empty_backends() -> None:
         DeviceDecl.model_validate({"ports": ["D"], "backends": {}})
 
 
+def test_device_decl_allows_missing_ports() -> None:
+    device = DeviceDecl.model_validate(
+        {"backends": {"ngspice": {"template": "R{name} {conns} {params}"}}}
+    )
+    assert device.ports is None
+
+
 def test_device_backend_allows_extra_fields() -> None:
     backend = DeviceBackendDecl.model_validate({"template": "M{inst}", "model": "nfet"})
     assert backend.model == "nfet"

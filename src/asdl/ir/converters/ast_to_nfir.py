@@ -118,9 +118,10 @@ def _convert_device(name: str, device: DeviceDecl) -> DeviceOp:
     for backend_name, backend in device.backends.items():
         backends.append(_convert_backend(backend_name, backend))
 
+    ports = device.ports or []
     return DeviceOp(
         name=name,
-        ports=device.ports,
+        ports=ports,
         params=_to_string_dict_attr(device.params),
         region=backends,
         src=_loc_attr(device._loc),

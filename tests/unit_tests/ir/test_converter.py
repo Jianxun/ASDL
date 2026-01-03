@@ -63,6 +63,24 @@ def test_convert_document_to_nfir() -> None:
     assert backend.props.data["model"].data == "nfet"
 
 
+def test_convert_document_allows_portless_device() -> None:
+    doc = AsdlDocument(
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{name} {conns} {params}")}
+            )
+        }
+    )
+
+    design, diagnostics = convert_document(doc)
+    assert diagnostics == []
+    assert isinstance(design, DesignOp)
+
+    device = next(op for op in design.body.block.ops if isinstance(op, DeviceOp))
+    assert device.sym_name.data == "res"
+    assert list(device.ports.data) == []
+
+
 def test_convert_document_rejects_invalid_instance_params() -> None:
     doc = AsdlDocument(
         modules={"m": ModuleDecl(instances={"M1": "nfet_3p3 badtoken"})}

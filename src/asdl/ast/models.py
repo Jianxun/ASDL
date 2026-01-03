@@ -44,7 +44,7 @@ class DeviceBackendDecl(AstBaseModel):
 
 
 class DeviceDecl(AstBaseModel):
-    ports: List[StrictStr]
+    ports: Optional[List[StrictStr]] = None
     params: Optional[Dict[str, ParamValue]] = None
     backends: Dict[str, DeviceBackendDecl]
 
