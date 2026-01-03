@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
 
-from xdsl.dialects.builtin import ArrayAttr, SymbolRefAttr
+from xdsl.dialects.builtin import ArrayAttr, LocationAttr, SymbolRefAttr
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.ir.ifir import (
@@ -22,6 +22,7 @@ from asdl.ir.nfir import (
     ModuleOp as NfirModuleOp,
     NetOp as NfirNetOp,
 )
+from asdl.ir.location import location_attr_to_span
 
 INVALID_NFIR_DESIGN = format_code("IR", 3)
 INVALID_NFIR_DEVICE = format_code("IR", 4)
@@ -54,6 +55,7 @@ def convert_design(
             _diagnostic(
                 INVALID_NFIR_DESIGN,
                 "asdl_nfir.design contains non-module/device ops",
+                getattr(op, "src", None),
             )
         )
         had_error = True
@@ -86,6 +88,7 @@ def _convert_module(
             _diagnostic(
                 INVALID_NFIR_DESIGN,
                 "asdl_nfir.module contains non-net/instance ops",
+                getattr(op, "src", None) or module.src,
             )
         )
         had_error = True
@@ -105,6 +108,7 @@ def _convert_module(
                     _diagnostic(
                         UNKNOWN_ENDPOINT_INSTANCE,
                         f"Endpoint references unknown instance '{endpoint.inst.data}'",
+                        net.src or module.src,
                     )
                 )
                 had_error = True
@@ -152,6 +156,7 @@ def _convert_device(
                 _diagnostic(
                     INVALID_NFIR_DEVICE,
                     "asdl_nfir.device contains non-backend ops",
+                    getattr(backend, "src", None) or device.src,
                 )
             )
             had_error = True
@@ -180,12 +185,17 @@ def _convert_device(
     )
 
 
-def _diagnostic(code: str, message: str) -> Diagnostic:
+def _diagnostic(
+    code: str, message: str, loc: LocationAttr | None = None
+) -> Diagnostic:
+    span = location_attr_to_span(loc)
+    notes = None if span is not None else [NO_SPAN_NOTE]
     return Diagnostic(
         code=code,
         severity=Severity.ERROR,
         message=message,
-        notes=[NO_SPAN_NOTE],
+        primary_span=span,
+        notes=notes,
         source="ir",
     )
 
