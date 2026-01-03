@@ -103,3 +103,14 @@ def test_cli_netlist_missing_input_file(tmp_path: Path) -> None:
     stderr = getattr(result, "stderr", "")
     combined = f"{result.output}{stderr}"
     assert "PARSE-004" in combined
+
+
+def test_cli_help() -> None:
+    runner = CliRunner()
+    result = runner.invoke(cli, ["--help"])
+
+    assert result.exit_code == 0
+    output = result.output
+    assert "Commands:" in output
+    assert "netlist" in output
+    assert "Generate an ngspice netlist from ASDL." in output
