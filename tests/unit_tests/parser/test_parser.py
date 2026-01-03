@@ -10,7 +10,8 @@ def _basic_yaml() -> str:
             "    instances:",
             "      MN_IN: nfet_3p3 m=8",
             "    nets:",
-            "      $VIN: MN_IN.G",
+            "      $VIN:",
+            "        - MN_IN.G",
             "devices:",
             "  nfet_3p3:",
             "    ports: [D, G, S]",
@@ -36,7 +37,7 @@ def test_parse_string_success_attaches_locations() -> None:
 
     device_loc = document.devices["nfet_3p3"]._loc
     assert device_loc is not None
-    assert (device_loc.start_line, device_loc.start_col) == (9, 5)
+    assert (device_loc.start_line, device_loc.start_col) == (10, 5)
 
 
 def test_parse_string_invalid_root_type() -> None:
@@ -68,10 +69,12 @@ def test_parse_string_requires_top_with_multiple_modules() -> None:
             "modules:",
             "  mod_a:",
             "    nets:",
-            "      $A: I1.P",
+            "      $A:",
+            "        - I1.P",
             "  mod_b:",
             "    nets:",
-            "      $B: I2.P",
+            "      $B:",
+            "        - I2.P",
         ]
     )
 
@@ -90,7 +93,8 @@ def test_parse_string_forbids_exports_in_module() -> None:
             "modules:",
             "  my_mod:",
             "    nets:",
-            "      $VIN: MN_IN.G",
+            "      $VIN:",
+            "        - MN_IN.G",
             "    exports:",
             "      VIN: $VIN",
         ]
@@ -103,4 +107,23 @@ def test_parse_string_forbids_exports_in_module() -> None:
     diag = diagnostics[0]
     assert diag.code == "PARSE-003"
     assert diag.primary_span is not None
-    assert (diag.primary_span.start.line, diag.primary_span.start.col) == (5, 5)
+    assert (diag.primary_span.start.line, diag.primary_span.start.col) == (6, 5)
+
+
+def test_parse_string_rejects_endpoint_string() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  my_mod:",
+            "    nets:",
+            "      $VIN: MN_IN.G",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert "Endpoint lists must be YAML lists" in diag.message

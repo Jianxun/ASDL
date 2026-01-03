@@ -156,9 +156,11 @@ def _parse_instance_expr(expr: str) -> Tuple[str, Dict[str, str]]:
     return ref, params
 
 
-def _parse_endpoints(expr: str) -> List[EndpointAttr]:
+def _parse_endpoints(expr: List[str]) -> List[EndpointAttr]:
     endpoints: List[EndpointAttr] = []
-    for token in expr.split():
+    if isinstance(expr, str):
+        raise ValueError("Endpoint lists must be YAML lists of '<instance>.<pin>' strings")
+    for token in expr:
         if token.count(".") != 1:
             raise ValueError(f"Invalid endpoint token '{token}'; expected inst.pin")
         inst, pin = token.split(".", 1)

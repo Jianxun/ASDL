@@ -1,12 +1,28 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Annotated, Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr, StrictStr, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    PrivateAttr,
+    StrictStr,
+    field_validator,
+    model_validator,
+)
 
 ParamValue = Union[int, float, bool, str]
 InstanceExpr = StrictStr
-EndpointListExpr = StrictStr
+
+
+def _reject_string_endpoint_list(value: object) -> object:
+    if isinstance(value, str):
+        raise ValueError("Endpoint lists must be YAML lists of '<instance>.<pin>' strings")
+    return value
+
+
+EndpointListExpr = Annotated[List[StrictStr], BeforeValidator(_reject_string_endpoint_list)]
 InstancesBlock = Dict[str, InstanceExpr]
 NetsBlock = Dict[str, EndpointListExpr]
 

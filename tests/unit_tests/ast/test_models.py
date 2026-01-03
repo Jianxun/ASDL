@@ -12,8 +12,8 @@ def test_document_requires_modules_or_devices() -> None:
 def test_document_requires_top_when_multiple_modules() -> None:
     data = {
         "modules": {
-            "a": {"nets": {"$A": "I1.P"}},
-            "b": {"nets": {"$B": "I2.P"}},
+            "a": {"nets": {"$A": ["I1.P"]}},
+            "b": {"nets": {"$B": ["I2.P"]}},
         }
     }
     with pytest.raises(ValidationError):

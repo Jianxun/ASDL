@@ -15,8 +15,8 @@ def test_convert_document_to_nfir() -> None:
             "top": ModuleDecl(
                 instances={"M1": "nfet_3p3 m=2"},
                 nets={
-                    "$VIN": "M1.G",
-                    "VSS": "M1.S",
+                    "$VIN": ["M1.G"],
+                    "VSS": ["M1.S"],
                 },
             )
         },
@@ -76,7 +76,7 @@ def test_convert_document_rejects_invalid_instance_params() -> None:
 
 
 def test_convert_document_rejects_invalid_endpoints() -> None:
-    doc = AsdlDocument(modules={"m": ModuleDecl(nets={"$VIN": "M1G"})})
+    doc = AsdlDocument(modules={"m": ModuleDecl(nets={"$VIN": ["M1G"]})})
 
     design, diagnostics = convert_document(doc)
     assert design is None
