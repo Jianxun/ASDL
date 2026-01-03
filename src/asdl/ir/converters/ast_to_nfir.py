@@ -64,13 +64,12 @@ def _convert_module(
                 stripped_name = net_name[1:]
                 port_order.append(stripped_name)
                 net_name = stripped_name
-            try:
-                endpoints = _parse_endpoints(endpoint_expr)
-            except ValueError as exc:
+            endpoints, endpoint_error = _parse_endpoints(endpoint_expr)
+            if endpoint_error is not None:
                 diagnostics.append(
                     _diagnostic(
                         INVALID_ENDPOINT_EXPR,
-                        f"{exc} in module '{name}'",
+                        f"{endpoint_error} in module '{name}'",
                         module._loc,
                     )
                 )
@@ -80,13 +79,12 @@ def _convert_module(
 
     if module.instances:
         for inst_name, expr in module.instances.items():
-            try:
-                ref, params = _parse_instance_expr(expr)
-            except ValueError as exc:
+            ref, params, instance_error = _parse_instance_expr(expr)
+            if instance_error is not None:
                 diagnostics.append(
                     _diagnostic(
                         INVALID_INSTANCE_EXPR,
-                        f"{exc} in module '{name}'",
+                        f"{instance_error} in module '{name}'",
                         module._loc,
                     )
                 )
@@ -140,32 +138,34 @@ def _convert_backend(name: str, backend: DeviceBackendDecl) -> BackendOp:
     )
 
 
-def _parse_instance_expr(expr: str) -> Tuple[str, Dict[str, str]]:
+def _parse_instance_expr(expr: str) -> Tuple[Optional[str], Dict[str, str], Optional[str]]:
     tokens = expr.split()
     if not tokens:
-        raise ValueError("Instance expression must start with a model name")
+        return None, {}, "Instance expression must start with a model name"
     ref = tokens[0]
     params: Dict[str, str] = {}
     for token in tokens[1:]:
         if "=" not in token:
-            raise ValueError(f"Invalid instance param token '{token}'; expected key=value")
+            return None, {}, f"Invalid instance param token '{token}'; expected key=value"
         key, value = token.split("=", 1)
         if not key or not value:
-            raise ValueError(f"Invalid instance param token '{token}'; expected key=value")
+            return None, {}, f"Invalid instance param token '{token}'; expected key=value"
         params[key] = value
-    return ref, params
+    return ref, params, None
 
 
-def _parse_endpoints(expr: str) -> List[EndpointAttr]:
+def _parse_endpoints(expr: List[str]) -> Tuple[List[EndpointAttr], Optional[str]]:
     endpoints: List[EndpointAttr] = []
-    for token in expr.split():
+    if isinstance(expr, str):
+        return [], "Endpoint lists must be YAML lists of '<instance>.<pin>' strings"
+    for token in expr:
         if token.count(".") != 1:
-            raise ValueError(f"Invalid endpoint token '{token}'; expected inst.pin")
+            return [], f"Invalid endpoint token '{token}'; expected inst.pin"
         inst, pin = token.split(".", 1)
         if not inst or not pin:
-            raise ValueError(f"Invalid endpoint token '{token}'; expected inst.pin")
+            return [], f"Invalid endpoint token '{token}'; expected inst.pin"
         endpoints.append(EndpointAttr(StringAttr(inst), StringAttr(pin)))
-    return endpoints
+    return endpoints, None
 
 
 def _to_string_dict_attr(
