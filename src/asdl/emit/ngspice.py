@@ -4,10 +4,11 @@ from dataclasses import dataclass
 import string
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from xdsl.dialects.builtin import DictionaryAttr, StringAttr
+from xdsl.dialects.builtin import DictionaryAttr, LocationAttr, StringAttr
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.ir.ifir import BackendOp, DesignOp, DeviceOp, InstanceOp, ModuleOp
+from asdl.ir.location import location_attr_to_span
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -159,6 +160,7 @@ def _emit_instance(
                 UNKNOWN_REFERENCE,
                 f"Instance '{instance.name_attr.data}' references unknown symbol '{ref_name}'",
                 Severity.ERROR,
+                instance.src,
             )
         )
         return None, True
@@ -171,6 +173,7 @@ def _emit_instance(
                 MISSING_BACKEND,
                 f"Device '{ref_name}' has no backend '{options.backend_name}'",
                 Severity.ERROR,
+                device.src,
             )
         )
         return None, True
@@ -190,17 +193,19 @@ def _emit_instance(
         inst_params,
         instance_name=instance.name_attr.data,
         device_name=ref_name,
+        loc=instance.src,
     )
     diagnostics.extend(param_diags)
 
     template = backend.template.data
-    if not _validate_template(template, ref_name, diagnostics):
+    if not _validate_template(template, ref_name, diagnostics, loc=backend.src):
         return None, True
 
     props = _filter_props(
         _dict_attr_to_strings(backend.props),
         diagnostics,
         device_name=ref_name,
+        loc=backend.src,
     )
     template_values = {
         "name": instance.name_attr.data,
@@ -216,6 +221,7 @@ def _emit_instance(
                 UNKNOWN_REFERENCE,
                 f"Backend template for '{ref_name}' references unknown placeholder '{exc.args[0]}'",
                 Severity.ERROR,
+                backend.src,
             )
         )
         return None, True
@@ -225,6 +231,7 @@ def _emit_instance(
                 MALFORMED_TEMPLATE,
                 f"Backend template for '{ref_name}' is malformed: {exc}",
                 Severity.ERROR,
+                backend.src,
             )
         )
         return None, True
@@ -251,6 +258,7 @@ def _ordered_conns(
                 MISSING_CONN,
                 f"Instance '{instance.name_attr.data}' is missing conns for ports: {missing_str}",
                 Severity.ERROR,
+                instance.src,
             )
         )
         had_error = True
@@ -264,6 +272,7 @@ def _ordered_conns(
                 UNKNOWN_CONN_PORT,
                 f"Instance '{instance.name_attr.data}' has conns for unknown ports: {unknown_str}",
                 Severity.ERROR,
+                instance.src,
             )
         )
         had_error = True
@@ -282,7 +291,11 @@ def _select_backend(device: DeviceOp, backend_name: str) -> Optional[BackendOp]:
 
 
 def _validate_template(
-    template: str, device_name: str, diagnostics: List[Diagnostic]
+    template: str,
+    device_name: str,
+    diagnostics: List[Diagnostic],
+    *,
+    loc: LocationAttr | None = None,
 ) -> bool:
     try:
         placeholders = _template_field_roots(template)
@@ -292,6 +305,7 @@ def _validate_template(
                 MALFORMED_TEMPLATE,
                 f"Backend template for '{device_name}' is malformed: {exc}",
                 Severity.ERROR,
+                loc,
             )
         )
         return False
@@ -306,6 +320,7 @@ def _validate_template(
                     f"placeholders: {missing_list}"
                 ),
                 Severity.ERROR,
+                loc,
             )
         )
         return False
@@ -329,6 +344,7 @@ def _filter_props(
     diagnostics: List[Diagnostic],
     *,
     device_name: str,
+    loc: LocationAttr | None = None,
 ) -> Dict[str, str]:
     filtered: Dict[str, str] = {}
     for key, value in props.items():
@@ -341,6 +357,7 @@ def _filter_props(
                         f"reserved placeholder '{key}'"
                     ),
                     Severity.WARNING,
+                    loc,
                 )
             )
             continue
@@ -369,6 +386,7 @@ def _merge_params(
     *,
     instance_name: str,
     device_name: str,
+    loc: LocationAttr | None = None,
 ) -> Tuple[str, List[Diagnostic]]:
     diagnostics: List[Diagnostic] = []
     order: List[str] = list(device_params.keys())
@@ -391,6 +409,7 @@ def _merge_params(
                         f"on device '{device_name}'"
                     ),
                     Severity.WARNING,
+                    loc,
                 )
             )
             continue
@@ -406,13 +425,17 @@ def _format_subckt_line(name: str, ports: List[str]) -> str:
     return f".subckt {name}"
 
 
-def _diagnostic(code: str, message: str, severity: Severity) -> Diagnostic:
+def _diagnostic(
+    code: str, message: str, severity: Severity, loc: LocationAttr | None = None
+) -> Diagnostic:
+    span = location_attr_to_span(loc)
+    notes = None if span is not None else [NO_SPAN_NOTE]
     return Diagnostic(
         code=code,
         severity=severity,
         message=message,
-        primary_span=None,
-        notes=[NO_SPAN_NOTE],
+        primary_span=span,
+        notes=notes,
         source="emit",
     )
 

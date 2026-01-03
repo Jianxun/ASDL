@@ -14,6 +14,7 @@
 - T-043 list-only endpoint authoring enforced in AST/converter with parser coverage merged (PR #32).
 - T-037 PARSE-003 diagnostics updated with endpoint list and instance expr hints merged (PR #33).
 - T-041 device ports optional support merged with AST/IR/netlist coverage (PR #34).
+- T-035 IFIR/emit diagnostics now attach source spans where available (PR #35).
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ast`
@@ -22,10 +23,10 @@
 - `venv/bin/pytest tests/unit_tests/netlist`
 - `venv/bin/pytest tests/unit_tests/e2e`
 - `venv/bin/pytest tests/unit_tests/cli`
+- `venv/bin/pytest tests/unit_tests/ir tests/unit_tests/netlist`
 
 ## Next steps (1-3)
 1. Start Bundle B (T-038 netlist placeholders + T-039 CLI help).
-2. Triage T-035 IFIR diagnostic span mapping.
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.
