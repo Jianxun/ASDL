@@ -46,7 +46,10 @@ def netlist(
     verify: bool,
     top_as_subckt: bool,
 ) -> None:
-    """Generate an ngspice netlist from ASDL."""
+    """Generate an ngspice netlist from ASDL.
+
+    Supported placeholders: {name}, {ports} (optional). {params} is deprecated.
+    """
     diagnostics: List[Diagnostic] = []
 
     document, parse_diags = parse_file(str(input_file))

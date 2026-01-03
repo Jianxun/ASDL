@@ -35,7 +35,7 @@ def _pipeline_yaml() -> str:
             "      r: 1k",
             "    backends:",
             "      ngspice:",
-            "        template: \"{name} {conns} {params}\"",
+            "        template: \"{name} {ports} {params}\"",
         ]
     )
 
