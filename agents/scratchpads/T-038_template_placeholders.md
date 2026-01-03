@@ -30,6 +30,7 @@
 - 2026-01-02: Updated ngspice emitter placeholder handling and whitespace cleanup.
 - 2026-01-02: Refreshed tests/fixtures to use `{ports}` and adjusted diagnostics expectations.
 - 2026-01-02: Updated CLI help text for supported placeholders.
+- 2026-01-02: Opened PR https://github.com/Jianxun/ASDL/pull/36.
 
 ## Patch summary
 - src/asdl/emit/ngspice.py: swap `{conns}` -> `{ports}`, make `{ports}` optional, remove reserved prop enforcement, and refine template cleanup.
@@ -48,4 +49,4 @@
 - None.
 
 ## Next steps
-- Update handoff and task status; prep PR when approved.
+- Await Architect review of PR #36.
