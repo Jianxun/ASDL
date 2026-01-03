@@ -16,6 +16,8 @@ PARSE_ROOT_ERROR = "PARSE-002"
 PARSE_VALIDATION_ERROR = "PARSE-003"
 PARSE_FILE_ERROR = "PARSE-004"
 NO_SPAN_NOTE = "No source span available."
+ENDPOINT_LIST_NOTE = "Endpoint lists must be YAML lists of '<instance>.<pin>' strings"
+INSTANCE_EXPR_NOTE = "Instance expressions use '<model> key=value ...' format"
 
 
 def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]:
@@ -116,8 +118,12 @@ def _validation_errors_to_diagnostics(
         prefer_key = entry.get("type") == "extra_forbidden"
         location = location_index.lookup_with_fallback(loc, prefer_key=prefer_key)
         span = location.to_source_span() if location else None
-        notes = None if span is not None else [NO_SPAN_NOTE]
-        message = entry.get("msg", "Validation error")
+        message = _format_validation_message(entry)
+        notes = _hint_notes(entry)
+        if span is None:
+            notes.append(NO_SPAN_NOTE)
+        if not notes:
+            notes = None
         path_str = _format_path(loc)
         diagnostics.append(
             Diagnostic(
@@ -130,6 +136,27 @@ def _validation_errors_to_diagnostics(
             )
         )
     return diagnostics
+
+
+def _format_validation_message(entry: dict) -> str:
+    message = entry.get("msg", "Validation error")
+    ctx = entry.get("ctx") or {}
+    error = ctx.get("error")
+    if isinstance(error, ValueError):
+        error_message = str(error)
+        if ENDPOINT_LIST_NOTE in error_message:
+            return error_message
+    return message
+
+
+def _hint_notes(entry: dict) -> List[str]:
+    notes: List[str] = []
+    loc = entry.get("loc", ())
+    if _path_has_segment(loc, "nets"):
+        notes.append(ENDPOINT_LIST_NOTE)
+    if _path_has_segment(loc, "instances"):
+        notes.append(INSTANCE_EXPR_NOTE)
+    return notes
 
 
 def _attach_locations(value: Any, location_index: LocationIndex, path: Iterable[PathSegment]) -> None:
@@ -162,6 +189,10 @@ def _format_path(path: Iterable[PathSegment]) -> str:
                 parts.append(".")
             parts.append(str(segment))
     return "".join(parts) if parts else "<root>"
+
+
+def _path_has_segment(path: Iterable[PathSegment], segment: str) -> bool:
+    return any(isinstance(item, str) and item == segment for item in path)
 
 
 def _span_at(file_label: str, line: int, col: int) -> SourceSpan:

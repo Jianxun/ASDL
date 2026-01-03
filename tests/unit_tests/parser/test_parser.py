@@ -127,3 +127,25 @@ def test_parse_string_rejects_endpoint_string() -> None:
     diag = diagnostics[0]
     assert diag.code == "PARSE-003"
     assert "Endpoint lists must be YAML lists" in diag.message
+    assert diag.notes is not None
+    assert "Endpoint lists must be YAML lists of '<instance>.<pin>' strings" in diag.notes
+
+
+def test_parse_string_invalid_instance_expr_includes_hint() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  my_mod:",
+            "    instances:",
+            "      M1: 123",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert diag.notes is not None
+    assert "Instance expressions use '<model> key=value ...' format" in diag.notes
