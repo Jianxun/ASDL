@@ -52,4 +52,5 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2025-12-30: Archived all non-AST code/tests under `legacy/`; active refactor surface is `src/asdl/ast/`.
 - 2026-01-01: MVP pipeline set to AST -> NFIR -> IFIR -> ngspice emission; CIR removed for MVP and NLIR renamed to IFIR with instance-first semantics.
 - 2026-01-02: Netlist template placeholders: hard switch from `{conns}` to `{ports}`; `{ports}` optional; `{params}` deprecated (no reserved-status enforcement). Device `ports` field becomes optional in the AST schema to permit templates that do not use ports.
+- 2026-01-03: Individual merged parameter values exposed as template placeholders. Templates can now reference device/backend/instance params directly (e.g., `{L}`, `{W}`, `{NF}`, `{m}`). Backward compat preserved for `{params}` formatted string. Props override params if names collide.
 - 2026-01-02: ADR-0005 -- Pattern expansion uses `|` for alternatives and `;` for splicing; no whitespace around delimiters; left-to-right concatenation. Endpoint lists become YAML lists only once the delimiter change lands.

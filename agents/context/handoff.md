@@ -17,6 +17,7 @@
 - T-035 IFIR/emit diagnostics now attach source spans where available (PR #35).
 - T-038 netlist template placeholders updated to `{ports}` (optional); reserved placeholder enforcement removed; CLI help/tests updated (PR #36).
 - T-039 CLI help test added to verify command listing (PR #37).
+- T-046 individual merged parameter values now exposed as template placeholders; templates can reference device/backend/instance params directly (e.g., `{L}`, `{W}`, `{NF}`, `{m}`).
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ast`
@@ -28,7 +29,7 @@
 - `venv/bin/pytest tests/unit_tests/ir tests/unit_tests/netlist`
 
 ## Next steps (1-3)
-1. Review and merge PRs #36 (T-038) and #37 (T-039) when approved.
+1. None currently - all recent tasks completed and verified.
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.
