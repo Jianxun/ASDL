@@ -11,6 +11,7 @@
 - ngspice emitter from IFIR implemented with MVP netlist tests.
 - MVP pipeline orchestrator implemented with xDSL pass pipeline and an end-to-end pipeline test.
 - T-036 CLI netlist command implemented under `src/asdl/cli/` with tests passing locally; PR open: https://github.com/Jianxun/ASDL/pull/31.
+- T-043 list-only endpoint authoring enforced in AST/converter with parser coverage; PR open: https://github.com/Jianxun/ASDL/pull/32.
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ir`
@@ -20,8 +21,8 @@
 - `venv/bin/pytest tests/unit_tests/cli`
 
 ## Next steps (1-3)
-1. Await Architect review/approval on PR #31.
-2. Triage T-035 on IFIR diagnostic span mapping once CLI work lands.
+1. Await Architect review/approval on PR #31 and PR #32.
+2. Start Bundle A follow-on (T-041, then T-037) after PRs land.
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.
