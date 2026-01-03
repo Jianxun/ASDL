@@ -88,6 +88,22 @@ def test_emit_ngspice_top_as_subckt_option() -> None:
     assert lines[-1] == ".ends top"
 
 
+def test_emit_ngspice_allows_portless_device() -> None:
+    backend = BackendOp(
+        name="ngspice",
+        template="X{name} {conns} {params}",
+    )
+    device = DeviceOp(name="probe", ports=[], region=[backend])
+    instance = InstanceOp(name="P1", ref="probe", conns=[])
+    module = ModuleOp(name="top", port_order=[], region=[instance])
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = emit_ngspice(design)
+
+    assert diagnostics == []
+    assert netlist == "\n".join(["*.subckt top", "XP1", "*.ends top"])
+
+
 def test_emit_ngspice_requires_top_when_multiple_modules() -> None:
     module_a = ModuleOp(name="a", port_order=[], region=[])
     module_b = ModuleOp(name="b", port_order=[], region=[])
