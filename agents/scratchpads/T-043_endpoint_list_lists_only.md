@@ -27,10 +27,11 @@
 ## Progress log
 - 2026-01-02: Created branch `feature/T-043-endpoint-list-only`, set task to In Progress, initialized scratchpad.
 - 2026-01-02: Updated AST endpoint list type/validation and AST->NFIR parsing; refreshed tests/fixtures for list-only endpoints and added parser coverage.
+- 2026-01-02: Removed converter exceptions in endpoint/instance parsing; return diagnostics instead.
 
 ## Patch summary
 - `src/asdl/ast/models.py`: enforce list-only endpoint lists with a validator message.
-- `src/asdl/ir/converters/ast_to_nfir.py`: parse list-based endpoints and guard against string inputs.
+- `src/asdl/ir/converters/ast_to_nfir.py`: parse list-based endpoints without raising; return diagnostics on errors.
 - `tests/unit_tests/ast/test_models.py`: update nets fixtures to list syntax.
 - `tests/unit_tests/parser/test_parser.py`: update YAML fixtures for list endpoints, add list-only error test, adjust line expectations.
 - `tests/unit_tests/ir/test_converter.py`: update nets fixtures to list syntax.
