@@ -186,7 +186,7 @@ def _emit_instance(
     device_params = _dict_attr_to_strings(device.params)
     backend_params = _dict_attr_to_strings(backend.params)
     inst_params = _dict_attr_to_strings(instance.params)
-    params_str, param_diags = _merge_params(
+    merged_params, params_str, param_diags = _merge_params(
         device_params,
         backend_params,
         inst_params,
@@ -207,6 +207,7 @@ def _emit_instance(
         "name": instance.name_attr.data,
         "ports": ports_str,
     }
+    template_values.update(merged_params)
     template_values.update(props)
     try:
         rendered = template.format_map(template_values)
@@ -361,7 +362,7 @@ def _merge_params(
     instance_name: str,
     device_name: str,
     loc: LocationAttr | None = None,
-) -> Tuple[str, List[Diagnostic]]:
+) -> Tuple[Dict[str, str], str, List[Diagnostic]]:
     diagnostics: List[Diagnostic] = []
     order: List[str] = list(device_params.keys())
     for key in backend_params.keys():
@@ -390,7 +391,7 @@ def _merge_params(
         merged[key] = value
 
     tokens = [f"{key}={merged[key]}" for key in order if key in merged]
-    return " ".join(tokens), diagnostics
+    return merged, " ".join(tokens), diagnostics
 
 
 def _format_subckt_line(name: str, ports: List[str]) -> str:
