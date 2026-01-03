@@ -28,7 +28,7 @@ def _loc(line: int, col: int) -> FileLineColLoc:
 def test_emit_ngspice_device_params_and_top_default() -> None:
     backend = BackendOp(
         name="ngspice",
-        template="{name} {conns} {model} {params}",
+        template="{name} {ports} {model} {params}",
         params=_dict_attr({"l": "120n", "m": "2"}),
         props=_dict_attr({"model": "nfet"}),
     )
@@ -99,7 +99,7 @@ def test_emit_ngspice_top_as_subckt_option() -> None:
 def test_emit_ngspice_allows_portless_device() -> None:
     backend = BackendOp(
         name="ngspice",
-        template="X{name} {conns} {params}",
+        template="X{name} {params}",
     )
     device = DeviceOp(name="probe", ports=[], region=[backend])
     instance = InstanceOp(name="P1", ref="probe", conns=[])
@@ -128,7 +128,7 @@ def test_emit_ngspice_requires_top_when_multiple_modules() -> None:
 def test_emit_ngspice_requires_template_placeholders() -> None:
     backend = BackendOp(
         name="ngspice",
-        template="{name} {conns} {model}",
+        template="{ports} {model}",
         props=_dict_attr({"model": "nfet"}),
         src=_loc(7, 1),
     )
@@ -159,7 +159,7 @@ def test_emit_ngspice_requires_template_placeholders() -> None:
 def test_emit_ngspice_reports_malformed_template() -> None:
     backend = BackendOp(
         name="ngspice",
-        template="{name} {conns",
+        template="{name} {ports",
     )
     device = DeviceOp(name="nfet", ports=["D"], region=[backend])
     instance = InstanceOp(
@@ -182,10 +182,10 @@ def test_emit_ngspice_reports_malformed_template() -> None:
     assert diagnostics[0].code == format_code("EMIT", 8)
 
 
-def test_emit_ngspice_ignores_reserved_prop_collisions() -> None:
+def test_emit_ngspice_allows_prop_override() -> None:
     backend = BackendOp(
         name="ngspice",
-        template="R{name} {conns} {params}",
+        template="R{name} {ports} {params}",
         props=_dict_attr({"name": "OVERRIDE"}),
     )
     device = DeviceOp(name="res", ports=["P"], region=[backend])
@@ -204,7 +204,5 @@ def test_emit_ngspice_ignores_reserved_prop_collisions() -> None:
     netlist, diagnostics = emit_ngspice(design)
 
     assert netlist is not None
-    assert "RR1 VOUT" in netlist
-    assert len(diagnostics) == 1
-    assert diagnostics[0].severity is Severity.WARNING
-    assert diagnostics[0].code == format_code("EMIT", 9)
+    assert "ROVERRIDE VOUT" in netlist
+    assert diagnostics == []

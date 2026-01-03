@@ -20,9 +20,8 @@ MISSING_CONN = format_code("EMIT", 5)
 UNKNOWN_CONN_PORT = format_code("EMIT", 6)
 MISSING_PLACEHOLDER = format_code("EMIT", 7)
 MALFORMED_TEMPLATE = format_code("EMIT", 8)
-RESERVED_PLACEHOLDER = format_code("EMIT", 9)
 
-REQUIRED_PLACEHOLDERS = {"name", "conns", "params"}
+REQUIRED_PLACEHOLDERS = {"name"}
 
 
 @dataclass(frozen=True)
@@ -182,7 +181,7 @@ def _emit_instance(
     conns, had_error = _ordered_conns(instance, port_order, diagnostics)
     if had_error:
         return None, True
-    conn_str = " ".join(conns)
+    ports_str = " ".join(conns)
 
     device_params = _dict_attr_to_strings(device.params)
     backend_params = _dict_attr_to_strings(backend.params)
@@ -198,19 +197,15 @@ def _emit_instance(
     diagnostics.extend(param_diags)
 
     template = backend.template.data
-    if not _validate_template(template, ref_name, diagnostics, loc=backend.src):
+    placeholders = _validate_template(template, ref_name, diagnostics, loc=backend.src)
+    if placeholders is None:
         return None, True
 
-    props = _filter_props(
-        _dict_attr_to_strings(backend.props),
-        diagnostics,
-        device_name=ref_name,
-        loc=backend.src,
-    )
+    props = _dict_attr_to_strings(backend.props)
+    props.setdefault("params", params_str)
     template_values = {
         "name": instance.name_attr.data,
-        "conns": conn_str,
-        "params": params_str,
+        "ports": ports_str,
     }
     template_values.update(props)
     try:
@@ -236,7 +231,12 @@ def _emit_instance(
         )
         return None, True
 
-    if not params_str:
+    should_collapse = False
+    if "ports" in placeholders and not ports_str:
+        should_collapse = True
+    if "params" in placeholders and not params_str:
+        should_collapse = True
+    if should_collapse:
         rendered = " ".join(rendered.split())
     return rendered, False
 
@@ -296,7 +296,7 @@ def _validate_template(
     diagnostics: List[Diagnostic],
     *,
     loc: LocationAttr | None = None,
-) -> bool:
+) -> Optional[set[str]]:
     try:
         placeholders = _template_field_roots(template)
     except ValueError as exc:
@@ -308,7 +308,7 @@ def _validate_template(
                 loc,
             )
         )
-        return False
+        return None
     missing = REQUIRED_PLACEHOLDERS - placeholders
     if missing:
         missing_list = ", ".join(sorted(missing))
@@ -323,8 +323,8 @@ def _validate_template(
                 loc,
             )
         )
-        return False
-    return True
+        return None
+    return placeholders
 
 
 def _template_field_roots(template: str) -> set[str]:
@@ -337,32 +337,6 @@ def _template_field_roots(template: str) -> set[str]:
         if root:
             fields.add(root)
     return fields
-
-
-def _filter_props(
-    props: Dict[str, str],
-    diagnostics: List[Diagnostic],
-    *,
-    device_name: str,
-    loc: LocationAttr | None = None,
-) -> Dict[str, str]:
-    filtered: Dict[str, str] = {}
-    for key, value in props.items():
-        if key in REQUIRED_PLACEHOLDERS:
-            diagnostics.append(
-                _diagnostic(
-                    RESERVED_PLACEHOLDER,
-                    (
-                        f"Backend props for '{device_name}' attempt to override "
-                        f"reserved placeholder '{key}'"
-                    ),
-                    Severity.WARNING,
-                    loc,
-                )
-            )
-            continue
-        filtered[key] = value
-    return filtered
 
 
 def _dict_attr_to_strings(values: Optional[DictionaryAttr]) -> Dict[str, str]:

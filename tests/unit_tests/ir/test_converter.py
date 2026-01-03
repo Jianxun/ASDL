@@ -67,7 +67,7 @@ def test_convert_document_allows_portless_device() -> None:
     doc = AsdlDocument(
         devices={
             "res": DeviceDecl(
-                backends={"ngspice": DeviceBackendDecl(template="R{name} {conns} {params}")}
+                backends={"ngspice": DeviceBackendDecl(template="R{name} {ports} {params}")}
             )
         }
     )

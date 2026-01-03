@@ -32,7 +32,7 @@ def test_device_decl_requires_non_empty_backends() -> None:
 
 def test_device_decl_allows_missing_ports() -> None:
     device = DeviceDecl.model_validate(
-        {"backends": {"ngspice": {"template": "R{name} {conns} {params}"}}}
+        {"backends": {"ngspice": {"template": "R{name} {ports} {params}"}}}
     )
     assert device.ports is None
 
