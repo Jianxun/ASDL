@@ -29,7 +29,7 @@
 - `venv/bin/pytest tests/unit_tests/ir tests/unit_tests/netlist`
 
 ## Next steps (1-3)
-1. None currently - all recent tasks completed and verified.
+1. T-047: Refactor emitter to use backend config with system devices per ADR-0006 (Ready for Executor).
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.

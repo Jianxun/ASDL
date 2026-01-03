@@ -4,11 +4,10 @@
 - See `agents/context/okrs.md`.
 
 ## Current Sprint
-- None.
+- T-047 | Status: Ready | Owner: Executor | DoD: Refactor ngspice emitter to use backend config with system devices per ADR-0006. Create `src/asdl/emit/backend_config.py` with backend config loading/validation. Create `config/backends.yaml` with ngspice system device definitions. Refactor `src/asdl/emit/ngspice.py` to use system device templates for subcircuit headers/footers (top vs non-top), subcircuit calls, and optional netlist headers/footers. Remove hardcoded ngspice syntax (`_format_subckt_line`, inline header/footer strings, hardcoded `X{name}...` logic). Add unit tests for backend config loading and system device rendering. Verify all existing netlist tests pass with byte-for-byte identical output. Update emission spec with system device documentation. | Verify: `pytest tests/unit_tests/emit -v && pytest tests/unit_tests/netlist -v` | Links: scratchpad `agents/scratchpads/T-047_system_devices.md`, ADR-0006 `agents/adr/ADR-0006-system-devices.md`, spec `docs/specs_mvp/spec_netlist_emission_mvp.md`.
 
 ## Backlog
-## Execution grouping (recommendation)
-- Bundle B: T-038 + T-039 (emitter + CLI help).
+- None.
 
 ## Exploration candidates (informal)
 - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.

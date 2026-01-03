@@ -31,6 +31,9 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Converters MUST NOT silently drop endpoints, connections, or nets; any missing references must emit diagnostics.
 - Converters MUST NOT raise `ValueError` for malformed IR; emit diagnostics and return failure indicators instead.
 - Instance params must not introduce new device params; emit a warning and ignore unknown keys.
+- System device names (prefixed `__`) are reserved; regular device names MUST NOT use this prefix.
+- Backend config file MUST define all required system devices; missing required system devices emit `MISSING_BACKEND` error and abort emission.
+- Backend config location determined by `ASDL_BACKEND_CONFIG` env var; defaults to `config/backends.yaml`.
 - Use project venv at `venv/` for all commands/tests.
 - Keep contract/map/tasks/handoff aligned with repository reality; update after merges or major decisions.
 - Legacy `context/todo_*.md` remain unchanged until explicitly migrated.
@@ -53,4 +56,5 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-01-01: MVP pipeline set to AST -> NFIR -> IFIR -> ngspice emission; CIR removed for MVP and NLIR renamed to IFIR with instance-first semantics.
 - 2026-01-02: Netlist template placeholders: hard switch from `{conns}` to `{ports}`; `{ports}` optional; `{params}` deprecated (no reserved-status enforcement). Device `ports` field becomes optional in the AST schema to permit templates that do not use ports.
 - 2026-01-03: Individual merged parameter values exposed as template placeholders. Templates can now reference device/backend/instance params directly (e.g., `{L}`, `{W}`, `{NF}`, `{m}`). Backward compat preserved for `{params}` formatted string. Props override params if names collide.
+- 2026-01-03: ADR-0006 -- System devices for backend structural templates. System devices (prefixed `__`) define backend-specific structural elements (subcircuit headers, footers, module calls) in external `backends.yaml`. Required system devices: `__subckt_header__`, `__subckt_footer__`, `__top_header__`, `__top_footer__`, `__subckt_call__`. Optional: `__netlist_header__`, `__netlist_footer__`. Backend config location via `ASDL_BACKEND_CONFIG` env var; defaults to `config/backends.yaml`. Missing required system devices = fatal error.
 - 2026-01-02: ADR-0005 -- Pattern expansion uses `|` for alternatives and `;` for splicing; no whitespace around delimiters; left-to-right concatenation. Endpoint lists become YAML lists only once the delimiter change lands.
