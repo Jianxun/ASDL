@@ -10,9 +10,9 @@
 - ASDL_IFIR dialect + NFIR->IFIR conversion implemented with unit tests.
 - ngspice emitter from IFIR implemented with MVP netlist tests.
 - MVP pipeline orchestrator implemented with xDSL pass pipeline and an end-to-end pipeline test.
-- T-036 CLI netlist command implemented under `src/asdl/cli/` with tests passing locally; PR open: https://github.com/Jianxun/ASDL/pull/31.
-- T-043 list-only endpoint authoring enforced in AST/converter with parser coverage; PR open: https://github.com/Jianxun/ASDL/pull/32.
-- T-037 PARSE-003 diagnostics updated with endpoint list and instance expr hints; PR open: https://github.com/Jianxun/ASDL/pull/33.
+- T-036 CLI netlist command merged under `src/asdl/cli/` with tests passing locally (PR #31).
+- T-043 list-only endpoint authoring enforced in AST/converter with parser coverage merged (PR #32).
+- T-037 PARSE-003 diagnostics updated with endpoint list and instance expr hints merged (PR #33).
 - T-041 device ports optional support merged with AST/IR/netlist coverage (PR #34).
 
 ## Last verified status
@@ -24,7 +24,8 @@
 - `venv/bin/pytest tests/unit_tests/cli`
 
 ## Next steps (1-3)
-1. Await Architect review/approval on PR #31, PR #32, and PR #33.
+1. Start Bundle B (T-038 netlist placeholders + T-039 CLI help).
+2. Triage T-035 IFIR diagnostic span mapping.
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.
