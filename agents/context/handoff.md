@@ -13,8 +13,10 @@
 - T-036 CLI netlist command implemented under `src/asdl/cli/` with tests passing locally; PR open: https://github.com/Jianxun/ASDL/pull/31.
 - T-043 list-only endpoint authoring enforced in AST/converter with parser coverage; PR open: https://github.com/Jianxun/ASDL/pull/32.
 - T-037 PARSE-003 diagnostics updated with endpoint list and instance expr hints; PR open: https://github.com/Jianxun/ASDL/pull/33.
+- T-041 device ports optional support implemented with AST/IR/netlist coverage; PR open: https://github.com/Jianxun/ASDL/pull/34.
 
 ## Last verified status
+- `venv/bin/pytest tests/unit_tests/ast`
 - `venv/bin/pytest tests/unit_tests/ir`
 - `venv/bin/pytest tests/unit_tests/parser`
 - `venv/bin/pytest tests/unit_tests/netlist`
@@ -23,7 +25,7 @@
 
 ## Next steps (1-3)
 1. Await Architect review/approval on PR #31, PR #32, and PR #33.
-2. Start Bundle A follow-on (T-041) after PRs land.
+2. Await Architect review/approval on PR #34.
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.

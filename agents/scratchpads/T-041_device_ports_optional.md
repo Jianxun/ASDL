@@ -25,6 +25,7 @@
 - Created feature branch and scratchpad.
 - Inspected AST models, converters, emitter, and relevant tests for port handling.
 - Updated AST device model, AST->NFIR conversion, and added tests (AST/IR/netlist) for portless devices.
+- Opened PR https://github.com/Jianxun/ASDL/pull/34.
 
 ## Patch summary
 - src/asdl/ast/models.py: make `DeviceDecl.ports` optional.
@@ -44,4 +45,4 @@
 - None yet.
 
 ## Next steps
-1. Update handoff and tasks status after final summary.
+1. Await Architect review/approval for PR #34.
