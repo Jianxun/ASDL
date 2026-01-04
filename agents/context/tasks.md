@@ -4,7 +4,7 @@
 - See `agents/context/okrs.md`.
 
 ## Current Sprint
-- None.
+- T-048 | Status: Ready | Owner: Architect | DoD: Replace ngspice-specific emitter with unified netlist emitter (new module/package). Remove `emit_ngspice` and `src/asdl/emit/ngspice.py` entirely; update `src/asdl/emit/__init__.py` and all call sites/tests. Add dedicated netlist verification pass under `src/asdl/emit/` (xDSL ModulePass) and run it before lowering/rendering. Add CLI `--backend` (default `sim.ngspice`) and drive output extension from `config/backends.yaml` per-backend `extension` key (verbatim). Update backend config schema to `extension`, `comment_prefix`, `templates`; adjust loader/tests accordingly. Ensure top module emits no wrapper when `top_as_subckt` is false. Update specs and rebaseline netlist tests to new backend naming. | Verify: `pytest tests/unit_tests/emit -v && pytest tests/unit_tests/netlist -v && pytest tests/unit_tests/cli -v && pytest tests/unit_tests/e2e -v` | Links: scratchpad `agents/scratchpads/T-048_unified_netlist_emitter.md`.
 
 ## Backlog
 - None.

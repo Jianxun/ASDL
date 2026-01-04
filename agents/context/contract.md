@@ -19,6 +19,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - `agents/context/handoff.md`: succinct current state, last verified status, next 1-3 steps, risks.
 - `agents/context/codebase_map.md`: navigation reference; update when files move or new subsystems appear.
 - `agents/context/lessons.md`: durable lessons/best practices; ADRs go in `agents/adr/` and are referenced here.
+- Netlist emission uses backend names (e.g., `sim.ngspice`) as stable identifiers in CLI and config; the CLI exposes `--backend` with default `sim.ngspice`.
+- Backend config schema (`config/backends.yaml` or `ASDL_BACKEND_CONFIG`) must include per-backend `templates`, `extension` (verbatim output suffix), and `comment_prefix`.
 - Net-first authoring uses YAML map order for `nets:` when order matters, including port order from `$`-prefixed net keys; the parser must preserve source order. Internal IR uses explicit lists; uniqueness is enforced by verification passes, not by dict key uniqueness.
 - Diagnostic schema is centralized (code, severity, message, primary span, labels, notes, help, fix-its, source); locations use file + line/col spans; all pipeline stages emit diagnostics via this contract.
 - AST->NFIR converter returns `(DesignOp | None, diagnostics)`; invalid instance or endpoint tokens emit `IR-001`/`IR-002` with `Severity.ERROR` and return `None`.
@@ -33,6 +35,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Instance params must not introduce new device params; emit a warning and ignore unknown keys.
 - System device names (prefixed `__`) are reserved; regular device names MUST NOT use this prefix.
 - Backend config file MUST define all required system devices; missing required system devices emit `MISSING_BACKEND` error and abort emission.
+- When `top_as_subckt` is false, netlist emission MUST NOT emit any top-level subckt wrapper lines.
 - Backend config location determined by `ASDL_BACKEND_CONFIG` env var; defaults to `config/backends.yaml`.
 - Use project venv at `venv/` for all commands/tests.
 - Keep contract/map/tasks/handoff aligned with repository reality; update after merges or major decisions.
@@ -56,5 +59,6 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-01-01: MVP pipeline set to AST -> NFIR -> IFIR -> ngspice emission; CIR removed for MVP and NLIR renamed to IFIR with instance-first semantics.
 - 2026-01-02: Netlist template placeholders: hard switch from `{conns}` to `{ports}`; `{ports}` optional; `{params}` deprecated (no reserved-status enforcement). Device `ports` field becomes optional in the AST schema to permit templates that do not use ports.
 - 2026-01-03: Individual merged parameter values exposed as template placeholders. Templates can now reference device/backend/instance params directly (e.g., `{L}`, `{W}`, `{NF}`, `{m}`). Backward compat preserved for `{params}` formatted string. Props override params if names collide.
-- 2026-01-03: ADR-0006 -- System devices for backend structural templates. System devices (prefixed `__`) define backend-specific structural elements (subcircuit headers, footers, module calls) in external `backends.yaml`. Required system devices: `__subckt_header__`, `__subckt_footer__`, `__top_header__`, `__top_footer__`, `__subckt_call__`. Optional: `__netlist_header__`, `__netlist_footer__`. Backend config location via `ASDL_BACKEND_CONFIG` env var; defaults to `config/backends.yaml`. Missing required system devices = fatal error.
+- 2026-01-04: ADR-0006 -- System devices for backend structural templates. System devices (prefixed `__`) define backend-specific structural elements in external `backends.yaml`. Required system devices: `__subckt_header__`, `__subckt_footer__`, `__subckt_call__`, `__netlist_header__`, `__netlist_footer__`. Top module emits no wrapper unless `top_as_subckt` uses `__subckt_header__`/`__subckt_footer__`. Backend config location via `ASDL_BACKEND_CONFIG` env var; defaults to `config/backends.yaml`. Missing required system devices = fatal error.
 - 2026-01-02: ADR-0005 -- Pattern expansion uses `|` for alternatives and `;` for splicing; no whitespace around delimiters; left-to-right concatenation. Endpoint lists become YAML lists only once the delimiter change lands.
+- 2026-01-05: Netlist emission is backend-selected via CLI `--backend` (default `sim.ngspice`); `config/backends.yaml` includes output `extension` per backend; `emit_ngspice` is removed in favor of a unified netlist emitter.
