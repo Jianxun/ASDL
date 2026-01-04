@@ -267,7 +267,7 @@ def _emit_instance(
     if "params" in placeholders and not params_str:
         should_collapse = True
     if should_collapse:
-        rendered = " ".join(rendered.split())
+        rendered = _collapse_whitespace(rendered)
     return rendered, False
 
 
@@ -380,6 +380,10 @@ def _render_system_device(
     if "ports" in placeholders and context.get("ports", "") == "":
         should_collapse = True
     if should_collapse:
-        rendered = " ".join(rendered.split())
+        rendered = _collapse_whitespace(rendered)
 
     return rendered, False
+
+
+def _collapse_whitespace(rendered: str) -> str:
+    return "\n".join(" ".join(line.split()) for line in rendered.splitlines())
