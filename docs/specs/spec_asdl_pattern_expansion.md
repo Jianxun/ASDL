@@ -132,7 +132,13 @@ OUT<P|N>;CLK[1:0]
 
 ## 5. Expansion Scope
 
-- Patterns may appear anywhere a symbol/endpoint token is allowed
+- Patterns are allowed only in instance names, net names, and endpoint tokens
+  (instance name and pin name).
+- Patterns are forbidden in model names.
+- `$` net names preserve pattern tokens verbatim; `;` is forbidden in `$` net
+  expressions.
+- Literal names must match `[A-Za-z_][A-Za-z0-9_]*` and must not contain
+  pattern delimiters (`<`, `>`, `[`, `]`, `;`).
 - Expansion is local to the token being expanded
 - Expansion does not imply hierarchy or connectivity semantics by itself
 
@@ -155,11 +161,31 @@ If expansion produces duplicate atoms *within the same expanded list*:
 | Empty enumeration (`<>` or `<|>`) | Error |
 | Empty splice segment (`a;;b`) | Error |
 | Duplicate expanded atoms | Error |
+| Expansion exceeds 10k atoms per token | Error |
 | Unexpanded pattern remains | Error |
 
 ---
 
-## 8. Semantics and Downstream Consumption (Allowed)
+## 8. Binding and Equivalence Rules (Pre-Elaboration)
+
+- Binding compares **total expansion length**; splicing (`;`) is flattened into
+  a single list with no segment alignment.
+- If a net expands to length **N > 1**, every bound endpoint token must expand
+  to **N**; binding is by index.
+- If a net is scalar (length **1**), it may bind to endpoints of any length;
+  each expanded endpoint binds to that single net (endpoints may differ in
+  length).
+- Endpoint expansion length is computed from the full `inst.pin` token; if the
+  instance expands to **N** and the pin expands to **M**, the endpoint expands
+  to **N * M** (left-to-right order).
+- Every scalar endpoint atom binds to **exactly one** net.
+- Equivalence checks use the fully expanded string tokens (e.g., `MN<A,B>` is
+  equivalent to `MN_A` and `MN_B`). Binding verification and elaboration must
+  share the same equivalence helper.
+
+---
+
+## 9. Semantics and Downstream Consumption (Allowed)
 
 Downstream tools may interpret expanded structure, for example:
 - infer bus widths / ordering from numeric suffixes
@@ -171,17 +197,18 @@ correctness of the expanded structural IR.
 
 ---
 
-## 9. Explicit Non-Goals (Tier-1 Core)
+## 10. Explicit Non-Goals (Tier-1 Core)
 
 - Wildcard or glob matching (`*`)
 - Regex or predicate patterns
 - Semantic aliasing / net merging
 - Export / re-export mechanisms
 - Implicit net creation
+- Escaping or quoting pattern delimiters inside literal names
 
 ---
 
-## 10. Post-Expansion Invariant
+## 11. Post-Expansion Invariant
 
 After expansion:
 - Every endpoint/name is a plain atom (no `[]`, no `<>`, no `;`)

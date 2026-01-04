@@ -1,5 +1,8 @@
 # Spec D — ASDL_NLIR (Netlist IR) v0
 
+**Status**: Superseded by the AST → NFIR → IFIR pipeline. This spec is retained
+for historical context only and should not be used for new work.
+
 ## Purpose
 ASDL_NLIR is a formal netlist IR for emission and as an entry point for third-
 party flows. It exists in two forms:

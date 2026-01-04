@@ -1,5 +1,8 @@
 # Spec B — ASDL_CIR (xDSL Dialect `asdl_cir`) v0 (Revised: named-only conns; add subckt_ref/dummy/behav; SelectView contract)
 
+**Status**: Superseded by the AST → NFIR → IFIR pipeline. This spec is retained
+for historical context only and should not be used for new work.
+
 ## Purpose
 IR ID: **ASDL_CIR** (formerly `asdl.ir`).
 A compiler-facing structural IR that:

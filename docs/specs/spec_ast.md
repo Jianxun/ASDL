@@ -10,7 +10,9 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 ## Conventions
 - **Plural nouns** for collections: `modules`, `devices`, `instances`, `nets`, `exports`, `backends`, `params`.
 - Ordered mappings preserve source order when it matters (notably `nets` and `exports`).
-- Names are raw strings with existing naming rules; validation is deferred.
+- Literal names must match `[A-Za-z_][A-Za-z0-9_]*`; pattern delimiters (`<`, `>`, `[`, `]`, `;`)
+  are reserved and forbidden in literals.
+- Names are raw strings; semantic validation is deferred to verification passes.
 - Comments/docstrings/groups are YAML comments and are **not** represented in AST fields.
 
 ---
@@ -66,6 +68,7 @@ instances:
   ```
 - `ParamTokens` are preserved as raw text.
 - Inline pin-bindings are preserved as raw text; conflicts are resolved later.
+ - `<TypeName>` (model name) is a literal and must not include pattern syntax.
 
 ---
 
@@ -90,6 +93,7 @@ instances:
 - `$` on the net name marks an **exported port**.
 - Port order is the appearance order of `$` nets in `nets`, followed by forwarded ports from `exports`.
 - `*`, `<...>`, `[...]`, and `;` pattern/domain markers are preserved as raw tokens for later expansion.
+- `$` net names may include pattern syntax, but `;` is forbidden in `$` net expressions.
 
 ---
 
@@ -143,7 +147,7 @@ instances:
 
 ## Deferred to IR verification / passes
 - Name resolution (module/device lookup, instance refs).
-- Domain and wildcard expansion (`*`, `<...>`, `[...]`).
+- Pattern expansion and binding verification (`<...>`, `[...]`, `;`); enforce expansion size limits.
 - Inline pin-bind parsing and conflict detection vs `nets`.
 - Export forwarding resolution and collision checks.
 - Endpoint uniqueness checks (an endpoint bound to multiple nets).

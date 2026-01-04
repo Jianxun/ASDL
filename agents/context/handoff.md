@@ -1,8 +1,8 @@
 # Handoff
 
 ## Current state
-- MVP specs live under `docs/specs_mvp/` for AST, NFIR, IFIR, and ngspice emission; full specs remain under `docs/specs/`.
-- MVP pipeline is now AST -> NFIR -> IFIR -> ngspice emission (CIR removed for MVP; NLIR renamed to IFIR).
+- MVP specs live under `docs/specs_mvp/` for AST, NFIR, IFIR, and ngspice emission; full specs remain under `docs/specs/` pending reconciliation.
+- MVP pipeline is AST -> NFIR -> IFIR -> emit; NLIR and CIR are merged into IFIR.
 - Clean slate for IR implementation; prior CIR/NLIR tasks archived.
 - New OKR tracking lives in `agents/context/okrs.md`.
 - AST models + parser updated to MVP net-first schema; parser/AST tests refreshed.
@@ -19,7 +19,7 @@
 - T-039 CLI help test added to verify command listing (PR #37).
 - T-046 individual merged parameter values now exposed as template placeholders; templates can reference device/backend/instance params directly (e.g., `{L}`, `{W}`, `{NF}`, `{m}`).
 - T-047 system devices refactor complete: ngspice emitter now uses backend config (`config/backends.yaml`) with 5 required system devices; all hardcoded ngspice syntax removed; all tests passing with byte-for-byte identical output.
-- T-048 planned: rewrite emitter as unified netlist backend with CLI `--backend` (default `sim.ngspice`), backend config `extension`, and dedicated netlist verification pass; remove `emit_ngspice` entirely.
+- T-048 complete: unified netlist backend with CLI `--backend` (default `sim.ngspice`), backend config `extension`, and dedicated netlist verification pass; `emit_ngspice` removed.
 - T-049 complete: split `src/asdl/emit/netlist.py` into `src/asdl/emit/netlist/` package with API/verify/render/templates/params/IR helpers/diagnostics; updated codebase map; tests passing; PR https://github.com/Jianxun/ASDL/pull/41.
 
 ## Last verified status
@@ -34,7 +34,9 @@
 - `venv/bin/python -m py_compile src/asdl/emit/netlist/*.py`
 
 ## Next steps (1-3)
-1. T-048: Kick off unified netlist emitter rewrite and CLI backend selection refactor.
+1. T-053: Add pattern token representation in AST/NFIR/IFIR (no expansion yet).
+2. T-057: Implement standalone pattern expansion engine + tests.
+3. T-054: Draft multi-file import/dependency spec.
 
 ## Risks / unknowns
 - IFIR and emission semantics are new; tests will drive final API shape.
