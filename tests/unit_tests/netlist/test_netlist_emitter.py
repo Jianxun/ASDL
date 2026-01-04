@@ -92,7 +92,9 @@ def test_emit_netlist_top_as_subckt_option() -> None:
 
     assert diagnostics == []
     assert netlist is not None
-    lines = netlist.splitlines()
+    lines = [
+        line for line in netlist.splitlines() if line and not line.startswith("*")
+    ]
     assert lines[0] == ".subckt top IN"
     assert lines[1] == ".ends top"
     assert lines[2] == ".end"
