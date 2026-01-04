@@ -1,7 +1,7 @@
 # Spec - MVP CLI (asdlc netlist) v0
 
 ## Purpose
-Define the MVP CLI surface for generating ngspice netlists from ASDL using the
+Define the MVP CLI surface for generating backend netlists from ASDL using the
 xDSL pipeline. This spec is focused on the `asdlc netlist` command only.
 
 ---
@@ -10,7 +10,7 @@ xDSL pipeline. This spec is focused on the `asdlc netlist` command only.
 - One command: `asdlc netlist`.
 - Input: a single ASDL file parsed into `AsdlDocument`.
 - Pipeline: uses `src/asdl/ir/pipeline.py` entrypoint and xDSL PassManager.
-- Output: ngspice netlist text written to a `.spice` file.
+- Output: backend netlist text written to a file using the backend extension.
 - Diagnostics emitted via the shared diagnostic contract.
 
 Non-goals (MVP):
@@ -22,17 +22,20 @@ Non-goals (MVP):
 
 ## Command
 ```
-asdlc netlist <file.asdl> [-o <out.spice>] [--verify|--no-verify] [--top-as-subckt]
+asdlc netlist <file.asdl> [-o <out.ext>] [--verify|--no-verify] [--backend <name>] [--top-as-subckt]
 ```
 
 ### Options
 - `-o, --output <path>`: output file path.
-  - Default: `{asdl_basename}.spice` in the same directory as the input file.
+  - Default: `{asdl_basename}{extension}` in the same directory as the input file.
 - `--verify` / `--no-verify`:
   - Default: `--verify`.
   - Controls whether verifier passes run in the pipeline.
+- `--backend <name>`:
+  - Default: `sim.ngspice`.
+  - Backend name from `config/backends.yaml`.
 - `--top-as-subckt`:
-  - Pass-through to ngspice emitter; keeps `.subckt` and `.ends` for top module.
+  - Pass-through to netlist emitter; keeps subckt wrapper for the top module.
 
 ---
 
@@ -41,7 +44,7 @@ asdlc netlist <file.asdl> [-o <out.spice>] [--verify|--no-verify] [--top-as-subc
 2. Run MVP pipeline via `src/asdl/ir/pipeline.py`:
    - AST -> NFIR conversion.
    - NFIR -> IFIR pass manager (verify gates based on `--verify`).
-3. Emit ngspice netlist using `emit_ngspice`.
+3. Emit backend netlist using `emit_netlist`.
 4. Write output file when no error diagnostics are present.
 
 ---

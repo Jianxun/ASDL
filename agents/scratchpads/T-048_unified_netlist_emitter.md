@@ -1,26 +1,32 @@
 # T-048 Unified netlist emitter rewrite
 
-## Goal
-- Replace `emit_ngspice` with a unified netlist emitter that selects backends via `--backend`.
-- Split verification from rendering and keep backend-specific checks in a dedicated pass.
+## Task summary
+- DoD: Replace ngspice-specific emitter with unified netlist emitter (new module/package). Remove `emit_ngspice` and `src/asdl/emit/ngspice.py` entirely; update `src/asdl/emit/__init__.py` and all call sites/tests. Add dedicated netlist verification pass under `src/asdl/emit/` (xDSL ModulePass) and run it before lowering/rendering. Add CLI `--backend` (default `sim.ngspice`) and drive output extension from `config/backends.yaml` per-backend `extension` key (verbatim). Update backend config schema to `extension`, `comment_prefix`, `templates`; adjust loader/tests accordingly. Ensure top module emits no wrapper when `top_as_subckt` is false. Update specs and rebaseline netlist tests to new backend naming.
+- Verify: `pytest tests/unit_tests/emit -v && pytest tests/unit_tests/netlist -v && pytest tests/unit_tests/cli -v && pytest tests/unit_tests/e2e -v`
 
-## Scope
-- New emitter module/package under `src/asdl/emit/`.
-- Remove `src/asdl/emit/ngspice.py` and `emit_ngspice` import surface.
-- Add CLI `--backend` with default `sim.ngspice`.
-- Backend config schema is `extension`, `comment_prefix`, `templates` (verbatim `extension`).
-- Top module emits no wrapper when `top_as_subckt` is false.
+## Read
+- `agents/roles/executor.md`
+- `agents/context/lessons.md`
+- `agents/context/contract.md`
+- `agents/context/tasks.md`
+- `agents/context/handoff.md`
 
-## File touch list (expected)
-- `src/asdl/emit/` (new emitter + verify pass)
-- `src/asdl/emit/__init__.py`
-- `src/asdl/cli/__init__.py`
-- `config/backends.yaml`
-- `tests/unit_tests/emit/test_backend_config.py`
-- `tests/unit_tests/netlist/`
-- `tests/unit_tests/cli/test_netlist.py`
-- `tests/unit_tests/e2e/test_pipeline_mvp.py`
+## Plan
+1. Inspect current emit/CLI pipeline and backend config loader to identify ngspice-specific surfaces to replace.
+2. Implement unified netlist emitter module + verification pass; update CLI backend selection and output extension logic.
+3. Update backend config schema and tests, rebaseline netlist tests/specs, then run verify commands.
 
-## Notes
-- Backend names should be updated to `sim.ngspice` in tests and fixtures.
-- Output extension should come from backend config; CLI default output path uses that.
+## Progress log
+- 2026-01-03: Set task T-048 to In Progress; created scratchpad structure.
+
+## Patch summary
+- None yet.
+
+## Verification
+- Not run yet.
+
+## Blockers / Questions
+- None yet.
+
+## Next steps
+1. Inspect current emission/CLI code paths for ngspice-specific entry points and backend config schema.

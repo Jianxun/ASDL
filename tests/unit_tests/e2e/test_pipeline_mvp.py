@@ -3,7 +3,7 @@ import pytest
 pytest.importorskip("xdsl")
 
 from asdl.ast import parse_string
-from asdl.emit.ngspice import emit_ngspice
+from asdl.emit.netlist import emit_netlist
 from asdl.ir.pipeline import run_mvp_pipeline
 
 
@@ -34,7 +34,7 @@ def _pipeline_yaml() -> str:
             "    params:",
             "      r: 1k",
             "    backends:",
-            "      ngspice:",
+            "      sim.ngspice:",
             "        template: \"{name} {ports} {params}\"",
         ]
     )
@@ -50,21 +50,20 @@ def test_pipeline_end_to_end_deterministic_top_handling() -> None:
     assert pipeline_diags == []
     assert design is not None
 
-    netlist, emit_diags = emit_ngspice(design)
+    netlist, emit_diags = emit_netlist(design)
     assert emit_diags == []
     assert netlist is not None
 
     design_again, pipeline_diags_again = run_mvp_pipeline(document)
     assert pipeline_diags_again == []
     assert design_again is not None
-    netlist_again, emit_diags_again = emit_ngspice(design_again)
+    netlist_again, emit_diags_again = emit_netlist(design_again)
     assert emit_diags_again == []
     assert netlist_again == netlist
 
     lines = netlist.splitlines()
-    assert lines[0] == "*.subckt top IN OUT"
-    assert lines[1] == "XU1 IN OUT leaf"
-    assert lines[2] == "*.ends top"
-    assert lines[3] == ".subckt leaf IN OUT"
-    assert lines[4] == "R1 IN OUT r=2k"
-    assert lines[5] == ".ends leaf"
+    assert lines[0] == "XU1 IN OUT leaf"
+    assert lines[1] == ".subckt leaf IN OUT"
+    assert lines[2] == "R1 IN OUT r=2k"
+    assert lines[3] == ".ends leaf"
+    assert lines[4] == ".end"

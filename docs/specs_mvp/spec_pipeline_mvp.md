@@ -7,7 +7,7 @@ individual dialect semantics.
 
 ## Scope
 - Input: validated AST (`AsdlDocument`) produced by the parser.
-- Output: ASDL_IFIR `DesignOp` ready for ngspice emission.
+- Output: ASDL_IFIR `DesignOp` ready for netlist emission.
 - Emission is a separate step (see `docs/specs_mvp/spec_netlist_emission_mvp.md`).
 
 ## Entrypoint
@@ -33,7 +33,7 @@ Behavior:
    - Wrap the NFIR `DesignOp` in a `builtin.module` for the pass manager.
    - Run passes in the order below.
 3. Emission (outside pipeline)
-   - Use `emit_ngspice` from `src/asdl/emit/ngspice.py`.
+   - Use `emit_netlist` from `src/asdl/emit/netlist.py`.
 
 ## Pass order (NFIR -> IFIR)
 ```

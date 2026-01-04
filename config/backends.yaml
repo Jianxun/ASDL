@@ -2,8 +2,16 @@ sim.ngspice:
   extension: ".spice"
   comment_prefix: "*"
   templates:
-    __subckt_header__: ".subckt {name} {ports}"
-    __subckt_footer__: ".ends {name}"
+    __subckt_header__: |
+
+      * ===============================================
+      * {name}
+      .subckt {name} {ports}
+
+    __subckt_footer__: | 
+      .ends {name}
+      * ===============================================
+      
     __subckt_call__: "X{name} {ports} {ref}"
     __netlist_header__: ""
     __netlist_footer__: ".end"

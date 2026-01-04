@@ -36,24 +36,28 @@ def _pipeline_yaml() -> str:
             "    params:",
             "      r: 1k",
             "    backends:",
-            "      ngspice:",
+            "      sim.ngspice:",
             "        template: \"{name} {ports} {params}\"",
         ]
     )
 
 
 def _expected_netlist(top_as_subckt: bool) -> str:
-    prefix = "" if top_as_subckt else "*"
-    return "\n".join(
+    lines = []
+    if top_as_subckt:
+        lines.append(".subckt top IN OUT")
+    lines.append("XU1 IN OUT leaf")
+    if top_as_subckt:
+        lines.append(".ends top")
+    lines.extend(
         [
-            f"{prefix}.subckt top IN OUT",
-            "XU1 IN OUT leaf",
-            f"{prefix}.ends top",
             ".subckt leaf IN OUT",
             "R1 IN OUT r=2k",
             ".ends leaf",
+            ".end",
         ]
     )
+    return "\n".join(lines)
 
 
 def test_cli_netlist_default_output(tmp_path: Path) -> None:
@@ -82,6 +86,8 @@ def test_cli_netlist_top_as_subckt_with_output_flag(
         [
             "netlist",
             str(input_path),
+            "--backend",
+            "sim.ngspice",
             "--top-as-subckt",
             "-o",
             str(output_path),
@@ -113,4 +119,4 @@ def test_cli_help() -> None:
     output = result.output
     assert "Commands:" in output
     assert "netlist" in output
-    assert "Generate an ngspice netlist from ASDL." in output
+    assert "Generate a netlist from ASDL." in output

@@ -19,7 +19,7 @@
 - `syntax-highlighter/`: VSCode extension assets for ASDL syntax.
 
 ## Quick Reference: Emission Subsystem
-- `src/asdl/emit/ngspice.py`: ngspice emitter (IFIR → SPICE netlist)
+- `src/asdl/emit/netlist/`: netlist emitter package (API, verification, rendering, templates, params, IR helpers, diagnostics)
 - `src/asdl/emit/backend_config.py`: backend config loader and system device validation (created in T-047)
 - `config/backends.yaml`: backend configuration file with system device templates (created in T-047)
 - `tests/unit_tests/emit/`: emission tests (backend config loading, system device validation)

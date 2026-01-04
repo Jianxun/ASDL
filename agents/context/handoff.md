@@ -20,15 +20,18 @@
 - T-046 individual merged parameter values now exposed as template placeholders; templates can reference device/backend/instance params directly (e.g., `{L}`, `{W}`, `{NF}`, `{m}`).
 - T-047 system devices refactor complete: ngspice emitter now uses backend config (`config/backends.yaml`) with 5 required system devices; all hardcoded ngspice syntax removed; all tests passing with byte-for-byte identical output.
 - T-048 planned: rewrite emitter as unified netlist backend with CLI `--backend` (default `sim.ngspice`), backend config `extension`, and dedicated netlist verification pass; remove `emit_ngspice` entirely.
+- T-049 complete: split `src/asdl/emit/netlist.py` into `src/asdl/emit/netlist/` package with API/verify/render/templates/params/IR helpers/diagnostics; updated codebase map; tests passing.
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ast`
 - `venv/bin/pytest tests/unit_tests/ir`
 - `venv/bin/pytest tests/unit_tests/parser`
+- `venv/bin/pytest tests/unit_tests/emit -v`
 - `venv/bin/pytest tests/unit_tests/netlist`
 - `venv/bin/pytest tests/unit_tests/e2e`
 - `venv/bin/pytest tests/unit_tests/cli`
 - `venv/bin/pytest tests/unit_tests/ir tests/unit_tests/netlist`
+- `venv/bin/python -m py_compile src/asdl/emit/netlist/*.py`
 
 ## Next steps (1-3)
 1. T-048: Kick off unified netlist emitter rewrite and CLI backend selection refactor.

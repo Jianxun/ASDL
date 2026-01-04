@@ -35,6 +35,12 @@ def cli() -> None:
     help="Enable IR verification passes.",
 )
 @click.option(
+    "--backend",
+    default="sim.ngspice",
+    show_default=True,
+    help="Backend name from the backend config.",
+)
+@click.option(
     "--top-as-subckt",
     is_flag=True,
     default=False,
@@ -44,9 +50,10 @@ def netlist(
     input_file: Path,
     output_path: Optional[Path],
     verify: bool,
+    backend: str,
     top_as_subckt: bool,
 ) -> None:
-    """Generate an ngspice netlist from ASDL.
+    """Generate a netlist from ASDL.
 
     Supported placeholders: {name}, {ports} (optional). {params} is deprecated.
     """
@@ -59,7 +66,7 @@ def netlist(
         raise click.exceptions.Exit(1)
 
     try:
-        from asdl.emit.ngspice import emit_ngspice
+        from asdl.emit.netlist import emit_netlist, load_backend
         from asdl.ir.pipeline import run_mvp_pipeline
     except Exception as exc:  # pragma: no cover - defensive: missing optional deps
         diagnostics.append(
@@ -77,14 +84,25 @@ def netlist(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    netlist_text, emit_diags = emit_ngspice(design, top_as_subckt=top_as_subckt)
+    backend_config, backend_diags = load_backend(backend)
+    diagnostics.extend(backend_diags)
+    if backend_config is None or _has_error_diagnostics(diagnostics):
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    netlist_text, emit_diags = emit_netlist(
+        design,
+        top_as_subckt=top_as_subckt,
+        backend_name=backend,
+        backend_config=backend_config,
+    )
     diagnostics.extend(emit_diags)
     if netlist_text is None or _has_error_diagnostics(diagnostics):
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
     if output_path is None:
-        output_path = input_file.with_suffix(".spice")
+        output_path = input_file.with_suffix(backend_config.extension)
 
     try:
         output_path.write_text(netlist_text, encoding="utf-8")

@@ -5,7 +5,7 @@ pytest.importorskip("xdsl")
 from xdsl.dialects.builtin import DictionaryAttr, FileLineColLoc, IntAttr, StringAttr
 
 from asdl.diagnostics import Severity, format_code
-from asdl.emit.ngspice import emit_ngspice
+from asdl.emit.netlist import emit_netlist
 from asdl.ir.ifir import (
     BackendOp,
     ConnAttr,
@@ -16,6 +16,8 @@ from asdl.ir.ifir import (
     NetOp,
 )
 
+BACKEND_NAME = "sim.ngspice"
+
 
 def _dict_attr(values: dict[str, str]) -> DictionaryAttr:
     return DictionaryAttr({key: StringAttr(value) for key, value in values.items()})
@@ -25,9 +27,9 @@ def _loc(line: int, col: int) -> FileLineColLoc:
     return FileLineColLoc(StringAttr("design.asdl"), IntAttr(line), IntAttr(col))
 
 
-def test_emit_ngspice_device_params_and_top_default() -> None:
+def test_emit_netlist_device_params_and_top_default() -> None:
     backend = BackendOp(
-        name="ngspice",
+        name=BACKEND_NAME,
         template="{name} {ports} {model} {params}",
         params=_dict_attr({"l": "120n", "m": "2"}),
         props=_dict_attr({"model": "nfet"}),
@@ -61,13 +63,12 @@ def test_emit_ngspice_device_params_and_top_default() -> None:
     )
     design = DesignOp(region=[module, device], top="top")
 
-    netlist, diagnostics = emit_ngspice(design)
+    netlist, diagnostics = emit_netlist(design)
 
     expected = "\n".join(
         [
-            "*.subckt top VIN VOUT VSS",
             "M1 VOUT VIN VSS nfet w=1u l=120n m=4",
-            "*.ends top",
+            ".end",
         ]
     )
     assert netlist == expected
@@ -79,7 +80,7 @@ def test_emit_ngspice_device_params_and_top_default() -> None:
     assert diagnostics[0].primary_span.start.col == 3
 
 
-def test_emit_ngspice_top_as_subckt_option() -> None:
+def test_emit_netlist_top_as_subckt_option() -> None:
     module = ModuleOp(
         name="top",
         port_order=["IN"],
@@ -87,18 +88,19 @@ def test_emit_ngspice_top_as_subckt_option() -> None:
     )
     design = DesignOp(region=[module])
 
-    netlist, diagnostics = emit_ngspice(design, top_as_subckt=True)
+    netlist, diagnostics = emit_netlist(design, top_as_subckt=True)
 
     assert diagnostics == []
     assert netlist is not None
     lines = netlist.splitlines()
     assert lines[0] == ".subckt top IN"
-    assert lines[-1] == ".ends top"
+    assert lines[1] == ".ends top"
+    assert lines[2] == ".end"
 
 
-def test_emit_ngspice_allows_portless_device() -> None:
+def test_emit_netlist_allows_portless_device() -> None:
     backend = BackendOp(
-        name="ngspice",
+        name=BACKEND_NAME,
         template="X{name} {params}",
     )
     device = DeviceOp(name="probe", ports=[], region=[backend])
@@ -106,18 +108,18 @@ def test_emit_ngspice_allows_portless_device() -> None:
     module = ModuleOp(name="top", port_order=[], region=[instance])
     design = DesignOp(region=[module, device], top="top")
 
-    netlist, diagnostics = emit_ngspice(design)
+    netlist, diagnostics = emit_netlist(design)
 
     assert diagnostics == []
-    assert netlist == "\n".join(["*.subckt top", "XP1", "*.ends top"])
+    assert netlist == "\n".join(["XP1", ".end"])
 
 
-def test_emit_ngspice_requires_top_when_multiple_modules() -> None:
+def test_emit_netlist_requires_top_when_multiple_modules() -> None:
     module_a = ModuleOp(name="a", port_order=[], region=[])
     module_b = ModuleOp(name="b", port_order=[], region=[])
     design = DesignOp(region=[module_a, module_b])
 
-    netlist, diagnostics = emit_ngspice(design)
+    netlist, diagnostics = emit_netlist(design)
 
     assert netlist is None
     assert len(diagnostics) == 1
@@ -125,9 +127,9 @@ def test_emit_ngspice_requires_top_when_multiple_modules() -> None:
     assert diagnostics[0].code == format_code("EMIT", 1)
 
 
-def test_emit_ngspice_requires_template_placeholders() -> None:
+def test_emit_netlist_requires_template_placeholders() -> None:
     backend = BackendOp(
-        name="ngspice",
+        name=BACKEND_NAME,
         template="{ports} {model}",
         props=_dict_attr({"model": "nfet"}),
         src=_loc(7, 1),
@@ -145,7 +147,7 @@ def test_emit_ngspice_requires_template_placeholders() -> None:
     )
     design = DesignOp(region=[module, device], top="top")
 
-    netlist, diagnostics = emit_ngspice(design)
+    netlist, diagnostics = emit_netlist(design)
 
     assert netlist is None
     assert len(diagnostics) == 1
@@ -156,9 +158,9 @@ def test_emit_ngspice_requires_template_placeholders() -> None:
     assert diagnostics[0].primary_span.start.col == 1
 
 
-def test_emit_ngspice_reports_malformed_template() -> None:
+def test_emit_netlist_reports_malformed_template() -> None:
     backend = BackendOp(
-        name="ngspice",
+        name=BACKEND_NAME,
         template="{name} {ports",
     )
     device = DeviceOp(name="nfet", ports=["D"], region=[backend])
@@ -174,7 +176,7 @@ def test_emit_ngspice_reports_malformed_template() -> None:
     )
     design = DesignOp(region=[module, device], top="top")
 
-    netlist, diagnostics = emit_ngspice(design)
+    netlist, diagnostics = emit_netlist(design)
 
     assert netlist is None
     assert len(diagnostics) == 1
@@ -182,9 +184,9 @@ def test_emit_ngspice_reports_malformed_template() -> None:
     assert diagnostics[0].code == format_code("EMIT", 8)
 
 
-def test_emit_ngspice_allows_prop_override() -> None:
+def test_emit_netlist_allows_prop_override() -> None:
     backend = BackendOp(
-        name="ngspice",
+        name=BACKEND_NAME,
         template="R{name} {ports} {params}",
         props=_dict_attr({"name": "OVERRIDE"}),
     )
@@ -201,8 +203,9 @@ def test_emit_ngspice_allows_prop_override() -> None:
     )
     design = DesignOp(region=[module, device], top="top")
 
-    netlist, diagnostics = emit_ngspice(design)
+    netlist, diagnostics = emit_netlist(design)
 
     assert netlist is not None
     assert "ROVERRIDE VOUT" in netlist
+    assert netlist.endswith(".end")
     assert diagnostics == []

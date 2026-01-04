@@ -1,0 +1,169 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import List
+
+from xdsl.context import Context
+from xdsl.dialects import builtin
+from xdsl.passes import ModulePass, PassPipeline
+
+from asdl.diagnostics import Diagnostic, Severity
+from asdl.diagnostics.collector import DiagnosticCollector
+from asdl.emit.backend_config import BackendConfig, validate_system_devices
+from asdl.ir.ifir import ASDL_IFIR, DesignOp, InstanceOp
+
+from .diagnostics import (
+    MISSING_BACKEND,
+    NETLIST_DESIGN_MISSING,
+    NETLIST_VERIFY_CRASH,
+    UNKNOWN_REFERENCE,
+    _diagnostic,
+)
+from .ir_utils import (
+    _collect_design_ops,
+    _find_single_design,
+    _resolve_top_name,
+    _select_backend,
+)
+from .render import _ordered_conns
+from .templates import (
+    _allowed_backend_placeholders,
+    _validate_system_device_templates,
+    _validate_template,
+)
+
+
+@dataclass
+class NetlistVerificationState:
+    diagnostics: DiagnosticCollector
+    backend_name: str
+    backend_config: BackendConfig
+
+
+@dataclass(frozen=True)
+class VerifyNetlistPass(ModulePass):
+    name = "verify-netlist"
+
+    state: NetlistVerificationState
+
+    def apply(self, ctx: Context, op: builtin.ModuleOp) -> None:
+        design = _find_single_design(
+            op,
+            DesignOp,
+            NETLIST_DESIGN_MISSING,
+            diagnostics=self.state.diagnostics,
+        )
+        if design is None:
+            return
+
+        modules, devices, module_ops = _collect_design_ops(design)
+        top_name = _resolve_top_name(design, module_ops, self.state.diagnostics)
+        if top_name is None:
+            return
+
+        self.state.diagnostics.extend(
+            validate_system_devices(self.state.backend_config)
+        )
+        _validate_system_device_templates(self.state.backend_config, self.state.diagnostics)
+
+        for module in module_ops:
+            for op in module.body.block.ops:
+                if not isinstance(op, InstanceOp):
+                    continue
+                ref_name = op.ref.root_reference.data
+                if ref_name in modules:
+                    port_order = [attr.data for attr in modules[ref_name].port_order.data]
+                    _ordered_conns(op, port_order, self.state.diagnostics)
+                    continue
+                if ref_name not in devices:
+                    self.state.diagnostics.emit(
+                        _diagnostic(
+                            UNKNOWN_REFERENCE,
+                            (
+                                f"Instance '{op.name_attr.data}' references unknown "
+                                f"symbol '{ref_name}'"
+                            ),
+                            Severity.ERROR,
+                            op.src,
+                        )
+                    )
+                    continue
+
+                device = devices[ref_name]
+                backend = _select_backend(device, self.state.backend_name)
+                if backend is None:
+                    self.state.diagnostics.emit(
+                        _diagnostic(
+                            MISSING_BACKEND,
+                            f"Device '{ref_name}' has no backend '{self.state.backend_name}'",
+                            Severity.ERROR,
+                            device.src,
+                        )
+                    )
+                    continue
+
+                port_order = [attr.data for attr in device.ports.data]
+                _ordered_conns(op, port_order, self.state.diagnostics)
+
+                placeholders = _validate_template(
+                    backend.template.data,
+                    ref_name,
+                    self.state.diagnostics,
+                    loc=backend.src,
+                )
+                if placeholders is None:
+                    continue
+
+                unknown = placeholders - _allowed_backend_placeholders(device, backend)
+                if unknown:
+                    unknown_name = sorted(unknown)[0]
+                    self.state.diagnostics.emit(
+                        _diagnostic(
+                            UNKNOWN_REFERENCE,
+                            (
+                                f"Backend template for '{ref_name}' references "
+                                f"unknown placeholder '{unknown_name}'"
+                            ),
+                            Severity.ERROR,
+                            backend.src,
+                        )
+                    )
+
+
+def _run_netlist_verification(
+    design: DesignOp,
+    *,
+    backend_name: str,
+    backend_config: BackendConfig,
+) -> List[Diagnostic]:
+    diagnostics = DiagnosticCollector()
+    state = NetlistVerificationState(
+        diagnostics=diagnostics,
+        backend_name=backend_name,
+        backend_config=backend_config,
+    )
+
+    # Clone when already attached to avoid reparenting into a new module.
+    design_op = design.clone() if design.parent is not None else design
+    module = builtin.ModuleOp([design_op])
+    pipeline = PassPipeline((VerifyNetlistPass(state=state),))
+    ctx = _build_context()
+    try:
+        pipeline.apply(ctx, module)
+    except Exception as exc:  # pragma: no cover - defensive
+        diagnostics.emit(
+            _diagnostic(
+                NETLIST_VERIFY_CRASH,
+                f"Netlist verification failed: {exc}",
+                Severity.ERROR,
+            )
+        )
+
+    return diagnostics.to_list()
+
+
+def _build_context() -> Context:
+    ctx = Context()
+    ctx.load_dialect(builtin.Builtin)
+    ctx.load_dialect(ASDL_IFIR)
+    return ctx

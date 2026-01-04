@@ -38,7 +38,9 @@ class BackendConfig:
     """Backend configuration loaded from backends.yaml."""
 
     name: str
-    system_devices: Dict[str, SystemDeviceTemplate]
+    extension: str
+    comment_prefix: str
+    templates: Dict[str, SystemDeviceTemplate]
 
 
 def load_backend_config(
@@ -47,7 +49,7 @@ def load_backend_config(
     """Load backend configuration from YAML file.
 
     Args:
-        backend_name: Name of the backend to load (e.g., "ngspice")
+        backend_name: Name of the backend to load (e.g., "sim.ngspice")
         config_path: Path to backend config file. If None, uses ASDL_BACKEND_CONFIG
                      env var or defaults to config/backends.yaml
 
@@ -78,14 +80,35 @@ def load_backend_config(
         )
 
     backend_data = data[backend_name]
-    system_devices_raw = backend_data.get("system_devices", {})
+    if "extension" not in backend_data:
+        raise KeyError(f"Backend '{backend_name}' missing required key: extension")
+    if "comment_prefix" not in backend_data:
+        raise KeyError(
+            f"Backend '{backend_name}' missing required key: comment_prefix"
+        )
+    if "templates" not in backend_data:
+        raise KeyError(f"Backend '{backend_name}' missing required key: templates")
 
-    system_devices = {
-        name: SystemDeviceTemplate(template=device_data["template"])
-        for name, device_data in system_devices_raw.items()
+    extension = backend_data["extension"]
+    comment_prefix = backend_data["comment_prefix"]
+    templates_raw = backend_data["templates"]
+
+    if not isinstance(templates_raw, dict):
+        raise TypeError(
+            f"Backend '{backend_name}' templates must be a mapping of name to template"
+        )
+
+    templates = {
+        name: SystemDeviceTemplate(template=template)
+        for name, template in templates_raw.items()
     }
 
-    return BackendConfig(name=backend_name, system_devices=system_devices)
+    return BackendConfig(
+        name=backend_name,
+        extension=extension,
+        comment_prefix=comment_prefix,
+        templates=templates,
+    )
 
 
 def validate_system_devices(config: BackendConfig) -> List[Diagnostic]:
@@ -98,7 +121,7 @@ def validate_system_devices(config: BackendConfig) -> List[Diagnostic]:
         List of diagnostics (errors if required devices missing)
     """
     diagnostics: List[Diagnostic] = []
-    missing = REQUIRED_SYSTEM_DEVICES - set(config.system_devices.keys())
+    missing = REQUIRED_SYSTEM_DEVICES - set(config.templates.keys())
 
     if missing:
         missing_list = ", ".join(sorted(missing))
