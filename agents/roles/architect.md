@@ -39,6 +39,7 @@ Architecture Decision Records capture durable decisions. Follow these rules:
 - **Format**: Each ADR (≤1 page) includes Title (`ADR-XXXX: <decision>`), Status (Proposed | Accepted | Superseded), Context, Decision, Consequences (1–3 bullets), and Alternatives (1–2 bullets with rejection rationale). ADRs are append-only; supersede via a new ADR instead of editing history.
 - **Ownership**: Only the Architect writes/updates ADRs. Executors/Explorers may request one via tasks/scratchpads but must not create them.
 - **Contract integration**: `agents/context/contract.md` must list active ADRs by ID with a one-line summary, and any contract rule that depends on ADR rationale should link to the ADR ID.
+
 ## Authority and constraints
 
 ### You MAY:

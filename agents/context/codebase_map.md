@@ -1,7 +1,7 @@
 # Codebase Map
 
 ## Directories
-- `src/asdl/`: active refactor code (`ast/`, `diagnostics/`, `ir/`, `cli/`, `emit/`).
+- `src/asdl/`: active refactor code (`ast/`, `diagnostics/`, `ir/`, `cli/`, `emit/`, `imports/`).
 - `legacy/`: archived code and tests for reference only.
 - `legacy/tests/`: archived pytest suites and fixtures.
 - `docs/`: design docs (parser, elaborator, diagnostic system, CLI, schema, logging, xDSL plans, etc.).
@@ -17,6 +17,9 @@
 - `docs/specs/`: canonical specs (e.g., `docs/specs/spec_ast.md`, `docs/specs/spec_asdl_cir.md` for v0 AST/IR).
 - `scripts/`: helper scripts (e.g., schema generation, visualizer start).
 - `syntax-highlighter/`: VSCode extension assets for ASDL syntax.
+
+## Quick Reference: Imports Subsystem
+- `src/asdl/imports/`: import resolution package (resolver, program DB, name env, diagnostics).
 
 ## Quick Reference: Emission Subsystem
 - `src/asdl/emit/netlist/`: netlist emitter package (API, verification, rendering, templates, params, IR helpers, diagnostics)
