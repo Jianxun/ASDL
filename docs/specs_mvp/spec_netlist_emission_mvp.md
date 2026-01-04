@@ -1,15 +1,16 @@
-# Spec - Netlist Emission (ngspice) v0 (MVP)
+# Spec - Netlist Emission v0 (MVP)
 
 ## Purpose
-Define MVP emission rules from ASDL_IFIR into ngspice-compatible netlists.
+Define MVP emission rules from ASDL_IFIR into backend-selected netlists.
 
 ---
 
 ## MVP scope
-- Target backend is ngspice.
+- Target backend is selected via CLI `--backend` (default `sim.ngspice`).
 - Only named connections (no positional conns).
 - Subckt parameters are not supported.
 - Device parameters are merged and rendered as `k=v` tokens.
+- Output extension is determined by backend config (`extension`).
 
 ---
 
@@ -22,9 +23,8 @@ Define MVP emission rules from ASDL_IFIR into ngspice-compatible netlists.
 
 ## Top wrapper handling
 - Always emit the top module body.
-- Default behavior: comment out the top module's `.subckt` and `.ends` lines.
-  - Comment prefix is `*` at column 1.
-- `--top-as-subckt`: keep the `.subckt` and `.ends` lines uncommented.
+- Default behavior: emit no `.subckt`/`.ends` wrapper for the top module.
+- `--top-as-subckt`: emit the top module with the standard subckt wrapper.
 
 ---
 
@@ -85,9 +85,74 @@ result params:       w=1u l=120n m=4
 
 ---
 
-## ngspice module instantiation
-- Use `X` instance prefix for module references:
+## System devices (ADR-0006)
+
+### Purpose
+System devices define backend-specific structural elements (subcircuit headers, footers, module calls) using the same template mechanism as regular device backends. This decouples backend syntax from emitter logic.
+
+### Reserved names
+System device names are prefixed with `__` and are reserved. Regular devices must not use these names.
+
+### Required system devices
+Every backend must define the following system devices in `backends.yaml`:
+
+| System Device | Purpose | Required Placeholders | Optional Placeholders |
+|---------------|---------|----------------------|----------------------|
+| `__subckt_header__` | Non-top module header | `{name}` | `{ports}` |
+| `__subckt_footer__` | Non-top module footer | - | `{name}` |
+| `__subckt_call__` | Module instantiation | `{name}`, `{ports}`, `{ref}` | - |
+| `__netlist_header__` | File-level preamble | - | `{backend}`, `{top}` |
+| `__netlist_footer__` | File-level postamble | - | `{backend}`, `{top}` |
+
+### Backend configuration file
+- Location: Determined by environment variable `ASDL_BACKEND_CONFIG`; defaults to `config/backends.yaml`
+- Format: YAML with backend sections containing `extension`, `comment_prefix`, and `templates`
+- Example for ngspice:
+  ```yaml
+  sim.ngspice:
+    extension: ".spice"
+    comment_prefix: "*"
+    templates:
+      __subckt_header__: ".subckt {name} {ports}"
+      __subckt_footer__: ".ends {name}"
+      __subckt_call__: "X{name} {ports} {ref}"
+      __netlist_header__: ""
+      __netlist_footer__: ".end"
   ```
-  X<name> <conns> <subckt_name>
-  ```
-- Subckt parameters are not supported in MVP.
+- `extension` is used verbatim by the CLI when `--output` is not provided.
+- `comment_prefix` is used by tools that inject optional comment lines; emission is deterministic by default.
+
+### Rendering rules
+- System devices are rendered using `_render_system_device()` (similar to `_emit_instance()`)
+- Placeholder validation applies (same as device backends)
+- Whitespace collapsing applies when `{ports}` is empty
+- Missing required system devices emit `MISSING_BACKEND` error and abort emission
+- Netlist header/footer are rendered once per file via `__netlist_header__` and
+  `__netlist_footer__` (empty templates emit no line)
+
+### Top module handling
+- If `top_as_subckt` is true: use `__subckt_header__` and `__subckt_footer__`
+- Otherwise: emit no subckt wrapper for the top module
+- This replaces the previous conditional commenting logic
+
+### Module instantiation
+- Module instances use `__subckt_call__` system device instead of hardcoded `X{name} {conns} {ref}` syntax
+- Placeholder context:
+  - `{name}`: instance name
+  - `{ports}`: space-joined connection nets in port order
+  - `{ref}`: referenced module name
+
+### Validation
+- Backend config is loaded and validated at emission time
+- Missing required system devices: fatal error (`MISSING_BACKEND`)
+- Malformed templates: fatal error (`MALFORMED_TEMPLATE`)
+- Unknown placeholders in templates: fatal error (`UNKNOWN_REFERENCE`)
+
+---
+
+## Individual parameter placeholders (T-046)
+After merging device/backend/instance params, each key-value pair is available as a template placeholder:
+- Example: If merged params are `{L: "0.2u", W: "5u", NF: "2"}`, then `{L}`, `{W}`, `{NF}` are available in templates
+- This allows templates like `template: "M{name} {ports} {model} L={L} W={W} NF={NF}"`
+- Backward compatibility: `{params}` placeholder still available as formatted string `"L=0.2u W=5u NF=2"`
+- Props override params if names collide
