@@ -23,6 +23,7 @@
 - Initialized scratchpad and read context files.
 - Split netlist emitter into package modules and updated codebase map.
 - Ran emit/netlist/cli/e2e test suites.
+- Preserved multiline system device output for empty ports and updated netlist test expectations.
 
 ## Patch summary
 - `src/asdl/emit/netlist/__init__.py`: re-export netlist public API.
@@ -35,6 +36,8 @@
 - `src/asdl/emit/netlist/diagnostics.py`: diagnostic codes and helpers.
 - `src/asdl/emit/netlist.py`: removed (replaced by package).
 - `agents/context/codebase_map.md`: updated emitter layout.
+- `src/asdl/emit/netlist/render.py`: preserve line breaks when collapsing whitespace for empty ports/params.
+- `tests/unit_tests/netlist/test_netlist_emitter.py`: ignore header comment lines for top-as-subckt assertion.
 
 ## Verification
 - `venv/bin/python -m py_compile src/asdl/emit/netlist/*.py`
@@ -42,6 +45,7 @@
 - `venv/bin/pytest tests/unit_tests/netlist -v`
 - `venv/bin/pytest tests/unit_tests/cli -v`
 - `venv/bin/pytest tests/unit_tests/e2e -v`
+- `venv/bin/pytest tests/unit_tests/netlist -v`
 
 ## Blockers / Questions
 - User requested no new feature branch; this deviates from executor role guidance. Proceeding on current branch unless instructed otherwise.
