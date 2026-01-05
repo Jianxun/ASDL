@@ -7,7 +7,11 @@
 ## Read
 - `tests/unit_tests/cli/test_netlist.py`
 - `tests/unit_tests/e2e/test_pipeline_mvp.py`
+- `src/asdl/cli/__init__.py`
 - `src/asdl/emit/backend_config.py`
+- `src/asdl/emit/netlist/api.py`
+- `src/asdl/emit/netlist/render.py`
+- `src/asdl/emit/netlist/templates.py`
 - `config/backends.yaml`
 
 ## Plan
@@ -17,15 +21,24 @@
 
 ## Progress log
 - Initialized scratchpad.
+- Reviewed issue #44 and netlist emission/template handling.
+- Added per-test backend config helpers + env setup for CLI and e2e tests.
+- Ran CLI and e2e pytest targets (see Verification).
+- Opened PR https://github.com/Jianxun/ASDL/pull/45.
 
 ## Patch summary
-- TBD.
+- `tests/unit_tests/cli/test_netlist.py`: write temp backend config + set `ASDL_BACKEND_CONFIG` fixture for CLI tests.
+- `tests/unit_tests/e2e/test_pipeline_mvp.py`: add temp backend config fixture to make e2e netlist emission deterministic.
 
 ## Verification
-- TBD.
+- `venv/bin/pytest tests/unit_tests/cli -v`
+- `venv/bin/pytest tests/unit_tests/e2e -v`
+
+## Status request
+- Done.
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Implement deterministic backend config setup in CLI/e2e tests.
+- Await Reviewer feedback.
