@@ -1,7 +1,7 @@
 schema_version: 1
 
 statuses:
-  T-050: In Progress
+  T-050: done
   T-051: In Progress
   T-052: Backlog
   T-053: Backlog
