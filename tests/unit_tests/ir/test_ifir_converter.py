@@ -68,6 +68,45 @@ def test_convert_nfir_design_to_ifir() -> None:
     assert backend.template.data == "M{inst} {D} {G} {S} {model}"
 
 
+def test_convert_nfir_preserves_pattern_tokens() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT<P|N>"],
+        region=[
+            NetOp(
+                name="OUT<P|N>",
+                endpoints=[EndpointAttr(StringAttr("MN<1|2>"), StringAttr("D<0|1>"))],
+            ),
+            NetOp(
+                name="BUS[3:0];BUS<4|5>",
+                endpoints=[EndpointAttr(StringAttr("MN<1|2>"), StringAttr("S"))],
+            ),
+            InstanceOp(name="MN<1|2>", ref="nfet"),
+        ],
+    )
+    design = DesignOp(region=[module])
+
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert diagnostics == []
+    assert isinstance(ifir_design, IfirDesignOp)
+
+    ifir_module = next(
+        op for op in ifir_design.body.block.ops if isinstance(op, IfirModuleOp)
+    )
+    nets = [op for op in ifir_module.body.block.ops if isinstance(op, IfirNetOp)]
+    assert {net.name_attr.data for net in nets} == {"OUT<P|N>", "BUS[3:0];BUS<4|5>"}
+
+    instance = next(
+        op for op in ifir_module.body.block.ops if isinstance(op, IfirInstanceOp)
+    )
+    assert instance.name_attr.data == "MN<1|2>"
+    conns = [(conn.port.data, conn.net.data) for conn in instance.conns.data]
+    assert conns == [
+        ("D<0|1>", "OUT<P|N>"),
+        ("S", "BUS[3:0];BUS<4|5>"),
+    ]
+
+
 def test_convert_nfir_rejects_unknown_instance_endpoint() -> None:
     module = ModuleOp(
         name="top",

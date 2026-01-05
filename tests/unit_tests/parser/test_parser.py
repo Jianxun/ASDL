@@ -40,6 +40,34 @@ def test_parse_string_success_attaches_locations() -> None:
     assert (device_loc.start_line, device_loc.start_col) == (10, 5)
 
 
+def test_parse_string_preserves_pattern_tokens() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      \"MN<1|2>\": nfet",
+            "    nets:",
+            "      \"$OUT<P|N>\":",
+            "        - \"MN<1|2>.D<0|1>\"",
+            "      \"BUS[3:0];BUS<4|5>\":",
+            "        - \"MN<1|2>.S\"",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert diagnostics == []
+    assert document is not None
+    module = document.modules["top"]
+    assert "MN<1|2>" in module.instances
+    assert module.instances["MN<1|2>"] == "nfet"
+    assert "$OUT<P|N>" in module.nets
+    assert module.nets["$OUT<P|N>"] == ["MN<1|2>.D<0|1>"]
+    assert "BUS[3:0];BUS<4|5>" in module.nets
+    assert module.nets["BUS[3:0];BUS<4|5>"] == ["MN<1|2>.S"]
+
+
 def test_parse_string_invalid_root_type() -> None:
     document, diagnostics = parse_string("- item")
 
