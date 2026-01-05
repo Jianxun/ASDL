@@ -23,6 +23,7 @@
 - Ran CLI tests; netlist output assertions failed (extra header/comment lines).
 - User requested skipping netlist CLI tests for this task.
 - Opened PR: https://github.com/Jianxun/ASDL/pull/43
+- Merged `origin/main` (T-050) and re-ran CLI tests.
 
 ## Patch summary
 - `src/asdl/schema.py`: new shared schema generation helpers.
@@ -32,13 +33,13 @@
 - `tests/unit_tests/cli/test_schema.py`: new CLI schema output test.
 
 ## Verification
-- Skipped per user request (netlist CLI tests handled by another task).
+- `venv/bin/pytest tests/unit_tests/cli -v`
 
 ## Status request
 - Done.
 
 ## Blockers / Questions
-- Should CLI netlist tests be updated to accept backend header/comment lines, or is this a local config issue?
+- None.
 
 ## Next steps
-- Decide on netlist CLI expected output mismatch before marking Done.
+- Merge PR 43.
