@@ -24,6 +24,7 @@
 - Reviewed issue #44 and netlist emission/template handling.
 - Added per-test backend config helpers + env setup for CLI and e2e tests.
 - Ran CLI and e2e pytest targets (see Verification).
+- Opened PR https://github.com/Jianxun/ASDL/pull/45.
 
 ## Patch summary
 - `tests/unit_tests/cli/test_netlist.py`: write temp backend config + set `ASDL_BACKEND_CONFIG` fixture for CLI tests.
@@ -40,4 +41,4 @@
 - None.
 
 ## Next steps
-- Push branch and open PR once ready.
+- Await Reviewer feedback.
