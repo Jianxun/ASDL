@@ -22,6 +22,7 @@
 - Added `schema` CLI command + tests; updated CLI help assertions.
 - Ran CLI tests; netlist output assertions failed (extra header/comment lines).
 - User requested skipping netlist CLI tests for this task.
+- Opened PR: https://github.com/Jianxun/ASDL/pull/43
 
 ## Patch summary
 - `src/asdl/schema.py`: new shared schema generation helpers.
