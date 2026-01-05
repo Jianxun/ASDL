@@ -33,6 +33,7 @@
 - Marked T-053 as `in_progress` in `agents/context/tasks_state.yaml`.
 - Added parser/IR tests covering pattern token preservation.
 - Ran parser/AST/IR unit tests.
+- Opened PR https://github.com/Jianxun/ASDL/pull/46.
 
 ## Patch summary
 - `agents/context/tasks_state.yaml`: set T-053 to `in_progress`.
@@ -52,4 +53,4 @@
 - None.
 
 ## Next steps
-1. Push branch and open PR for T-053.
+1. Wait for Reviewer feedback.
