@@ -1,5 +1,8 @@
 # Tasks Archived
 
+Deprecated: source of truth is now `agents/context/tasks_archived.yaml`. This
+file is a frozen legacy snapshot.
+
 ## 2026-01-03
 - T-035 | Status: Done | Owner: Executor | DoD: Decide how to map NFIR `src`/AST locations into IFIR conversion diagnostics; emit span-aware diagnostics (or document why spans are unavailable) for NFIR->IFIR conversion + emission errors; update unit tests as needed. | Verify: `pytest tests/unit_tests/ir`. | Links: scratchpad `agents/scratchpads/T-035_ifir_diagnostics_spans.md`, PR https://github.com/Jianxun/ASDL/pull/35. | Completion: 2026-01-03.
 - T-039 | Status: Done | Owner: Executor | DoD: Improve `asdlc --help` so the top-level menu lists `netlist` and includes a brief command summary; add a CLI help test that asserts the command list appears. | Verify: `pytest tests/unit_tests/cli`. | Links: scratchpad `agents/scratchpads/T-039_cli_help.md`, PR https://github.com/Jianxun/ASDL/pull/37. | Completion: 2026-01-03.

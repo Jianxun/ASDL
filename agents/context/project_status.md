@@ -6,7 +6,7 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - MVP specs live under `docs/specs_mvp/` for AST, NFIR, IFIR, and ngspice emission; full specs remain under `docs/specs/` pending reconciliation.
 - MVP pipeline is AST -> NFIR -> IFIR -> emit; NLIR and CIR are merged into IFIR.
 - Clean slate for IR implementation; prior CIR/NLIR tasks archived.
-- New OKR tracking lives in `agents/context/okrs.md`.
+- OKR tracking is deprecated; planning is spec-driven.
 - AST models + parser updated to MVP net-first schema; parser/AST tests refreshed.
 - ASDL_NFIR dialect + AST->NFIR conversion implemented with unit tests.
 - ASDL_IFIR dialect + NFIR->IFIR conversion implemented with unit tests.

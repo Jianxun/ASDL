@@ -47,7 +47,7 @@
  
 ## References
 - ASDL MVP specs: `docs/specs_mvp/` (AST, NFIR, IFIR, emission)
-- Project contract and tasks: `agents/context/contract.md`, `agents/context/tasks.md`, `agents/context/okrs.md`
+- Project contract and tasks: `agents/context/contract.md`, `agents/context/tasks.yaml`, `agents/context/tasks_state.yaml`, `agents/context/tasks_icebox.yaml`, `agents/context/tasks_archived.yaml` (OKRs deprecated)
 
 ## xDSL Framework Notes (Agent Findings)
 - Use `xdsl.context.Context()` (not MLContext) and register dialects via `ctx.load_dialect(builtin.Builtin)` plus custom dialects before parsing.
