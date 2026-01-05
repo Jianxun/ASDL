@@ -28,6 +28,7 @@
 - Removed device template `{name}` requirement in template validation.
 - Updated netlist unit test to allow instruction-only templates.
 - Ran unit tests for emit and netlist suites.
+- Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/42.
 
 ## Patch summary
 - `src/asdl/emit/netlist/templates.py`: allow device templates without required placeholders.
@@ -44,6 +45,5 @@
 - None.
 
 ## Next steps
-1. Commit changes and push branch.
-2. Open PR referencing T-051 + scratchpad.
-3. Request task status update to Done.
+1. Wait for Architect review/approval.
+2. Request task status update to Done after approval.
