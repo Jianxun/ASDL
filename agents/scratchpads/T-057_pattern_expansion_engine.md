@@ -30,6 +30,7 @@
 - Added unit tests in `tests/unit_tests/parser/test_pattern_expansion.py`.
 - Ran parser unit tests.
 - Set T-057 status to ready_for_review in tasks_state.
+- Opened PR https://github.com/Jianxun/ASDL/pull/47.
 
 ## Patch summary
 - agents/context/tasks_state.yaml: set T-057 to ready_for_review.
@@ -47,4 +48,4 @@
 - None.
 
 ## Next steps
-1. Open PR for T-057 and wait for Reviewer feedback.
+1. Wait for Reviewer feedback on PR #47.
