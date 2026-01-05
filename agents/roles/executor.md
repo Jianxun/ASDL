@@ -30,9 +30,17 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
    - When DoD is met, push the branch, draft the full PR description (summary, testing, links) yourself, and submit the PR referencing the task ID + scratchpad. The user will not perform this step on your behalf.
    - Prefer `gh pr create` to open the pull request once pushed (include summary + testing).
    - Wait for Reviewer review/approval; do not merge PRs yourself.
-   - Respond to review feedback as GitHub PR comments starting with `[Executor]:`.
+- Respond to review feedback as GitHub PR comments starting with `[Executor]:`.
 
 ---
+
+## Status workflow and permissions
+
+Status labels recorded in `agents/context/tasks_state.yaml` are lowercase with underscores only, because automated scripts parse them. The supported set is: `backlog`, `ready`, `in_progress`, `blocked`, `ready_for_review`, `review_in_progress`, `review_clean`, `request_changes`, `escalation_needed`, `done`.
+
+- Executor-owned transitions: `in_progress`, `blocked`, `ready_for_review`. Use `in_progress` when you start work, `blocked` when you are waiting for input, and `ready_for_review` once the DoD, scratchpad, and verify outputs are all in place for the Reviewer.
+- Reviewer-owned statuses: `review_in_progress`, `review_clean`, `request_changes`, `escalation_needed`, `done`. Never edit these; the Reviewer drives the review loop and final closure. In particular, the Executor must not set `done`.
+- Workflow note: keep iterating until the Reviewer either moves to `review_clean`/`done` or requests changes. After a `request_changes` decision, return to `in_progress`, rework as needed, and once ready flip `ready_for_review` again.
 
 ## Authority and constraints
 
