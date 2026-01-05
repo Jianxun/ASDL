@@ -60,7 +60,37 @@ def _expected_netlist(top_as_subckt: bool) -> str:
     return "\n".join(lines)
 
 
-def test_cli_netlist_default_output(tmp_path: Path) -> None:
+def _write_backend_config(tmp_path: Path) -> Path:
+    config_path = tmp_path / "backends.yaml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "sim.ngspice:",
+                '  extension: ".spice"',
+                '  comment_prefix: "*"',
+                "  templates:",
+                '    __subckt_header__: ".subckt {name} {ports}"',
+                '    __subckt_footer__: ".ends {name}"',
+                '    __subckt_call__: "X{name} {ports} {ref}"',
+                '    __netlist_header__: ""',
+                '    __netlist_footer__: ".end"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return config_path
+
+
+@pytest.fixture()
+def backend_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    config_path = _write_backend_config(tmp_path)
+    monkeypatch.setenv("ASDL_BACKEND_CONFIG", str(config_path))
+    return config_path
+
+
+def test_cli_netlist_default_output(
+    tmp_path: Path, backend_config: Path
+) -> None:
     input_path = tmp_path / "design.asdl"
     input_path.write_text(_pipeline_yaml(), encoding="utf-8")
 
@@ -74,7 +104,7 @@ def test_cli_netlist_default_output(tmp_path: Path) -> None:
 
 
 def test_cli_netlist_top_as_subckt_with_output_flag(
-    tmp_path: Path,
+    tmp_path: Path, backend_config: Path
 ) -> None:
     input_path = tmp_path / "design.asdl"
     input_path.write_text(_pipeline_yaml(), encoding="utf-8")
