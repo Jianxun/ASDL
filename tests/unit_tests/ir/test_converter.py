@@ -63,6 +63,37 @@ def test_convert_document_to_nfir() -> None:
     assert backend.props.data["model"].data == "nfet"
 
 
+def test_convert_document_preserves_pattern_tokens() -> None:
+    doc = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"MN<1|2>": "nfet"},
+                nets={
+                    "$OUT<P|N>": ["MN<1|2>.D<0|1>"],
+                    "BUS[3:0];BUS<4|5>": ["MN<1|2>.S"],
+                },
+            )
+        }
+    )
+
+    design, diagnostics = convert_document(doc)
+    assert diagnostics == []
+    assert isinstance(design, DesignOp)
+
+    module = next(op for op in design.body.block.ops if isinstance(op, ModuleOp))
+    nets = [op for op in module.body.block.ops if isinstance(op, NetOp)]
+    instances = [op for op in module.body.block.ops if isinstance(op, InstanceOp)]
+
+    assert [item.data for item in module.port_order.data] == ["OUT<P|N>"]
+    assert {net.name_attr.data for net in nets} == {"OUT<P|N>", "BUS[3:0];BUS<4|5>"}
+    assert len(instances) == 1
+    assert instances[0].name_attr.data == "MN<1|2>"
+
+    out_net = next(net for net in nets if net.name_attr.data == "OUT<P|N>")
+    assert out_net.endpoints.data[0].inst.data == "MN<1|2>"
+    assert out_net.endpoints.data[0].pin.data == "D<0|1>"
+
+
 def test_convert_document_allows_portless_device() -> None:
     doc = AsdlDocument(
         devices={
