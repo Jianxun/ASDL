@@ -14,10 +14,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
-from asdl.data_structures import build_json_schema, render_text_schema
+from asdl.schema import write_schema_artifacts
 
 
 def main() -> None:
@@ -33,22 +32,11 @@ def main() -> None:
     out_dir: Path = args.out
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # JSON Schema
-    json_schema = build_json_schema()
-    (out_dir / "schema.json").write_text(
-        json.dumps(json_schema, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    json_path, txt_path = write_schema_artifacts(out_dir)
 
-    # Human-readable text schema
-    txt_schema = render_text_schema()
-    (out_dir / "schema.txt").write_text(txt_schema, encoding="utf-8")
-
-    print(f"Wrote: {out_dir / 'schema.json'}")
-    print(f"Wrote: {out_dir / 'schema.txt'}")
+    print(f"Wrote: {json_path}")
+    print(f"Wrote: {txt_path}")
 
 
 if __name__ == "__main__":
     main()
-
-

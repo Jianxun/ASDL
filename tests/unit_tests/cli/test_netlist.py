@@ -149,4 +149,6 @@ def test_cli_help() -> None:
     output = result.output
     assert "Commands:" in output
     assert "netlist" in output
+    assert "schema" in output
     assert "Generate a netlist from ASDL." in output
+    assert "Generate ASDL schema artifacts." in output

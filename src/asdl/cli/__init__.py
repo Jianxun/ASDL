@@ -12,11 +12,62 @@ NO_SPAN_NOTE = "No source span available."
 
 CLI_IMPORT_ERROR = format_code("TOOL", 1)
 CLI_WRITE_ERROR = format_code("TOOL", 2)
+CLI_SCHEMA_ERROR = format_code("TOOL", 3)
 
 
 @click.group()
 def cli() -> None:
     """ASDL compiler (asdlc)."""
+
+
+@cli.command("schema")
+@click.option(
+    "--out",
+    "output_dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Output directory (defaults to the current working directory).",
+)
+def schema(output_dir: Optional[Path]) -> None:
+    """Generate ASDL schema artifacts."""
+    diagnostics: List[Diagnostic] = []
+    if output_dir is None:
+        output_dir = Path.cwd()
+
+    try:
+        from asdl.schema import write_schema_artifacts
+    except Exception as exc:  # pragma: no cover - defensive: missing optional deps
+        diagnostics.append(
+            _diagnostic(
+                CLI_IMPORT_ERROR,
+                f"Failed to load schema generator: {exc}",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    try:
+        json_path, txt_path = write_schema_artifacts(output_dir)
+    except OSError as exc:
+        diagnostics.append(
+            _diagnostic(
+                CLI_WRITE_ERROR,
+                f"Failed to write schema to '{output_dir}': {exc}",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+    except Exception as exc:
+        diagnostics.append(
+            _diagnostic(
+                CLI_SCHEMA_ERROR,
+                f"Failed to generate schema: {exc}",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    click.echo(f"Wrote: {json_path}")
+    click.echo(f"Wrote: {txt_path}")
 
 
 @cli.command("netlist")
