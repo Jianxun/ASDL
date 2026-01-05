@@ -10,13 +10,16 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Examples under `examples/`; archived tests under `legacy/tests/`.
 - Visualization prototypes under `prototype/visualizer_react_flow/` (React Flow) and `prototype/visualization/` (jsPlumb legacy).
 - Context/state under `agents/context`; roles under `agents/roles`; ADRs under `agents/adr/`.
-- Legacy todos in `context/todo_*.md` are frozen pre-xDSL; new tasks will live in `agents/context/tasks.md`.
+- Legacy todos in `context/todo_*.md` are frozen pre-xDSL; new tasks live in `agents/context/tasks.yaml` (status in `agents/context/tasks_state.yaml`).
 
 ## Interfaces & data contracts
 - `agents/context/contract.md` maintains this structure; keep sections current.
-- `agents/context/okrs.md`: current OKRs; `agents/context/tasks.md` references these goals.
-- `agents/context/tasks.md`: single task board with IDs `T-00X`, status, owner, DoD, verify commands, links, and subsystem tags when relevant. `tasks_archived.md` holds completed items.
-- `agents/context/handoff.md`: succinct current state, last verified status, next 1-3 steps, risks.
+- `agents/context/tasks.yaml`: active task cards (current_sprint/backlog) without status fields.
+- `agents/context/tasks_state.yaml`: status-only map for active tasks; edited by Architect, Reviewer, and Executor.
+- `agents/context/tasks_icebox.yaml`: deferred task cards (icebox).
+- `agents/context/tasks_archived.yaml`: archived done tasks; compact records with optional `completed_on`.
+- `agents/context/tasks_archived.md`: legacy snapshot (read-only).
+- `agents/context/project_status.md`: project status, last verified status, next 1-3 steps, risks; updated by Architect.
 - `agents/context/codebase_map.md`: navigation reference; update when files move or new subsystems appear.
 - `agents/context/lessons.md`: durable lessons/best practices; ADRs go in `agents/adr/` and are referenced here.
 - Netlist emission uses backend names (e.g., `sim.ngspice`) as stable identifiers in CLI and config; the CLI exposes `--backend` with default `sim.ngspice`.
@@ -38,12 +41,17 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - When `top_as_subckt` is false, netlist emission MUST NOT emit any top-level subckt wrapper lines.
 - Backend config location determined by `ASDL_BACKEND_CONFIG` env var; defaults to `config/backends.yaml`.
 - Use project venv at `venv/` for all commands/tests.
-- Keep contract/map/tasks/handoff aligned with repository reality; update after merges or major decisions.
+- Keep contract/map/tasks/project_status aligned with repository reality; update after merges or major decisions.
+- Only the Architect edits task cards/archives (`agents/context/tasks.yaml`, `agents/context/tasks_icebox.yaml`, `agents/context/tasks_archived.yaml`).
+- Architect, Reviewer, and Executor may edit `agents/context/tasks_state.yaml` for status changes only.
+- Executors update only `agents/scratchpads/T-00X.md` and `agents/context/tasks_state.yaml` for their task; they do not edit task cards or project status.
+- Explorers update only `agents/scratchpads/T-00X.md` and do not edit task cards, project status, or `agents/context/tasks_state.yaml`.
+- `agents/context/project_status.md` is updated only by the Architect.
 - Legacy `context/todo_*.md` remain unchanged until explicitly migrated.
-- Architect direct-to-main is allowed only for documentation-only commits that touch files under `agents/` and/or `docs/` exclusively; all other changes require a PR.
+- Architect direct-to-main is allowed only for commits that touch files under `agents/` and/or `docs/` exclusively; all other changes require a PR.
 
 ## Verification protocol
-- Manual check: `agents/context` contains lessons.md, contract.md, okrs.md, tasks.md, handoff.md, tasks_archived.md, codebase_map.md.
+- Manual check: `agents/context` contains lessons.md, contract.md, tasks.yaml, tasks_state.yaml, tasks_icebox.yaml, tasks_archived.yaml, project_status.md, codebase_map.md.
 - Spot-check that contract reflects current architecture (AST -> NFIR -> IFIR -> emit, ordering-as-lists rule) and that codebase_map lists active subsystems.
 
 ## Decision log

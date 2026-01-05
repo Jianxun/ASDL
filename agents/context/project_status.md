@@ -1,4 +1,6 @@
-# Handoff
+# Project Status
+
+Brief context record for the Architect; reconcile from task status and reviews.
 
 ## Current state
 - MVP specs live under `docs/specs_mvp/` for AST, NFIR, IFIR, and ngspice emission; full specs remain under `docs/specs/` pending reconciliation.

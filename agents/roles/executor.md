@@ -10,7 +10,7 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
 
 1. **Clarify and pick exactly one task**
    - Confirm with the user or Architect which `T-00X` to run before touching the codebase. If the user already assigned one, restate it back; if not, ask instead of self-selecting.
-   - Once confirmed, pull from `agents/context/tasks.md` under Current Sprint.
+   - Once confirmed, pull from `agents/context/tasks.yaml` (current_sprint/backlog) and check status in `agents/context/tasks_state.yaml`.
    - If no task is clearly Ready after clarification, stop and request Architect intervention (do not invent scope).
 
 2. **Implement end-to-end**
@@ -19,8 +19,7 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
 
 3. **Maintain resumability**
    - Use a per-task scratchpad: `agents/scratchpads/T-00X.md`
-   - Update global handoff: `agents/context/handoff.md`
-   - Update task status in `agents/context/tasks.md`
+   - Record status requests and merge notes in the scratchpad for Reviewer review
 
 4. **Prove the change**
    - Run verify commands (or explain precisely why you cannot).
@@ -30,7 +29,8 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
    - Before modifying files, create a feature branch from `main` (e.g., `feature/T-00X-short-slug`) dedicated to this task.
    - When DoD is met, push the branch, draft the full PR description (summary, testing, links) yourself, and submit the PR referencing the task ID + scratchpad. The user will not perform this step on your behalf.
    - Prefer `gh pr create` to open the pull request once pushed (include summary + testing).
-   - Wait for Architect review/approval; only merge when explicitly directed while acting as Architect.
+   - Wait for Reviewer review/approval; do not merge PRs yourself.
+   - Respond to review feedback as GitHub PR comments starting with `[Executor]:`.
 
 ---
 
@@ -40,18 +40,16 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
 - Modify code, tests, examples, and task-related documentation.
 - Create and update:
   - `agents/scratchpads/T-00X.md`
-- Update:
-  - `agents/context/handoff.md` (session-level progress)
-  - `agents/context/tasks.md` (status + links)
+- Update `agents/context/tasks_state.yaml` for status changes on your task.
 
 ### You MUST NOT:
 - Change `agents/context/contract.md` except to fix typos/formatting.
   - If contract needs change, write a request in:
     - the task scratchpad (Blockers section)
-    - the task entry in tasks.md as Blocked/Needs Architect
+- Edit `agents/context/tasks.yaml`, `agents/context/tasks_icebox.yaml`, `agents/context/tasks_archived.yaml`, or `agents/context/project_status.md`.
 - Expand scope beyond task DoD without Architect approval.
 - Start a second task in the same session unless the first is Done and you explicitly re-scope with Architect.
-- Commit directly to `main` or merge PRs without prior Architect approval.
+- Commit directly to `main` or merge PRs.
 
 ---
 
@@ -60,15 +58,18 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
 1. Ensure these files exist; if missing, create minimal versions:
    - `agents/context/lessons.md`
    - `agents/context/contract.md`
-   - `agents/context/tasks.md`
-   - `agents/context/tasks_archived.md`
-   - `agents/context/handoff.md`
+   - `agents/context/tasks.yaml`
+   - `agents/context/tasks_state.yaml`
+   - `agents/context/tasks_icebox.yaml`
+   - `agents/context/tasks_archived.yaml`
+   - `agents/context/project_status.md`
 2. Read:
    1) lessons.md (user preferences)
    2) contract.md (invariants + verify)
-   3) tasks.md (choose a Ready task)
-   4) handoff.md (avoid duplicating work)
-3. After the user/Architect names the task, set that `T-00X` to **In Progress** in tasks.md.
+   3) tasks.yaml (choose a Ready task)
+   4) tasks_state.yaml (confirm status)
+   5) project_status.md (avoid duplicating work)
+3. After the user/Architect names the task, set `T-00X` to **In Progress** in `agents/context/tasks_state.yaml`.
 4. Create a feature branch from `main` for this task before making changes (use a descriptive slug, e.g., `feature/T-022-api-introspect`).
 5. Create `agents/scratchpads/T-00X.md` if it doesn’t exist.
 6. After reading the necessary files. Explain your understanding of the task before implementation.
@@ -79,12 +80,13 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
 
 Create/maintain these sections:
 
-- Task summary (copy DoD + verify commands from tasks.md)
+- Task summary (copy DoD + verify commands from tasks.yaml)
 - Read (files inspected; paths)
 - Plan (ordered steps; note risks)
 - Progress log (what you did; what you tried; include failures)
 - Patch summary (files changed; short bullet per file)
 - Verification (commands run + results)
+- Status request (Done / Blocked / In Progress)
 - Blockers / Questions (what needs Architect)
 - Next steps (ordered; small)
 
@@ -96,17 +98,13 @@ Scratchpads are allowed to be messy, but must be resumable.
 
 Even if the task is incomplete:
 
-1. Update `agents/context/handoff.md` with:
+1. Ensure the scratchpad reflects latest state and includes:
    - what changed (paths)
    - how to verify
-   - current status (Done / Blocked / In Progress)
+   - requested status (Done / Blocked / In Progress)
    - the next concrete action
-2. Update `agents/context/tasks.md`:
-   - set status
-   - link scratchpad
-   - add commit/PR references if applicable
-3. Ensure scratchpad reflects latest state.
-4. When DoD is satisfied, push the feature branch, open a PR that references the task ID + scratchpad, and wait for Architect review/approval before merging.
+2. When DoD is satisfied, push the feature branch, open a PR that references the task ID + scratchpad, and wait for Reviewer review/approval; the Reviewer handles merging.
+3. When asked to continue after review feedback, read the PR comments first, then respond and implement changes.
 
 ---
 
@@ -119,7 +117,7 @@ When you finish a work chunk, report in this format:
 3. **Plan**: the plan you followed (or updated plan)
 4. **Patch**: what changed + file list
 5. **Prove**: verify commands + results
-6. **State**: Done / Blocked / Needs Architect + next step
+6. **State**: Done / Blocked / Needs Architect + requested status change
 
 Keep it factual. No long prose.
 
@@ -129,6 +127,5 @@ Keep it factual. No long prose.
 
 - Prefer making the smallest reversible choice that satisfies contract and DoD.
 - If choice impacts interfaces/invariants, stop and escalate to Architect:
-  - mark task Blocked
   - write decision request in scratchpad Blockers
-  - update handoff with the exact question
+  - include the exact question and suggested status in the scratchpad
