@@ -1,47 +1,6 @@
 schema_version: 2
 
-current_sprint: []
-
-backlog:
-  - id: T-050
-    title: Netlist test backend config
-    owner: Executor
-    dod: >
-      Make netlist CLI/e2e tests deterministic by writing a temporary backend
-      config and setting `ASDL_BACKEND_CONFIG` in tests; ensure expected
-      netlists align with the test templates and do not rely on repo
-      `config/backends.yaml`.
-    verify:
-      - pytest tests/unit_tests/cli -v
-      - pytest tests/unit_tests/e2e -v
-    links:
-      scratchpad: agents/scratchpads/T-050_netlist_test_backend_config.md
-  - id: T-051
-    title: Optional name placeholder
-    owner: Executor
-    dod: >
-      Remove the requirement that backend device templates include `{name}`.
-      Update template validation so pure-instruction templates are allowed,
-      keep `{ports}` optional. Adjust diagnostics/tests to reflect the new
-      rule.
-    verify:
-      - pytest tests/unit_tests/emit -v
-      - pytest tests/unit_tests/netlist -v
-    links:
-      scratchpad: agents/scratchpads/T-051_optional_name_placeholder.md
-  - id: T-052
-    title: Backend lowering refactor
-    owner: Executor
-    dod: >
-      Refactor backend lowering to separate verification from
-      rendering/emission; reduce overly defensive checks in render paths now
-      covered by verification. Focus on readability and single-pass flow
-      without changing netlist output or diagnostics semantics.
-    verify:
-      - pytest tests/unit_tests/emit -v
-      - pytest tests/unit_tests/netlist -v
-    links:
-      scratchpad: agents/scratchpads/T-052_backend_lowering_refactor.md
+current_sprint:
   - id: T-053
     title: Pattern expansion
     owner: Executor
@@ -93,6 +52,47 @@ backlog:
       - pytest tests/unit_tests/netlist -v
     links:
       scratchpad: agents/scratchpads/T-059_pattern_elaboration_pass.md
+
+backlog:
+  - id: T-050
+    title: Netlist test backend config
+    owner: Executor
+    dod: >
+      Make netlist CLI/e2e tests deterministic by writing a temporary backend
+      config and setting `ASDL_BACKEND_CONFIG` in tests; ensure expected
+      netlists align with the test templates and do not rely on repo
+      `config/backends.yaml`.
+    verify:
+      - pytest tests/unit_tests/cli -v
+      - pytest tests/unit_tests/e2e -v
+    links:
+      scratchpad: agents/scratchpads/T-050_netlist_test_backend_config.md
+  - id: T-051
+    title: Optional name placeholder
+    owner: Executor
+    dod: >
+      Remove the requirement that backend device templates include `{name}`.
+      Update template validation so pure-instruction templates are allowed,
+      keep `{ports}` optional. Adjust diagnostics/tests to reflect the new
+      rule.
+    verify:
+      - pytest tests/unit_tests/emit -v
+      - pytest tests/unit_tests/netlist -v
+    links:
+      scratchpad: agents/scratchpads/T-051_optional_name_placeholder.md
+  - id: T-052
+    title: Backend lowering refactor
+    owner: Executor
+    dod: >
+      Refactor backend lowering to separate verification from
+      rendering/emission; reduce overly defensive checks in render paths now
+      covered by verification. Focus on readability and single-pass flow
+      without changing netlist output or diagnostics semantics.
+    verify:
+      - pytest tests/unit_tests/emit -v
+      - pytest tests/unit_tests/netlist -v
+    links:
+      scratchpad: agents/scratchpads/T-052_backend_lowering_refactor.md
   - id: T-060
     title: CLI schema command
     owner: Executor

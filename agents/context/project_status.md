@@ -36,11 +36,12 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - `venv/bin/python -m py_compile src/asdl/emit/netlist/*.py`
 
 ## Next steps (1-3)
-1. T-053: Add pattern token representation in AST/NFIR/IFIR (no expansion yet).
-2. T-057: Implement standalone pattern expansion engine + tests.
-3. T-054: Draft multi-file import/dependency spec.
+1. T-053: Preserve the raw pattern tokens through AST/NFIR/IFIR so downstream passes can trust lexemes before expansion.
+2. T-057: Deliver the standalone pattern expansion engine (ranges/alternation/splicing) and prove it via parser tests and diagnostics.
+3. T-058/T-059: Follow with pattern binding verification (length/endpoint constraints) and then a coordinated elaboration pass so IFIR/netlist outputs consume concrete names.
 
 ## Risks / unknowns
+- Coordinating pattern expansion across AST, NFIR, IFIR, and netlist diagnostics is currently the highest ambiguity.
 - IFIR and emission semantics are new; tests will drive final API shape.
 - Backend-specific emission rules beyond ngspice remain undefined.
 - System devices successfully decouple backend syntax; backend config schema is evolving to include output extensions.
