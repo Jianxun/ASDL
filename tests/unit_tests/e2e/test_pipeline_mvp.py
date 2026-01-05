@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 pytest.importorskip("xdsl")
@@ -5,6 +7,34 @@ pytest.importorskip("xdsl")
 from asdl.ast import parse_string
 from asdl.emit.netlist import emit_netlist
 from asdl.ir.pipeline import run_mvp_pipeline
+
+
+def _write_backend_config(tmp_path: Path) -> Path:
+    config_path = tmp_path / "backends.yaml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "sim.ngspice:",
+                '  extension: ".spice"',
+                '  comment_prefix: "*"',
+                "  templates:",
+                '    __subckt_header__: ".subckt {name} {ports}"',
+                '    __subckt_footer__: ".ends {name}"',
+                '    __subckt_call__: "X{name} {ports} {ref}"',
+                '    __netlist_header__: ""',
+                '    __netlist_footer__: ".end"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return config_path
+
+
+@pytest.fixture()
+def backend_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    config_path = _write_backend_config(tmp_path)
+    monkeypatch.setenv("ASDL_BACKEND_CONFIG", str(config_path))
+    return config_path
 
 
 def _pipeline_yaml() -> str:
@@ -40,7 +70,9 @@ def _pipeline_yaml() -> str:
     )
 
 
-def test_pipeline_end_to_end_deterministic_top_handling() -> None:
+def test_pipeline_end_to_end_deterministic_top_handling(
+    backend_config: Path,
+) -> None:
     document, diagnostics = parse_string(_pipeline_yaml())
 
     assert diagnostics == []
