@@ -1,19 +1,9 @@
 schema_version: 1
 
 statuses:
-  T-050: done
-  T-051: done
-  T-052: backlog
-  T-053: done
-  T-057: done
-  T-058: done
-  T-059: done
-  T-060: done
-  T-061: backlog
-  T-062: backlog
-  T-063: backlog
-  T-054: backlog
-  T-055: backlog
-  T-056: backlog
+  T-061: ready
+  T-062: ready
+  T-063: ready
   T-064: backlog
-  T-065: done
+  T-065: ready
+  T-066: ready

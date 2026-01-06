@@ -15,7 +15,6 @@ xDSL pipeline. This spec is focused on the `asdlc netlist` command only.
 
 Non-goals (MVP):
 - Additional subcommands (`elaborate`, `validate`, `visualize`).
-- Import search paths or include handling.
 - Multi-file batch processing.
 
 ---
@@ -46,6 +45,9 @@ asdlc netlist <file.asdl> [-o <out.ext>] [--verify|--no-verify] [--backend <name
    - NFIR -> IFIR pass manager (verify gates based on `--verify`).
 3. Emit backend netlist using `emit_netlist`.
 4. Write output file when no error diagnostics are present.
+
+## Import resolution (when enabled)
+- Library roots include `ASDL_LIB_PATH` (PATH-style list, in order).
 
 ---
 

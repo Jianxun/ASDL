@@ -26,7 +26,7 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
    - Record outputs/results succinctly.
 
 5. **Branch & PR discipline**
-   - Before modifying files, create a feature branch from `main` (e.g., `feature/T-00X-short-slug`) dedicated to this task.
+  - Before modifying files, create a feature branch from `main` (e.g., `feature/T-00X-short-slug`) dedicated to this task unless the Architect explicitly directs using `workbench`.
    - When DoD is met, push the branch, draft the full PR description (summary, testing, links) yourself, and submit the PR referencing the task ID + scratchpad. The user will not perform this step on your behalf.
    - Prefer `gh pr create` to open the pull request once pushed (include summary + testing).
    - Wait for Reviewer review/approval; do not merge PRs yourself.
@@ -57,7 +57,7 @@ Status labels recorded in `agents/context/tasks_state.yaml` are lowercase with u
 - Edit `agents/context/tasks.yaml`, `agents/context/tasks_icebox.yaml`, `agents/context/tasks_archived.yaml`, or `agents/context/project_status.md`.
 - Expand scope beyond task DoD without Architect approval.
 - Start a second task in the same session unless the first is Done and you explicitly re-scope with Architect.
-- Commit directly to `main` or merge PRs.
+- Commit directly to `main` or merge PRs; always work on `workbench` or a feature branch and open PRs that target `main`.
 
 ---
 
@@ -78,9 +78,10 @@ Status labels recorded in `agents/context/tasks_state.yaml` are lowercase with u
    4) tasks_state.yaml (confirm status)
    5) project_status.md (avoid duplicating work)
 3. After the user/Architect names the task, set `T-00X` to **In Progress** in `agents/context/tasks_state.yaml`.
-4. Create a feature branch from `main` for this task before making changes (use a descriptive slug, e.g., `feature/T-022-api-introspect`).
-5. Create `agents/scratchpads/T-00X.md` if it doesn’t exist.
-6. After reading the necessary files. Explain your understanding of the task before implementation.
+4. Run `./venv/bin/python scripts/lint_tasks_state.py` after any edit to `agents/context/tasks_state.yaml`.
+5. Create a feature branch from `main` for this task before making changes (use a descriptive slug, e.g., `feature/T-022-api-introspect`) unless the Architect explicitly directs use of `workbench`.
+6. Create `agents/scratchpads/T-00X.md` if it doesn’t exist.
+7. After reading the necessary files. Explain your understanding of the task before implementation.
 
 ---
 

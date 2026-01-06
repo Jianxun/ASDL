@@ -1,3 +1,29 @@
 schema_version: 1
 
-icebox: []
+icebox:
+  - id: T-052
+    title: Backend lowering refactor
+    owner: Executor
+    dod: >
+      Refactor backend lowering to separate verification from
+      rendering/emission; reduce overly defensive checks in render paths now
+      covered by verification. Focus on readability and single-pass flow
+      without changing netlist output or diagnostics semantics.
+    verify:
+      - pytest tests/unit_tests/emit -v
+      - pytest tests/unit_tests/netlist -v
+    links:
+      scratchpad: agents/scratchpads/T-052_backend_lowering_refactor.md
+  - id: T-056
+    title: Exports sugar
+    owner: Executor
+    dod: >
+      Add `exports` sugar to AST and lowering: allow `exports` block in modules
+      and forward child ports into parent nets per `docs/specs/spec_ast.md`.
+      Include diagnostics for invalid forwarding; no changes to IFIR
+      semantics beyond expanded nets.
+    verify:
+      - pytest tests/unit_tests/ast -v
+      - pytest tests/unit_tests/ir -v
+    links:
+      scratchpad: agents/scratchpads/T-056_exports_sugar.md

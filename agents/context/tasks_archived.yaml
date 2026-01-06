@@ -1,55 +1,38 @@
 schema_version: 1
 
 archive:
+  - id: T-054
+    title: Imports spec
+    owner: Architect
+    completed_on: 2026-01-06
+    dod: >
+      Define multi-file import/dependency spec (syntax, resolution rules,
+      cycles, diagnostics). Capture proposed schema and pass boundaries in
+      `docs/specs/` plus a migration note for MVP pipeline.
+    verify: []
+    links:
+      scratchpad: agents/scratchpads/T-054_imports_spec.md
+  - id: T-055
+    title: Specs reconciliation
+    owner: Architect
+    completed_on: 2026-01-06
+    dod: >
+      Reconcile `docs/specs/` with the MVP pipeline (AST -> NFIR -> IFIR ->
+      emit), deprecate CIR/NLIR or merge into IFIR in spec docs, and update
+      `spec_compiler_stack.md` accordingly.
+    verify: []
+    links:
+      scratchpad: agents/scratchpads/T-055_specs_reconciliation.md
   - id: T-048
     title: Unified netlist emitter
     owner: Architect
     completed_on: null
-    dod: >
-      Replace ngspice-specific emitter with unified netlist emitter (new
-      module/package). Remove `emit_ngspice` and `src/asdl/emit/ngspice.py`
-      entirely; update `src/asdl/emit/__init__.py` and all call sites/tests.
-      Add dedicated netlist verification pass under `src/asdl/emit/` (xDSL
-      ModulePass) and run it before lowering/rendering. Add CLI `--backend`
-      (default `sim.ngspice`) and drive output extension from
-      `config/backends.yaml` per-backend `extension` key (verbatim). Update
-      backend config schema to `extension`, `comment_prefix`, `templates`;
-      adjust loader/tests accordingly. Ensure top module emits no wrapper when
-      `top_as_subckt` is false. Update specs and rebaseline netlist tests to
-      new backend naming.
-    verify:
-      - pytest tests/unit_tests/emit -v
-      - pytest tests/unit_tests/netlist -v
-      - pytest tests/unit_tests/cli -v
-      - pytest tests/unit_tests/e2e -v
     links:
       scratchpad: agents/scratchpads/T-048_unified_netlist_emitter.md
   - id: T-049
     title: Netlist emitter refactor
     owner: Executor
     completed_on: null
-    dod: >
-      Refactor `src/asdl/emit/netlist.py` into a package with clear separation
-      of validation vs rendering. Create `src/asdl/emit/netlist/` modules:
-      `__init__.py` (re-exports), `api.py` (emit_netlist/load_backend
-      orchestration), `verify.py` (VerifyNetlistPass + verification runner),
-      `render.py` (emit_design/module/instance + system device rendering),
-      `templates.py` (placeholder parsing/validation + system-device placeholder
-      rules/constants), `params.py` (param merge + attr stringify helpers),
-      `ir_utils.py` (collect ops, resolve top, find single design),
-      `diagnostics.py` (diagnostic codes + helpers). Preserve public API:
-      `from asdl.emit.netlist import EmitOptions, VerifyNetlistPass,
-      emit_netlist, load_backend` remains valid via re-exports. Ensure no
-      behavior changes (byte-for-byte netlist output + diagnostics) beyond
-      necessary import paths. Update imports across `src/asdl/emit/`,
-      `src/asdl/cli/`, and tests as needed. Add/adjust any internal imports to
-      avoid cycles. Update `agents/context/codebase_map.md` emission section to
-      reflect new netlist package layout.
-    verify:
-      - pytest tests/unit_tests/emit -v
-      - pytest tests/unit_tests/netlist -v
-      - pytest tests/unit_tests/cli -v
-      - pytest tests/unit_tests/e2e -v
     links:
       scratchpad: agents/scratchpads/T-049_netlist_emitter_refactor.md
       pr: https://github.com/Jianxun/ASDL/pull/41
@@ -57,65 +40,70 @@ archive:
     title: System devices
     owner: Executor
     completed_on: null
-    dod: >
-      Refactor ngspice emitter to use backend config with system devices per
-      ADR-0006. Create `src/asdl/emit/backend_config.py` with backend config
-      loading/validation. Create `config/backends.yaml` with ngspice system
-      device definitions (include required `__netlist_header__`/
-      `__netlist_footer__`). Refactor `src/asdl/emit/ngspice.py` to use system
-      device templates for subcircuit headers/footers (top uses `__subckt_*`
-      when `top_as_subckt`, otherwise no wrapper), subcircuit calls, and
-      required netlist headers/footers. Remove hardcoded ngspice syntax
-      (`_format_subckt_line`, inline header/footer strings, hardcoded
-      `X{name}...` logic). Add unit tests for backend config loading and system
-      device rendering. Verify all existing netlist tests pass with
-      byte-for-byte identical output.
-    verify:
-      - pytest tests/unit_tests/emit -v
-      - pytest tests/unit_tests/netlist -v
     links:
       scratchpad: agents/scratchpads/T-047_system_devices.md
       adr: agents/adr/ADR-0006-system-devices.md
       spec: docs/specs_mvp/spec_netlist_emission_mvp.md
       pr: https://github.com/Jianxun/ASDL/pull/39
-    files:
-      - src/asdl/emit/backend_config.py
-      - src/asdl/emit/ngspice.py
-      - config/backends.yaml
-      - tests/unit_tests/emit/test_backend_config.py
   - id: T-046
     title: Individual param placeholders
     owner: Architect
     completed_on: null
-    dod: >
-      Expose individual merged parameter values as template placeholders in
-      the ngspice emitter. After merging device/backend/instance params, add
-      each key-value pair from the merged dict to `template_values` (not just
-      the formatted `params_str`). This allows templates to reference
-      individual params like `{L}`, `{W}`, `{NF}`, `{m}`. Preserve backward
-      compat with `{params}` placeholder for the formatted string.
-    verify:
-      - pytest tests/unit_tests/netlist
     links:
       scratchpad: agents/scratchpads/T-046_individual_param_placeholders.md
       pr: https://github.com/Jianxun/ASDL/pull/38
-    files:
-      - src/asdl/emit/ngspice.py
   - id: T-038
     title: Template placeholders
     owner: Executor
     completed_on: null
-    dod: >
-      Update netlist template placeholders to use `{ports}` (hard switch;
-      remove `{conns}`); treat `{ports}` as optional; only implicit
-      placeholders are `{name}` and `{ports}` (others are user-controlled).
-      Deprecate `{params}` placeholder and remove reserved-status enforcement;
-      update validation rules/diagnostics and tests (missing `{ports}`
-      allowed; unknown placeholders error). Update CLI help text to list
-      supported placeholders.
-    verify:
-      - pytest tests/unit_tests/netlist
-      - pytest tests/unit_tests/cli
     links:
       scratchpad: agents/scratchpads/T-038_template_placeholders.md
       pr: https://github.com/Jianxun/ASDL/pull/36
+  - id: T-050
+    title: Netlist test backend config
+    owner: Executor
+    completed_on: null
+    links:
+      scratchpad: agents/scratchpads/T-050_netlist_test_backend_config.md
+  - id: T-051
+    title: Optional name placeholder
+    owner: Executor
+    completed_on: null
+    links:
+      scratchpad: agents/scratchpads/T-051_optional_name_placeholder.md
+  - id: T-053
+    title: Pattern expansion
+    owner: Executor
+    completed_on: null
+    links:
+      scratchpad: agents/scratchpads/T-053_pattern_expansion.md
+  - id: T-057
+    title: Pattern expansion engine
+    owner: Executor
+    completed_on: null
+    links:
+      scratchpad: agents/scratchpads/T-057_pattern_expansion_engine.md
+  - id: T-058
+    title: Pattern binding verification
+    owner: Executor
+    completed_on: null
+    links:
+      scratchpad: agents/scratchpads/T-058_pattern_binding_verification.md
+  - id: T-059
+    title: Pattern elaboration pass
+    owner: Executor
+    completed_on: null
+    links:
+      scratchpad: agents/scratchpads/T-059_pattern_elaboration_pass.md
+  - id: T-060
+    title: CLI schema command
+    owner: Executor
+    completed_on: null
+    links:
+      scratchpad: agents/scratchpads/T-060_cli_schema_command.md
+  - id: T-065
+    title: Pattern enumeration validation
+    owner: Executor
+    completed_on: null
+    links:
+      scratchpad: agents/scratchpads/T-065_pattern_enumeration_validation.md

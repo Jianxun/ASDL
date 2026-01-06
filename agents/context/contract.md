@@ -14,7 +14,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 
 ## Interfaces & data contracts
 - `agents/context/contract.md` maintains this structure; keep sections current.
-- `agents/context/tasks.yaml`: active task cards (current_sprint/backlog) without status fields.
+- `agents/context/tasks.yaml`: active task cards (current_sprint/backlog) without status fields; tasks may include optional `depends_on` lists of `T-00X`.
 - `agents/context/tasks_state.yaml`: status-only map for active tasks; edited by Architect, Reviewer, and Executor.
 - `agents/context/tasks_icebox.yaml`: deferred task cards (icebox).
 - `agents/context/tasks_archived.yaml`: archived done tasks; compact records with optional `completed_on`.
@@ -78,3 +78,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-01-06: Binding verification and elaboration must share an equivalence helper; scalar endpoints bind to exactly one net.
 - 2026-01-06: NFIR/IFIR carry raw pattern tokens; store `expansion_len` metadata for faster verification. NFIR verification runs before IFIR lowering. Prefer single net ops with patterned names (no eager expansion).
 - 2026-01-07: Import spec v0.1: imports resolve to files only (no directory imports, no extension inference). `file_id` is an absolute path with `.`/`..` normalization and no symlink resolution. Unqualified references resolve only within the same file. Multiple namespaces may bind to the same `file_id`. Unused imports emit a warning.
+- 2026-01-08: `file_id` is the normalized absolute path used for symbol identity `(file_id, name)` and is propagated through NFIR/IFIR. Netlist emission remains template-driven; `{file_id}` is available to system-device templates, with entry `file_id` provided to netlist header/footer.
+- 2026-01-08: `top` resolves only within the entry file (no `ns.top`). Same-name modules/devices across files are allowed; same-name within a file is still invalid. Netlist emission must guarantee unique subckt identifiers: if duplicates exist across files, backend templates must include `{file_id}` in subckt headers/calls or emission errors. Import resolution adds `ASDL_LIB_PATH` (PATH-style list) after `-I` roots.
+- 2026-01-08: Import diagnostics codes are reserved: `AST-010/011/012/013/014`, `IR-010/011`, `LINT-001` per `docs/specs/spec_asdl_import.md`.
+- 2026-01-08: Instance type tokens may be qualified as `ns.symbol`; name resolution splits `ref` + `ref_file_id`. Import paths expand `~` and `$VAR` before resolution; `file_id` is the normalized absolute path. Files must define at least one module or device (import-only documents are invalid).
+- 2026-01-08: Netlist emission must auto-disambiguate duplicate module names across files by appending `__{hash8}` where `hash8 = sha1(file_id)[:8]`; emitted names are used for subckt headers/calls and `{top}` placeholders. `{sym_name}`/`{top_sym_name}` expose the original module names to templates.

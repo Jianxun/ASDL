@@ -28,7 +28,7 @@ ordered mappings but performs no semantic resolution.
   - Map of device name -> device definition.
 
 ### Notes
-- At least one of `modules` or `devices` must be present.
+- At least one of `modules` or `devices` must be present (import-only files are invalid).
 
 ---
 

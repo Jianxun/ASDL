@@ -14,13 +14,15 @@ source of truth for stage boundaries and naming.
 ---
 
 ## Pipeline (canonical)
-Tier-1 YAML → ASDL_A → ASDL_NFIR → (NFIR verify) → ASDL_IFIR → (IFIR verify) → pattern elaboration → backend emission.
+Tier-1 YAML → ASDL_A → import resolution (ProgramDB + NameEnv) → ASDL_NFIR →
+(NFIR verify) → ASDL_IFIR → (IFIR verify) → pattern elaboration → backend emission.
 
 ---
 
 ## MVP scope (skeleton stack)
 - Pattern tokens are preserved through NFIR/IFIR; elaboration happens just before emission.
-- No import system (deferred).
+- Imports are resolved before AST->NFIR; symbol identity is `(file_id, name)` and `file_id`
+  is propagated through NFIR/IFIR. Entry `file_id` is exposed to netlist templates.
 - Exports block is optional sugar (deferred).
 - Ports are inferred only from `$`-prefixed net keys in `nets:`.
 - Port order is the YAML source order of `$` nets.

@@ -107,6 +107,7 @@ def netlist(
     """Generate a netlist from ASDL.
 
     Supported placeholders: {name}, {ports} (optional). {params} is deprecated.
+    Library search path: ASDL_LIB_PATH (PATH-style list).
     """
     diagnostics: List[Diagnostic] = []
 

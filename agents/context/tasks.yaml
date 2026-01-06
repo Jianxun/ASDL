@@ -1,110 +1,8 @@
 schema_version: 2
 
-current_sprint:
-  - id: T-053
-    title: Pattern expansion
-    owner: Executor
-    dod: >
-      Preserve raw pattern tokens verbatim in AST/NFIR/IFIR (no
-      basename+pattern decomposition). Update parsers/converters to retain the
-      original token strings; add tests to ensure round-trip preservation
-      through NFIR/IFIR.
-    verify:
-      - pytest tests/unit_tests/ast -v
-      - pytest tests/unit_tests/ir -v
-    links:
-      scratchpad: agents/scratchpads/T-053_pattern_expansion.md
-  - id: T-057
-    title: Pattern expansion engine
-    owner: Executor
-    dod: >
-      Implement a standalone pattern expansion engine per
-      `docs/specs/spec_asdl_pattern_expansion.md` (ranges, alternation,
-      splicing, expansion order, collisions, errors). Use `_` between basename
-      and suffixes. Add focused unit tests for expansion and diagnostics; no
-      pipeline integration yet.
-    verify:
-      - pytest tests/unit_tests/parser -v
-    links:
-      scratchpad: agents/scratchpads/T-057_pattern_expansion_engine.md
-  - id: T-058
-    title: Pattern binding verification
-    owner: Executor
-    dod: >
-      Implement pattern binding verification for nets/endpoints: total length
-      comparison, scalar net broadcast, patterned net requires all endpoint
-      lengths match. Emit diagnostics on mismatch and malformed patterns. Add
-      unit tests in IR layer.
-    verify:
-      - pytest tests/unit_tests/ir -v
-    links:
-      scratchpad: agents/scratchpads/T-058_pattern_binding_verification.md
-  - id: T-059
-    title: Pattern elaboration pass
-    owner: Executor
-    dod: >
-      Add an elaboration pass that expands pattern tokens into explicit
-      names/endpoints before backend emission. Wire it into the pipeline
-      before IFIR->emit; add tests covering expansion + netlist output
-      stability.
-    verify:
-      - pytest tests/unit_tests/ir -v
-      - pytest tests/unit_tests/netlist -v
-    links:
-      scratchpad: agents/scratchpads/T-059_pattern_elaboration_pass.md
+current_sprint: []
 
 backlog:
-  - id: T-050
-    title: Netlist test backend config
-    owner: Executor
-    dod: >
-      Make netlist CLI/e2e tests deterministic by writing a temporary backend
-      config and setting `ASDL_BACKEND_CONFIG` in tests; ensure expected
-      netlists align with the test templates and do not rely on repo
-      `config/backends.yaml`.
-    verify:
-      - pytest tests/unit_tests/cli -v
-      - pytest tests/unit_tests/e2e -v
-    links:
-      scratchpad: agents/scratchpads/T-050_netlist_test_backend_config.md
-  - id: T-051
-    title: Optional name placeholder
-    owner: Executor
-    dod: >
-      Remove the requirement that backend device templates include `{name}`.
-      Update template validation so pure-instruction templates are allowed,
-      keep `{ports}` optional. Adjust diagnostics/tests to reflect the new
-      rule.
-    verify:
-      - pytest tests/unit_tests/emit -v
-      - pytest tests/unit_tests/netlist -v
-    links:
-      scratchpad: agents/scratchpads/T-051_optional_name_placeholder.md
-  - id: T-052
-    title: Backend lowering refactor
-    owner: Executor
-    dod: >
-      Refactor backend lowering to separate verification from
-      rendering/emission; reduce overly defensive checks in render paths now
-      covered by verification. Focus on readability and single-pass flow
-      without changing netlist output or diagnostics semantics.
-    verify:
-      - pytest tests/unit_tests/emit -v
-      - pytest tests/unit_tests/netlist -v
-    links:
-      scratchpad: agents/scratchpads/T-052_backend_lowering_refactor.md
-  - id: T-060
-    title: CLI schema command
-    owner: Executor
-    dod: >
-      Add a CLI command `asdlc schema` that writes the JSON schema and text
-      schema to an output directory (default: CWD), reusing the same generator
-      logic as `scripts/generate_schema.py`. Update CLI help to list the new
-      command and add CLI tests that assert the output files are created.
-    verify:
-      - pytest tests/unit_tests/cli -v
-    links:
-      scratchpad: agents/scratchpads/T-060_cli_schema_command.md
   - id: T-061
     title: AST imports schema
     owner: Executor
@@ -115,7 +13,8 @@ backlog:
       `scripts/generate_schema.py` output. Update `docs/specs/spec_ast.md` to
       include `imports` (keep MVP spec unchanged). Add parser/AST tests for
       valid and invalid `imports` (bad namespace, duplicate key, invalid
-      type).
+      type). Enforce that documents define at least one module or device
+      (import-only files are invalid), with tests covering the new rule.
     verify:
       - pytest tests/unit_tests/parser -v
       - pytest tests/unit_tests/ast -v
@@ -124,16 +23,20 @@ backlog:
   - id: T-062
     title: Import resolution
     owner: Executor
+    depends_on:
+      - T-061
     dod: >
       Implement import resolution + file loading per
       `docs/specs/spec_asdl_import.md` (relative/absolute/logical roots, no
-      extension inference, `--lib` name ignored for resolution, path
-      normalization collapses `.`/`..`, no symlink resolution). Build a
+      extension inference, `--lib` name ignored for resolution, `ASDL_LIB_PATH`
+      roots, `~`/`$VAR` expansion, path normalization collapses `.`/`..`, no
+      symlink resolution). Build a
       `ProgramDB` keyed by `file_id` (absolute path) and a per-file `NameEnv`
       that allows multiple namespaces to the same file. Detect cycles with a
       readable import chain and emit diagnostics for missing files and
-      malformed paths. Add unit tests for resolution order, cycles, and
-      missing imports.
+      malformed paths (`AST-010`/`AST-011`/`AST-012`/`AST-013`/`AST-014`). Add
+      unit tests for resolution order, cycles, missing imports, duplicate
+      symbols in a file, and deduping the same `file_id` across paths.
     verify:
       - pytest tests/unit_tests/parser -v
       - pytest tests/unit_tests/ir -v
@@ -142,52 +45,22 @@ backlog:
   - id: T-063
     title: Import name resolution
     owner: Executor
+    depends_on:
+      - T-062
     dod: >
       Wire import-aware name resolution into AST->NFIR conversion: allow
       unqualified symbols only from the current file, and `ns.symbol` for
       imported files; reject unresolved names with diagnostics. Forbid
       same-name symbol duplicates within a file regardless of kind. Emit a
-      warning for unused `imports` namespaces. Add IR tests covering local
-      refs, imported refs, unused-import warnings, and unresolved symbol
-      diagnostics.
+      warning for unused `imports` namespaces (`LINT-001`) and errors for
+      unresolved names (`IR-010`/`IR-011`). Support qualified type tokens in
+      instance expressions by splitting `ns.symbol` into `ref` + `ref_file_id`.
+      Add IR tests covering local refs, imported refs, unused-import warnings,
+      and unresolved symbol diagnostics.
     verify:
       - pytest tests/unit_tests/ir -v
     links:
       scratchpad: agents/scratchpads/T-063_import_name_resolution.md
-  - id: T-054
-    title: Imports spec
-    owner: Executor
-    dod: >
-      Define multi-file import/dependency spec (syntax, resolution rules,
-      cycles, diagnostics). Capture proposed schema and pass boundaries in
-      `docs/specs/` plus a migration note for MVP pipeline.
-    verify: []
-    links:
-      scratchpad: agents/scratchpads/T-054_imports_spec.md
-  - id: T-055
-    title: Specs reconciliation
-    owner: Architect
-    dod: >
-      Reconcile `docs/specs/` with the MVP pipeline (AST -> NFIR -> IFIR ->
-      emit), deprecate CIR/NLIR or merge into IFIR in spec docs, and update
-      `spec_compiler_stack.md` accordingly.
-    verify: []
-    links:
-      scratchpad: agents/scratchpads/T-055_specs_reconciliation.md
-  - id: T-056
-    title: Exports sugar
-    owner: Executor
-    dod: >
-      Add `exports` sugar to AST and lowering: allow `exports` block in modules
-      and forward child ports into parent nets per `docs/specs/spec_ast.md`.
-      Include diagnostics for invalid forwarding; no changes to IFIR
-      semantics beyond expanded nets.
-    verify:
-      - pytest tests/unit_tests/ast -v
-      - pytest tests/unit_tests/ir -v
-    links:
-      scratchpad: agents/scratchpads/T-056_exports_sugar.md
-
   - id: T-064
     title: Pattern endpoint equivalence
     owner: Executor
@@ -203,22 +76,61 @@ backlog:
       - examples/scratch/test.asdl
     links:
       scratchpad: agents/scratchpads/T-064_pattern_equivalence.md
-
   - id: T-065
-    title: Pattern enumeration validation
+    title: File_id propagation in IR
     owner: Executor
+    depends_on:
+      - T-062
+      - T-063
     dod: >
-      Detect malformed pattern enumerations (e.g., commas inside `<...>`)
-      as early as possible: update the pattern expansion helpers or parser
-      validators so that `MN_OUT<P,N>` and similar tokens trigger a PASS
-      diagnostic before NFIR verification. Add parser/IR tests that cover
-      invalid enumerations and ensure the existing expansion suite still
-      accepts valid `|`-separated lists.
+      Carry `file_id` metadata from import resolution through NFIR/IFIR:
+      add `entry_file_id` on design ops, `file_id` on module/device ops, and
+      `ref_file_id` on instance ops. Update AST->NFIR and NFIR->IFIR converters
+      to set/copy these attributes from the import ProgramDB/NameEnv. Adjust
+      IR verification to allow same-name modules/devices across files (uniqueness
+      per `file_id`) while still enforcing same-file uniqueness. Ensure `top`
+      resolves within the entry file only (via `entry_file_id`). Add IR tests
+      covering duplicate names across files and entry-top resolution.
     verify:
-      - pytest tests/unit_tests/parser -v
       - pytest tests/unit_tests/ir -v
+    files:
+      - src/asdl/ir/nfir/dialect.py
+      - src/asdl/ir/ifir/dialect.py
+      - src/asdl/ir/converters/ast_to_nfir.py
+      - src/asdl/ir/converters/nfir_to_ifir.py
+      - src/asdl/imports
+      - tests/unit_tests/ir
     links:
-      scratchpad: agents/scratchpads/T-065_pattern_enumeration_validation.md
+      scratchpad: agents/scratchpads/T-065_file_id_propagation.md
+  - id: T-066
+    title: Netlist templates file_id placeholders
+    owner: Executor
+    depends_on:
+      - T-065
+    dod: >
+      Expose `file_id` to system-device templates without changing emission
+      behavior. Allow `{file_id}` in `__subckt_header__`,
+      `__subckt_call__`, `__netlist_header__`, and `__netlist_footer__`
+      placeholder validation, plus `{sym_name}` for module templates and
+      `{top_sym_name}` for netlist header/footer. Pass the module's `file_id`
+      into `__subckt_header__`, the referenced module `file_id` into
+      `__subckt_call__`, and the entry `file_id` into netlist header/footer
+      contexts. Implement deterministic subckt renaming for duplicate module
+      names across files using `{sym_name}__{hash8}` (first 8 hex chars of
+      `sha1(file_id)`), applied consistently to `__subckt_header__`, module
+      calls, and `{top}` in netlist header/footer. Add or update emission tests
+      to cover template usage and duplicate-name disambiguation.
+    verify:
+      - pytest tests/unit_tests/emit -v
+      - pytest tests/unit_tests/netlist -v
+    files:
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/templates.py
+      - src/asdl/emit/backend_config.py
+      - config/backends.yaml
+      - tests/unit_tests/emit
+    links:
+      scratchpad: agents/scratchpads/T-066_netlist_file_id_templates.md
 
 exploration_candidates:
   - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.

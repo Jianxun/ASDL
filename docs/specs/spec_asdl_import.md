@@ -55,6 +55,9 @@ Examples:
 Unqualified symbol references MAY be used only for symbols defined in the
 same file; they never search imported namespaces.
 
+In inline instance expressions, the type token may be qualified as
+`ns.symbol_name` to reference imported modules/devices.
+
 ---
 
 ## 3. Path Resolution
@@ -70,6 +73,7 @@ file as written.
 
 Given an importing file `F` and an import path `P`:
 
+0. Expand `~` and `$VAR` segments in `P` (environment variable expansion).
 1. If `P` starts with `./` or `../`:
    - resolve relative to directory of `F`.
 
@@ -80,7 +84,8 @@ Given an importing file `F` and an import path `P`:
    - search in ordered roots:
      1) project root (`--root`, default: entry file directory)
      2) include roots (`-I <dir>`, in CLI order)
-     3) library roots (`--lib <name>=<dir>`, in CLI order; optional; name does not affect resolution)
+     3) `ASDL_LIB_PATH` roots (PATH-like list, in order)
+     4) library roots (`--lib <name>=<dir>`, in CLI order; optional; name does not affect resolution)
 
 After a candidate path is found, the compiler MUST normalize it by collapsing
 `.`/`..` segments and converting to an absolute path (no symlink resolution).
@@ -88,6 +93,10 @@ After a candidate path is found, the compiler MUST normalize it by collapsing
 First match wins. If multiple matches exist, the compiler MAY warn.
 
 If no match is found, it is an error.
+
+`ASDL_LIB_PATH` is a PATH-style list of directories (OS path separator).
+Relative entries are resolved against the current working directory; empty
+entries are ignored.
 
 ---
 
@@ -125,6 +134,9 @@ Each symbol stores:
 - kind (`module`, `device`, ...)
 - definition (AST handle)
 - source location (file + span) for diagnostics
+
+If a `file_id` is loaded multiple times (via different import paths),
+the compiler MUST deduplicate it and reuse the first loaded AST.
 
 ### 5.2 Per-file Name Environment (lexical bindings)
 
@@ -178,9 +190,36 @@ If the import graph contains a cycle:
 If a declared namespace is never referenced:
 - Compiler SHOULD emit a warning.
 
+### 6.5 Diagnostics codes
+
+- `AST-010`: import path not found (ERROR)
+- `AST-011`: malformed import path (ERROR)
+- `AST-012`: import cycle detected (ERROR)
+- `AST-013`: duplicate namespace in `imports` (ERROR)
+- `AST-014`: duplicate symbol name within a file (ERROR)
+- `IR-010`: unresolved qualified symbol `ns.symbol` (ERROR)
+- `IR-011`: unresolved unqualified symbol (ERROR)
+- `LINT-001`: unused import namespace (WARNING)
+
 ---
 
-## 7. Re-exports (Optional Extension)
+## 7. Pipeline integration
+
+- Import resolution runs after parsing and before AST->NFIR conversion.
+- `file_id` is the canonical absolute path (normalized `.`/`..`, no symlink resolution).
+- Symbol identity is `(file_id, name)`; same-name symbols are allowed across files.
+- IR propagation:
+  - `ModuleOp` and `DeviceOp` carry `file_id`.
+  - `InstanceOp` carries `ref_file_id` for the resolved module/device reference.
+  - `DesignOp` carries `entry_file_id` for the root input file.
+- Emission remains template-driven; the compiler only passes data:
+  - `__subckt_header__` receives the defining module `file_id`.
+  - `__subckt_call__` receives the referenced module `file_id`.
+  - `__netlist_header__`/`__netlist_footer__` receive the entry `file_id`.
+
+---
+
+## 8. Re-exports (Optional Extension)
 
 Re-exports allow a file to act as a façade by exposing selected symbols from its own imports.
 
@@ -201,7 +240,7 @@ Visibility remains lexical:
 
 ---
 
-## 8. Examples
+## 9. Examples
 
 ### 8.1 Typical project top
 
@@ -266,7 +305,7 @@ modules:
 
 ---
 
-## 9. Determinism Requirements
+## 10. Determinism Requirements
 
 A build is deterministic if:
 - import resolution order is stable

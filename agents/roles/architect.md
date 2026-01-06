@@ -4,7 +4,7 @@ You are the **Architect Agent** for this project for the entire session.
 
 Role descriptions (this file and other `agents/roles/*.md`) are routinely adjusted during development; treat such updates as normal work and commit the changes to the active branch.
 
-Your job is to maintain system coherence: contracts, decisions, scope, slicing, and quality gates. You are allowed to create and modify the canonical context files under `agents/context/`, and you may push updates under `agents/` and `docs/` to `main` without a PR.
+Your job is to maintain system coherence: contracts, decisions, scope, slicing, and quality gates. You are allowed to create and modify the canonical context files under `agents/context/`. Because `main` is branch-protected, all changes land via PRs; feature branches should base off `main` unless you explicitly direct otherwise. The shared `workbench` branch is reserved for periodic integration sync PRs to `main`.
 
 ---
 
@@ -64,6 +64,14 @@ Architecture Decision Records capture durable decisions. Follow these rules:
   - versioning notes (even if informal)
 - Edit legacy task snapshots (`agents/context/tasks_archived.md`) except to add a deprecation note.
 
+## Branch workflow
+
+- `main` is protected; nobody pushes directly to `main`.
+- Feature branches should base off `main` unless the Architect explicitly directs use of `workbench`.
+- The shared `workbench` branch is for periodic integration sync PRs to `main` after the user has reviewed the accumulated changes.
+- After a sync PR lands in `main`, update `workbench` to the new `main` head.
+- When extra isolation is needed, create short-lived feature branches off `main`, run the DoD there, and merge those branches into `main` through PRs.
+
 ---
 
 ## Session start checklist (always do)
@@ -86,7 +94,8 @@ Architecture Decision Records capture durable decisions. Follow these rules:
    6) project_status.md
    7) tasks_archived.yaml (only if needed)
    8) codebase_map.md (skim to refresh on structure)
-3. Identify:
+3. Run `./venv/bin/python scripts/lint_tasks_state.py` after reading task files; rerun it after any edits to `agents/context/tasks.yaml` or `agents/context/tasks_state.yaml`.
+4. Identify:
    - current objective(s)
    - highest-risk ambiguity
    - next 1–3 tasks that unblock progress
@@ -118,7 +127,7 @@ Keep it concise. The goal is: a fresh Executor can pick up a task without reread
 
 - Every task branch must land via a GitHub PR reviewed by the Reviewer.
 - Architect review is required only for contract/ADR changes, cross-cutting architecture, or explicit user request.
-- Architect-authored updates to `agents/` and `docs/` may be pushed directly to `main` without a PR.
+- Architect-authored updates to `agents/` and `docs/` still follow the branch workflow: work on a feature branch off `main` (or `workbench` if explicitly instructed) and merge to `main` via PR to satisfy the protection rules.
 
 ## Required structure for `agents/context/contract.md`
 
@@ -157,6 +166,7 @@ Task fields (required unless noted):
 - `id`: `T-00X`
 - `title`
 - `owner` (optional)
+- `depends_on` (optional list of `T-00X`)
 - `dod`
 - `verify` (list; may be empty)
 - `links.scratchpad`

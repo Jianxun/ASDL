@@ -7,6 +7,7 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - MVP pipeline is AST -> NFIR -> IFIR -> emit; NLIR and CIR are merged into IFIR.
 - Clean slate for IR implementation; prior CIR/NLIR tasks archived.
 - OKR tracking is deprecated; planning is spec-driven.
+- Import system clarified: `file_id` propagation, PATH-style `ASDL_LIB_PATH`, diagnostics codes, and subckt auto-disambiguation via hash.
 - AST models + parser updated to MVP net-first schema; parser/AST tests refreshed.
 - ASDL_NFIR dialect + AST->NFIR conversion implemented with unit tests.
 - ASDL_IFIR dialect + NFIR->IFIR conversion implemented with unit tests.
