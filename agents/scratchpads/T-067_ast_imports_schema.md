@@ -14,16 +14,25 @@
 - `tests/unit_tests/parser/test_parser.py`
 
 ## Plan
-1. Update AST models to include `imports` with validation hooks for namespaces and path types.
-2. Wire parser support + diagnostics for duplicate namespaces and import-only documents.
-3. Add targeted tests for valid/invalid imports and run the listed pytest command.
+- [x] Add AST/parser tests for valid/invalid imports.
+- [x] Update AST models + parser validation/diagnostics for imports.
+- [x] Document `imports` in `spec_ast`.
 
 ## Progress log
-- Not started yet.
+- 2026-01-09: Added AST/parser tests for import cases.
+- 2026-01-09: Implemented imports schema + parser diagnostics; updated spec.
+- 2026-01-09: Verified AST/parser tests.
+
+## Patch summary
+- Added imports field to AST models and export surface.
+- Parser now detects duplicate import namespaces and validates namespace/path types with AST-011/AST-013 diagnostics.
+- Documented top-level `imports` in `docs/specs/spec_ast.md`.
+
+## Verification
+- `./venv/bin/pytest tests/unit_tests/ast tests/unit_tests/parser -v`
 
 ## Status request
 - None.
 
 ## Blockers / Questions
 - None.
-
