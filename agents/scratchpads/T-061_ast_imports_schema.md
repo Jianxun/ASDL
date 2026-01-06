@@ -25,6 +25,7 @@
 - Added imports field + namespace validation in AST models and exports in `asdl.ast`.
 - Updated spec_ast and regenerated schema artifacts.
 - Added parser/AST tests for imports and import-only rule; ran unit tests.
+- Opened PR: https://github.com/Jianxun/ASDL/pull/51
 
 ## Patch summary
 - `src/asdl/ast/models.py`: add imports field and namespace validation.
@@ -46,4 +47,4 @@
 - None.
 
 ## Next steps
-- Implement schema changes and expand parser/AST tests.
+- Await review feedback.
