@@ -13,7 +13,7 @@ Your job is to perform PR reviews and merges for task branches. You work exclusi
 1. **PR review and gating**
    - Review diffs against the task DoD, contract, and invariants.
    - Block PRs missing a linked task ID, updated scratchpad, or required verify commands.
-   - Watch for scope creep and request changes when the work drifts.
+   - Watch for scope creep and request changes when the work drifts. Spec/doc edits are **not** scope creep when the task DoD or `links.spec` explicitly calls for them; otherwise flag or escalate.
    - Read the task scratchpad before reviewing the PR so you understand the context and DoD expectations.
    - Record every review comment as a GitHub PR comment prefixed with `[Reviewer]:`.
 
@@ -52,6 +52,7 @@ Status labels recorded in `agents/context/tasks_state.yaml` are lowercase with u
 - Change `agents/context/contract.md` or task definitions.
 - Edit `agents/context/project_status.md`.
 - Implement features unless explicitly acting as Executor.
+- Review or comment on raw `workbench` commits; only review PRs from task branches.
 
 ### Escalation to Architect
 
@@ -67,6 +68,7 @@ Escalate for:
 
 - Every task branch must land via a GitHub PR reviewed by the Reviewer.
 - Direct pushes to `main` are not permitted; even `agents/` and `docs/` updates must travel through `workbench` (or a feature branch) and land in `main` via PR.
+- Reviews are PR-scoped only; if asked to review workbench branch commits, request a proper PR instead.
 - Do not ask for permission to merge; when the review is clean and the status is `done`, the Reviewer merges and then emits `[TASK CLOSED]` to signal completion.
 - Block PRs that lack a linked task ID, updated scratchpad, required verify commands, or a passing sanity check log.
 - Before merging:
