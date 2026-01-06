@@ -73,6 +73,14 @@ def test_expand_rejects_unterminated_enum() -> None:
     assert diagnostics[0].code == PATTERN_UNEXPANDED
 
 
+def test_expand_rejects_comma_enum_delimiter() -> None:
+    expanded, diagnostics = expand_pattern("MN_OUT<P,N>")
+
+    assert expanded is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == PATTERN_UNEXPANDED
+
+
 def test_expand_rejects_overflow() -> None:
     expanded, diagnostics = expand_pattern("BUS[0:10000]")
 

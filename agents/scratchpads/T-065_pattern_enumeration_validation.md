@@ -20,14 +20,24 @@
 4. Run the parser/IR test suites listed above.
 
 ## Progress log
-- Not started yet.
+- Added comma delimiter validation in pattern enum parsing.
+- Added parser and IR tests covering invalid comma enumerations.
+- Ran parser and IR unit tests.
+
+## Patch summary
+- `src/asdl/patterns.py`: reject commas in `<...>` with a PASS diagnostic.
+- `tests/unit_tests/parser/test_pattern_expansion.py`: cover comma delimiter rejection.
+- `tests/unit_tests/ir/test_ifir_converter.py`: cover invalid enumeration diagnostic in IFIR conversion.
+
+## Verification
+- `./venv/bin/pytest tests/unit_tests/parser -v`
+- `./venv/bin/pytest tests/unit_tests/ir -v`
 
 ## Status request
-- None.
+- Ready for review.
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-1. Update `_validate_enum_content` to reject commas inside `<...>` with a clear message per the spec.
-2. Hook in diagnostics/tests so malformed enumerations fail before binding verification.
+1. Open PR and request review.
