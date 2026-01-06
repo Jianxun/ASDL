@@ -30,6 +30,7 @@
 - Implemented import resolver, ProgramDB/NameEnv, and diagnostics helpers.
 - Added parser unit tests for resolution order, cycles, missing imports, duplicate symbols, and file_id dedupe.
 - Ran parser and IR unit tests.
+- Opened PR https://github.com/Jianxun/ASDL/pull/55.
 
 ## Patch summary
 - Implemented import resolution primitives (`ProgramDB`, `NameEnv`, resolver, diagnostics).
@@ -46,4 +47,4 @@
 - None.
 
 ## Next steps
-- Push branch and open PR.
+- Await review.
