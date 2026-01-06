@@ -42,6 +42,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Backend config location determined by `ASDL_BACKEND_CONFIG` env var; defaults to `config/backends.yaml`.
 - Use project venv at `venv/` for all commands/tests.
 - Keep contract/map/tasks/project_status aligned with repository reality; update after merges or major decisions.
+- Task cards MUST target a single subsystem/layer, list <= 5 likely files, and include one primary verify command; split cross-cutting or multi-rule work into separate tasks.
 - Only the Architect edits task cards/archives (`agents/context/tasks.yaml`, `agents/context/tasks_icebox.yaml`, `agents/context/tasks_archived.yaml`).
 - Architect, Reviewer, and Executor may edit `agents/context/tasks_state.yaml` for status changes only.
 - Executors update only `agents/scratchpads/T-00X.md` and `agents/context/tasks_state.yaml` for their task; they do not edit task cards or project status.
