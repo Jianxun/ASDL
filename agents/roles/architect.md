@@ -71,6 +71,7 @@ Architecture Decision Records capture durable decisions. Follow these rules:
 - The shared `workbench` branch is for periodic integration sync PRs to `main` after the user has reviewed the accumulated changes.
 - After a sync PR lands in `main`, update `workbench` to the new `main` head.
 - When extra isolation is needed, create short-lived feature branches off `main`, run the DoD there, and merge those branches into `main` through PRs.
+- When the user says "sync with main", follow this exact sequence: create a PR to `main`, merge it, checkout `main`, pull `main`, checkout `workbench`, then fast-forward `workbench` to the new `main` head.
 
 ---
 
