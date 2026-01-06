@@ -24,6 +24,7 @@
 ## Progress log
 - 2026-01-09: Initialized scratchpad, read contract/specs and IR converters/tests; created feature branch; set T-058 in progress.
 - 2026-01-09: Added endpoint pattern helper, binding verification in NFIR->IFIR conversion, and IR tests; updated existing pattern-preservation test for length matching; ran IR tests.
+- 2026-01-09: Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/48.
 
 ## Patch summary
 - `src/asdl/patterns.py`: add endpoint expansion helper for inst.pin tokens.
