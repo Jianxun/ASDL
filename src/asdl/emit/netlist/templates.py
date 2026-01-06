@@ -19,8 +19,6 @@ from .diagnostics import (
 )
 from .params import _dict_attr_to_strings
 
-REQUIRED_PLACEHOLDERS = {"name"}
-
 SYSTEM_DEVICE_REQUIRED_PLACEHOLDERS: Dict[str, set[str]] = {
     "__subckt_header__": {"name"},
     "__subckt_footer__": set(),
@@ -53,22 +51,6 @@ def _validate_template(
             _diagnostic(
                 MALFORMED_TEMPLATE,
                 f"Backend template for '{device_name}' is malformed: {exc}",
-                Severity.ERROR,
-                loc,
-            ),
-        )
-        return None
-    missing = REQUIRED_PLACEHOLDERS - placeholders
-    if missing:
-        missing_list = ", ".join(sorted(missing))
-        _emit_diagnostic(
-            diagnostics,
-            _diagnostic(
-                MISSING_PLACEHOLDER,
-                (
-                    f"Backend template for '{device_name}' is missing required "
-                    f"placeholders: {missing_list}"
-                ),
                 Severity.ERROR,
                 loc,
             ),
