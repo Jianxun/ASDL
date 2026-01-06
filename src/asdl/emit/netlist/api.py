@@ -9,6 +9,7 @@ import yaml
 from asdl.diagnostics import Diagnostic, Severity
 from asdl.emit.backend_config import BackendConfig, load_backend_config
 from asdl.ir.ifir import DesignOp
+from asdl.ir.pattern_elaboration import run_pattern_elaboration
 
 from .diagnostics import MISSING_BACKEND, _diagnostic, _has_error_diagnostics
 from .render import _emit_design
@@ -58,8 +59,13 @@ def emit_netlist(
         if backend_config is None:
             return None, diagnostics
 
+    elaborated, elaboration_diags = run_pattern_elaboration(design)
+    diagnostics.extend(elaboration_diags)
+    if elaborated is None or _has_error_diagnostics(diagnostics):
+        return None, diagnostics
+
     verify_diags = _run_netlist_verification(
-        design, backend_name=backend_name, backend_config=backend_config
+        elaborated, backend_name=backend_name, backend_config=backend_config
     )
     diagnostics.extend(verify_diags)
     if _has_error_diagnostics(diagnostics):
@@ -70,7 +76,7 @@ def emit_netlist(
         backend_name=backend_name,
         backend_config=backend_config,
     )
-    netlist, emit_diags = _emit_design(design, options)
+    netlist, emit_diags = _emit_design(elaborated, options)
     diagnostics.extend(emit_diags)
     if netlist is None or _has_error_diagnostics(diagnostics):
         return None, diagnostics
