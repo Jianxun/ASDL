@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, Iterable, List, Optional, Tuple
 
 from pydantic import ValidationError
 from ruamel.yaml import YAML
 from ruamel.yaml.error import MarkedYAMLError, YAMLError
+from ruamel.yaml.nodes import MappingNode, ScalarNode
 
 from ..diagnostics import Diagnostic, Severity, SourcePos, SourceSpan
 from .location import Locatable, LocationIndex, PathSegment, to_plain
@@ -15,9 +17,12 @@ PARSE_YAML_ERROR = "PARSE-001"
 PARSE_ROOT_ERROR = "PARSE-002"
 PARSE_VALIDATION_ERROR = "PARSE-003"
 PARSE_FILE_ERROR = "PARSE-004"
+AST_IMPORT_PATH_ERROR = "AST-011"
+AST_IMPORT_DUP_NAMESPACE_ERROR = "AST-013"
 NO_SPAN_NOTE = "No source span available."
 ENDPOINT_LIST_NOTE = "Endpoint lists must be YAML lists of '<instance>.<pin>' strings"
 INSTANCE_EXPR_NOTE = "Instance expressions use '<model> key=value ...' format"
+IMPORT_NAMESPACE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]:
@@ -63,6 +68,16 @@ def parse_string(
 
     yaml = YAML(typ="rt")
     try:
+        root_node = yaml.compose(yaml_content)
+    except YAMLError as exc:
+        diagnostics.append(_yaml_error_to_diagnostic(exc, file_label))
+        return None, diagnostics
+
+    duplicate_imports = _duplicate_import_namespace_diagnostics(root_node, file_label)
+    if duplicate_imports:
+        return None, duplicate_imports
+
+    try:
         data = yaml.load(yaml_content)
     except YAMLError as exc:
         diagnostics.append(_yaml_error_to_diagnostic(exc, file_label))
@@ -82,6 +97,10 @@ def parse_string(
 
     location_index = LocationIndex.from_yaml(data, file_label)
     plain = to_plain(data)
+
+    import_errors = _validate_imports(plain, location_index)
+    if import_errors:
+        return None, import_errors
 
     try:
         document = AsdlDocument.model_validate(plain)
@@ -138,6 +157,79 @@ def _validation_errors_to_diagnostics(
     return diagnostics
 
 
+def _duplicate_import_namespace_diagnostics(
+    root_node: Optional[MappingNode], file_label: str
+) -> List[Diagnostic]:
+    if root_node is None or not isinstance(root_node, MappingNode):
+        return []
+
+    imports_node = None
+    for key_node, value_node in root_node.value:
+        if isinstance(key_node, ScalarNode) and key_node.value == "imports":
+            if isinstance(value_node, MappingNode):
+                imports_node = value_node
+            break
+
+    if imports_node is None:
+        return []
+
+    seen = set()
+    diagnostics: List[Diagnostic] = []
+    for key_node, _value_node in imports_node.value:
+        if not isinstance(key_node, ScalarNode):
+            continue
+        namespace = key_node.value
+        if namespace in seen:
+            span = _span_from_mark(file_label, getattr(key_node, "start_mark", None), len(str(namespace)))
+            diagnostics.append(
+                _import_diagnostic(
+                    code=AST_IMPORT_DUP_NAMESPACE_ERROR,
+                    message=f"Duplicate import namespace '{namespace}'.",
+                    span=span,
+                )
+            )
+        else:
+            seen.add(namespace)
+    return diagnostics
+
+
+def _validate_imports(plain: Any, location_index: LocationIndex) -> List[Diagnostic]:
+    if not isinstance(plain, dict):
+        return []
+    imports = plain.get("imports")
+    if imports is None or not isinstance(imports, dict):
+        return []
+
+    diagnostics: List[Diagnostic] = []
+    for namespace, path in imports.items():
+        if not isinstance(namespace, str) or not IMPORT_NAMESPACE_RE.fullmatch(namespace):
+            key_loc = location_index.lookup_with_fallback(("imports", namespace), prefer_key=True)
+            span = key_loc.to_source_span() if key_loc else None
+            diagnostics.append(
+                _import_diagnostic(
+                    code=AST_IMPORT_PATH_ERROR,
+                    message=(
+                        f"Invalid import namespace '{namespace}'. "
+                        "Namespaces must match [A-Za-z_][A-Za-z0-9_]*."
+                    ),
+                    span=span,
+                )
+            )
+
+        if not isinstance(path, str):
+            value_loc = location_index.lookup_with_fallback(("imports", namespace))
+            span = value_loc.to_source_span() if value_loc else None
+            diagnostics.append(
+                _import_diagnostic(
+                    code=AST_IMPORT_PATH_ERROR,
+                    message=f"Import path for namespace '{namespace}' must be a string.",
+                    span=span,
+                )
+            )
+
+    return diagnostics
+
+
 def _format_validation_message(entry: dict) -> str:
     message = entry.get("msg", "Validation error")
     ctx = entry.get("ctx") or {}
@@ -157,6 +249,18 @@ def _hint_notes(entry: dict) -> List[str]:
     if _path_has_segment(loc, "instances"):
         notes.append(INSTANCE_EXPR_NOTE)
     return notes
+
+
+def _import_diagnostic(code: str, message: str, span: Optional[SourceSpan]) -> Diagnostic:
+    notes = [NO_SPAN_NOTE] if span is None else None
+    return Diagnostic(
+        code=code,
+        severity=Severity.ERROR,
+        message=message,
+        primary_span=span,
+        notes=notes,
+        source="parser",
+    )
 
 
 def _attach_locations(value: Any, location_index: LocationIndex, path: Iterable[PathSegment]) -> None:
@@ -200,6 +304,23 @@ def _span_at(file_label: str, line: int, col: int) -> SourceSpan:
         file=file_label,
         start=SourcePos(line, col),
         end=SourcePos(line, col),
+    )
+
+
+def _span_from_mark(file_label: str, mark: Any, length: int) -> Optional[SourceSpan]:
+    if mark is None:
+        return None
+    line = getattr(mark, "line", None)
+    col = getattr(mark, "column", None)
+    if line is None or col is None:
+        return None
+    start_line = line + 1
+    start_col = col + 1
+    end_col = start_col + max(length, 0)
+    return SourceSpan(
+        file=file_label,
+        start=SourcePos(start_line, start_col),
+        end=SourcePos(start_line, end_col),
     )
 
 

@@ -23,6 +23,7 @@ def _reject_string_endpoint_list(value: object) -> object:
 
 
 EndpointListExpr = Annotated[List[StrictStr], BeforeValidator(_reject_string_endpoint_list)]
+ImportsBlock = Dict[StrictStr, StrictStr]
 InstancesBlock = Dict[str, InstanceExpr]
 NetsBlock = Dict[str, EndpointListExpr]
 
@@ -64,6 +65,7 @@ class ModuleDecl(AstBaseModel):
 
 
 class AsdlDocument(AstBaseModel):
+    imports: Optional[ImportsBlock] = None
     top: Optional[StrictStr] = None
     modules: Optional[Dict[str, ModuleDecl]] = None
     devices: Optional[Dict[str, DeviceDecl]] = None
@@ -83,6 +85,7 @@ __all__ = [
     "ParamValue",
     "InstanceExpr",
     "EndpointListExpr",
+    "ImportsBlock",
     "InstancesBlock",
     "NetsBlock",
     "AsdlDocument",
