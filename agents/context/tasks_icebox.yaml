@@ -1,3 +1,16 @@
 schema_version: 1
 
-icebox: []
+icebox:
+  - id: T-052
+    title: Backend lowering refactor
+    owner: Executor
+    dod: >
+      Refactor backend lowering to separate verification from
+      rendering/emission; reduce overly defensive checks in render paths now
+      covered by verification. Focus on readability and single-pass flow
+      without changing netlist output or diagnostics semantics.
+    verify:
+      - pytest tests/unit_tests/emit -v
+      - pytest tests/unit_tests/netlist -v
+    links:
+      scratchpad: agents/scratchpads/T-052_backend_lowering_refactor.md
