@@ -6,6 +6,7 @@
 
 ## Read
 - `src/asdl/ast/models.py`
+- `src/asdl/ast/__init__.py`
 - `src/asdl/ast/parser.py`
 - `docs/specs/spec_ast.md`
 - `docs/specs/spec_asdl_import.md`
@@ -17,16 +18,29 @@
 - Add an `imports: Optional[Dict[str, str]]` field to `AsdlDocument`.
 - Validate namespace key format and string values; emit diagnostics for invalid keys/types.
 - Update spec_ast to document `imports`; keep MVP spec unchanged.
-- Add tests for valid imports, invalid namespace keys, and non-string paths.
+- Add parser/AST tests for valid imports, invalid namespace keys, and non-string paths.
+- Regenerate schema artifacts.
 
 ## Progress log
-- Initialized scratchpad.
+- Added imports field + namespace validation in AST models and exports in `asdl.ast`.
+- Updated spec_ast and regenerated schema artifacts.
+- Added parser/AST tests for imports and import-only rule; ran unit tests.
 
 ## Patch summary
-- TBD.
+- `src/asdl/ast/models.py`: add imports field and namespace validation.
+- `src/asdl/ast/__init__.py`: export `ImportsBlock`.
+- `docs/specs/spec_ast.md`: document `imports` in AST spec.
+- `legacy_doc/schema/schema.json`: regenerate schema output.
+- `legacy_doc/schema/schema.txt`: regenerate schema output.
+- `tests/unit_tests/ast/test_models.py`: add imports and import-only validation tests.
+- `tests/unit_tests/parser/test_parser.py`: add parser tests for imports handling.
 
 ## Verification
-- TBD.
+- `./venv/bin/pytest tests/unit_tests/parser -v`
+- `./venv/bin/pytest tests/unit_tests/ast -v`
+
+## Status request
+- Ready for review.
 
 ## Blockers / Questions
 - None.

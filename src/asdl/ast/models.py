@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Annotated, Any, Dict, List, Optional, Union
 
 from pydantic import (
@@ -11,6 +12,8 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+
+IMPORT_NAMESPACE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 ParamValue = Union[int, float, bool, str]
 InstanceExpr = StrictStr
@@ -24,6 +27,7 @@ def _reject_string_endpoint_list(value: object) -> object:
 
 EndpointListExpr = Annotated[List[StrictStr], BeforeValidator(_reject_string_endpoint_list)]
 InstancesBlock = Dict[str, InstanceExpr]
+ImportsBlock = Dict[StrictStr, StrictStr]
 NetsBlock = Dict[str, EndpointListExpr]
 
 
@@ -64,9 +68,24 @@ class ModuleDecl(AstBaseModel):
 
 
 class AsdlDocument(AstBaseModel):
+    imports: Optional[ImportsBlock] = None
     top: Optional[StrictStr] = None
     modules: Optional[Dict[str, ModuleDecl]] = None
     devices: Optional[Dict[str, DeviceDecl]] = None
+
+    @field_validator("imports")
+    @classmethod
+    def imports_must_use_valid_namespaces(
+        cls, value: Optional[ImportsBlock]
+    ) -> Optional[ImportsBlock]:
+        if value is None:
+            return value
+        for namespace in value.keys():
+            if not IMPORT_NAMESPACE_RE.match(namespace):
+                raise ValueError(
+                    f"import namespace '{namespace}' must match {IMPORT_NAMESPACE_RE.pattern}"
+                )
+        return value
 
     @model_validator(mode="after")
     def validate_document(self) -> "AsdlDocument":
@@ -84,6 +103,7 @@ __all__ = [
     "InstanceExpr",
     "EndpointListExpr",
     "InstancesBlock",
+    "ImportsBlock",
     "NetsBlock",
     "AsdlDocument",
     "ModuleDecl",

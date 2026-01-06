@@ -5,7 +5,7 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 - Validates **shape/types** only.
 - Preserves **raw strings** for inline instance expressions, endpoint tokens, and templates.
 - Does **not** perform semantic resolution (imports, symbol lookup, domain expansion, ERC).
-- Represents the net-first authoring surface: **modules + devices + optional `top`**.
+- Represents the net-first authoring surface: **imports + modules + devices + optional `top`**.
 
 ## Conventions
 - **Plural nouns** for collections: `modules`, `devices`, `instances`, `nets`, `exports`, `backends`, `params`.
@@ -16,12 +16,15 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
   both `ns` and `symbol` must match the literal name regex.
 - Names are raw strings; semantic validation is deferred to verification passes.
 - Comments/docstrings/groups are YAML comments and are **not** represented in AST fields.
+- Import namespaces must match `[A-Za-z_][A-Za-z0-9_]*`; paths are raw strings.
 
 ---
 
 ## Top-Level: `AsdlDocument`
 
 ### Fields
+- `imports: Optional[Dict[str, str]]`
+  - Map of namespace → import path.
 - `top: Optional[str]`
   - Entry module name.
   - Required if **multiple modules** exist; otherwise optional.

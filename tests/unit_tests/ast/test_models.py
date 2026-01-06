@@ -9,6 +9,41 @@ def test_document_requires_modules_or_devices() -> None:
         AsdlDocument.model_validate({})
 
 
+def test_document_rejects_imports_only() -> None:
+    with pytest.raises(ValidationError):
+        AsdlDocument.model_validate({"imports": {"gf": "gf180/primitives.asdl"}})
+
+
+def test_document_allows_imports_with_modules() -> None:
+    document = AsdlDocument.model_validate(
+        {
+            "imports": {"gf": "gf180/primitives.asdl"},
+            "modules": {"top": {"nets": {"$A": ["I1.P"]}}},
+        }
+    )
+    assert document.imports == {"gf": "gf180/primitives.asdl"}
+
+
+def test_document_rejects_invalid_import_namespace() -> None:
+    with pytest.raises(ValidationError):
+        AsdlDocument.model_validate(
+            {
+                "imports": {"bad-ns": "lib.asdl"},
+                "modules": {"top": {"nets": {"$A": ["I1.P"]}}},
+            }
+        )
+
+
+def test_document_rejects_non_string_import_path() -> None:
+    with pytest.raises(ValidationError):
+        AsdlDocument.model_validate(
+            {
+                "imports": {"gf": 123},
+                "modules": {"top": {"nets": {"$A": ["I1.P"]}}},
+            }
+        )
+
+
 def test_document_requires_top_when_multiple_modules() -> None:
     data = {
         "modules": {
