@@ -10,6 +10,7 @@ NO_SPAN_NOTE = "No source span available."
 
 IMPORT_PATH_MISSING = format_code("AST", 10)
 IMPORT_PATH_MALFORMED = format_code("AST", 11)
+IMPORT_CYCLE = format_code("AST", 12)
 IMPORT_PATH_AMBIGUOUS = format_code("AST", 15)
 
 
@@ -39,6 +40,13 @@ def import_path_ambiguous(
     )
 
 
+def import_cycle(chain: Iterable[Path], loc: Optional[Locatable] = None) -> Diagnostic:
+    ordered = [str(path) for path in chain]
+    message = "Import cycle detected: " + " -> ".join(ordered)
+    notes = ["Import chain:", *ordered]
+    return _diagnostic(IMPORT_CYCLE, message, loc, notes=notes)
+
+
 def _diagnostic(
     code: str,
     message: str,
@@ -62,9 +70,11 @@ def _diagnostic(
 
 
 __all__ = [
+    "IMPORT_CYCLE",
     "IMPORT_PATH_AMBIGUOUS",
     "IMPORT_PATH_MALFORMED",
     "IMPORT_PATH_MISSING",
+    "import_cycle",
     "import_path_ambiguous",
     "import_path_malformed",
     "import_path_missing",
