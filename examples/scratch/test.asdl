@@ -1,0 +1,53 @@
+top: tb
+
+modules:
+
+  tb:
+    instances:
+      dut: current_mirror_array
+      spice_model: gf180mcu_models
+      MN1: nfet_3p3 L=0.2u W=5u NF=2 m=1
+    nets:
+      VSS: [dut.VSS, MN1.S, MN1.B, MN1.G, MN1.D]
+      IREF: [dut.IREF]
+      IOUT: [dut.IOUT]
+
+
+
+  current_mirror_array:
+    instances:
+      MN_REF: nfet_3p3 L=0.2u W=5u NF=2 m=1
+      MN_OUT: nfet_3p3 m=1
+
+    nets:
+      $IREF: [MN_REF.D, MN_REF.G, MN_OUT.G]
+      $IOUT: [MN_OUT.D]
+      $VSS: [MN_REF.S, MN_OUT.S, MN_REF.B, MN_OUT.B]
+
+
+
+devices:
+  nfet_3p3:
+    ports: [D, G, S, B]
+    params:
+      L: 0.2u
+      W: 5u
+      NF: 1
+      m: 1
+    backends:
+      sim.ngspice:
+        model: nfet_03v3
+        template: 'X_{name} {ports} {model} L={L} W={W} NF={NF} m={m}'
+      lvs.klayout:
+        model: nfet_03v3
+        template: 'M_{name} {ports} {model} L={L} W={W} NF={NF} m={m}'
+
+  gf180mcu_models:
+    backends:
+      sim.ngspice:
+        template: | 
+          * GF180MCU Model Card:
+          .include PDK_MODEL_PATH/design.ngspice
+          .lib PDK_MODEL_PATH/sm141064.ngspice typical
+      lvs.klayout:
+        template: ""

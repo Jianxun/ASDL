@@ -129,35 +129,20 @@ def test_emit_netlist_requires_top_when_multiple_modules() -> None:
     assert diagnostics[0].code == format_code("EMIT", 1)
 
 
-def test_emit_netlist_requires_template_placeholders() -> None:
+def test_emit_netlist_allows_instruction_template() -> None:
     backend = BackendOp(
         name=BACKEND_NAME,
-        template="{ports} {model}",
-        props=_dict_attr({"model": "nfet"}),
-        src=_loc(7, 1),
+        template="save all",
     )
-    device = DeviceOp(name="nfet", ports=["D"], region=[backend])
-    instance = InstanceOp(
-        name="M1",
-        ref="nfet",
-        conns=[ConnAttr(StringAttr("D"), StringAttr("VOUT"))],
-    )
-    module = ModuleOp(
-        name="top",
-        port_order=["VOUT"],
-        region=[NetOp(name="VOUT"), instance],
-    )
+    device = DeviceOp(name="save", ports=[], region=[backend])
+    instance = InstanceOp(name="S1", ref="save", conns=[])
+    module = ModuleOp(name="top", port_order=[], region=[instance])
     design = DesignOp(region=[module, device], top="top")
 
     netlist, diagnostics = emit_netlist(design)
 
-    assert netlist is None
-    assert len(diagnostics) == 1
-    assert diagnostics[0].severity is Severity.ERROR
-    assert diagnostics[0].code == format_code("EMIT", 7)
-    assert diagnostics[0].primary_span is not None
-    assert diagnostics[0].primary_span.start.line == 7
-    assert diagnostics[0].primary_span.start.col == 1
+    assert diagnostics == []
+    assert netlist == "\n".join(["save all", ".end"])
 
 
 def test_emit_netlist_reports_malformed_template() -> None:

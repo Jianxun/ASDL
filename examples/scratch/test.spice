@@ -1,0 +1,16 @@
+Xdut IREF IOUT VSS current_mirror_array
+
+* GF180MCU Model Card: spice_model
+.include PDK_MODEL_PATH/design.ngspice
+.lib PDK_MODEL_PATH/sm141064.ngspice typical
+
+X_MN1 VSS VSS VSS VSS nfet_03v3 L=0.2u W=5u NF=2 m=1
+* ===============================================
+* current_mirror_array
+.subckt current_mirror_array IREF IOUT VSS
+
+X_MN_REF IREF IREF VSS VSS nfet_03v3 L=0.2u W=5u NF=2 m=1
+X_MN_OUT IOUT IREF VSS VSS nfet_03v3 L=0.2u W=5u NF=1 m=1
+.ends current_mirror_array
+
+.end
