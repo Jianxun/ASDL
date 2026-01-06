@@ -29,6 +29,7 @@
 - Initialized scratchpad.
 - Implemented import diagnostics, ProgramDB/NameEnv, and resolver with cycle detection/path resolution.
 - Added import resolution unit tests and verified parser/IR suites.
+- Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/57.
 
 ## Patch summary
 - `src/asdl/imports/diagnostics.py`: added import diagnostics helpers and codes.
