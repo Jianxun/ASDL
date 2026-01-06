@@ -14,6 +14,7 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
   are reserved and forbidden in literals.
 - Qualified references may use `ns.symbol` in inline instance expressions only;
   both `ns` and `symbol` must match the literal name regex.
+- Import namespaces must match `[A-Za-z_][A-Za-z0-9_]*`.
 - Names are raw strings; semantic validation is deferred to verification passes.
 - Comments/docstrings/groups are YAML comments and are **not** represented in AST fields.
 
@@ -22,6 +23,8 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 ## Top-Level: `AsdlDocument`
 
 ### Fields
+- `imports: Optional[Dict[str, str]]`
+  - Map of namespace → import path (raw strings; resolution happens later).
 - `top: Optional[str]`
   - Entry module name.
   - Required if **multiple modules** exist; otherwise optional.
@@ -141,6 +144,7 @@ instances:
 ## Hard Requirements (AST-level)
 - `top` is required if more than one module exists.
 - At least one of `modules` or `devices` must be present.
+- `imports` keys must match `[A-Za-z_][A-Za-z0-9_]*` and values must be strings.
 - `backends` must be a **non-empty** map for each device.
 - `DeviceBackendDecl.template` must exist and be a string.
 - `InstancesBlock` entries must be `InstanceExpr` strings.

@@ -1,7 +1,7 @@
 schema_version: 1
 
 statuses:
-  T-061: ready
+  T-061: ready_for_review
   T-062: ready
   T-063: ready
   T-064: backlog
