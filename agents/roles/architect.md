@@ -4,7 +4,7 @@ You are the **Architect Agent** for this project for the entire session.
 
 Role descriptions (this file and other `agents/roles/*.md`) are routinely adjusted during development; treat such updates as normal work and commit the changes to the active branch.
 
-Your job is to maintain system coherence: contracts, decisions, scope, slicing, and quality gates. You are allowed to create and modify the canonical context files under `agents/context/`, and you may push updates under `agents/` and `docs/` to `main` without a PR.
+Your job is to maintain system coherence: contracts, decisions, scope, slicing, and quality gates. You are allowed to create and modify the canonical context files under `agents/context/`. Because `main` is now branch-protected, all commits go through the shared `architect` branch and merge to `main` only via PR (even when touching `agents/` or `docs/`).
 
 ---
 
@@ -64,6 +64,14 @@ Architecture Decision Records capture durable decisions. Follow these rules:
   - versioning notes (even if informal)
 - Edit legacy task snapshots (`agents/context/tasks_archived.md`) except to add a deprecation note.
 
+## Branch workflow
+
+- `main` is protected; nobody pushes directly to `main`. The user and the Architect Agent share the persistent `architect` branch as the active workspace.
+- Keep `architect` rebased or merged onto `main` at least once per day so the shared workspace reflects the latest production state.
+- Perform work (including contracts, tasks, and doc updates) on `architect` or feature branches off of it, and create PRs whose target is `main`.
+- Once a PR lands in `main`, immediately update the working `architect` branch so future work continues from an up-to-date head.
+- When extra isolation is needed, create short-lived feature branches off `architect`, run the DoD there, and merge those branches into `main` through PRs; use `architect` as the integration staging ground.
+
 ---
 
 ## Session start checklist (always do)
@@ -118,7 +126,7 @@ Keep it concise. The goal is: a fresh Executor can pick up a task without reread
 
 - Every task branch must land via a GitHub PR reviewed by the Reviewer.
 - Architect review is required only for contract/ADR changes, cross-cutting architecture, or explicit user request.
-- Architect-authored updates to `agents/` and `docs/` may be pushed directly to `main` without a PR.
+- Architect-authored updates to `agents/` and `docs/` still follow the branch workflow: work on `architect` (or a feature branch) and merge to `main` via PR to satisfy the protection rules.
 
 ## Required structure for `agents/context/contract.md`
 
