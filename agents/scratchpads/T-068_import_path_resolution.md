@@ -5,23 +5,44 @@
 - **Verify**: `pytest tests/unit_tests/parser -v`
 
 ## Read
+- `agents/context/lessons.md`
 - `agents/context/contract.md`
+- `agents/context/tasks.yaml`
+- `agents/context/tasks_state.yaml`
+- `agents/context/project_status.md`
 - `docs/specs/spec_asdl_import.md`
 - `src/asdl/imports/resolver.py`
 - `src/asdl/imports/diagnostics.py`
 - `tests/unit_tests/parser/test_import_resolution.py`
 
 ## Plan
-1. Implement the core resolution helper(s) with env expansion and normalized `file_id`s.
-2. Wire diagnostics for missing/malformed paths and ensure resolution ordering matches spec.
-3. Add parser-level tests covering each path category and run the verify command.
+1. Add import resolution tests for relative/absolute, env expansion, root order, missing paths.
+2. Implement diagnostics + resolver helpers to satisfy the spec behavior.
+3. Run parser test suite.
+
+## Todo
+- [x] Add tests for import resolution path handling + root ordering.
+- [x] Implement resolver/diagnostics core for import paths.
+- [x] Run parser unit tests.
 
 ## Progress log
-- Not started yet.
+- Added import resolution tests for relative/absolute/env/logical path cases + missing path.
+- Implemented import diagnostics helpers and core path resolver with env expansion,
+  ordered roots, and normalization.
+- Ran `pytest tests/unit_tests/parser/test_import_resolution.py -v`.
+- Ran `pytest tests/unit_tests/parser -v`.
+
+## Patch summary
+- Added import resolution tests at `tests/unit_tests/parser/test_import_resolution.py`.
+- Implemented import path diagnostics in `src/asdl/imports/diagnostics.py`.
+- Implemented path resolution logic in `src/asdl/imports/resolver.py`.
+
+## Verification
+- `./venv/bin/pytest tests/unit_tests/parser/test_import_resolution.py -v`
+- `./venv/bin/pytest tests/unit_tests/parser -v`
 
 ## Status request
-- None.
+- Ready for review.
 
 ## Blockers / Questions
 - None.
-
