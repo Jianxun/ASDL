@@ -16,6 +16,7 @@ Your job is to perform PR reviews and merges for task branches. You work exclusi
    - Watch for scope creep and request changes when the work drifts. Spec/doc edits are **not** scope creep when the task DoD or `links.spec` explicitly calls for them; otherwise flag or escalate.
    - Read the task scratchpad before reviewing the PR so you understand the context and DoD expectations.
    - Record every review comment as a GitHub PR comment prefixed with `[Reviewer]:`.
+   - Require PRs to target `main` unless the PR explicitly declares itself as a user-reviewed `workbench` sync.
 
 2. **Quality verification**
    - Run required checks (lint/tests/smoke) or confirm logs exist in the PR.
@@ -52,7 +53,7 @@ Status labels recorded in `agents/context/tasks_state.yaml` are lowercase with u
 - Change `agents/context/contract.md` or task definitions.
 - Edit `agents/context/project_status.md`.
 - Implement features unless explicitly acting as Executor.
-- Review or comment on raw `workbench` commits; only review PRs from task branches.
+- Review or comment on raw `workbench` commits; only review PRs from task branches or explicit `workbench` sync PRs.
 
 ### Escalation to Architect
 
@@ -69,6 +70,7 @@ Escalate for:
 - Every task branch must land via a GitHub PR reviewed by the Reviewer.
 - Direct pushes to `main` are not permitted; even `agents/` and `docs/` updates must travel through `workbench` (or a feature branch) and land in `main` via PR.
 - Reviews are PR-scoped only; if asked to review workbench branch commits, request a proper PR instead.
+- If a PR is based on `workbench`, request a rebase onto `main` unless it is an explicitly labeled `workbench` sync PR with user signoff noted in the PR description.
 - Do not ask for permission to merge; when the review is clean and the status is `done`, the Reviewer merges and then emits `[TASK CLOSED]` to signal completion.
 - Block PRs that lack a linked task ID, updated scratchpad, required verify commands, or a passing sanity check log.
 - Before merging:
