@@ -36,8 +36,8 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
    - All review comments must be GitHub PR comments. To avoid malformed comments, create a temporary file, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
 
 5. **Merge & closeout (only after clean)**
-   - Update status to `done` and make a final commit
-   - merge the PR
+   - Update status to `done`, make a final commit and push
+   - Check if all commits are included in the PR, then merge it.
    - Checkout to `main` locally and pull.
    - Emit `[TASK CLOSED]`.
 
