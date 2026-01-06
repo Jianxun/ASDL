@@ -2,7 +2,7 @@ schema_version: 1
 
 statuses:
   T-050: done
-  T-051: done
+  T-051: ready
   T-052: backlog
   T-053: done
   T-057: done
