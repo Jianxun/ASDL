@@ -32,7 +32,10 @@
 - `./venv/bin/pytest tests/unit_tests/ast tests/unit_tests/parser -v`
 
 ## Status request
-- None.
+- Ready for review.
 
 ## Blockers / Questions
 - None.
+
+## Next steps
+- Await reviewer feedback.
