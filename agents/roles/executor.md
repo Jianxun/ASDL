@@ -30,8 +30,12 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
    - Create a feature branch from `main` (e.g., `feature/T-00X-short-slug`)
    - Explain your understanding of the task before implementation.
 3. **Implement**
+   - Break down the task into subtasks and track them with a todo list.
+   - After each subtask is done, commit the changes.
+   - Follow TDD (test-driven development) practice.
    - Change code/tests/docs strictly within the DoD.
    - Keep changes focused; avoid unrelated refactors.
+   
 4. **Prove**
    - Run verify commands or document precise skip reasons.
    - Record results in the scratchpad.

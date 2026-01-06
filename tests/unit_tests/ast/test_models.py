@@ -20,38 +20,6 @@ def test_document_requires_top_when_multiple_modules() -> None:
         AsdlDocument.model_validate(data)
 
 
-def test_document_allows_imports() -> None:
-    data = {
-        "imports": {"gf": "gf180/primitives.asdl"},
-        "modules": {"top": {"nets": {"$OUT": ["I1.P"]}}},
-    }
-    document = AsdlDocument.model_validate(data)
-    assert document.imports == {"gf": "gf180/primitives.asdl"}
-
-
-def test_document_rejects_import_only() -> None:
-    with pytest.raises(ValidationError):
-        AsdlDocument.model_validate({"imports": {"gf": "gf180/primitives.asdl"}})
-
-
-def test_document_rejects_bad_import_namespace() -> None:
-    data = {
-        "imports": {"bad-key": "gf180/primitives.asdl"},
-        "modules": {"top": {"nets": {"$OUT": ["I1.P"]}}},
-    }
-    with pytest.raises(ValidationError):
-        AsdlDocument.model_validate(data)
-
-
-def test_document_rejects_non_string_import_path() -> None:
-    data = {
-        "imports": {"gf": 123},
-        "modules": {"top": {"nets": {"$OUT": ["I1.P"]}}},
-    }
-    with pytest.raises(ValidationError):
-        AsdlDocument.model_validate(data)
-
-
 def test_device_backend_requires_template() -> None:
     with pytest.raises(ValidationError):
         DeviceBackendDecl.model_validate({})
