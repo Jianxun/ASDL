@@ -33,6 +33,7 @@
 - Added pattern elaboration pass and wired into netlist emission.
 - Added IR/netlist tests for pattern expansion.
 - Ran unit tests for IR + netlist coverage.
+- Opened PR: https://github.com/Jianxun/ASDL/pull/49
 
 ## Patch summary
 - `src/asdl/ir/pattern_elaboration.py`: new elaboration pass + runner for pattern expansion.
@@ -53,4 +54,4 @@
 - None.
 
 ## Next steps
-1. Push branch and open PR for review.
+1. Wait for Reviewer feedback.
