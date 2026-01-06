@@ -200,6 +200,25 @@ def test_convert_nfir_allows_scalar_net_broadcast() -> None:
     assert isinstance(ifir_design, IfirDesignOp)
 
 
+def test_convert_nfir_allows_spliced_instance_pattern() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[
+            NetOp(
+                name="VIN",
+                endpoints=[EndpointAttr(StringAttr("M<1|2>;M<3|4>"), StringAttr("D"))],
+            ),
+            InstanceOp(name="M<1|2>;M<3|4>", ref="nfet"),
+        ],
+    )
+    design = DesignOp(region=[module])
+
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert diagnostics == []
+    assert isinstance(ifir_design, IfirDesignOp)
+
+
 def test_convert_nfir_reports_pattern_binding_mismatch() -> None:
     module = ModuleOp(
         name="top",

@@ -49,22 +49,28 @@ def expand_endpoint(
     inst: str, pin: str, *, max_atoms: int = MAX_EXPANSION_SIZE
 ) -> Tuple[Optional[List[Tuple[str, str]]], List[Diagnostic]]:
     token = f"{inst}.{pin}"
-    expanded, diagnostics = expand_pattern(token, max_atoms=max_atoms)
-    if expanded is None:
+    inst_expanded, inst_diags = expand_pattern(inst, max_atoms=max_atoms)
+    if inst_expanded is None:
+        return None, inst_diags
+    pin_expanded, pin_diags = expand_pattern(pin, max_atoms=max_atoms)
+    diagnostics = [*inst_diags, *pin_diags]
+    if pin_expanded is None:
+        return None, diagnostics
+
+    product_size = len(inst_expanded) * len(pin_expanded)
+    if product_size > max_atoms:
+        diagnostics.append(
+            _diagnostic(
+                PATTERN_TOO_LARGE,
+                _too_large_message(token, max_atoms),
+            )
+        )
         return None, diagnostics
 
     endpoints: List[Tuple[str, str]] = []
-    for atom in expanded:
-        if atom.count(".") != 1:
-            diagnostics.append(
-                _diagnostic(
-                    PATTERN_UNEXPANDED,
-                    f"Endpoint token '{token}' expanded to malformed atom '{atom}'.",
-                )
-            )
-            return None, diagnostics
-        inst_atom, pin_atom = atom.split(".", 1)
-        endpoints.append((inst_atom, pin_atom))
+    for inst_atom in inst_expanded:
+        for pin_atom in pin_expanded:
+            endpoints.append((inst_atom, pin_atom))
 
     return endpoints, diagnostics
 

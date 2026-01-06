@@ -25,11 +25,13 @@
 - 2026-01-09: Initialized scratchpad, read contract/specs and IR converters/tests; created feature branch; set T-058 in progress.
 - 2026-01-09: Added endpoint pattern helper, binding verification in NFIR->IFIR conversion, and IR tests; updated existing pattern-preservation test for length matching; ran IR tests.
 - 2026-01-09: Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/48.
+- 2026-01-09: Addressed review feedback by expanding inst/pin separately; added splicing regression test; reran IR tests.
 
 ## Patch summary
 - `src/asdl/patterns.py`: add endpoint expansion helper for inst.pin tokens.
 - `src/asdl/ir/converters/nfir_to_ifir.py`: verify pattern binding lengths; emit IR-006 for mismatches; surface malformed pattern diagnostics.
 - `tests/unit_tests/ir/test_ifir_converter.py`: add binding verification tests and adjust pattern-preservation fixture.
+- `tests/unit_tests/ir/test_ifir_converter.py`: add spliced-instance regression test.
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir -v`
