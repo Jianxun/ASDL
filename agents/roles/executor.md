@@ -78,9 +78,10 @@ Status labels recorded in `agents/context/tasks_state.yaml` are lowercase with u
    4) tasks_state.yaml (confirm status)
    5) project_status.md (avoid duplicating work)
 3. After the user/Architect names the task, set `T-00X` to **In Progress** in `agents/context/tasks_state.yaml`.
-4. Create a feature branch from the shared `workbench` branch for this task before making changes (use a descriptive slug, e.g., `feature/T-022-api-introspect`).
-5. Create `agents/scratchpads/T-00X.md` if it doesn’t exist.
-6. After reading the necessary files. Explain your understanding of the task before implementation.
+4. Run `./venv/bin/python scripts/lint_tasks_state.py` after any edit to `agents/context/tasks_state.yaml`.
+5. Create a feature branch from the shared `workbench` branch for this task before making changes (use a descriptive slug, e.g., `feature/T-022-api-introspect`).
+6. Create `agents/scratchpads/T-00X.md` if it doesn’t exist.
+7. After reading the necessary files. Explain your understanding of the task before implementation.
 
 ---
 

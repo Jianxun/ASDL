@@ -94,7 +94,8 @@ Architecture Decision Records capture durable decisions. Follow these rules:
    6) project_status.md
    7) tasks_archived.yaml (only if needed)
    8) codebase_map.md (skim to refresh on structure)
-3. Identify:
+3. Run `./venv/bin/python scripts/lint_tasks_state.py` after reading task files; rerun it after any edits to `agents/context/tasks.yaml` or `agents/context/tasks_state.yaml`.
+4. Identify:
    - current objective(s)
    - highest-risk ambiguity
    - next 1–3 tasks that unblock progress

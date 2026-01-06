@@ -35,6 +35,7 @@ You operate end-to-end: once a PR is ready and passes the verify checklist, take
 
 Status labels recorded in `agents/context/tasks_state.yaml` are lowercase with underscores only (`backlog`, `ready`, `in_progress`, `blocked`, `ready_for_review`, `review_in_progress`, `review_clean`, `request_changes`, `escalation_needed`, `done`). Automation relies on this exact vocabulary.
 
+- After any edit to `agents/context/tasks_state.yaml`, run `./venv/bin/python scripts/lint_tasks_state.py`.
 - Reviewer-owned transitions: `review_in_progress`, `review_clean`, `request_changes`, `escalation_needed`, `done`. Set `review_in_progress` when you start reviewing, `review_clean` when you are ready to merge, `request_changes` when blockers exist, and `done` after the merge completes.
 - Executor-only statuses (do not edit): `in_progress`, `blocked`, `ready_for_review`. The Executor drives those transitions.
 - Expect a loop: after you mark `request_changes`, the Executor returns to `in_progress` and eventually flips `ready_for_review`; after `escalation_needed`, wait for Architect or user clarification before restarting.
