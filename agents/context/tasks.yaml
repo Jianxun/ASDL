@@ -57,26 +57,6 @@ backlog:
       - pytest tests/unit_tests/ir -v
     links:
       scratchpad: agents/scratchpads/T-063_import_name_resolution.md
-  - id: T-054
-    title: Imports spec
-    owner: Architect
-    dod: >
-      Define multi-file import/dependency spec (syntax, resolution rules,
-      cycles, diagnostics). Capture proposed schema and pass boundaries in
-      `docs/specs/` plus a migration note for MVP pipeline.
-    verify: []
-    links:
-      scratchpad: agents/scratchpads/T-054_imports_spec.md
-  - id: T-055
-    title: Specs reconciliation
-    owner: Architect
-    dod: >
-      Reconcile `docs/specs/` with the MVP pipeline (AST -> NFIR -> IFIR ->
-      emit), deprecate CIR/NLIR or merge into IFIR in spec docs, and update
-      `spec_compiler_stack.md` accordingly.
-    verify: []
-    links:
-      scratchpad: agents/scratchpads/T-055_specs_reconciliation.md
   - id: T-064
     title: Pattern endpoint equivalence
     owner: Executor

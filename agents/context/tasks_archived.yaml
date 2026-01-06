@@ -1,6 +1,28 @@
 schema_version: 1
 
 archive:
+  - id: T-054
+    title: Imports spec
+    owner: Architect
+    completed_on: 2026-01-06
+    dod: >
+      Define multi-file import/dependency spec (syntax, resolution rules,
+      cycles, diagnostics). Capture proposed schema and pass boundaries in
+      `docs/specs/` plus a migration note for MVP pipeline.
+    verify: []
+    links:
+      scratchpad: agents/scratchpads/T-054_imports_spec.md
+  - id: T-055
+    title: Specs reconciliation
+    owner: Architect
+    completed_on: 2026-01-06
+    dod: >
+      Reconcile `docs/specs/` with the MVP pipeline (AST -> NFIR -> IFIR ->
+      emit), deprecate CIR/NLIR or merge into IFIR in spec docs, and update
+      `spec_compiler_stack.md` accordingly.
+    verify: []
+    links:
+      scratchpad: agents/scratchpads/T-055_specs_reconciliation.md
   - id: T-048
     title: Unified netlist emitter
     owner: Architect
