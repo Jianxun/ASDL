@@ -14,3 +14,16 @@ icebox:
       - pytest tests/unit_tests/netlist -v
     links:
       scratchpad: agents/scratchpads/T-052_backend_lowering_refactor.md
+  - id: T-056
+    title: Exports sugar
+    owner: Executor
+    dod: >
+      Add `exports` sugar to AST and lowering: allow `exports` block in modules
+      and forward child ports into parent nets per `docs/specs/spec_ast.md`.
+      Include diagnostics for invalid forwarding; no changes to IFIR
+      semantics beyond expanded nets.
+    verify:
+      - pytest tests/unit_tests/ast -v
+      - pytest tests/unit_tests/ir -v
+    links:
+      scratchpad: agents/scratchpads/T-056_exports_sugar.md

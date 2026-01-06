@@ -72,20 +72,6 @@ backlog:
     verify: []
     links:
       scratchpad: agents/scratchpads/T-055_specs_reconciliation.md
-  - id: T-056
-    title: Exports sugar
-    owner: Executor
-    dod: >
-      Add `exports` sugar to AST and lowering: allow `exports` block in modules
-      and forward child ports into parent nets per `docs/specs/spec_ast.md`.
-      Include diagnostics for invalid forwarding; no changes to IFIR
-      semantics beyond expanded nets.
-    verify:
-      - pytest tests/unit_tests/ast -v
-      - pytest tests/unit_tests/ir -v
-    links:
-      scratchpad: agents/scratchpads/T-056_exports_sugar.md
-
   - id: T-064
     title: Pattern endpoint equivalence
     owner: Executor
