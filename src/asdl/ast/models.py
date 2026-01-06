@@ -10,15 +10,10 @@ from pydantic import (
     StrictStr,
     field_validator,
     model_validator,
-    StringConstraints,
 )
 
 ParamValue = Union[int, float, bool, str]
 InstanceExpr = StrictStr
-ImportNamespace = Annotated[
-    str, StringConstraints(strict=True, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
-]
-ImportPath = StrictStr
 
 
 def _reject_string_endpoint_list(value: object) -> object:
@@ -30,7 +25,6 @@ def _reject_string_endpoint_list(value: object) -> object:
 EndpointListExpr = Annotated[List[StrictStr], BeforeValidator(_reject_string_endpoint_list)]
 InstancesBlock = Dict[str, InstanceExpr]
 NetsBlock = Dict[str, EndpointListExpr]
-ImportsBlock = Dict[ImportNamespace, ImportPath]
 
 
 class AstBaseModel(BaseModel):
@@ -70,7 +64,6 @@ class ModuleDecl(AstBaseModel):
 
 
 class AsdlDocument(AstBaseModel):
-    imports: Optional[ImportsBlock] = None
     top: Optional[StrictStr] = None
     modules: Optional[Dict[str, ModuleDecl]] = None
     devices: Optional[Dict[str, DeviceDecl]] = None
@@ -89,12 +82,9 @@ class AsdlDocument(AstBaseModel):
 __all__ = [
     "ParamValue",
     "InstanceExpr",
-    "ImportNamespace",
-    "ImportPath",
     "EndpointListExpr",
     "InstancesBlock",
     "NetsBlock",
-    "ImportsBlock",
     "AsdlDocument",
     "ModuleDecl",
     "DeviceDecl",
