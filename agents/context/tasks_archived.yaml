@@ -119,3 +119,115 @@ archive:
     links:
       scratchpad: agents/scratchpads/T-038_template_placeholders.md
       pr: https://github.com/Jianxun/ASDL/pull/36
+  - id: T-050
+    title: Netlist test backend config
+    owner: Executor
+    completed_on: null
+    dod: >
+      Make netlist CLI/e2e tests deterministic by writing a temporary backend
+      config and setting `ASDL_BACKEND_CONFIG` in tests; ensure expected
+      netlists align with the test templates and do not rely on repo
+      `config/backends.yaml`.
+    verify:
+      - pytest tests/unit_tests/cli -v
+      - pytest tests/unit_tests/e2e -v
+    links:
+      scratchpad: agents/scratchpads/T-050_netlist_test_backend_config.md
+  - id: T-051
+    title: Optional name placeholder
+    owner: Executor
+    completed_on: null
+    dod: >
+      Remove the requirement that backend device templates include `{name}`.
+      Update template validation so pure-instruction templates are allowed,
+      keep `{ports}` optional. Adjust diagnostics/tests to reflect the new
+      rule.
+    verify:
+      - pytest tests/unit_tests/emit -v
+      - pytest tests/unit_tests/netlist -v
+    links:
+      scratchpad: agents/scratchpads/T-051_optional_name_placeholder.md
+  - id: T-053
+    title: Pattern expansion
+    owner: Executor
+    completed_on: null
+    dod: >
+      Preserve raw pattern tokens verbatim in AST/NFIR/IFIR (no
+      basename+pattern decomposition). Update parsers/converters to retain the
+      original token strings; add tests to ensure round-trip preservation
+      through NFIR/IFIR.
+    verify:
+      - pytest tests/unit_tests/ast -v
+      - pytest tests/unit_tests/ir -v
+    links:
+      scratchpad: agents/scratchpads/T-053_pattern_expansion.md
+  - id: T-057
+    title: Pattern expansion engine
+    owner: Executor
+    completed_on: null
+    dod: >
+      Implement a standalone pattern expansion engine per
+      `docs/specs/spec_asdl_pattern_expansion.md` (ranges, alternation,
+      splicing, expansion order, collisions, errors). Use `_` between basename
+      and suffixes. Add focused unit tests for expansion and diagnostics; no
+      pipeline integration yet.
+    verify:
+      - pytest tests/unit_tests/parser -v
+    links:
+      scratchpad: agents/scratchpads/T-057_pattern_expansion_engine.md
+  - id: T-058
+    title: Pattern binding verification
+    owner: Executor
+    completed_on: null
+    dod: >
+      Implement pattern binding verification for nets/endpoints: total length
+      comparison, scalar net broadcast, patterned net requires all endpoint
+      lengths match. Emit diagnostics on mismatch and malformed patterns. Add
+      unit tests in IR layer.
+    verify:
+      - pytest tests/unit_tests/ir -v
+    links:
+      scratchpad: agents/scratchpads/T-058_pattern_binding_verification.md
+  - id: T-059
+    title: Pattern elaboration pass
+    owner: Executor
+    completed_on: null
+    dod: >
+      Add an elaboration pass that expands pattern tokens into explicit
+      names/endpoints before backend emission. Wire it into the pipeline
+      before IFIR->emit; add tests covering expansion + netlist output
+      stability.
+    verify:
+      - pytest tests/unit_tests/ir -v
+      - pytest tests/unit_tests/netlist -v
+    links:
+      scratchpad: agents/scratchpads/T-059_pattern_elaboration_pass.md
+  - id: T-060
+    title: CLI schema command
+    owner: Executor
+    completed_on: null
+    dod: >
+      Add a CLI command `asdlc schema` that writes the JSON schema and text
+      schema to an output directory (default: CWD), reusing the same generator
+      logic as `scripts/generate_schema.py`. Update CLI help to list the new
+      command and add CLI tests that assert the output files are created.
+    verify:
+      - pytest tests/unit_tests/cli -v
+    links:
+      scratchpad: agents/scratchpads/T-060_cli_schema_command.md
+  - id: T-065
+    title: Pattern enumeration validation
+    owner: Executor
+    completed_on: null
+    dod: >
+      Detect malformed pattern enumerations (e.g., commas inside `<...>`)
+      as early as possible: update the pattern expansion helpers or parser
+      validators so that `MN_OUT<P,N>` and similar tokens trigger a PASS
+      diagnostic before NFIR verification. Add parser/IR tests that cover
+      invalid enumerations and ensure the existing expansion suite still
+      accepts valid `|`-separated lists.
+    verify:
+      - pytest tests/unit_tests/parser -v
+      - pytest tests/unit_tests/ir -v
+    links:
+      scratchpad: agents/scratchpads/T-065_pattern_enumeration_validation.md
