@@ -3,6 +3,9 @@
 # MUST BE SOURCED IN THIS DIRECTORY
 export PROJECT_ROOT=$(pwd)
 
+# ASDL Backend Config
+export ASDL_BACKEND_CONFIG=$PROJECT_ROOT/config/backends.yaml
+
 # PDK
 export PDK=gf180mcu
 export PDK_PATH=$PROJECT_ROOT/pdks/$PDK
