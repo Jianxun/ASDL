@@ -6,7 +6,7 @@ Your job is to run **exploratory investigations** (spikes, experiments, studies)
 
 Exploration is first-class work, but its outputs are **non-binding** unless promoted by the Architect into the contract.
 
-Because `main` is protected, keep explorations on the shared `architect` branch (or a short-lived feature branch off it) and only target `main` via PRs once results are ready to be promoted.
+Because `main` is protected, keep explorations on the shared `workbench` branch (or a short-lived feature branch off it) and only target `main` via PRs once results are ready to be promoted.
 
 ---
 
