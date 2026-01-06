@@ -166,6 +166,7 @@ Task fields (required unless noted):
 - `id`: `T-00X`
 - `title`
 - `owner` (optional)
+- `depends_on` (optional list of `T-00X`)
 - `dod`
 - `verify` (list; may be empty)
 - `links.scratchpad`

@@ -35,11 +35,14 @@ def load_yaml(path: Path) -> dict:
     return data
 
 
-def collect_task_ids(tasks: list, label: str, errors: list[str]) -> list[str]:
+def collect_task_ids(
+    tasks: list, label: str, errors: list[str]
+) -> tuple[list[str], dict[str, list[str]]]:
     ids: list[str] = []
+    dependencies: dict[str, list[str]] = {}
     if not isinstance(tasks, list):
         errors.append(f"{label} must be a list.")
-        return ids
+        return ids, dependencies
     for index, task in enumerate(tasks):
         if not isinstance(task, dict):
             errors.append(f"{label}[{index}] must be a mapping.")
@@ -50,8 +53,37 @@ def collect_task_ids(tasks: list, label: str, errors: list[str]) -> list[str]:
             continue
         if not TASK_ID_RE.match(task_id):
             errors.append(f"{label}[{index}].id '{task_id}' must match T-000 format.")
+        depends_on = task.get("depends_on")
+        if depends_on is not None:
+            if not isinstance(depends_on, list):
+                errors.append(f"{label}[{index}].depends_on must be a list.")
+            else:
+                deps: list[str] = []
+                seen_deps: set[str] = set()
+                for dep in depends_on:
+                    if not isinstance(dep, str):
+                        errors.append(
+                            f"{label}[{index}].depends_on values must be strings."
+                        )
+                        continue
+                    if not TASK_ID_RE.match(dep):
+                        errors.append(
+                            f"{label}[{index}].depends_on '{dep}' must match T-000 format."
+                        )
+                    if dep in seen_deps:
+                        errors.append(
+                            f"{label}[{index}].depends_on contains duplicate '{dep}'."
+                        )
+                        continue
+                    seen_deps.add(dep)
+                    deps.append(dep)
+                if task_id in seen_deps:
+                    errors.append(
+                        f"{label}[{index}].depends_on cannot include itself."
+                    )
+                dependencies[task_id] = deps
         ids.append(task_id)
-    return ids
+    return ids, dependencies
 
 
 def main() -> int:
@@ -78,14 +110,24 @@ def main() -> int:
 
     current_sprint = tasks_data.get("current_sprint", [])
     backlog = tasks_data.get("backlog", [])
-    active_ids = collect_task_ids(current_sprint, "current_sprint", errors)
-    active_ids += collect_task_ids(backlog, "backlog", errors)
+    current_ids, current_deps = collect_task_ids(
+        current_sprint, "current_sprint", errors
+    )
+    backlog_ids, backlog_deps = collect_task_ids(backlog, "backlog", errors)
+    active_ids = current_ids + backlog_ids
+    active_deps = {**current_deps, **backlog_deps}
 
     seen_ids: set[str] = set()
     for task_id in active_ids:
         if task_id in seen_ids:
             errors.append(f"Duplicate task id '{task_id}' in tasks.yaml.")
         seen_ids.add(task_id)
+    for task_id, deps in active_deps.items():
+        for dep in deps:
+            if dep not in seen_ids:
+                errors.append(
+                    f"tasks.yaml task '{task_id}' depends_on inactive or missing task '{dep}'."
+                )
 
     if state_data.get("schema_version") != 1:
         errors.append(f"{state_path} schema_version must be 1.")

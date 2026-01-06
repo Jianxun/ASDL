@@ -14,7 +14,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 
 ## Interfaces & data contracts
 - `agents/context/contract.md` maintains this structure; keep sections current.
-- `agents/context/tasks.yaml`: active task cards (current_sprint/backlog) without status fields.
+- `agents/context/tasks.yaml`: active task cards (current_sprint/backlog) without status fields; tasks may include optional `depends_on` lists of `T-00X`.
 - `agents/context/tasks_state.yaml`: status-only map for active tasks; edited by Architect, Reviewer, and Executor.
 - `agents/context/tasks_icebox.yaml`: deferred task cards (icebox).
 - `agents/context/tasks_archived.yaml`: archived done tasks; compact records with optional `completed_on`.
