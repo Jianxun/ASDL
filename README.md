@@ -34,9 +34,9 @@ ASDL is a Python-first framework for describing analog circuits as structured YA
 4. Install runtime and developer deps:
    ```bash
    pip install --upgrade pip
-   pip install -e .[asdl]
+   pip install -e ".[dev]"
    ```
-   The xDSL toolchain is optional but can be installed with `pip install -e .[xdsl]` for running xDSL-specific tooling or passes.
+   The xDSL toolchain is optional; install it alongside dev deps with `pip install -e ".[dev,xdsl]"` when you need xDSL-specific tooling or passes.
 5. Ensure the backend config is reachable (default `config/backends.yaml`). Override it with `ASDL_BACKEND_CONFIG=/path/to/backends.yaml` when needed (tests use temporary overrides).
 6. Run `asdlc --help` to verify the CLI entry point and inspect available commands (`parse`, `emit`, `schema`, etc.).
 
