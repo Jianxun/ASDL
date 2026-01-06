@@ -87,12 +87,11 @@ Given an importing file `F` and an import path `P`:
      3) `ASDL_LIB_PATH` roots (PATH-like list, in order)
      4) library roots (`--lib <name>=<dir>`, in CLI order; optional; name does not affect resolution)
 
-After a candidate path is found, the compiler MUST normalize it by collapsing
-`.`/`..` segments and converting to an absolute path (no symlink resolution).
-
-First match wins. If multiple matches exist, the compiler MAY warn.
-
-If no match is found, it is an error.
+Search all roots in order and collect existing candidates. If exactly one
+match exists, the compiler MUST normalize it by collapsing `.`/`..` segments
+and converting to an absolute path (no symlink resolution). If multiple
+matches exist, it is an error (no shadowing); the error MUST list all matches
+in root order. If no match is found, it is an error.
 
 `ASDL_LIB_PATH` is a PATH-style list of directories (OS path separator).
 Relative entries are resolved against the current working directory; empty
@@ -197,6 +196,7 @@ If a declared namespace is never referenced:
 - `AST-012`: import cycle detected (ERROR)
 - `AST-013`: duplicate namespace in `imports` (ERROR)
 - `AST-014`: duplicate symbol name within a file (ERROR)
+- `AST-015`: ambiguous import path; multiple matches (ERROR)
 - `IR-010`: unresolved qualified symbol `ns.symbol` (ERROR)
 - `IR-011`: unresolved unqualified symbol (ERROR)
 - `LINT-001`: unused import namespace (WARNING)
@@ -310,7 +310,7 @@ modules:
 A build is deterministic if:
 - import resolution order is stable
 - symbol registration order does not affect resolution
-- resolution always uses the “first match wins” ordered root list
+- resolution scans the ordered root list and errors on ambiguity (no shadowing)
 
 The compiler MUST produce byte-identical outputs given identical input files and identical root lists.
 
