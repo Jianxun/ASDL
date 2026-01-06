@@ -8,7 +8,7 @@ elaboration representation before backend emission.
 ---
 
 ## Scope (v0)
-- Self-contained design (imports/exports deferred).
+- Multi-file designs are supported; symbol identity is `(file_id, name)`.
 - Named-only connections (no positional conns).
 - Explicit net objects are declared per module.
 - Pattern tokens may appear only in instance names, net names, and endpoint
@@ -25,6 +25,8 @@ elaboration representation before backend emission.
 **Attributes**
 - `top: StringAttr?`
   - Entry module name (from AST `top`).
+- `entry_file_id: StringAttr?`
+  - Canonical file id for the entry file (normalized absolute path).
 - `doc: StringAttr?`
 - `src: LocAttr?`
 
@@ -34,6 +36,7 @@ elaboration representation before backend emission.
 ### `asdl_ifir.module` (symbol)
 **Attributes**
 - `sym_name: StringAttr`
+- `file_id: StringAttr`
 - `port_order: ArrayAttr<StringAttr>`
   - Ordered list of port names derived from `$` nets in AST.
   - Port names are stored without the `$` prefix and may include pattern tokens.
@@ -59,8 +62,10 @@ elaboration representation before backend emission.
   - Instance name; may include pattern tokens.
 - `expansion_len: IntegerAttr`
   - Total expansion length of `name` (1 for literals).
-- `ref: SymbolRefAttr`
-  - References a module or device by name; must be a literal.
+- `ref: StringAttr`
+  - References a module or device by unqualified name.
+- `ref_file_id: StringAttr`
+  - Resolved file id for the referenced module/device definition.
 - `params: DictAttr?`
 - `conns: ArrayAttr<asdl_ifir.conn>`  (**named-only**)
 - `doc: StringAttr?`
@@ -77,6 +82,7 @@ elaboration representation before backend emission.
 ### `asdl_ifir.device` (symbol)
 **Attributes**
 - `sym_name: StringAttr`
+- `file_id: StringAttr`
 - `ports: ArrayAttr<StringAttr>`
   - Ordered port list.
 - `params: DictAttr?`
@@ -101,8 +107,9 @@ elaboration representation before backend emission.
 ## Derivation rules (NFIR -> IFIR)
 - NFIR verification must run and succeed before lowering.
 - `asdl_ifir.design.top` is copied from `asdl_nfir.design.top` (if present).
+- `asdl_ifir.design.entry_file_id` is copied from `asdl_nfir.design.entry_file_id`.
 - For each NFIR module:
-  - copy `sym_name` and `port_order`.
+  - copy `sym_name`, `file_id`, and `port_order`.
   - create `asdl_ifir.net` for every NFIR net (names already stripped of `$`).
   - copy `expansion_len` from NFIR net `name`.
   - invert NFIR net endpoints into instance conns:
@@ -110,9 +117,9 @@ elaboration representation before backend emission.
       add a conn `{port=<pin>, port_len=<pin_len>, net=<net_name>}` to the
       matching instance.
 - For each NFIR instance:
-  - copy `name`, `expansion_len`, `ref`, and `params`.
+  - copy `name`, `expansion_len`, `ref`, `ref_file_id`, and `params`.
   - conns are populated by the inversion above.
-- Devices and their backends are copied 1:1 from NFIR.
+- Devices and their backends are copied 1:1 from NFIR, including `file_id`.
 
 ---
 
@@ -138,8 +145,8 @@ elaboration representation before backend emission.
 ---
 
 ## Invariants (v0)
-- Module names are unique within a design.
-- Device names are unique within a design.
+- Module names are unique per `file_id`.
+- Device names are unique per `file_id`.
 - Net names are unique within a module (post-verification).
 - Instance names are unique within a module (post-verification).
 - Each instance's `conns` list has unique `port` names (post-verification).

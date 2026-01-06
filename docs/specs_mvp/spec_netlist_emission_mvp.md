@@ -98,11 +98,11 @@ Every backend must define the following system devices in `backends.yaml`:
 
 | System Device | Purpose | Required Placeholders | Optional Placeholders |
 |---------------|---------|----------------------|----------------------|
-| `__subckt_header__` | Non-top module header | `{name}` | `{ports}` |
+| `__subckt_header__` | Non-top module header | `{name}` | `{ports}`, `{file_id}`, `{sym_name}` |
 | `__subckt_footer__` | Non-top module footer | - | `{name}` |
-| `__subckt_call__` | Module instantiation | `{name}`, `{ports}`, `{ref}` | - |
-| `__netlist_header__` | File-level preamble | - | `{backend}`, `{top}` |
-| `__netlist_footer__` | File-level postamble | - | `{backend}`, `{top}` |
+| `__subckt_call__` | Module instantiation | `{name}`, `{ports}`, `{ref}` | `{file_id}`, `{sym_name}` |
+| `__netlist_header__` | File-level preamble | - | `{backend}`, `{top}`, `{file_id}`, `{top_sym_name}` |
+| `__netlist_footer__` | File-level postamble | - | `{backend}`, `{top}`, `{file_id}`, `{top_sym_name}` |
 
 ### Backend configuration file
 - Location: Determined by environment variable `ASDL_BACKEND_CONFIG`; defaults to `config/backends.yaml`
@@ -141,6 +141,28 @@ Every backend must define the following system devices in `backends.yaml`:
   - `{name}`: instance name
   - `{ports}`: space-joined connection nets in port order
   - `{ref}`: referenced module name
+  - `{file_id}`: referenced module `file_id`
+  - `{sym_name}`: referenced module original name (pre-disambiguation)
+
+### File identity placeholders
+- `{file_id}` in `__subckt_header__` is the defining module `file_id`.
+- `{file_id}` in `__netlist_header__`/`__netlist_footer__` is the entry file `file_id`.
+
+### Subckt name disambiguation
+- Subckt identifiers must be globally unique in emitted netlists.
+- If multiple modules share the same `sym_name` across different files, the
+  emitter MUST deterministically rename those subckts for emission.
+- Emitted module names:
+  - If `sym_name` is unique across all `file_id` values: use `sym_name`.
+  - Otherwise: use `{sym_name}__{hash8}` where `hash8` is the first 8 hex chars
+    of `sha1(file_id)`.
+- The emitted name is used for:
+  - `{name}` in `__subckt_header__`
+  - `{ref}` in `__subckt_call__`
+  - `{top}` in `__netlist_header__`/`__netlist_footer__` when it refers to a
+    module
+- `{sym_name}` and `{top_sym_name}` always refer to the original module name
+  before disambiguation.
 
 ### Validation
 - Backend config is loaded and validated at emission time

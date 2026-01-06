@@ -15,7 +15,7 @@ AST. It preserves pattern tokens and is the staging IR for IFIR lowering.
 ---
 
 ## Scope (v0)
-- Self-contained design (imports/exports deferred).
+- Multi-file designs are supported; symbol identity is `(file_id, name)`.
 - Pattern tokens allowed only in instance names, net names, and endpoint tokens
   (instance name and pin name).
 - No view system or backend selection semantics.
@@ -30,6 +30,8 @@ AST. It preserves pattern tokens and is the staging IR for IFIR lowering.
 **Attributes**
 - `top: StringAttr?`
   - Entry module name (from AST `top`).
+- `entry_file_id: StringAttr?`
+  - Canonical file id for the entry file (normalized absolute path).
 - `doc: StringAttr?`
 - `src: LocAttr?`
 
@@ -39,6 +41,7 @@ AST. It preserves pattern tokens and is the staging IR for IFIR lowering.
 ### `asdl_nfir.module` (symbol)
 **Attributes**
 - `sym_name: StringAttr`
+- `file_id: StringAttr`
 - `port_order: ArrayAttr<StringAttr>`
   - Ordered list of port names derived from `$` nets in AST.
   - Port names are stored without the `$` prefix and may include pattern tokens.
@@ -76,7 +79,9 @@ AST. It preserves pattern tokens and is the staging IR for IFIR lowering.
 - `expansion_len: IntegerAttr`
   - Total expansion length of `name` (1 for literals).
 - `ref: StringAttr`
-  - Model name parsed from the AST instance expression; must be a literal.
+  - Model name parsed from the AST instance expression; unqualified symbol name.
+- `ref_file_id: StringAttr`
+  - Resolved file id for the referenced module/device definition.
 - `params: DictAttr?`
   - Key/value parameters parsed from the AST instance expression.
   - Values are stored as raw strings.
@@ -86,6 +91,7 @@ AST. It preserves pattern tokens and is the staging IR for IFIR lowering.
 ### `asdl_nfir.device` (symbol)
 **Attributes**
 - `sym_name: StringAttr`
+- `file_id: StringAttr`
 - `ports: ArrayAttr<StringAttr>`
   - Ordered port list.
 - `params: DictAttr?`
@@ -109,15 +115,22 @@ AST. It preserves pattern tokens and is the staging IR for IFIR lowering.
 
 ## Derivation rules (AST -> NFIR)
 - `asdl_nfir.design.top` is copied from AST `top` (if present).
+- `asdl_nfir.design.entry_file_id` is the canonical `file_id` of the entry file.
+- `top` resolution is scoped to `entry_file_id`; same-name modules in other files
+  do not satisfy the entry top.
 - For each `$` net in AST:
   - strip the `$` prefix for the NFIR net name.
   - append the stripped name (verbatim pattern token) to `port_order`.
 - Non-port nets must not start with `$` in NFIR.
 - Parse `InstanceExpr` as:
-  - first token is `ref` (model name; literal),
+  - first token is the type token (`symbol` or `ns.symbol`),
   - remaining tokens must be `<key>=<value>` pairs,
   - store params as a dict of raw strings.
-- Devices and their backends are copied 1:1 from AST.
+- If the type token is qualified (`ns.symbol`), store `symbol` in `ref` and
+  `ref_file_id` from name resolution. Unqualified refs use the current file's
+  `file_id`.
+- Instances store `ref_file_id` from import-aware name resolution.
+- Devices and their backends are copied 1:1 from AST and tagged with `file_id`.
 - Compute and attach `expansion_len`, `inst_len`, and `pin_len` using the
   pattern expansion rules (length only; no expansion is emitted).
 
@@ -148,5 +161,6 @@ Must run and succeed before lowering to IFIR.
 - Each endpoint `(inst, pin)` binds to at most one net (post-verification).
 - `port_order` is a list of unique names, and each entry corresponds to a net.
 - `ref` is non-empty and literal for every instance.
-- Device names are unique within a design.
+- Module names are unique per `file_id`.
+- Device names are unique per `file_id`.
 - Backend `name` keys are unique per device.

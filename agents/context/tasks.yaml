@@ -13,7 +13,8 @@ backlog:
       `scripts/generate_schema.py` output. Update `docs/specs/spec_ast.md` to
       include `imports` (keep MVP spec unchanged). Add parser/AST tests for
       valid and invalid `imports` (bad namespace, duplicate key, invalid
-      type).
+      type). Enforce that documents define at least one module or device
+      (import-only files are invalid), with tests covering the new rule.
     verify:
       - pytest tests/unit_tests/parser -v
       - pytest tests/unit_tests/ast -v
@@ -25,13 +26,15 @@ backlog:
     dod: >
       Implement import resolution + file loading per
       `docs/specs/spec_asdl_import.md` (relative/absolute/logical roots, no
-      extension inference, `--lib` name ignored for resolution, path
-      normalization collapses `.`/`..`, no symlink resolution). Build a
+      extension inference, `--lib` name ignored for resolution, `ASDL_LIB_PATH`
+      roots, `~`/`$VAR` expansion, path normalization collapses `.`/`..`, no
+      symlink resolution). Build a
       `ProgramDB` keyed by `file_id` (absolute path) and a per-file `NameEnv`
       that allows multiple namespaces to the same file. Detect cycles with a
       readable import chain and emit diagnostics for missing files and
-      malformed paths. Add unit tests for resolution order, cycles, and
-      missing imports.
+      malformed paths (`AST-010`/`AST-011`/`AST-012`/`AST-013`/`AST-014`). Add
+      unit tests for resolution order, cycles, missing imports, duplicate
+      symbols in a file, and deduping the same `file_id` across paths.
     verify:
       - pytest tests/unit_tests/parser -v
       - pytest tests/unit_tests/ir -v
@@ -45,16 +48,18 @@ backlog:
       unqualified symbols only from the current file, and `ns.symbol` for
       imported files; reject unresolved names with diagnostics. Forbid
       same-name symbol duplicates within a file regardless of kind. Emit a
-      warning for unused `imports` namespaces. Add IR tests covering local
-      refs, imported refs, unused-import warnings, and unresolved symbol
-      diagnostics.
+      warning for unused `imports` namespaces (`LINT-001`) and errors for
+      unresolved names (`IR-010`/`IR-011`). Support qualified type tokens in
+      instance expressions by splitting `ns.symbol` into `ref` + `ref_file_id`.
+      Add IR tests covering local refs, imported refs, unused-import warnings,
+      and unresolved symbol diagnostics.
     verify:
       - pytest tests/unit_tests/ir -v
     links:
       scratchpad: agents/scratchpads/T-063_import_name_resolution.md
   - id: T-054
     title: Imports spec
-    owner: Executor
+    owner: Architect
     dod: >
       Define multi-file import/dependency spec (syntax, resolution rules,
       cycles, diagnostics). Capture proposed schema and pass boundaries in
@@ -87,6 +92,56 @@ backlog:
       - examples/scratch/test.asdl
     links:
       scratchpad: agents/scratchpads/T-064_pattern_equivalence.md
+  - id: T-065
+    title: File_id propagation in IR
+    owner: Executor
+    dod: >
+      Carry `file_id` metadata from import resolution through NFIR/IFIR:
+      add `entry_file_id` on design ops, `file_id` on module/device ops, and
+      `ref_file_id` on instance ops. Update AST->NFIR and NFIR->IFIR converters
+      to set/copy these attributes from the import ProgramDB/NameEnv. Adjust
+      IR verification to allow same-name modules/devices across files (uniqueness
+      per `file_id`) while still enforcing same-file uniqueness. Ensure `top`
+      resolves within the entry file only (via `entry_file_id`). Add IR tests
+      covering duplicate names across files and entry-top resolution.
+    verify:
+      - pytest tests/unit_tests/ir -v
+    files:
+      - src/asdl/ir/nfir/dialect.py
+      - src/asdl/ir/ifir/dialect.py
+      - src/asdl/ir/converters/ast_to_nfir.py
+      - src/asdl/ir/converters/nfir_to_ifir.py
+      - src/asdl/imports
+      - tests/unit_tests/ir
+    links:
+      scratchpad: agents/scratchpads/T-065_file_id_propagation.md
+  - id: T-066
+    title: Netlist templates file_id placeholders
+    owner: Executor
+    dod: >
+      Expose `file_id` to system-device templates without changing emission
+      behavior. Allow `{file_id}` in `__subckt_header__`,
+      `__subckt_call__`, `__netlist_header__`, and `__netlist_footer__`
+      placeholder validation, plus `{sym_name}` for module templates and
+      `{top_sym_name}` for netlist header/footer. Pass the module's `file_id`
+      into `__subckt_header__`, the referenced module `file_id` into
+      `__subckt_call__`, and the entry `file_id` into netlist header/footer
+      contexts. Implement deterministic subckt renaming for duplicate module
+      names across files using `{sym_name}__{hash8}` (first 8 hex chars of
+      `sha1(file_id)`), applied consistently to `__subckt_header__`, module
+      calls, and `{top}` in netlist header/footer. Add or update emission tests
+      to cover template usage and duplicate-name disambiguation.
+    verify:
+      - pytest tests/unit_tests/emit -v
+      - pytest tests/unit_tests/netlist -v
+    files:
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/templates.py
+      - src/asdl/emit/backend_config.py
+      - config/backends.yaml
+      - tests/unit_tests/emit
+    links:
+      scratchpad: agents/scratchpads/T-066_netlist_file_id_templates.md
 
 exploration_candidates:
   - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.
