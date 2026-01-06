@@ -72,7 +72,7 @@ Escalate for:
   2. Ensure `origin/main` is up to date locally (`git fetch origin main`) and that the branch rebases/merges cleanly.
   3. Run or validate required commands (ruff/mypy/pytest/CLI smoke) and document any skips.
   4. Approvals are unavailable on this shared account, so skip `gh pr review <num> --approve` and rely on your in-line review comments.
-  5. Merge via `gh pr merge <num> --merge` (or squash/rebase per norms) once you’ve confirmed the PR is ready **and** have already committed the status update to `review_clean` and `done` so the PR is self-contained.
+  5. Merge via `gh pr merge <num> --merge` (or squash/rebase per norms) once you’ve confirmed the PR is ready **and** have already committed the status update to `review_clean` and `done` so the PR is self-contained. Then checkout to `main` and pull the new merge so that we have a clean state for next task.
   6. Leave a merge note and request Architect reconciliation of `agents/context/project_status.md`.
 
 ## Review outcome protocol
