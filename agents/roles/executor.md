@@ -15,6 +15,7 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
 ---
 
 ## Workflow (exact)
+**IMPORTANT** you must execute the workflow end-to-end without asking for explict user permissions for next steps.
 
 1. **Select task**
    - Confirm the `T-00X` with the user or Architect before touching code.
@@ -37,7 +38,6 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
 5. **Closeout**
    - Update the scratchpad with progress, patch summary, verification, and next steps.
    - Push the branch and open a PR to `main` with summary + testing.
-   - Respond to review feedback with GitHub PR comments prefixed `[Executor]:`.
    - Do not merge the PR yourself.
 
 ---
