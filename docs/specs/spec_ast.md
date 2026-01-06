@@ -22,6 +22,9 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 ## Top-Level: `AsdlDocument`
 
 ### Fields
+- `imports: Optional[Dict[str, str]]`
+  - Map of namespace → import path (raw string).
+  - Namespaces must match `[A-Za-z_][A-Za-z0-9_]*`.
 - `top: Optional[str]`
   - Entry module name.
   - Required if **multiple modules** exist; otherwise optional.

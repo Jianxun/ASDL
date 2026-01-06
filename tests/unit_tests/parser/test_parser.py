@@ -68,6 +68,87 @@ def test_parse_string_preserves_pattern_tokens() -> None:
     assert module.nets["BUS[3:0];BUS<4|5>"] == ["MN<1|2>.S"]
 
 
+def test_parse_string_accepts_imports() -> None:
+    yaml_content = "\n".join(
+        [
+            "imports:",
+            "  gf: libs/gf.asdl",
+            "modules:",
+            "  top:",
+            "    nets:",
+            "      $OUT:",
+            "        - I1.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert diagnostics == []
+    assert document is not None
+    assert document.imports == {"gf": "libs/gf.asdl"}
+
+
+def test_parse_string_rejects_invalid_import_namespace() -> None:
+    yaml_content = "\n".join(
+        [
+            "imports:",
+            "  \"1bad\": libs/gf.asdl",
+            "modules:",
+            "  top: {}",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "AST-011"
+    assert diag.severity is Severity.ERROR
+    assert "namespace" in diag.message
+
+
+def test_parse_string_rejects_duplicate_import_namespaces() -> None:
+    yaml_content = "\n".join(
+        [
+            "imports:",
+            "  gf: libs/gf.asdl",
+            "  gf: other/gf.asdl",
+            "modules:",
+            "  top: {}",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "AST-013"
+    assert diag.severity is Severity.ERROR
+
+
+def test_parse_string_rejects_non_string_import_path() -> None:
+    yaml_content = "\n".join(
+        [
+            "imports:",
+            "  gf:",
+            "    - libs/gf.asdl",
+            "modules:",
+            "  top: {}",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "AST-011"
+    assert diag.severity is Severity.ERROR
+    assert "path" in diag.message
+
+
 def test_parse_string_invalid_root_type() -> None:
     document, diagnostics = parse_string("- item")
 
@@ -82,6 +163,17 @@ def test_parse_string_invalid_root_type() -> None:
 
 def test_parse_string_requires_modules_or_devices() -> None:
     document, diagnostics = parse_string("top: main")
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert "modules" in diag.message
+    assert "devices" in diag.message
+
+
+def test_parse_string_rejects_import_only_document() -> None:
+    document, diagnostics = parse_string("imports:\n  gf: libs/gf.asdl")
 
     assert document is None
     assert diagnostics
