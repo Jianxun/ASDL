@@ -23,10 +23,12 @@ from asdl.ir.nfir import (
     NetOp as NfirNetOp,
 )
 from asdl.ir.location import location_attr_to_span
+from asdl.patterns import expand_endpoint, expand_pattern
 
 INVALID_NFIR_DESIGN = format_code("IR", 3)
 INVALID_NFIR_DEVICE = format_code("IR", 4)
 UNKNOWN_ENDPOINT_INSTANCE = format_code("IR", 5)
+PATTERN_BINDING_MISMATCH = format_code("IR", 6)
 NO_SPAN_NOTE = "No source span available."
 
 
@@ -97,6 +99,10 @@ def _convert_module(
     conn_map: Dict[str, List[ConnAttr]] = {
         inst.name_attr.data: [] for inst in nfir_instances
     }
+
+    pattern_diags, pattern_error = _verify_pattern_bindings(module, nfir_nets)
+    diagnostics.extend(pattern_diags)
+    had_error = had_error or pattern_error
 
     for net in nfir_nets:
         net_name = net.name_attr.data
@@ -198,6 +204,49 @@ def _diagnostic(
         notes=notes,
         source="ir",
     )
+
+
+def _verify_pattern_bindings(
+    module: NfirModuleOp,
+    nets: List[NfirNetOp],
+) -> Tuple[List[Diagnostic], bool]:
+    diagnostics: List[Diagnostic] = []
+    had_error = False
+
+    for net in nets:
+        net_token = net.name_attr.data
+        net_expanded, net_diags = expand_pattern(net_token)
+        diagnostics.extend(net_diags)
+        if net_expanded is None:
+            had_error = True
+            continue
+        net_len = len(net_expanded)
+
+        for endpoint in net.endpoints.data:
+            endpoint_token = f"{endpoint.inst.data}.{endpoint.pin.data}"
+            endpoint_expanded, endpoint_diags = expand_endpoint(
+                endpoint.inst.data,
+                endpoint.pin.data,
+            )
+            diagnostics.extend(endpoint_diags)
+            if endpoint_expanded is None:
+                had_error = True
+                continue
+            endpoint_len = len(endpoint_expanded)
+            if net_len > 1 and endpoint_len != net_len:
+                diagnostics.append(
+                    _diagnostic(
+                        PATTERN_BINDING_MISMATCH,
+                        (
+                            f"Net '{net_token}' expands to {net_len} atoms but "
+                            f"endpoint '{endpoint_token}' expands to {endpoint_len}"
+                        ),
+                        net.src or module.src,
+                    )
+                )
+                had_error = True
+
+    return diagnostics, had_error
 
 
 __all__ = ["convert_design"]

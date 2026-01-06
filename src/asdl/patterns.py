@@ -45,6 +45,30 @@ def expand_pattern(
     return expanded, diagnostics
 
 
+def expand_endpoint(
+    inst: str, pin: str, *, max_atoms: int = MAX_EXPANSION_SIZE
+) -> Tuple[Optional[List[Tuple[str, str]]], List[Diagnostic]]:
+    token = f"{inst}.{pin}"
+    expanded, diagnostics = expand_pattern(token, max_atoms=max_atoms)
+    if expanded is None:
+        return None, diagnostics
+
+    endpoints: List[Tuple[str, str]] = []
+    for atom in expanded:
+        if atom.count(".") != 1:
+            diagnostics.append(
+                _diagnostic(
+                    PATTERN_UNEXPANDED,
+                    f"Endpoint token '{token}' expanded to malformed atom '{atom}'.",
+                )
+            )
+            return None, diagnostics
+        inst_atom, pin_atom = atom.split(".", 1)
+        endpoints.append((inst_atom, pin_atom))
+
+    return endpoints, diagnostics
+
+
 def _split_splice_segments(token: str) -> Tuple[Optional[List[str]], Optional[Diagnostic]]:
     segments: List[str] = []
     buffer: List[str] = []
@@ -313,5 +337,6 @@ __all__ = [
     "PATTERN_DUPLICATE_ATOM",
     "PATTERN_TOO_LARGE",
     "PATTERN_UNEXPANDED",
+    "expand_endpoint",
     "expand_pattern",
 ]

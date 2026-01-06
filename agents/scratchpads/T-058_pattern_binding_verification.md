@@ -1,16 +1,45 @@
 # T-058 Pattern Binding Verification
 
-## Context
-Binding rules for patterned nets/endpoints must be enforced before elaboration. Patterns are flattened to a single list for length comparisons; no segment alignment semantics.
+## Task summary
+- DoD: Implement pattern binding verification for nets/endpoints (total length comparison, scalar net broadcast, patterned net requires all endpoint lengths match). Emit diagnostics on mismatch and malformed patterns. Add IR layer unit tests.
+- Verify: `pytest tests/unit_tests/ir -v`
 
-## Notes
-- If net is scalar: all endpoint patterns bind to it (endpoints may have differing lengths).
-- If net expands to N: all endpoints must expand to N; bind by index.
-- Bindings compare the string form of fully expanded tokens (e.g., `MN<A,B>` matches `MN_A` and `MN_B`).
-- Use a shared equivalence helper in both binding verification and elaboration.
-- Every scalar endpoint (post-expansion element) binds to exactly one net.
-- Emit diagnostics on mismatch or malformed patterns.
+## Read
+- `agents/context/contract.md`
+- `agents/context/tasks.yaml`
+- `agents/context/tasks_state.yaml`
+- `agents/context/project_status.md`
+- `src/asdl/patterns.py`
+- `src/asdl/ir/converters/nfir_to_ifir.py`
+- `tests/unit_tests/ir/test_converter.py`
+- `tests/unit_tests/ir/test_ifir_converter.py`
+- `docs/specs/spec_asdl_pattern_expansion.md`
 
-## DoD
-- Verification rules implemented in IR layer with unit tests.
-- Clear diagnostics for length mismatches and invalid patterns.
+## Plan
+1. Add shared pattern expansion helper(s) for endpoint tokens to reuse in binding verification.
+2. Implement pattern binding verification in NFIR->IFIR conversion with diagnostics for invalid patterns and length mismatches.
+3. Add IR unit tests covering scalar broadcast, patterned net mismatch, and malformed pattern diagnostics.
+4. Run IR unit tests (or note if not run).
+
+## Progress log
+- 2026-01-09: Initialized scratchpad, read contract/specs and IR converters/tests; created feature branch; set T-058 in progress.
+- 2026-01-09: Added endpoint pattern helper, binding verification in NFIR->IFIR conversion, and IR tests; updated existing pattern-preservation test for length matching; ran IR tests.
+
+## Patch summary
+- `src/asdl/patterns.py`: add endpoint expansion helper for inst.pin tokens.
+- `src/asdl/ir/converters/nfir_to_ifir.py`: verify pattern binding lengths; emit IR-006 for mismatches; surface malformed pattern diagnostics.
+- `tests/unit_tests/ir/test_ifir_converter.py`: add binding verification tests and adjust pattern-preservation fixture.
+
+## Verification
+- `venv/bin/pytest tests/unit_tests/ir -v`
+
+## Status request
+- Ready for Review
+
+## Blockers / Questions
+- None yet.
+
+## Next steps
+1. Implement endpoint expansion helper in `src/asdl/patterns.py`.
+2. Add binding verification + diagnostics in `src/asdl/ir/converters/nfir_to_ifir.py`.
+3. Write IR tests for mismatch and malformed patterns.
