@@ -188,6 +188,38 @@ backlog:
     links:
       scratchpad: agents/scratchpads/T-056_exports_sugar.md
 
+  - id: T-064
+    title: Pattern endpoint equivalence
+    owner: Executor
+    dod: >
+      Ensure NFIR verification treats word-sense-equivalent pattern tokens as the same instance (e.g., `MN_OUT<P,N>` vs `MN_OUT<P|N>`) by comparing the expansion outputs instead of raw strings. Add IR/unit tests plus the `examples/scratch/test.asdl` netlist run to prove the pipeline no longer rejects those bindings.
+    verify:
+      - pytest tests/unit_tests/ir -v
+      - ./venv/bin/asdlc netlist examples/scratch/test.asdl
+    files:
+      - src/asdl/ir/nfir/dialect.py
+      - src/asdl/ir/converters/nfir_to_ifir.py
+      - tests/unit_tests/ir/test_ifir_converter.py
+      - examples/scratch/test.asdl
+    links:
+      scratchpad: agents/scratchpads/T-064_pattern_equivalence.md
+
+  - id: T-065
+    title: Pattern enumeration validation
+    owner: Executor
+    dod: >
+      Detect malformed pattern enumerations (e.g., commas inside `<...>`)
+      as early as possible: update the pattern expansion helpers or parser
+      validators so that `MN_OUT<P,N>` and similar tokens trigger a PASS
+      diagnostic before NFIR verification. Add parser/IR tests that cover
+      invalid enumerations and ensure the existing expansion suite still
+      accepts valid `|`-separated lists.
+    verify:
+      - pytest tests/unit_tests/parser -v
+      - pytest tests/unit_tests/ir -v
+    links:
+      scratchpad: agents/scratchpads/T-065_pattern_enumeration_validation.md
+
 exploration_candidates:
   - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.
   - CLI pipeline UX: command flow, error messaging, and file layout.

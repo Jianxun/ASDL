@@ -10,19 +10,19 @@ modules:
     nets:
       VSS: [dut.VSS, MN1.S, MN1.B, MN1.G, MN1.D]
       IREF: [dut.IREF]
-      IOUT: [dut.IOUT]
+      IOUT<P|N>: [dut.IOUT<P|N>]
 
 
 
   current_mirror_array:
     instances:
       MN_REF: nfet_3p3 L=0.2u W=5u NF=2 m=1
-      MN_OUT: nfet_3p3 m=1
+      MN_OUT<P|N>: nfet_3p3 m=1
 
     nets:
-      $IREF: [MN_REF.D, MN_REF.G, MN_OUT.G]
-      $IOUT: [MN_OUT.D]
-      $VSS: [MN_REF.S, MN_OUT.S, MN_REF.B, MN_OUT.B]
+      $IREF: [MN_REF.D, MN_REF.G, MN_OUT<P|N>.G]
+      $IOUT<P|N>: [MN_OUT<P|N>.D]
+      $VSS: [MN_REF.S, MN_OUT<P|N>.S, MN_REF.B, MN_OUT<P|N>.B]
 
 
 
