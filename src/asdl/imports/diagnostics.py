@@ -11,6 +11,7 @@ NO_SPAN_NOTE = "No source span available."
 IMPORT_PATH_MISSING = format_code("AST", 10)
 IMPORT_PATH_MALFORMED = format_code("AST", 11)
 IMPORT_CYCLE = format_code("AST", 12)
+IMPORT_DUP_SYMBOL = format_code("AST", 14)
 IMPORT_PATH_AMBIGUOUS = format_code("AST", 15)
 
 
@@ -47,6 +48,10 @@ def import_cycle(chain: Iterable[Path], loc: Optional[Locatable] = None) -> Diag
     return _diagnostic(IMPORT_CYCLE, message, loc, notes=notes)
 
 
+def import_duplicate_symbol(name: str, loc: Optional[Locatable] = None) -> Diagnostic:
+    return _diagnostic(IMPORT_DUP_SYMBOL, f"Duplicate symbol name '{name}'.", loc)
+
+
 def _diagnostic(
     code: str,
     message: str,
@@ -71,10 +76,12 @@ def _diagnostic(
 
 __all__ = [
     "IMPORT_CYCLE",
+    "IMPORT_DUP_SYMBOL",
     "IMPORT_PATH_AMBIGUOUS",
     "IMPORT_PATH_MALFORMED",
     "IMPORT_PATH_MISSING",
     "import_cycle",
+    "import_duplicate_symbol",
     "import_path_ambiguous",
     "import_path_malformed",
     "import_path_missing",

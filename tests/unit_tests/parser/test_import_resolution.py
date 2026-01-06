@@ -17,6 +17,19 @@ def _write_stub(path: Path, imports: dict[str, str] | None = None) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def _write_dup_symbol_stub(path: Path) -> None:
+    lines = [
+        "modules:",
+        "  dup: {}",
+        "devices:",
+        "  dup:",
+        "    backends:",
+        "      sim.ngspice:",
+        '        template: "X{inst} {ports} {ref}"',
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def test_resolve_relative_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
     entry_dir = tmp_path / "project"
@@ -214,3 +227,51 @@ def test_resolve_import_cycle_multi_hop(tmp_path: Path, monkeypatch: pytest.Monk
         ]
     )
     assert expected_chain in diag.message
+
+
+def test_program_db_dedupes_file_ids(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    deps_dir = project_root / "deps"
+    deps_dir.mkdir()
+    entry_file = project_root / "entry.asdl"
+    dep_file = deps_dir / "dep.asdl"
+    _write_stub(dep_file)
+    _write_stub(
+        entry_file,
+        imports={
+            "a": "./deps/dep.asdl",
+            "b": "./deps/../deps/dep.asdl",
+        },
+    )
+
+    result, diagnostics = resolve_import_graph(
+        entry_file,
+        project_root=project_root,
+    )
+
+    assert diagnostics == []
+    assert result is not None
+    assert len(result.program_db.documents) == 2
+    entry_id = entry_file.absolute()
+    dep_id = dep_file.absolute()
+    name_env = result.name_envs[entry_id]
+    assert name_env.bindings["a"] == dep_id
+    assert name_env.bindings["b"] == dep_id
+
+
+def test_duplicate_symbol_names_emit_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    entry_file = tmp_path / "entry.asdl"
+    _write_dup_symbol_stub(entry_file)
+
+    result, diagnostics = resolve_import_graph(entry_file)
+
+    assert result is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "AST-014"
+    assert diag.severity is Severity.ERROR
