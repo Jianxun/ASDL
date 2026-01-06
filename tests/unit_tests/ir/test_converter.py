@@ -1,9 +1,12 @@
+from pathlib import Path
+
 import pytest
 
 pytest.importorskip("xdsl")
 
 from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
 from asdl.diagnostics import Severity
+from asdl.imports import NameEnv, ProgramDB
 from asdl.ir import convert_document
 from asdl.ir.nfir import BackendOp, DesignOp, DeviceOp, InstanceOp, ModuleOp, NetOp
 
@@ -63,6 +66,64 @@ def test_convert_document_to_nfir() -> None:
     assert backend.props.data["model"].data == "nfet"
 
 
+def test_convert_document_resolves_local_module_reference() -> None:
+    doc = AsdlDocument(
+        top="top",
+        modules={
+            "top": ModuleDecl(instances={"U1": "child"}),
+            "child": ModuleDecl(),
+        },
+    )
+
+    design, diagnostics = convert_document(doc)
+
+    assert diagnostics == []
+    assert isinstance(design, DesignOp)
+
+    top_module = next(
+        op
+        for op in design.body.block.ops
+        if isinstance(op, ModuleOp) and op.sym_name.data == "top"
+    )
+    instance = next(
+        op for op in top_module.body.block.ops if isinstance(op, InstanceOp)
+    )
+    assert instance.ref.data == "child"
+
+
+def test_convert_document_emits_unresolved_unqualified_symbol() -> None:
+    doc = AsdlDocument(modules={"top": ModuleDecl(instances={"U1": "missing"})})
+
+    design, diagnostics = convert_document(doc)
+
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "IR-011"
+    assert diagnostics[0].severity is Severity.ERROR
+
+
+def test_convert_document_unqualified_does_not_use_imports(tmp_path: Path) -> None:
+    entry_file = tmp_path / "entry.asdl"
+    dep_file = tmp_path / "dep.asdl"
+    entry_doc = AsdlDocument(modules={"top": ModuleDecl(instances={"U1": "child"})})
+    dep_doc = AsdlDocument(modules={"child": ModuleDecl()})
+    program_db, diagnostics = ProgramDB.build(
+        {entry_file: entry_doc, dep_file: dep_doc}
+    )
+
+    assert diagnostics == []
+
+    name_env = NameEnv(file_id=entry_file, bindings={"dep": dep_file})
+    design, diagnostics = convert_document(
+        entry_doc, name_env=name_env, program_db=program_db
+    )
+
+    assert design is None
+    assert diagnostics
+    assert diagnostics[0].code == "IR-011"
+    assert diagnostics[0].severity is Severity.ERROR
+
+
 def test_convert_document_preserves_pattern_tokens() -> None:
     doc = AsdlDocument(
         modules={
@@ -73,7 +134,12 @@ def test_convert_document_preserves_pattern_tokens() -> None:
                     "BUS[3:0];BUS<4|5>": ["MN<1|2>.S"],
                 },
             )
-        }
+        },
+        devices={
+            "nfet": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="M{inst}")}
+            )
+        },
     )
 
     design, diagnostics = convert_document(doc)
