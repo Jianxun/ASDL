@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from asdl.diagnostics import Severity
+from asdl.ast.location import Locatable
 from asdl.imports.resolver import resolve_import_path
 
 
@@ -65,16 +66,18 @@ def test_resolve_env_expansion(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert resolved == target.absolute()
 
 
-def test_resolve_logical_path_order(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_logical_path_project_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     project_root = tmp_path / "project"
     include_root = tmp_path / "include"
     env_root = tmp_path / "env"
     lib_root = tmp_path / "lib"
     for root in (project_root, include_root, env_root, lib_root):
         root.mkdir()
-        _write_stub(root / "shared.asdl")
     entry_file = project_root / "entry.asdl"
     _write_stub(entry_file)
+    _write_stub(project_root / "shared.asdl")
     monkeypatch.setenv("ASDL_LIB_PATH", str(env_root))
 
     resolved, diagnostics = resolve_import_path(
@@ -87,6 +90,50 @@ def test_resolve_logical_path_order(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 
     assert diagnostics == []
     assert resolved == (project_root / "shared.asdl").absolute()
+
+
+def test_resolve_logical_path_ambiguity_ordering(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project_root = tmp_path / "project"
+    include_root = tmp_path / "include"
+    env_root = tmp_path / "env"
+    lib_root = tmp_path / "lib"
+    for root in (project_root, include_root, env_root, lib_root):
+        root.mkdir()
+        _write_stub(root / "shared.asdl")
+    entry_file = project_root / "entry.asdl"
+    _write_stub(entry_file)
+    monkeypatch.setenv("ASDL_LIB_PATH", str(env_root))
+    loc = Locatable(
+        file=str(entry_file),
+        start_line=1,
+        start_col=1,
+        end_line=1,
+        end_col=2,
+    )
+
+    resolved, diagnostics = resolve_import_path(
+        "shared.asdl",
+        importing_file=entry_file,
+        project_root=project_root,
+        include_roots=[include_root],
+        lib_roots=[lib_root],
+        loc=loc,
+    )
+
+    assert resolved is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "AST-015"
+    assert diag.severity is Severity.ERROR
+    assert diag.notes == [
+        "Matches (root order):",
+        str((project_root / "shared.asdl").absolute()),
+        str((include_root / "shared.asdl").absolute()),
+        str((env_root / "shared.asdl").absolute()),
+        str((lib_root / "shared.asdl").absolute()),
+    ]
 
 
 def test_resolve_missing_path_emits_error(
