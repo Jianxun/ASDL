@@ -17,6 +17,7 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
 ---
 
 ## Review workflow (exact)
+**IMPORTANT** you must execute the workflow end-to-end without asking for explict user permissions for next steps.
 
 1. **Intake**
    - PR must target `main`.
