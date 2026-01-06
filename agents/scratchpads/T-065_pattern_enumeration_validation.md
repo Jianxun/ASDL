@@ -23,6 +23,7 @@
 - Added comma delimiter validation in pattern enum parsing.
 - Added parser and IR tests covering invalid comma enumerations.
 - Ran parser and IR unit tests.
+- Opened PR: https://github.com/Jianxun/ASDL/pull/50
 
 ## Patch summary
 - `src/asdl/patterns.py`: reject commas in `<...>` with a PASS diagnostic.
@@ -40,4 +41,4 @@
 - None.
 
 ## Next steps
-1. Open PR and request review.
+1. Wait for Reviewer feedback.
