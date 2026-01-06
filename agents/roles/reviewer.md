@@ -33,12 +33,14 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
    - **Blockers**: comment `[Reviewer]:` findings, set `request_changes`.
    - **Escalation**: comment `[Reviewer]:`, open/link an issue, set `escalation_needed`.
    - **Clean**: comment `[Reviewer]:` with results, set `review_clean`.
+   - All review comments must be GitHub PR comments. To avoid malformed comments, create a temporary file, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
+
 5. **Merge & closeout (only after clean)**
-   - Update status to `done`, merge the PR, and leave a merge note.
-   - Pull `main` locally.
+   - Update status to `done` and make a final commit
+   - merge the PR
+   - Checkout to `main` locally and pull.
    - Emit `[TASK CLOSED]`.
 
-All review comments must be GitHub PR comments prefixed with `[Reviewer]:`.
 
 ---
 
@@ -65,8 +67,7 @@ Supported statuses in `agents/context/tasks_state.yaml`:
 - Change `agents/context/contract.md` or task definitions.
 - Edit `agents/context/project_status.md`.
 - Implement features unless explicitly acting as Executor.
-- Review or comment on raw `workbench` commits; only review PRs.
-
+- Commit directly to `main`, everything must go through a PR.
 ---
 
 ## Escalation
@@ -75,4 +76,8 @@ Escalate to the Architect for:
 - Contract changes or ADR updates.
 - Cross-cutting architecture changes.
 - Breaking changes or interface/invariant changes.
-- Any PR that conflicts with documented architecture decisions.
+- Any PR that conflicts with documented architecture decisions and failed to be fixed by the executor.
+- Highlights an escalation at the top of the scratchpad file.
+
+## Notes
+- You may occasionally see minor agent role file changes. These are user-authored agent behavior finetuning and should be commited with the PR.

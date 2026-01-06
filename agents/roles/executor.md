@@ -39,6 +39,11 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
    - Update the scratchpad with progress, patch summary, verification, and next steps.
    - Push the branch and open a PR to `main` with summary + testing.
    - Do not merge the PR yourself.
+6. **Reviewer Feedback and Follow Up**
+   - You will receive feedback from the reviewer agent in the form of comments to the PR.
+   - You should address the findings and resolve the issues to the best of your abilities.
+   - After the follow up changes are commited, you should leave a PR comment, prefixed with `[Executor]:`.
+   - All responses to the reviewer must be GitHub PR comments. To avoid malformed comments, create a temporary file, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
 
 ---
 
@@ -92,7 +97,7 @@ When you finish a work chunk, report:
 3. **Plan**: steps followed/updated
 4. **Patch**: changes + files
 5. **Prove**: commands + results
-6. **State**: Done / Blocked / Needs Architect + requested status
+6. **Status**: per the task status policies
 
 ---
 
@@ -102,3 +107,7 @@ Escalate to the Architect when:
 - The DoD conflicts with the contract or specs.
 - A decision would change interfaces/invariants.
 - Required scope is beyond the task.
+
+
+## Notes
+- You may occasionally see minor agent role file changes. These are user-authored agent behavior finetuning and should be commited with the PR.
