@@ -20,6 +20,16 @@ def test_document_requires_top_when_multiple_modules() -> None:
         AsdlDocument.model_validate(data)
 
 
+def test_document_allows_imports() -> None:
+    document = AsdlDocument.model_validate({"imports": {"gf": "lib.asdl"}, "modules": {"top": {}}})
+    assert document.imports == {"gf": "lib.asdl"}
+
+
+def test_document_rejects_non_string_import_paths() -> None:
+    with pytest.raises(ValidationError):
+        AsdlDocument.model_validate({"imports": {"gf": 123}, "modules": {"top": {}}})
+
+
 def test_device_backend_requires_template() -> None:
     with pytest.raises(ValidationError):
         DeviceBackendDecl.model_validate({})
