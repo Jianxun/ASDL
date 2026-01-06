@@ -13,7 +13,7 @@ from asdl.ir.ifir import InstanceOp as IfirInstanceOp
 from asdl.ir.ifir import ModuleOp as IfirModuleOp
 from asdl.ir.ifir import NetOp as IfirNetOp
 from asdl.ir.nfir import BackendOp, DesignOp, DeviceOp, EndpointAttr, InstanceOp, ModuleOp, NetOp
-from asdl.patterns import PATTERN_EMPTY_ENUM
+from asdl.patterns import PATTERN_EMPTY_ENUM, PATTERN_UNEXPANDED
 
 
 def _loc(line: int, col: int) -> FileLineColLoc:
@@ -258,4 +258,25 @@ def test_convert_nfir_reports_malformed_endpoint_pattern() -> None:
     assert ifir_design is None
     assert len(diagnostics) == 1
     assert diagnostics[0].code == PATTERN_EMPTY_ENUM
+    assert diagnostics[0].severity is Severity.ERROR
+
+
+def test_convert_nfir_reports_comma_enum_delimiter() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[
+            NetOp(
+                name="VIN<P,N>",
+                endpoints=[EndpointAttr(StringAttr("M1"), StringAttr("D"))],
+            ),
+            InstanceOp(name="M1", ref="nfet"),
+        ],
+    )
+    design = DesignOp(region=[module])
+
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert ifir_design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == PATTERN_UNEXPANDED
     assert diagnostics[0].severity is Severity.ERROR

@@ -244,6 +244,11 @@ def _validate_enum_content(content: str, token: str) -> Optional[Diagnostic]:
             PATTERN_UNEXPANDED,
             f"Whitespace is not allowed around '|' in '{token}'.",
         )
+    if "," in content:
+        return _diagnostic(
+            PATTERN_UNEXPANDED,
+            f"Enumeration alternatives must use '|' in '{token}'.",
+        )
     if any(char in "<>[];" for char in content):
         return _diagnostic(
             PATTERN_UNEXPANDED,
