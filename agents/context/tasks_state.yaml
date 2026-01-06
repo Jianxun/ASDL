@@ -1,9 +1,14 @@
 schema_version: 1
 
 statuses:
-  T-061: ready
-  T-062: ready
-  T-063: ready
   T-064: backlog
-  T-065: ready
-  T-066: ready
+  T-065: blocked
+  T-066: blocked
+  T-067: ready
+  T-068: backlog
+  T-069: backlog
+  T-070: backlog
+  T-071: backlog
+  T-072: backlog
+  T-073: backlog
+  T-074: backlog

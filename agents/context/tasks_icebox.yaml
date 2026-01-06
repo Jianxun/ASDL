@@ -27,3 +27,85 @@ icebox:
       - pytest tests/unit_tests/ir -v
     links:
       scratchpad: agents/scratchpads/T-056_exports_sugar.md
+  - id: T-061
+    title: AST imports schema (superseded)
+    owner: Executor
+    dod: >
+      Superseded by the import rewrite task set (T-067..T-074). Do not execute
+      unless the rewrite plan changes. Original scope: extend the AST schema
+      to allow a top-level `imports: Dict[str, str]` mapping (namespace ->
+      path) per `docs/specs/spec_asdl_import.md`; update Pydantic models,
+      parser validation/diagnostics, and `scripts/generate_schema.py` output.
+      Update `docs/specs/spec_ast.md` to include `imports` (keep MVP spec
+      unchanged). Add parser/AST tests for valid and invalid `imports` (bad
+      namespace, duplicate key, invalid type). Enforce that documents define
+      at least one module or device (import-only files are invalid), with
+      tests covering the new rule.
+    verify:
+      - pytest tests/unit_tests/parser -v
+      - pytest tests/unit_tests/ast -v
+    files:
+      - src/asdl/ast/models.py
+      - src/asdl/ast/parser.py
+      - docs/specs/spec_ast.md
+      - tests/unit_tests/ast/test_models.py
+      - tests/unit_tests/parser/test_parser.py
+    links:
+      scratchpad: agents/scratchpads/T-061_ast_imports_schema.md
+  - id: T-062
+    title: Import resolution (superseded)
+    owner: Executor
+    depends_on:
+      - T-061
+    dod: >
+      Superseded by the import rewrite task set (T-067..T-074). Do not execute
+      unless the rewrite plan changes. Original scope: implement import
+      resolution + file loading per `docs/specs/spec_asdl_import.md`
+      (relative/absolute/logical roots, no extension inference, `--lib` name
+      ignored for resolution, `ASDL_LIB_PATH` roots, `~`/`$VAR` expansion, path
+      normalization collapses `.`/`..`, no symlink resolution, error on
+      ambiguous logical-path matches with an ordered match list (`AST-015`)).
+      Build a `ProgramDB` keyed by `file_id` (absolute path) and a per-file
+      `NameEnv` that allows multiple namespaces to the same file. Detect
+      cycles with a readable import chain and emit diagnostics for missing
+      files and malformed paths (`AST-010`/`AST-011`/`AST-012`/`AST-013`/`AST-014`).
+      Add unit tests for resolution order, cycles, missing imports, duplicate
+      symbols in a file, and deduping the same `file_id` across paths.
+    verify:
+      - pytest tests/unit_tests/parser -v
+      - pytest tests/unit_tests/ir -v
+    files:
+      - src/asdl/imports/resolver.py
+      - src/asdl/imports/program_db.py
+      - src/asdl/imports/name_env.py
+      - src/asdl/imports/diagnostics.py
+      - tests/unit_tests/parser/test_import_resolution.py
+    links:
+      scratchpad: agents/scratchpads/T-062_import_resolution.md
+  - id: T-063
+    title: Import name resolution (superseded)
+    owner: Executor
+    depends_on:
+      - T-062
+    dod: >
+      Superseded by the import rewrite task set (T-067..T-074). Do not execute
+      unless the rewrite plan changes. Original scope: wire import-aware name
+      resolution into AST->NFIR conversion: allow unqualified symbols only
+      from the current file, and `ns.symbol` for imported files; reject
+      unresolved names with diagnostics. Forbid same-name symbol duplicates
+      within a file regardless of kind. Emit a warning for unused `imports`
+      namespaces (`LINT-001`) and errors for unresolved names
+      (`IR-010`/`IR-011`). Support qualified type tokens in instance
+      expressions by splitting `ns.symbol` into `ref` + `ref_file_id`. Add IR
+      tests covering local refs, imported refs, unused-import warnings, and
+      unresolved symbol diagnostics.
+    verify:
+      - pytest tests/unit_tests/ir -v
+    files:
+      - src/asdl/ir/converters/ast_to_nfir.py
+      - src/asdl/imports/name_env.py
+      - src/asdl/imports/program_db.py
+      - src/asdl/ir/nfir/dialect.py
+      - tests/unit_tests/ir/test_converter.py
+    links:
+      scratchpad: agents/scratchpads/T-063_import_name_resolution.md
