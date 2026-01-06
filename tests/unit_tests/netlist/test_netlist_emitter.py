@@ -196,3 +196,48 @@ def test_emit_netlist_allows_prop_override() -> None:
     assert "ROVERRIDE VOUT" in netlist
     assert netlist.endswith(".end")
     assert diagnostics == []
+
+
+def test_emit_netlist_expands_patterns() -> None:
+    backend = BackendOp(
+        name=BACKEND_NAME,
+        template="{name} {ports} {model}",
+        props=_dict_attr({"model": "nfet"}),
+    )
+    device = DeviceOp(name="nfet", ports=["D", "G", "S"], region=[backend])
+    instance = InstanceOp(
+        name="M<1|2>",
+        ref="nfet",
+        conns=[
+            ConnAttr(StringAttr("D"), StringAttr("OUT<P|N>")),
+            ConnAttr(StringAttr("G"), StringAttr("VSS")),
+            ConnAttr(StringAttr("S"), StringAttr("VSS")),
+        ],
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT<P|N>", "VSS"],
+        region=[
+            NetOp(name="OUT<P|N>"),
+            NetOp(name="VSS"),
+            instance,
+        ],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = emit_netlist(design, top_as_subckt=True)
+
+    assert diagnostics == []
+    assert netlist is not None
+    lines = [
+        line
+        for line in netlist.splitlines()
+        if line and not line.startswith("*")
+    ]
+    assert lines == [
+        ".subckt top OUT_P OUT_N VSS",
+        "M_1 OUT_P VSS VSS nfet",
+        "M_2 OUT_N VSS VSS nfet",
+        ".ends top",
+        ".end",
+    ]
