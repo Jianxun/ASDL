@@ -4,11 +4,17 @@ import pytest
 
 from asdl.diagnostics import Severity
 from asdl.ast.location import Locatable
-from asdl.imports.resolver import resolve_import_path
+from asdl.imports.resolver import resolve_import_graph, resolve_import_path
 
 
-def _write_stub(path: Path) -> None:
-    path.write_text("modules:\n  top: {}\n", encoding="utf-8")
+def _write_stub(path: Path, imports: dict[str, str] | None = None) -> None:
+    lines: list[str] = []
+    if imports:
+        lines.append("imports:")
+        for namespace, target in imports.items():
+            lines.append(f"  {namespace}: {target}")
+    lines.extend(["modules:", "  top: {}"])
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def test_resolve_relative_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -153,3 +159,58 @@ def test_resolve_missing_path_emits_error(
     diag = diagnostics[0]
     assert diag.code == "AST-010"
     assert diag.severity is Severity.ERROR
+
+
+def test_resolve_import_cycle_single(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    file_a = project_root / "a.asdl"
+    file_b = project_root / "b.asdl"
+    _write_stub(file_a, imports={"b": "b.asdl"})
+    _write_stub(file_b, imports={"a": "a.asdl"})
+
+    result, diagnostics = resolve_import_graph(
+        file_a,
+        project_root=project_root,
+    )
+
+    assert result is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "AST-012"
+    expected_chain = " -> ".join(
+        [str(file_a.absolute()), str(file_b.absolute()), str(file_a.absolute())]
+    )
+    assert expected_chain in diag.message
+
+
+def test_resolve_import_cycle_multi_hop(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    file_a = project_root / "a.asdl"
+    file_b = project_root / "b.asdl"
+    file_c = project_root / "c.asdl"
+    _write_stub(file_a, imports={"b": "b.asdl"})
+    _write_stub(file_b, imports={"c": "c.asdl"})
+    _write_stub(file_c, imports={"a": "a.asdl"})
+
+    result, diagnostics = resolve_import_graph(
+        file_a,
+        project_root=project_root,
+    )
+
+    assert result is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "AST-012"
+    expected_chain = " -> ".join(
+        [
+            str(file_a.absolute()),
+            str(file_b.absolute()),
+            str(file_c.absolute()),
+            str(file_a.absolute()),
+        ]
+    )
+    assert expected_chain in diag.message

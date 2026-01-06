@@ -32,15 +32,17 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
 4. **Decide**
    - **Blockers**: comment `[Reviewer]:` findings, set `request_changes`.
    - **Escalation**: comment `[Reviewer]:`, open/link an issue, set `escalation_needed`.
-   - **Clean**: comment `[Reviewer]:` with results, set `review_clean`. Then follow the merge and closeout process to close the task.
+   - **Clean**: comment `[Reviewer]:` with results, set `review_clean`. Then **immediately** follow the merge and closeout process to close the task (no stop after summary).
    - All review comments must be GitHub PR comments. To avoid malformed comments, create a temporary file, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
 
 5. **Merge & closeout**
    When the review is clean, follow the following steps **without** asking for user clarification or permissions.
+   **Completion gate**: this turn is incomplete unless you either (a) merge and close out the task, or (b) explicitly report what prevented merge/closeout and set an appropriate non-clean status.
    - Update status to `done`, make a final commit and push
    - Check if all commits are included in the PR, then merge it.
    - Checkout to `main` locally and pull.
    - Emit `[TASK CLOSED]`.
+   If blocked, emit `[REVIEW BLOCKED]` with the specific missing input (e.g., PR URL, failing checks) and set `request_changes` or `escalation_needed` accordingly.
 
 
 ---

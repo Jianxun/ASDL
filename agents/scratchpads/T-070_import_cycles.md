@@ -17,11 +17,24 @@
 3. Add tests for simple and multi-hop cycles and run the verify command.
 
 ## Progress log
-- Not started yet.
+- Added import cycle tests for single and multi-hop chains.
+- Implemented import graph resolution with cycle detection and `AST-012` diagnostics.
+- Ran `pytest tests/unit_tests/parser/test_import_resolution.py -v`.
+
+## Patch summary
+- Added import-cycle tests to `tests/unit_tests/parser/test_import_resolution.py`.
+- Added `AST-012` diagnostics helper in `src/asdl/imports/diagnostics.py`.
+- Added import graph resolver with cycle detection in `src/asdl/imports/resolver.py`.
+
+## Verification
+- `./venv/bin/pytest tests/unit_tests/parser/test_import_resolution.py -v`
+- `./venv/bin/pytest tests/unit_tests/parser -v`
 
 ## Status request
-- None.
+- Ready for review.
 
 ## Blockers / Questions
 - None.
 
+## Next steps
+- None.

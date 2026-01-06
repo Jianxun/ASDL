@@ -1,17 +1,27 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 
+from asdl.ast import AsdlDocument, parse_file
 from asdl.ast.location import Locatable
-from asdl.diagnostics import Diagnostic
+from asdl.diagnostics import Diagnostic, Severity
 
 from .diagnostics import (
+    import_cycle,
     import_path_ambiguous,
     import_path_malformed,
     import_path_missing,
 )
+
+
+@dataclass(frozen=True)
+class ImportGraph:
+    entry_file: Path
+    documents: dict[Path, AsdlDocument]
+    imports: dict[Path, dict[str, Path]]
 
 
 def resolve_import_path(
@@ -77,6 +87,78 @@ def resolve_import_path(
 
     diagnostics.append(import_path_missing(import_path, loc))
     return None, diagnostics
+
+
+def resolve_import_graph(
+    entry_file: Path,
+    *,
+    project_root: Optional[Path] = None,
+    include_roots: Optional[Iterable[Path]] = None,
+    lib_roots: Optional[Iterable[Path]] = None,
+) -> Tuple[Optional[ImportGraph], List[Diagnostic]]:
+    diagnostics: List[Diagnostic] = []
+    documents: dict[Path, AsdlDocument] = {}
+    imports_by_file: dict[Path, dict[str, Path]] = {}
+    visit_stack: list[Path] = []
+    visit_index: dict[Path, int] = {}
+    visited: set[Path] = set()
+
+    def visit(path: Path) -> bool:
+        file_id = _normalize_path(path)
+        if file_id in visited:
+            return True
+        if file_id in visit_index:
+            start = visit_index[file_id]
+            chain = [*visit_stack[start:], file_id]
+            diagnostics.append(import_cycle(chain))
+            return False
+
+        visit_index[file_id] = len(visit_stack)
+        visit_stack.append(file_id)
+
+        document, parse_diags = parse_file(str(file_id))
+        diagnostics.extend(parse_diags)
+        if document is None:
+            visit_stack.pop()
+            visit_index.pop(file_id, None)
+            return False
+
+        documents[file_id] = document
+        resolved_imports: dict[str, Path] = {}
+        for namespace, import_path in (document.imports or {}).items():
+            resolved, resolve_diags = resolve_import_path(
+                import_path,
+                importing_file=file_id,
+                project_root=project_root,
+                include_roots=include_roots,
+                lib_roots=lib_roots,
+                loc=None,
+            )
+            diagnostics.extend(resolve_diags)
+            if resolved is not None:
+                resolved_imports[namespace] = resolved
+
+        imports_by_file[file_id] = resolved_imports
+        ok = True
+        for resolved in resolved_imports.values():
+            if not visit(resolved):
+                ok = False
+
+        visit_stack.pop()
+        visit_index.pop(file_id, None)
+        visited.add(file_id)
+        return ok
+
+    ok = visit(Path(entry_file))
+    if not ok:
+        return None, diagnostics
+    if any(diag.severity is Severity.ERROR for diag in diagnostics):
+        return None, diagnostics
+    return ImportGraph(
+        entry_file=_normalize_path(Path(entry_file)),
+        documents=documents,
+        imports=imports_by_file,
+    ), diagnostics
 
 
 def _expand_import_path(import_path: str) -> str:
@@ -148,4 +230,4 @@ def _normalize_path(path: Path) -> Path:
     return path.absolute()
 
 
-__all__ = ["resolve_import_path"]
+__all__ = ["ImportGraph", "resolve_import_graph", "resolve_import_path"]
