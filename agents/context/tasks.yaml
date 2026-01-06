@@ -30,7 +30,8 @@ backlog:
       `docs/specs/spec_asdl_import.md` (relative/absolute/logical roots, no
       extension inference, `--lib` name ignored for resolution, `ASDL_LIB_PATH`
       roots, `~`/`$VAR` expansion, path normalization collapses `.`/`..`, no
-      symlink resolution). Build a
+      symlink resolution, error on ambiguous logical-path matches with an
+      ordered match list (`AST-015`)). Build a
       `ProgramDB` keyed by `file_id` (absolute path) and a per-file `NameEnv`
       that allows multiple namespaces to the same file. Detect cycles with a
       readable import chain and emit diagnostics for missing files and
