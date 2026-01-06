@@ -29,6 +29,7 @@
 - Updated netlist unit test to allow instruction-only templates.
 - Ran unit tests for emit and netlist suites.
 - Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/42.
+- Re-verified emit/netlist test suites; no additional code changes.
 
 ## Patch summary
 - `src/asdl/emit/netlist/templates.py`: allow device templates without required placeholders.
@@ -39,7 +40,7 @@
 - `venv/bin/pytest tests/unit_tests/netlist -v` (passed)
 
 ## Status request
-- Done
+- Done (ready for review)
 
 ## Blockers / Questions
 - None.
