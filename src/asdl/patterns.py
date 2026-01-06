@@ -45,6 +45,36 @@ def expand_pattern(
     return expanded, diagnostics
 
 
+def expand_endpoint(
+    inst: str, pin: str, *, max_atoms: int = MAX_EXPANSION_SIZE
+) -> Tuple[Optional[List[Tuple[str, str]]], List[Diagnostic]]:
+    token = f"{inst}.{pin}"
+    inst_expanded, inst_diags = expand_pattern(inst, max_atoms=max_atoms)
+    if inst_expanded is None:
+        return None, inst_diags
+    pin_expanded, pin_diags = expand_pattern(pin, max_atoms=max_atoms)
+    diagnostics = [*inst_diags, *pin_diags]
+    if pin_expanded is None:
+        return None, diagnostics
+
+    product_size = len(inst_expanded) * len(pin_expanded)
+    if product_size > max_atoms:
+        diagnostics.append(
+            _diagnostic(
+                PATTERN_TOO_LARGE,
+                _too_large_message(token, max_atoms),
+            )
+        )
+        return None, diagnostics
+
+    endpoints: List[Tuple[str, str]] = []
+    for inst_atom in inst_expanded:
+        for pin_atom in pin_expanded:
+            endpoints.append((inst_atom, pin_atom))
+
+    return endpoints, diagnostics
+
+
 def _split_splice_segments(token: str) -> Tuple[Optional[List[str]], Optional[Diagnostic]]:
     segments: List[str] = []
     buffer: List[str] = []
@@ -313,5 +343,6 @@ __all__ = [
     "PATTERN_DUPLICATE_ATOM",
     "PATTERN_TOO_LARGE",
     "PATTERN_UNEXPANDED",
+    "expand_endpoint",
     "expand_pattern",
 ]

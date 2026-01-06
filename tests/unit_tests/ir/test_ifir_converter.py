@@ -4,6 +4,7 @@ pytest.importorskip("xdsl")
 
 from xdsl.dialects.builtin import FileLineColLoc, IntAttr, StringAttr
 
+from asdl.diagnostics import Severity
 from asdl.ir import convert_nfir_to_ifir
 from asdl.ir.ifir import BackendOp as IfirBackendOp
 from asdl.ir.ifir import DesignOp as IfirDesignOp
@@ -12,6 +13,7 @@ from asdl.ir.ifir import InstanceOp as IfirInstanceOp
 from asdl.ir.ifir import ModuleOp as IfirModuleOp
 from asdl.ir.ifir import NetOp as IfirNetOp
 from asdl.ir.nfir import BackendOp, DesignOp, DeviceOp, EndpointAttr, InstanceOp, ModuleOp, NetOp
+from asdl.patterns import PATTERN_EMPTY_ENUM
 
 
 def _loc(line: int, col: int) -> FileLineColLoc:
@@ -75,11 +77,11 @@ def test_convert_nfir_preserves_pattern_tokens() -> None:
         region=[
             NetOp(
                 name="OUT<P|N>",
-                endpoints=[EndpointAttr(StringAttr("MN<1|2>"), StringAttr("D<0|1>"))],
+                endpoints=[EndpointAttr(StringAttr("MN<1|2>"), StringAttr("D"))],
             ),
             NetOp(
                 name="BUS[3:0];BUS<4|5>",
-                endpoints=[EndpointAttr(StringAttr("MN<1|2>"), StringAttr("S"))],
+                endpoints=[EndpointAttr(StringAttr("MN<1|2>"), StringAttr("S<0|1|2>"))],
             ),
             InstanceOp(name="MN<1|2>", ref="nfet"),
         ],
@@ -102,8 +104,8 @@ def test_convert_nfir_preserves_pattern_tokens() -> None:
     assert instance.name_attr.data == "MN<1|2>"
     conns = [(conn.port.data, conn.net.data) for conn in instance.conns.data]
     assert conns == [
-        ("D<0|1>", "OUT<P|N>"),
-        ("S", "BUS[3:0];BUS<4|5>"),
+        ("D", "OUT<P|N>"),
+        ("S<0|1|2>", "BUS[3:0];BUS<4|5>"),
     ]
 
 
@@ -177,3 +179,83 @@ def test_convert_nfir_reports_invalid_device_span() -> None:
     assert diagnostics[0].primary_span is not None
     assert diagnostics[0].primary_span.start.line == 8
     assert diagnostics[0].primary_span.start.col == 7
+
+
+def test_convert_nfir_allows_scalar_net_broadcast() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[
+            NetOp(
+                name="VIN",
+                endpoints=[EndpointAttr(StringAttr("M<1|2>"), StringAttr("D<0|1>"))],
+            ),
+            InstanceOp(name="M<1|2>", ref="nfet"),
+        ],
+    )
+    design = DesignOp(region=[module])
+
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert diagnostics == []
+    assert isinstance(ifir_design, IfirDesignOp)
+
+
+def test_convert_nfir_allows_spliced_instance_pattern() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[
+            NetOp(
+                name="VIN",
+                endpoints=[EndpointAttr(StringAttr("M<1|2>;M<3|4>"), StringAttr("D"))],
+            ),
+            InstanceOp(name="M<1|2>;M<3|4>", ref="nfet"),
+        ],
+    )
+    design = DesignOp(region=[module])
+
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert diagnostics == []
+    assert isinstance(ifir_design, IfirDesignOp)
+
+
+def test_convert_nfir_reports_pattern_binding_mismatch() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[
+            NetOp(
+                name="BUS<0|1>",
+                endpoints=[EndpointAttr(StringAttr("M<1|2|3>"), StringAttr("D"))],
+            ),
+            InstanceOp(name="M<1|2|3>", ref="nfet"),
+        ],
+    )
+    design = DesignOp(region=[module])
+
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert ifir_design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "IR-006"
+    assert diagnostics[0].severity is Severity.ERROR
+
+
+def test_convert_nfir_reports_malformed_endpoint_pattern() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[
+            NetOp(
+                name="VIN",
+                endpoints=[EndpointAttr(StringAttr("M1"), StringAttr("D<|>"))],
+            ),
+            InstanceOp(name="M1", ref="nfet"),
+        ],
+    )
+    design = DesignOp(region=[module])
+
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert ifir_design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == PATTERN_EMPTY_ENUM
+    assert diagnostics[0].severity is Severity.ERROR
