@@ -23,6 +23,8 @@ backlog:
   - id: T-062
     title: Import resolution
     owner: Executor
+    depends_on:
+      - T-061
     dod: >
       Implement import resolution + file loading per
       `docs/specs/spec_asdl_import.md` (relative/absolute/logical roots, no
@@ -43,6 +45,8 @@ backlog:
   - id: T-063
     title: Import name resolution
     owner: Executor
+    depends_on:
+      - T-062
     dod: >
       Wire import-aware name resolution into AST->NFIR conversion: allow
       unqualified symbols only from the current file, and `ns.symbol` for
@@ -75,6 +79,9 @@ backlog:
   - id: T-065
     title: File_id propagation in IR
     owner: Executor
+    depends_on:
+      - T-062
+      - T-063
     dod: >
       Carry `file_id` metadata from import resolution through NFIR/IFIR:
       add `entry_file_id` on design ops, `file_id` on module/device ops, and
@@ -98,6 +105,8 @@ backlog:
   - id: T-066
     title: Netlist templates file_id placeholders
     owner: Executor
+    depends_on:
+      - T-065
     dod: >
       Expose `file_id` to system-device templates without changing emission
       behavior. Allow `{file_id}` in `__subckt_header__`,
