@@ -18,7 +18,6 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
 **IMPORTANT** you must execute the workflow end-to-end without asking for explict user permissions for next steps.
 
 1. **Select task**
-   - Confirm the `T-00X` with the user or Architect before touching code.
    - Read `agents/context/tasks.yaml` and check status in `agents/context/tasks_state.yaml`.
    - If no task is clearly Ready, stop and request Architect input.
 2. **Prepare**
