@@ -26,6 +26,7 @@
 - Reviewed import/spec AST requirements and parser location handling.
 - Added imports schema/types, updated spec, and expanded parser/AST tests.
 - Ran parser and AST unit tests.
+- Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/52.
 
 ## Patch summary
 - `src/asdl/ast/models.py`: added typed imports mapping with namespace pattern validation.
@@ -45,4 +46,4 @@
 - None.
 
 ## Next steps
-- Update `agents/context/tasks_state.yaml` to `ready_for_review` and open PR.
+- Await Reviewer feedback.
