@@ -16,12 +16,16 @@
 2. Emit `AST-015` with ordered matches and ensure failure on ambiguity.
 3. Add tests for multiple matches and verify diagnostic ordering.
 
+## Todo
+- [x] Add ambiguity diagnostic + resolver handling.
+- [x] Add ambiguity ordering coverage in parser import resolution tests.
+
 ## Progress log
-- Not started yet.
+- Updated import resolution tests to avoid multiple-root shadowing and assert ambiguity ordering.
+- Added `AST-015` diagnostic helper and resolver logic for multiple logical matches.
 
 ## Status request
 - None.
 
 ## Blockers / Questions
 - None.
-

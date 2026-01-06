@@ -7,7 +7,11 @@ from typing import Iterable, List, Optional, Tuple
 from asdl.ast.location import Locatable
 from asdl.diagnostics import Diagnostic
 
-from .diagnostics import import_path_malformed, import_path_missing
+from .diagnostics import (
+    import_path_ambiguous,
+    import_path_malformed,
+    import_path_missing,
+)
 
 
 def resolve_import_path(
@@ -48,6 +52,8 @@ def resolve_import_path(
     if expanded_path.is_absolute():
         return _resolve_candidate(expanded_path, import_path, loc)
 
+    matches: List[Path] = []
+    seen: set[Path] = set()
     for candidate in _iter_logical_candidates(
         expanded,
         root,
@@ -55,8 +61,19 @@ def resolve_import_path(
         env_paths,
         lib_paths,
     ):
-        if candidate.is_file():
-            return _normalize_path(candidate), diagnostics
+        if not candidate.is_file():
+            continue
+        normalized = _normalize_path(candidate)
+        if normalized in seen:
+            continue
+        matches.append(normalized)
+        seen.add(normalized)
+
+    if len(matches) == 1:
+        return matches[0], diagnostics
+    if len(matches) > 1:
+        diagnostics.append(import_path_ambiguous(import_path, matches, loc))
+        return None, diagnostics
 
     diagnostics.append(import_path_missing(import_path, loc))
     return None, diagnostics
