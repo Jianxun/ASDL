@@ -1,9 +1,12 @@
+from pathlib import Path
+
 import pytest
 
 pytest.importorskip("xdsl")
 
 from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
 from asdl.diagnostics import Severity
+from asdl.imports import NameEnv, ProgramDB
 from asdl.ir import convert_document
 from asdl.ir.nfir import BackendOp, DesignOp, DeviceOp, InstanceOp, ModuleOp, NetOp
 
@@ -73,7 +76,12 @@ def test_convert_document_preserves_pattern_tokens() -> None:
                     "BUS[3:0];BUS<4|5>": ["MN<1|2>.S"],
                 },
             )
-        }
+        },
+        devices={
+            "nfet": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="M{inst} {ports}")}
+            )
+        },
     )
 
     design, diagnostics = convert_document(doc)
@@ -131,4 +139,53 @@ def test_convert_document_rejects_invalid_endpoints() -> None:
     assert design is None
     assert len(diagnostics) == 1
     assert diagnostics[0].code == "IR-002"
+    assert diagnostics[0].severity is Severity.ERROR
+
+
+def test_convert_document_resolves_unqualified_locally(tmp_path: Path) -> None:
+    entry_file = tmp_path / "entry.asdl"
+    doc = AsdlDocument(
+        modules={"top": ModuleDecl(instances={"M1": "res"})},
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+
+    program_db, diagnostics = ProgramDB.build({entry_file: doc})
+    assert diagnostics == []
+
+    name_env = NameEnv(file_id=entry_file, bindings={})
+    design, diagnostics = convert_document(doc, name_env=name_env, program_db=program_db)
+
+    assert diagnostics == []
+    assert isinstance(design, DesignOp)
+
+
+def test_convert_document_unqualified_missing_symbol_emits_error(
+    tmp_path: Path,
+) -> None:
+    entry_file = tmp_path / "entry.asdl"
+    dep_file = tmp_path / "dep.asdl"
+    entry_doc = AsdlDocument(
+        modules={"top": ModuleDecl(instances={"M1": "dep_dev"})},
+    )
+    dep_doc = AsdlDocument(
+        devices={
+            "dep_dev": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="X{inst} {ports}")}
+            )
+        }
+    )
+
+    program_db, diagnostics = ProgramDB.build({entry_file: entry_doc, dep_file: dep_doc})
+    assert diagnostics == []
+
+    name_env = NameEnv(file_id=entry_file, bindings={"dep": dep_file})
+    design, diagnostics = convert_document(entry_doc, name_env=name_env, program_db=program_db)
+
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "IR-011"
     assert diagnostics[0].severity is Severity.ERROR
