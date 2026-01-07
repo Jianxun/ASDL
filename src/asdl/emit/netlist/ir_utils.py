@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, TypeVar
 
 from xdsl.dialects import builtin
 from xdsl.ir import Operation
@@ -14,21 +14,40 @@ from .diagnostics import MISSING_TOP, _diagnostic
 
 def _collect_design_ops(
     design: DesignOp,
-) -> Tuple[Dict[str, ModuleOp], Dict[str, DeviceOp], List[ModuleOp]]:
-    modules: Dict[str, ModuleOp] = {}
-    devices: Dict[str, DeviceOp] = {}
+) -> Tuple[Dict[str, List[ModuleOp]], Dict[str, List[DeviceOp]], List[ModuleOp]]:
+    modules: Dict[str, List[ModuleOp]] = {}
+    devices: Dict[str, List[DeviceOp]] = {}
     module_ops: List[ModuleOp] = []
 
     for op in design.body.block.ops:
         if isinstance(op, ModuleOp):
             name = op.sym_name.data
-            modules[name] = op
+            modules.setdefault(name, []).append(op)
             module_ops.append(op)
             continue
         if isinstance(op, DeviceOp):
-            devices[op.sym_name.data] = op
+            devices.setdefault(op.sym_name.data, []).append(op)
 
     return modules, devices, module_ops
+
+
+T = TypeVar("T")
+
+
+def _select_symbol(
+    symbols_by_name: Dict[str, List[T]],
+    symbol_index: Dict[Tuple[str, Optional[str]], T],
+    name: str,
+    file_id: Optional[str],
+) -> Optional[T]:
+    if file_id is not None:
+        return symbol_index.get((name, file_id))
+    candidates = symbols_by_name.get(name, [])
+    if len(candidates) == 1:
+        return candidates[0]
+    if candidates:
+        return candidates[-1]
+    return None
 
 
 def _resolve_top_name(
