@@ -128,6 +128,90 @@ def test_design_roundtrip_print_parse() -> None:
     assert _print_op(parsed_design) == text
 
 
+def test_design_allows_duplicate_names_across_files() -> None:
+    module_a = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[],
+        file_id="a.asdl",
+    )
+    module_b = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[],
+        file_id="b.asdl",
+    )
+    device_a = DeviceOp(
+        name="dev",
+        ports=[],
+        region=[],
+        file_id="a.asdl",
+    )
+    device_b = DeviceOp(
+        name="dev",
+        ports=[],
+        region=[],
+        file_id="b.asdl",
+    )
+    design = DesignOp(region=[module_a, module_b, device_a, device_b])
+
+    design.verify()
+
+
+def test_design_rejects_duplicate_names_in_same_file() -> None:
+    module_a = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[],
+        file_id="a.asdl",
+    )
+    module_b = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[],
+        file_id="a.asdl",
+    )
+    design = DesignOp(region=[module_a, module_b])
+
+    with pytest.raises(VerifyException):
+        design.verify()
+
+
+def test_design_top_requires_entry_file() -> None:
+    module_dep = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[],
+        file_id="dep.asdl",
+    )
+    design = DesignOp(region=[module_dep], top="top", entry_file_id="entry.asdl")
+
+    with pytest.raises(VerifyException):
+        design.verify()
+
+
+def test_design_top_resolves_entry_file() -> None:
+    module_entry = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[],
+        file_id="entry.asdl",
+    )
+    module_dep = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[],
+        file_id="dep.asdl",
+    )
+    design = DesignOp(
+        region=[module_entry, module_dep],
+        top="top",
+        entry_file_id="entry.asdl",
+    )
+
+    design.verify()
+
+
 def test_design_rejects_missing_top_module() -> None:
     module = ModuleOp(
         name="m",
