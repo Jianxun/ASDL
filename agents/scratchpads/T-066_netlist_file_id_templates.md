@@ -36,7 +36,7 @@
 - `./venv/bin/pytest tests/unit_tests/netlist -v`
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None.
