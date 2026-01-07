@@ -65,6 +65,7 @@ def convert_design(
     design_op = DesignOp(
         region=[*modules, *devices],
         top=design.top,
+        entry_file_id=design.entry_file_id,
     )
     if had_error:
         return None, diagnostics
@@ -131,6 +132,7 @@ def _convert_module(
                 name=inst.name_attr,
                 ref=SymbolRefAttr(inst.ref.data),
                 conns=ArrayAttr(conns),
+                ref_file_id=inst.ref_file_id,
                 params=inst.params,
                 doc=inst.doc,
                 src=inst.src,
@@ -142,6 +144,7 @@ def _convert_module(
         name=module.sym_name,
         port_order=module.port_order,
         region=[*net_ops, *inst_ops],
+        file_id=module.file_id,
         doc=module.doc,
         src=module.src,
         ),
@@ -181,6 +184,7 @@ def _convert_device(
         DeviceOp(
         name=device.sym_name,
         ports=device.ports,
+        file_id=device.file_id,
         params=device.params,
         region=backends,
         doc=device.doc,
