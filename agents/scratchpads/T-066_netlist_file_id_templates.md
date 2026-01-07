@@ -16,19 +16,24 @@
 - Run emit/netlist unit tests and record results.
 
 ## Todo
-- [ ] Add tests for file_id placeholder usage + duplicate module name hashing.
-- [ ] Update template validation and render context to include file_id/sym_name/top_sym_name.
-- [ ] Implement deterministic subckt rename handling for duplicate module names across files.
-- [ ] Run emit/netlist tests and capture output.
+- [x] Add tests for file_id placeholder usage + duplicate module name hashing.
+- [x] Update template validation and render context to include file_id/sym_name/top_sym_name.
+- [x] Implement deterministic subckt rename handling for duplicate module names across files.
+- [x] Run emit/netlist tests and capture output.
 
 # Progress log
-- 
+- Added netlist emission tests for file_id placeholders and duplicate module hashing.
+- Updated netlist template validation, render path, and verification to use file_id contexts and disambiguated module names.
+- Ran emit and netlist unit tests.
 
 # Patch summary
-- 
+- Added file_id/sym_name/top_sym_name placeholder support for system templates.
+- Implemented deterministic module name hashing for duplicates across files and updated rendering/verification to resolve modules by file_id.
+- Added netlist tests for placeholder exposure and duplicate-name disambiguation.
 
 # Verification
-- 
+- `./venv/bin/pytest tests/unit_tests/emit -v`
+- `./venv/bin/pytest tests/unit_tests/netlist -v`
 
 # Status request (Done / Blocked / In Progress)
 - In Progress
