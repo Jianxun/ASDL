@@ -1,6 +1,62 @@
 schema_version: 2
 
-current_sprint: []
+current_sprint:
+  - id: T-075
+    title: Simplify import path resolution roots
+    owner: Executor
+    dod: >
+      Update import resolution so logical paths search only CLI `--lib` roots
+      (in order) followed by `ASDL_LIB_PATH` entries. Preserve explicit
+      relative and absolute path handling plus env expansion. Remove project
+      root / include-root lookups from the resolution path, and adjust
+      ambiguity ordering to reflect the new root order. Update unit tests to
+      match the simplified resolution behavior, including a precedence test
+      for CLI `--lib` roots over `ASDL_LIB_PATH`.
+    verify:
+      - pytest tests/unit_tests/parser -v
+    files:
+      - src/asdl/imports/resolver.py
+      - tests/unit_tests/parser/test_import_resolution.py
+    links:
+      scratchpad: agents/scratchpads/T-075_import_path_simplification.md
+  - id: T-076
+    title: Import-aware MVP pipeline
+    owner: Executor
+    dod: >
+      Extend `run_mvp_pipeline` to accept an entry file path and optional
+      `--lib` roots, resolve the import graph, and lower all loaded documents
+      into a single NFIR design. Ignore `top` declarations from non-entry
+      files; use only the entry file's `top` when building the design. Abort
+      the pipeline on any error-severity diagnostics from import resolution or
+      lowering, but allow warnings to flow through. Preserve the existing
+      document-only behavior for single-file callers. Add e2e tests that
+      exercise import-aware pipeline success and import failure gating.
+    verify:
+      - pytest tests/unit_tests/e2e -v
+    files:
+      - src/asdl/ir/pipeline.py
+      - tests/unit_tests/e2e/test_pipeline_mvp.py
+    links:
+      scratchpad: agents/scratchpads/T-076_import_pipeline.md
+  - id: T-077
+    title: CLI import wiring and --lib roots
+    owner: Executor
+    depends_on:
+      - T-075
+      - T-076
+    dod: >
+      Add a repeatable `--lib` option to `asdlc netlist` and pass the paths
+      into the import-aware pipeline entrypoint. Use the pipeline's import
+      diagnostics to gate output (errors abort, warnings allow netlist
+      emission). Update CLI tests to cover `--lib`-driven resolution and
+      `ASDL_LIB_PATH` fallback.
+    verify:
+      - pytest tests/unit_tests/cli -v
+    files:
+      - src/asdl/cli/__init__.py
+      - tests/unit_tests/cli/test_netlist.py
+    links:
+      scratchpad: agents/scratchpads/T-077_cli_import_wiring.md
 
 backlog:
   - id: T-067

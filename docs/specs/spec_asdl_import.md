@@ -82,10 +82,8 @@ Given an importing file `F` and an import path `P`:
 
 3. Else (logical path):
    - search in ordered roots:
-     1) project root (`--root`, default: entry file directory)
-     2) include roots (`-I <dir>`, in CLI order)
-     3) `ASDL_LIB_PATH` roots (PATH-like list, in order)
-     4) library roots (`--lib <name>=<dir>`, in CLI order; optional; name does not affect resolution)
+     1) CLI `--lib` roots (repeatable, in CLI order)
+     2) `ASDL_LIB_PATH` roots (PATH-style list, in order)
 
 Search all roots in order and collect existing candidates. If exactly one
 match exists, the compiler MUST normalize it by collapsing `.`/`..` segments
