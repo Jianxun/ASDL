@@ -42,6 +42,48 @@ def _pipeline_yaml() -> str:
     )
 
 
+def _write_import_entry(path: Path, import_path: str) -> None:
+    lines = [
+        "imports:",
+        f"  lib: {import_path}",
+        "top: top",
+        "modules:",
+        "  top:",
+        "    instances:",
+        "      U1: lib.leaf",
+        "    nets:",
+        "      $IN:",
+        "        - U1.IN",
+        "      $OUT:",
+        "        - U1.OUT",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_import_library(path: Path) -> None:
+    lines = [
+        "top: leaf",
+        "modules:",
+        "  leaf:",
+        "    instances:",
+        "      R1: res r=2k",
+        "    nets:",
+        "      $IN:",
+        "        - R1.P",
+        "      $OUT:",
+        "        - R1.N",
+        "devices:",
+        "  res:",
+        "    ports: [P, N]",
+        "    params:",
+        "      r: 1k",
+        "    backends:",
+        "      sim.ngspice:",
+        "        template: \"{name} {ports} {params}\"",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def _expected_netlist(top_as_subckt: bool) -> str:
     lines = []
     if top_as_subckt:
@@ -127,6 +169,53 @@ def test_cli_netlist_top_as_subckt_with_output_flag(
     assert result.exit_code == 0
     assert output_path.exists()
     assert output_path.read_text(encoding="utf-8") == _expected_netlist(True)
+
+
+def test_cli_netlist_imports_with_lib_root(
+    tmp_path: Path,
+    backend_config: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    lib_root = tmp_path / "lib"
+    lib_root.mkdir()
+    lib_file = lib_root / "lib.asdl"
+    _write_import_library(lib_file)
+    entry_file = tmp_path / "entry.asdl"
+    _write_import_entry(entry_file, "lib.asdl")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["netlist", str(entry_file), "--lib", str(lib_root)],
+    )
+
+    assert result.exit_code == 0
+    output_path = tmp_path / "entry.spice"
+    assert output_path.exists()
+    assert output_path.read_text(encoding="utf-8") == _expected_netlist(False)
+
+
+def test_cli_netlist_imports_with_env_fallback(
+    tmp_path: Path,
+    backend_config: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lib_root = tmp_path / "lib"
+    lib_root.mkdir()
+    lib_file = lib_root / "lib.asdl"
+    _write_import_library(lib_file)
+    entry_file = tmp_path / "entry.asdl"
+    _write_import_entry(entry_file, "lib.asdl")
+    monkeypatch.setenv("ASDL_LIB_PATH", str(lib_root))
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["netlist", str(entry_file)])
+
+    assert result.exit_code == 0
+    output_path = tmp_path / "entry.spice"
+    assert output_path.exists()
+    assert output_path.read_text(encoding="utf-8") == _expected_netlist(False)
 
 
 def test_cli_netlist_missing_input_file(tmp_path: Path) -> None:
