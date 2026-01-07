@@ -10,11 +10,10 @@
 - `agents/context/tasks.yaml`
 - `agents/context/tasks_state.yaml`
 - `agents/context/project_status.md`
-- `docs/specs/spec_asdl_import.md`
-- `docs/specs_mvp/spec_cli_mvp.md`
 - `src/asdl/ir/pipeline.py`
 - `src/asdl/imports/resolver.py`
 - `src/asdl/ir/converters/ast_to_nfir.py`
+- `src/asdl/cli/__init__.py`
 - `tests/unit_tests/e2e/test_pipeline_mvp.py`
 
 ## Plan
@@ -23,9 +22,26 @@
 3. Add e2e coverage for import-aware success and import-error gating.
 
 ## Todo
-- [ ] Add import-aware pipeline path with error gating.
-- [ ] Preserve single-file document-only behavior.
-- [ ] Add e2e tests for import success/failure cases.
+- [x] Add import-aware pipeline path with error gating.
+- [x] Preserve single-file document-only behavior.
+- [x] Add e2e tests for import success/failure cases.
+
+## Progress log
+- Added import-graph e2e tests for success and missing-import failure.
+- Extended pipeline to resolve imports, merge NFIR designs, and gate on errors.
+
+## Patch summary
+- Added import-aware lowering and error gating in `run_mvp_pipeline`.
+- Added e2e import-graph coverage for success and missing-import failure.
+
+## Verification
+- `./venv/bin/pytest tests/unit_tests/e2e -v`
+
+## Status request (Done / Blocked / In Progress)
+- Done
+
+## Next steps
+- Await review feedback.
 
 ## Blockers / Questions
 - None.
