@@ -24,6 +24,9 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - T-047 system devices refactor complete: ngspice emitter now uses backend config (`config/backends.yaml`) with 5 required system devices; all hardcoded ngspice syntax removed; all tests passing with byte-for-byte identical output.
 - T-048 complete: unified netlist backend with CLI `--backend` (default `sim.ngspice`), backend config `extension`, and dedicated netlist verification pass; `emit_ngspice` removed.
 - T-049 complete: split `src/asdl/emit/netlist.py` into `src/asdl/emit/netlist/` package with API/verify/render/templates/params/IR helpers/diagnostics; updated codebase map; tests passing; PR https://github.com/Jianxun/ASDL/pull/41.
+- Imports spec work landed: AST `imports` schema + parser validation + import resolver + ProgramDB/NameEnv exist in `src/asdl/imports/`, but import resolution is not yet wired into CLI/pipeline.
+- Pattern expansion/elaboration engine exists (`src/asdl/patterns.py`, `src/asdl/ir/pattern_elaboration.py`) and is used by netlist emission after IFIR, but NFIR/IFIR metadata fields and pattern-aware verifiers remain incomplete.
+- Netlist emission supports system devices + `{ports}` + merged param placeholders; `{file_id}`/`{sym_name}`/`{top_sym_name}` placeholders and subckt disambiguation are still pending.
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ast`
@@ -37,12 +40,13 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - `venv/bin/python -m py_compile src/asdl/emit/netlist/*.py`
 
 ## Next steps (1-3)
-1. T-053: Preserve the raw pattern tokens through AST/NFIR/IFIR so downstream passes can trust lexemes before expansion.
-2. T-057: Deliver the standalone pattern expansion engine (ranges/alternation/splicing) and prove it via parser tests and diagnostics.
-3. T-058/T-059: Follow with pattern binding verification (length/endpoint constraints) and then a coordinated elaboration pass so IFIR/netlist outputs consume concrete names.
+1. Wire import resolution into CLI/pipeline (resolve graph, pass NameEnv/ProgramDB, honor `ASDL_LIB_PATH` and CLI roots).
+2. Complete pattern-aware NFIR/IFIR metadata + verification (expansion lengths, equivalence checks) and align boolean param normalization.
+3. Finish netlist placeholders and subckt name disambiguation (`{file_id}`, `{sym_name}`, `{top_sym_name}`) per specs.
 
 ## Risks / unknowns
 - Coordinating pattern expansion across AST, NFIR, IFIR, and netlist diagnostics is currently the highest ambiguity.
 - IFIR and emission semantics are new; tests will drive final API shape.
 - Backend-specific emission rules beyond ngspice remain undefined.
 - System devices successfully decouple backend syntax; backend config schema is evolving to include output extensions.
+- Import-aware compilation is partially implemented but not yet exercised end-to-end in CLI or pipeline tests.
