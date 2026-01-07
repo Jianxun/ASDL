@@ -15,6 +15,8 @@ from .diagnostics import (
     import_path_malformed,
     import_path_missing,
 )
+from .name_env import NameEnv
+from .program_db import ProgramDB
 
 
 @dataclass(frozen=True)
@@ -22,6 +24,8 @@ class ImportGraph:
     entry_file: Path
     documents: dict[Path, AsdlDocument]
     imports: dict[Path, dict[str, Path]]
+    program_db: ProgramDB
+    name_envs: dict[Path, NameEnv]
 
 
 def resolve_import_path(
@@ -152,12 +156,22 @@ def resolve_import_graph(
     ok = visit(Path(entry_file))
     if not ok:
         return None, diagnostics
+
+    program_db, program_diags = ProgramDB.build(documents)
+    diagnostics.extend(program_diags)
+    name_envs = {
+        file_id: NameEnv(file_id=file_id, bindings=dict(imports_by_file.get(file_id, {})))
+        for file_id in documents.keys()
+    }
+
     if any(diag.severity is Severity.ERROR for diag in diagnostics):
         return None, diagnostics
     return ImportGraph(
         entry_file=_normalize_path(Path(entry_file)),
         documents=documents,
         imports=imports_by_file,
+        program_db=program_db,
+        name_envs=name_envs,
     ), diagnostics
 
 
@@ -227,7 +241,7 @@ def _normalize_root(root: Path | str) -> Path:
 
 
 def _normalize_path(path: Path) -> Path:
-    return path.absolute()
+    return Path(os.path.abspath(path))
 
 
 __all__ = ["ImportGraph", "resolve_import_graph", "resolve_import_path"]

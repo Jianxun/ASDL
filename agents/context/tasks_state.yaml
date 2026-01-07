@@ -29,9 +29,9 @@ T-070:
   pr: 64
   merged: true
 T-071:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 66
+  merged: true
 T-072:
   status: ready
   pr: null

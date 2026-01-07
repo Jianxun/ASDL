@@ -19,11 +19,22 @@
 3. Add tests covering dedupe and duplicate symbol diagnostics.
 
 ## Progress log
-- Not started yet.
+- Added parser tests for ProgramDB dedupe and duplicate symbol diagnostics.
+- Implemented ProgramDB/NameEnv integration with AST-014 diagnostics and file_id normalization.
+
+## Patch summary
+- Added ProgramDB + NameEnv structures with duplicate symbol detection.
+- Normalized `file_id` paths to collapse `.`/`..` for deduped loads.
+- Added parser tests for deduped imports and duplicate symbol names.
+
+## Verification
+- `./venv/bin/pytest tests/unit_tests/parser -v`
 
 ## Status request
-- None.
+- Ready for review.
 
 ## Blockers / Questions
 - None.
 
+## Next steps
+- Reviewer pass on ProgramDB/NameEnv behavior and diagnostics wording.
