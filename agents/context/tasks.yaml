@@ -209,11 +209,15 @@ backlog:
       `{top_sym_name}` for netlist header/footer. Pass the module's `file_id`
       into `__subckt_header__`, the referenced module `file_id` into
       `__subckt_call__`, and the entry `file_id` into netlist header/footer
-      contexts. Implement deterministic subckt renaming for duplicate module
-      names across files using `{sym_name}__{hash8}` (first 8 hex chars of
-      `sha1(file_id)`), applied consistently to `__subckt_header__`, module
-      calls, and `{top}` in netlist header/footer. Add or update emission tests
-      to cover template usage and duplicate-name disambiguation.
+      contexts. When `design.top` is absent and `entry_file_id` is set, only
+      allow implicit top selection if the sole module's `file_id` matches the
+      entry file; otherwise emit `MISSING_TOP`. Implement deterministic subckt
+      renaming for duplicate module names across files using
+      `{sym_name}__{hash8}` (first 8 hex chars of `sha1(file_id)`), applied
+      consistently to `__subckt_header__`, module calls, and `{top}` in netlist
+      header/footer. Add or update emission tests to cover template usage,
+      duplicate-name disambiguation, and implicit-top rejection when the entry
+      file has no local modules.
     verify:
       - pytest tests/unit_tests/emit -v
       - pytest tests/unit_tests/netlist -v
