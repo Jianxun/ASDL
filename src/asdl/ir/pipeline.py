@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Type, TypeVar
+from pathlib import Path
+from typing import Iterable, Optional, Type, TypeVar
 
 from xdsl.context import Context
 from xdsl.dialects import builtin
@@ -12,6 +13,7 @@ from xdsl.utils.exceptions import VerifyException
 from asdl.ast import AsdlDocument
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.diagnostics.collector import DiagnosticCollector
+from asdl.imports.resolver import ImportGraph, resolve_import_graph
 from asdl.ir.converters.ast_to_nfir import convert_document
 from asdl.ir.converters.nfir_to_ifir import convert_design as convert_nfir_to_ifir
 from asdl.ir.ifir import ASDL_IFIR, DesignOp as IfirDesignOp
@@ -109,15 +111,46 @@ class NfirToIfirPass(ModulePass):
 
 
 def run_mvp_pipeline(
-    document: AsdlDocument, *, verify: bool = True
+    document: Optional[AsdlDocument] = None,
+    *,
+    entry_file: Optional[Path] = None,
+    lib_roots: Optional[Iterable[Path]] = None,
+    verify: bool = True,
 ) -> tuple[IfirDesignOp | None, list[Diagnostic]]:
     diagnostics = DiagnosticCollector()
 
-    nfir_design, nfir_diags = convert_document(document)
-    diagnostics.extend(nfir_diags)
-    if nfir_design is None:
+    if entry_file is not None:
+        if document is not None:
+            diagnostics.emit(
+                _diagnostic(
+                    PIPELINE_CRASH,
+                    "Provide either document or entry_file, not both.",
+                )
+            )
+            return None, diagnostics.to_list()
+        nfir_design = _lower_import_graph(entry_file, lib_roots, diagnostics)
+    else:
+        if document is None:
+            diagnostics.emit(
+                _diagnostic(
+                    PIPELINE_CRASH,
+                    "Pipeline requires a document or entry file.",
+                )
+            )
+            return None, diagnostics.to_list()
+        nfir_design, nfir_diags = convert_document(document)
+        diagnostics.extend(nfir_diags)
+    if nfir_design is None or _has_error_diagnostics(diagnostics.to_list()):
         return None, diagnostics.to_list()
 
+    return _run_pipeline(nfir_design, diagnostics, verify)
+
+
+def _run_pipeline(
+    nfir_design: NfirDesignOp,
+    diagnostics: DiagnosticCollector,
+    verify: bool,
+) -> tuple[IfirDesignOp | None, list[Diagnostic]]:
     module = builtin.ModuleOp([nfir_design])
     state = PipelineState(diagnostics=diagnostics)
     passes: list[ModulePass] = []
@@ -150,6 +183,61 @@ def run_mvp_pipeline(
     return state.ifir_design, diagnostics.to_list()
 
 
+def _lower_import_graph(
+    entry_file: Path,
+    lib_roots: Optional[Iterable[Path]],
+    diagnostics: DiagnosticCollector,
+) -> Optional[NfirDesignOp]:
+    graph, import_diags = resolve_import_graph(
+        entry_file,
+        lib_roots=lib_roots,
+    )
+    diagnostics.extend(import_diags)
+    if graph is None:
+        return None
+
+    return _build_import_design(graph, diagnostics)
+
+
+def _build_import_design(
+    graph: ImportGraph,
+    diagnostics: DiagnosticCollector,
+) -> Optional[NfirDesignOp]:
+    ops: list[Operation] = []
+    had_error = False
+    entry_document = graph.documents.get(graph.entry_file)
+
+    for file_id, document in graph.documents.items():
+        name_env = graph.name_envs.get(file_id)
+        nfir_design, nfir_diags = convert_document(
+            document,
+            name_env=name_env,
+            program_db=graph.program_db,
+        )
+        diagnostics.extend(nfir_diags)
+        if nfir_design is None:
+            had_error = True
+            continue
+        ops.extend(op.clone() for op in nfir_design.body.block.ops)
+
+    if had_error:
+        return None
+    if entry_document is None:
+        diagnostics.emit(
+            _diagnostic(
+                PIPELINE_CRASH,
+                "Entry document missing from import graph.",
+            )
+        )
+        return None
+
+    return NfirDesignOp(
+        region=ops,
+        top=entry_document.top,
+        entry_file_id=str(graph.entry_file),
+    )
+
+
 def _build_context() -> Context:
     ctx = Context()
     ctx.load_dialect(builtin.Builtin)
@@ -175,6 +263,13 @@ def _find_single_design(
             _diagnostic(code, f"Expected single {label} in module, found {count}")
         )
     return None
+
+
+def _has_error_diagnostics(diagnostics: Iterable[Diagnostic]) -> bool:
+    return any(
+        diagnostic.severity in (Severity.ERROR, Severity.FATAL)
+        for diagnostic in diagnostics
+    )
 
 
 def _diagnostic(code: str, message: str) -> Diagnostic:
