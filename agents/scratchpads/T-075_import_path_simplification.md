@@ -20,9 +20,27 @@
 3. Run parser unit tests.
 
 ## Todo
-- [ ] Update import resolution tests for new root order.
-- [ ] Simplify resolver logic and ambiguity ordering.
+- [x] Update import resolution tests for new root order.
+- [x] Simplify resolver logic and ambiguity ordering.
 - [ ] Run parser unit tests.
+
+## Progress log
+- Confirmed T-075 scope: logical import paths now search only CLI `--lib` roots then `ASDL_LIB_PATH`, preserving explicit relative/absolute + env expansion.
+- Updated parser import resolution tests for lib/env ordering and explicit-relative cycle fixtures.
+- Simplified resolver logical root iteration to lib roots then env paths.
+
+## Patch summary
+- tests updated to remove project/include roots and assert lib/env ordering.
+- resolver logical candidates now only include CLI lib roots followed by `ASDL_LIB_PATH`.
+
+## Verification
+- `./venv/bin/pytest tests/unit_tests/parser -v`
+
+## Status request
+- Done
 
 ## Blockers / Questions
 - None.
+
+## Next steps
+- Reviewer: confirm import resolution ordering changes for logical paths.

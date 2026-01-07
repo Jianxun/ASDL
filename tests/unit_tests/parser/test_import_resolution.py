@@ -85,43 +85,37 @@ def test_resolve_env_expansion(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert resolved == target.absolute()
 
 
-def test_resolve_logical_path_project_root(
+def test_resolve_logical_path_cli_lib_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    project_root = tmp_path / "project"
-    include_root = tmp_path / "include"
-    env_root = tmp_path / "env"
-    lib_root = tmp_path / "lib"
-    for root in (project_root, include_root, env_root, lib_root):
-        root.mkdir()
-    entry_file = project_root / "entry.asdl"
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    entry_file = tmp_path / "entry.asdl"
     _write_stub(entry_file)
-    _write_stub(project_root / "shared.asdl")
-    monkeypatch.setenv("ASDL_LIB_PATH", str(env_root))
+    lib_root = tmp_path / "lib"
+    lib_root.mkdir()
+    target = lib_root / "shared.asdl"
+    _write_stub(target)
 
     resolved, diagnostics = resolve_import_path(
         "shared.asdl",
         importing_file=entry_file,
-        project_root=project_root,
-        include_roots=[include_root],
         lib_roots=[lib_root],
     )
 
     assert diagnostics == []
-    assert resolved == (project_root / "shared.asdl").absolute()
+    assert resolved == target.absolute()
 
 
 def test_resolve_logical_path_ambiguity_ordering(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    project_root = tmp_path / "project"
-    include_root = tmp_path / "include"
+    lib_root_a = tmp_path / "lib_a"
+    lib_root_b = tmp_path / "lib_b"
     env_root = tmp_path / "env"
-    lib_root = tmp_path / "lib"
-    for root in (project_root, include_root, env_root, lib_root):
+    for root in (lib_root_a, lib_root_b, env_root):
         root.mkdir()
         _write_stub(root / "shared.asdl")
-    entry_file = project_root / "entry.asdl"
+    entry_file = tmp_path / "entry.asdl"
     _write_stub(entry_file)
     monkeypatch.setenv("ASDL_LIB_PATH", str(env_root))
     loc = Locatable(
@@ -135,9 +129,7 @@ def test_resolve_logical_path_ambiguity_ordering(
     resolved, diagnostics = resolve_import_path(
         "shared.asdl",
         importing_file=entry_file,
-        project_root=project_root,
-        include_roots=[include_root],
-        lib_roots=[lib_root],
+        lib_roots=[lib_root_a, lib_root_b],
         loc=loc,
     )
 
@@ -148,10 +140,9 @@ def test_resolve_logical_path_ambiguity_ordering(
     assert diag.severity is Severity.ERROR
     assert diag.notes == [
         "Matches (root order):",
-        str((project_root / "shared.asdl").absolute()),
-        str((include_root / "shared.asdl").absolute()),
+        str((lib_root_a / "shared.asdl").absolute()),
+        str((lib_root_b / "shared.asdl").absolute()),
         str((env_root / "shared.asdl").absolute()),
-        str((lib_root / "shared.asdl").absolute()),
     ]
 
 
@@ -180,13 +171,10 @@ def test_resolve_import_cycle_single(tmp_path: Path, monkeypatch: pytest.MonkeyP
     project_root.mkdir()
     file_a = project_root / "a.asdl"
     file_b = project_root / "b.asdl"
-    _write_stub(file_a, imports={"b": "b.asdl"})
-    _write_stub(file_b, imports={"a": "a.asdl"})
+    _write_stub(file_a, imports={"b": "./b.asdl"})
+    _write_stub(file_b, imports={"a": "./a.asdl"})
 
-    result, diagnostics = resolve_import_graph(
-        file_a,
-        project_root=project_root,
-    )
+    result, diagnostics = resolve_import_graph(file_a)
 
     assert result is None
     assert diagnostics
@@ -205,14 +193,11 @@ def test_resolve_import_cycle_multi_hop(tmp_path: Path, monkeypatch: pytest.Monk
     file_a = project_root / "a.asdl"
     file_b = project_root / "b.asdl"
     file_c = project_root / "c.asdl"
-    _write_stub(file_a, imports={"b": "b.asdl"})
-    _write_stub(file_b, imports={"c": "c.asdl"})
-    _write_stub(file_c, imports={"a": "a.asdl"})
+    _write_stub(file_a, imports={"b": "./b.asdl"})
+    _write_stub(file_b, imports={"c": "./c.asdl"})
+    _write_stub(file_c, imports={"a": "./a.asdl"})
 
-    result, diagnostics = resolve_import_graph(
-        file_a,
-        project_root=project_root,
-    )
+    result, diagnostics = resolve_import_graph(file_a)
 
     assert result is None
     assert diagnostics
