@@ -25,11 +25,13 @@
 - Added netlist emission tests for file_id placeholders and duplicate module hashing.
 - Updated netlist template validation, render path, and verification to use file_id contexts and disambiguated module names.
 - Ran emit and netlist unit tests.
+- Added implicit-top guard for entry-file mismatch and a netlist test for missing entry modules.
 
 # Patch summary
 - Added file_id/sym_name/top_sym_name placeholder support for system templates.
 - Implemented deterministic module name hashing for duplicates across files and updated rendering/verification to resolve modules by file_id.
 - Added netlist tests for placeholder exposure and duplicate-name disambiguation.
+- Rejected implicit top selection when only an imported module exists for the entry file.
 
 # Verification
 - `./venv/bin/pytest tests/unit_tests/emit -v`
