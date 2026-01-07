@@ -20,6 +20,7 @@ from asdl.ir.nfir import (
 
 INVALID_INSTANCE_EXPR = format_code("IR", 1)
 INVALID_ENDPOINT_EXPR = format_code("IR", 2)
+UNRESOLVED_QUALIFIED = format_code("IR", 10)
 UNRESOLVED_UNQUALIFIED = format_code("IR", 11)
 NO_SPAN_NOTE = "No source span available."
 
@@ -42,6 +43,8 @@ def convert_document(
                 name,
                 module,
                 local_symbols=local_symbols,
+                name_env=name_env,
+                program_db=program_db,
             )
             diagnostics.extend(module_diags)
             had_error = had_error or module_error
@@ -61,13 +64,19 @@ def convert_document(
 
 
 def _convert_module(
-    name: str, module: ModuleDecl, *, local_symbols: Set[str]
+    name: str,
+    module: ModuleDecl,
+    *,
+    local_symbols: Set[str],
+    name_env: Optional[NameEnv],
+    program_db: Optional[ProgramDB],
 ) -> Tuple[ModuleOp, List[Diagnostic], bool]:
     diagnostics: List[Diagnostic] = []
     had_error = False
     nets: List[NetOp] = []
     instances: List[InstanceOp] = []
     port_order: List[str] = []
+    local_file_id = name_env.file_id if name_env is not None else None
 
     if module.nets:
         for net_name, endpoint_expr in module.nets.items():
@@ -102,7 +111,50 @@ def _convert_module(
                 )
                 had_error = True
                 continue
-            if ref is not None and "." not in ref and ref not in local_symbols:
+            ref_file_id = None
+            resolved_qualified = False
+            if ref is not None and "." in ref:
+                if name_env is None or program_db is None:
+                    diagnostics.append(
+                        _diagnostic(
+                            UNRESOLVED_QUALIFIED,
+                            f"Unresolved symbol '{ref}' in module '{name}'",
+                            module._loc,
+                        )
+                    )
+                    had_error = True
+                    continue
+                namespace, symbol = ref.split(".", 1)
+                if not namespace or not symbol:
+                    diagnostics.append(
+                        _diagnostic(
+                            UNRESOLVED_QUALIFIED,
+                            f"Unresolved symbol '{ref}' in module '{name}'",
+                            module._loc,
+                        )
+                    )
+                    had_error = True
+                    continue
+                resolved_file_id = name_env.resolve(namespace)
+                symbol_def = (
+                    program_db.lookup(resolved_file_id, symbol)
+                    if resolved_file_id is not None
+                    else None
+                )
+                if resolved_file_id is None or symbol_def is None:
+                    diagnostics.append(
+                        _diagnostic(
+                            UNRESOLVED_QUALIFIED,
+                            f"Unresolved symbol '{ref}' in module '{name}'",
+                            module._loc,
+                        )
+                    )
+                    had_error = True
+                    continue
+                ref = symbol
+                ref_file_id = resolved_file_id
+                resolved_qualified = True
+            if ref is not None and not resolved_qualified and "." not in ref and ref not in local_symbols:
                 diagnostics.append(
                     _diagnostic(
                         UNRESOLVED_UNQUALIFIED,
@@ -112,10 +164,13 @@ def _convert_module(
                 )
                 had_error = True
                 continue
+            if ref is not None and not resolved_qualified and "." not in ref and local_file_id is not None:
+                ref_file_id = local_file_id
             instances.append(
                 InstanceOp(
                     name=inst_name,
                     ref=ref,
+                    ref_file_id=str(ref_file_id) if ref_file_id is not None else None,
                     params=_to_string_dict_attr(params),
                 )
             )
