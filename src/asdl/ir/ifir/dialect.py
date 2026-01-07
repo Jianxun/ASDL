@@ -38,6 +38,7 @@ class DesignOp(IRDLOperation):
     name = "asdl_ifir.design"
 
     top = opt_attr_def(StringAttr)
+    entry_file_id = opt_attr_def(StringAttr)
     doc = opt_attr_def(StringAttr)
     src = opt_attr_def(LocationAttr)
     body = region_def("single_block")
@@ -50,16 +51,21 @@ class DesignOp(IRDLOperation):
         *,
         region: Region | Sequence[Operation],
         top: StringAttr | str | None = None,
+        entry_file_id: StringAttr | str | None = None,
         doc: StringAttr | str | None = None,
         src: LocationAttr | None = None,
     ):
         if isinstance(top, str):
             top = StringAttr(top)
+        if isinstance(entry_file_id, str):
+            entry_file_id = StringAttr(entry_file_id)
         if isinstance(doc, str):
             doc = StringAttr(doc)
         attributes = {}
         if top is not None:
             attributes["top"] = top
+        if entry_file_id is not None:
+            attributes["entry_file_id"] = entry_file_id
         if doc is not None:
             attributes["doc"] = doc
         if src is not None:
@@ -71,24 +77,44 @@ class DesignOp(IRDLOperation):
         super().__init__(attributes=attributes, regions=[body])
 
     def verify_(self) -> None:
-        module_names: set[str] = set()
-        device_names: set[str] = set()
+        module_names: dict[str | None, set[str]] = {}
+        device_names: dict[str | None, set[str]] = {}
+        all_module_names: set[str] = set()
+        entry_module_names: set[str] = set()
+        entry_file_id = (
+            self.entry_file_id.data if self.entry_file_id is not None else None
+        )
         for op in self.body.block.ops:
             if isinstance(op, ModuleOp):
                 name = op.sym_name.data
-                if name in module_names:
+                file_id = op.file_id.data if op.file_id is not None else None
+                names = module_names.setdefault(file_id, set())
+                if name in names:
                     raise VerifyException(f"Duplicate module name '{name}'")
-                module_names.add(name)
+                names.add(name)
+                all_module_names.add(name)
+                if entry_file_id is not None and file_id == entry_file_id:
+                    entry_module_names.add(name)
                 continue
             if isinstance(op, DeviceOp):
                 name = op.sym_name.data
-                if name in device_names:
+                file_id = op.file_id.data if op.file_id is not None else None
+                names = device_names.setdefault(file_id, set())
+                if name in names:
                     raise VerifyException(f"Duplicate device name '{name}'")
-                device_names.add(name)
+                names.add(name)
                 continue
             raise VerifyException("asdl_ifir.design region must contain only module/device ops")
-        if self.top is not None and self.top.data not in module_names:
-            raise VerifyException(f"Top module '{self.top.data}' is not defined")
+        if self.top is None:
+            return
+        if entry_file_id is None:
+            if self.top.data not in all_module_names:
+                raise VerifyException(f"Top module '{self.top.data}' is not defined")
+            return
+        if self.top.data not in entry_module_names:
+            raise VerifyException(
+                f"Top module '{self.top.data}' is not defined in entry file"
+            )
 
 
 @irdl_op_definition
@@ -97,6 +123,7 @@ class ModuleOp(IRDLOperation):
 
     sym_name = attr_def(StringAttr)
     port_order = attr_def(ArrayAttr[StringAttr])
+    file_id = opt_attr_def(StringAttr)
     doc = opt_attr_def(StringAttr)
     src = opt_attr_def(LocationAttr)
     body = region_def("single_block")
@@ -110,6 +137,7 @@ class ModuleOp(IRDLOperation):
         name: StringAttr | str,
         port_order: ArrayAttr[StringAttr] | Iterable[str],
         region: Region | Sequence[Operation],
+        file_id: StringAttr | str | None = None,
         doc: StringAttr | str | None = None,
         src: LocationAttr | None = None,
     ):
@@ -117,12 +145,16 @@ class ModuleOp(IRDLOperation):
             name = StringAttr(name)
         if isinstance(doc, str):
             doc = StringAttr(doc)
+        if isinstance(file_id, str):
+            file_id = StringAttr(file_id)
         if not isinstance(port_order, ArrayAttr):
             port_order = ArrayAttr([StringAttr(item) for item in port_order])
         attributes = {
             "sym_name": name,
             "port_order": port_order,
         }
+        if file_id is not None:
+            attributes["file_id"] = file_id
         if doc is not None:
             attributes["doc"] = doc
         if src is not None:
@@ -219,6 +251,7 @@ class InstanceOp(IRDLOperation):
 
     name_attr = attr_def(StringAttr, attr_name="name")
     ref = attr_def(FlatSymbolRefAttrConstr)
+    ref_file_id = opt_attr_def(StringAttr)
     params = opt_attr_def(DictionaryAttr)
     conns = attr_def(ArrayAttr[ConnAttr])
     doc = opt_attr_def(StringAttr)
@@ -232,6 +265,7 @@ class InstanceOp(IRDLOperation):
         name: StringAttr | str,
         ref: SymbolRefAttr | str,
         conns: ArrayAttr[ConnAttr] | Iterable[ConnAttr],
+        ref_file_id: StringAttr | str | None = None,
         params: DictionaryAttr | None = None,
         doc: StringAttr | str | None = None,
         src: LocationAttr | None = None,
@@ -242,6 +276,8 @@ class InstanceOp(IRDLOperation):
             ref = SymbolRefAttr(ref)
         if isinstance(doc, str):
             doc = StringAttr(doc)
+        if isinstance(ref_file_id, str):
+            ref_file_id = StringAttr(ref_file_id)
         if not isinstance(conns, ArrayAttr):
             conns = ArrayAttr(list(conns))
         attributes = {
@@ -249,6 +285,8 @@ class InstanceOp(IRDLOperation):
             "ref": ref,
             "conns": conns,
         }
+        if ref_file_id is not None:
+            attributes["ref_file_id"] = ref_file_id
         if params is not None:
             attributes["params"] = params
         if doc is not None:
@@ -264,6 +302,7 @@ class DeviceOp(IRDLOperation):
 
     sym_name = attr_def(StringAttr)
     ports = attr_def(ArrayAttr[StringAttr])
+    file_id = opt_attr_def(StringAttr)
     params = opt_attr_def(DictionaryAttr)
     doc = opt_attr_def(StringAttr)
     src = opt_attr_def(LocationAttr)
@@ -278,6 +317,7 @@ class DeviceOp(IRDLOperation):
         name: StringAttr | str,
         ports: ArrayAttr[StringAttr] | Iterable[str],
         region: Region | Sequence[Operation],
+        file_id: StringAttr | str | None = None,
         params: DictionaryAttr | None = None,
         doc: StringAttr | str | None = None,
         src: LocationAttr | None = None,
@@ -286,9 +326,13 @@ class DeviceOp(IRDLOperation):
             name = StringAttr(name)
         if isinstance(doc, str):
             doc = StringAttr(doc)
+        if isinstance(file_id, str):
+            file_id = StringAttr(file_id)
         if not isinstance(ports, ArrayAttr):
             ports = ArrayAttr([StringAttr(item) for item in ports])
         attributes = {"sym_name": name, "ports": ports}
+        if file_id is not None:
+            attributes["file_id"] = file_id
         if params is not None:
             attributes["params"] = params
         if doc is not None:

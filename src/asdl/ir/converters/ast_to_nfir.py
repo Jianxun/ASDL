@@ -38,12 +38,14 @@ def convert_document(
     devices: List[DeviceOp] = []
     used_namespaces: Set[str] = set()
     local_symbols = _collect_local_symbols(document, name_env, program_db)
+    entry_file_id = str(name_env.file_id) if name_env is not None else None
 
     if document.modules:
         for name, module in document.modules.items():
             module_op, module_diags, module_error = _convert_module(
                 name,
                 module,
+                file_id=entry_file_id,
                 local_symbols=local_symbols,
                 used_namespaces=used_namespaces,
                 name_env=name_env,
@@ -55,7 +57,7 @@ def convert_document(
 
     if document.devices:
         for name, device in document.devices.items():
-            devices.append(_convert_device(name, device))
+            devices.append(_convert_device(name, device, file_id=entry_file_id))
 
     if name_env is not None:
         diagnostics.extend(_unused_import_diagnostics(name_env, used_namespaces))
@@ -63,6 +65,7 @@ def convert_document(
     design = DesignOp(
         region=modules + devices,
         top=document.top,
+        entry_file_id=entry_file_id,
     )
     if had_error:
         return None, diagnostics
@@ -73,6 +76,7 @@ def _convert_module(
     name: str,
     module: ModuleDecl,
     *,
+    file_id: str | None,
     local_symbols: Set[str],
     used_namespaces: Set[str],
     name_env: Optional[NameEnv],
@@ -192,6 +196,7 @@ def _convert_module(
             name=name,
             port_order=port_order,
             region=ops,
+            file_id=file_id,
             src=_loc_attr(module._loc),
         ),
         diagnostics,
@@ -199,7 +204,7 @@ def _convert_module(
     )
 
 
-def _convert_device(name: str, device: DeviceDecl) -> DeviceOp:
+def _convert_device(name: str, device: DeviceDecl, *, file_id: str | None) -> DeviceOp:
     backends: List[BackendOp] = []
     for backend_name, backend in device.backends.items():
         backends.append(_convert_backend(backend_name, backend))
@@ -208,6 +213,7 @@ def _convert_device(name: str, device: DeviceDecl) -> DeviceOp:
     return DeviceOp(
         name=name,
         ports=ports,
+        file_id=file_id,
         params=_to_string_dict_attr(device.params),
         region=backends,
         src=_loc_attr(device._loc),

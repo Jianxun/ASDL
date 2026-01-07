@@ -163,6 +163,42 @@ def test_convert_document_resolves_unqualified_locally(tmp_path: Path) -> None:
     assert isinstance(design, DesignOp)
 
 
+def test_convert_document_propagates_entry_file_id(tmp_path: Path) -> None:
+    entry_file = tmp_path / "entry.asdl"
+    doc = AsdlDocument(
+        top="top",
+        modules={"top": ModuleDecl(instances={"M1": "res"})},
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+
+    program_db, diagnostics = ProgramDB.build({entry_file: doc})
+    assert diagnostics == []
+
+    name_env = NameEnv(file_id=entry_file, bindings={})
+    design, diagnostics = convert_document(doc, name_env=name_env, program_db=program_db)
+
+    assert diagnostics == []
+    assert isinstance(design, DesignOp)
+    assert design.entry_file_id is not None
+    assert design.entry_file_id.data == str(entry_file)
+
+    module = next(op for op in design.body.block.ops if isinstance(op, ModuleOp))
+    assert module.file_id is not None
+    assert module.file_id.data == str(entry_file)
+
+    device = next(op for op in design.body.block.ops if isinstance(op, DeviceOp))
+    assert device.file_id is not None
+    assert device.file_id.data == str(entry_file)
+
+    instance = next(op for op in module.body.block.ops if isinstance(op, InstanceOp))
+    assert instance.ref_file_id is not None
+    assert instance.ref_file_id.data == str(entry_file)
+
+
 def test_convert_document_unqualified_missing_symbol_emits_error(
     tmp_path: Path,
 ) -> None:

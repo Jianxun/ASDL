@@ -70,6 +70,49 @@ def test_convert_nfir_design_to_ifir() -> None:
     assert backend.template.data == "M{inst} {D} {G} {S} {model}"
 
 
+def test_convert_nfir_propagates_file_ids() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=[],
+        region=[
+            NetOp(name="VIN", endpoints=[]),
+            InstanceOp(name="M1", ref="nfet", ref_file_id="dep.asdl"),
+        ],
+        file_id="entry.asdl",
+    )
+    device = DeviceOp(
+        name="nfet",
+        ports=[],
+        region=[],
+        file_id="entry.asdl",
+    )
+    design = DesignOp(region=[module, device], top="top", entry_file_id="entry.asdl")
+
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert diagnostics == []
+    assert isinstance(ifir_design, IfirDesignOp)
+    assert ifir_design.entry_file_id is not None
+    assert ifir_design.entry_file_id.data == "entry.asdl"
+
+    ifir_module = next(
+        op for op in ifir_design.body.block.ops if isinstance(op, IfirModuleOp)
+    )
+    assert ifir_module.file_id is not None
+    assert ifir_module.file_id.data == "entry.asdl"
+
+    ifir_device = next(
+        op for op in ifir_design.body.block.ops if isinstance(op, IfirDeviceOp)
+    )
+    assert ifir_device.file_id is not None
+    assert ifir_device.file_id.data == "entry.asdl"
+
+    instance = next(
+        op for op in ifir_module.body.block.ops if isinstance(op, IfirInstanceOp)
+    )
+    assert instance.ref_file_id is not None
+    assert instance.ref_file_id.data == "dep.asdl"
+
+
 def test_convert_nfir_preserves_pattern_tokens() -> None:
     module = ModuleOp(
         name="top",

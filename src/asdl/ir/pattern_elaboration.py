@@ -125,6 +125,7 @@ def _elaborate_design(
     elaborated = DesignOp(
         region=[*modules, *devices],
         top=design.top,
+        entry_file_id=design.entry_file_id,
         doc=design.doc,
         src=design.src,
     )
@@ -286,6 +287,7 @@ def _elaborate_module(
                     name=atom,
                     ref=inst.ref,
                     conns=ArrayAttr(conns),
+                    ref_file_id=inst.ref_file_id,
                     params=inst.params,
                     doc=inst.doc,
                     src=inst.src,
@@ -296,6 +298,7 @@ def _elaborate_module(
         name=module.sym_name,
         port_order=port_order,
         region=[*net_ops, *inst_ops],
+        file_id=module.file_id,
         doc=module.doc,
         src=module.src,
     )
