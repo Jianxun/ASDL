@@ -21,9 +21,27 @@
 3. Extend CLI tests for `--lib` and env fallback.
 
 ## Todo
-- [ ] Add `--lib` CLI option (repeatable).
-- [ ] Wire CLI to import-aware pipeline entrypoint.
-- [ ] Update CLI tests for import resolution paths.
+- [x] Add `--lib` CLI option (repeatable).
+- [x] Wire CLI to import-aware pipeline entrypoint.
+- [x] Update CLI tests for import resolution paths.
+
+## Progress log
+- Understanding: add repeatable `--lib` roots to `asdlc netlist`, route them into the import-aware pipeline, and rely on pipeline diagnostics for error gating while adding CLI coverage for `--lib` and `ASDL_LIB_PATH`.
+- Added CLI tests for `--lib`-driven import resolution and `ASDL_LIB_PATH` fallback.
+- Wired `asdlc netlist` to call the import-aware pipeline with entry file and lib roots.
+
+## Patch summary
+- Added CLI tests for import resolution via `--lib` and env fallback.
+- Added `--lib` option to the netlist command and switched to entry-file pipeline invocation.
+
+## Verification
+- `./venv/bin/pytest tests/unit_tests/cli -v`
+
+## Status request
+- Ready for review (PR #78).
 
 ## Blockers / Questions
 - None.
+
+## Next steps
+- Await review feedback.
