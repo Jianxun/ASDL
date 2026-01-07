@@ -8,7 +8,7 @@ xDSL pipeline. This spec is focused on the `asdlc netlist` command only.
 
 ## MVP scope
 - One command: `asdlc netlist`.
-- Input: a single ASDL file parsed into `AsdlDocument`.
+- Input: an entry ASDL file; import resolution may load dependent files.
 - Pipeline: uses `src/asdl/ir/pipeline.py` entrypoint and xDSL PassManager.
 - Output: backend netlist text written to a file using the backend extension.
 - Diagnostics emitted via the shared diagnostic contract.
@@ -21,7 +21,7 @@ Non-goals (MVP):
 
 ## Command
 ```
-asdlc netlist <file.asdl> [-o <out.ext>] [--verify|--no-verify] [--backend <name>] [--top-as-subckt]
+asdlc netlist <file.asdl> [-o <out.ext>] [--verify|--no-verify] [--backend <name>] [--top-as-subckt] [--lib <dir> ...]
 ```
 
 ### Options
@@ -35,19 +35,25 @@ asdlc netlist <file.asdl> [-o <out.ext>] [--verify|--no-verify] [--backend <name
   - Backend name from `config/backends.yaml`.
 - `--top-as-subckt`:
   - Pass-through to netlist emitter; keeps subckt wrapper for the top module.
+- `--lib <dir>`:
+  - Repeatable; prepends a library root to the import search order for logical paths.
+  - Applied before `ASDL_LIB_PATH`.
 
 ---
 
 ## Execution flow
-1. Parse input file into `AsdlDocument` (AST validation included).
-2. Run MVP pipeline via `src/asdl/ir/pipeline.py`:
+1. Resolve the import graph for the entry file (parses files and builds ProgramDB/NameEnv).
+2. Run MVP pipeline via `src/asdl/ir/pipeline.py` on the entry document:
    - AST -> NFIR conversion.
    - NFIR -> IFIR pass manager (verify gates based on `--verify`).
 3. Emit backend netlist using `emit_netlist`.
 4. Write output file when no error diagnostics are present.
 
 ## Import resolution (when enabled)
-- Library roots include `ASDL_LIB_PATH` (PATH-style list, in order).
+- Logical import paths are resolved by searching:
+  1) CLI `--lib` roots (in CLI order)
+  2) `ASDL_LIB_PATH` roots (PATH-style list, in order)
+- Explicit relative paths (`./` or `../`) resolve against the importing file.
 
 ---
 
