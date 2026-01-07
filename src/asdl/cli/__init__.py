@@ -5,7 +5,6 @@ from typing import Iterable, List, Optional
 
 import click
 
-from asdl.ast import parse_file
 from asdl.diagnostics import Diagnostic, Severity, format_code, render_text
 
 NO_SPAN_NOTE = "No source span available."
@@ -92,6 +91,13 @@ def schema(output_dir: Optional[Path]) -> None:
     help="Backend name from the backend config.",
 )
 @click.option(
+    "--lib",
+    "lib_roots",
+    multiple=True,
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Library search root (repeatable).",
+)
+@click.option(
     "--top-as-subckt",
     is_flag=True,
     default=False,
@@ -102,20 +108,15 @@ def netlist(
     output_path: Optional[Path],
     verify: bool,
     backend: str,
+    lib_roots: tuple[Path, ...],
     top_as_subckt: bool,
 ) -> None:
     """Generate a netlist from ASDL.
 
     Supported placeholders: {name}, {ports} (optional). {params} is deprecated.
-    Library search path: ASDL_LIB_PATH (PATH-style list).
+    Library search path: repeatable --lib roots, then ASDL_LIB_PATH (PATH-style list).
     """
     diagnostics: List[Diagnostic] = []
-
-    document, parse_diags = parse_file(str(input_file))
-    diagnostics.extend(parse_diags)
-    if document is None:
-        _emit_diagnostics(diagnostics)
-        raise click.exceptions.Exit(1)
 
     try:
         from asdl.emit.netlist import emit_netlist, load_backend
@@ -130,7 +131,11 @@ def netlist(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    design, pipeline_diags = run_mvp_pipeline(document, verify=verify)
+    design, pipeline_diags = run_mvp_pipeline(
+        entry_file=input_file,
+        lib_roots=lib_roots,
+        verify=verify,
+    )
     diagnostics.extend(pipeline_diags)
     if design is None or _has_error_diagnostics(diagnostics):
         _emit_diagnostics(diagnostics)
