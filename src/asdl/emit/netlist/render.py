@@ -47,6 +47,16 @@ def _emit_design(
     if top_name is None:
         if len(module_ops) == 1:
             top_module = module_ops[0]
+            module_file_id = _module_file_id(top_module)
+            if entry_file_id is not None and module_file_id != entry_file_id:
+                diagnostics.append(
+                    _diagnostic(
+                        MISSING_TOP,
+                        "Top module is required when entry file has no local modules",
+                        Severity.ERROR,
+                    )
+                )
+                return None, diagnostics
             top_name = top_module.sym_name.data
         else:
             diagnostics.append(
