@@ -22,6 +22,7 @@ INVALID_INSTANCE_EXPR = format_code("IR", 1)
 INVALID_ENDPOINT_EXPR = format_code("IR", 2)
 UNRESOLVED_QUALIFIED = format_code("IR", 10)
 UNRESOLVED_UNQUALIFIED = format_code("IR", 11)
+UNUSED_IMPORT = format_code("LINT", 1)
 NO_SPAN_NOTE = "No source span available."
 
 
@@ -35,6 +36,7 @@ def convert_document(
     had_error = False
     modules: List[ModuleOp] = []
     devices: List[DeviceOp] = []
+    used_namespaces: Set[str] = set()
     local_symbols = _collect_local_symbols(document, name_env, program_db)
 
     if document.modules:
@@ -43,6 +45,7 @@ def convert_document(
                 name,
                 module,
                 local_symbols=local_symbols,
+                used_namespaces=used_namespaces,
                 name_env=name_env,
                 program_db=program_db,
             )
@@ -53,6 +56,9 @@ def convert_document(
     if document.devices:
         for name, device in document.devices.items():
             devices.append(_convert_device(name, device))
+
+    if name_env is not None:
+        diagnostics.extend(_unused_import_diagnostics(name_env, used_namespaces))
 
     design = DesignOp(
         region=modules + devices,
@@ -68,6 +74,7 @@ def _convert_module(
     module: ModuleDecl,
     *,
     local_symbols: Set[str],
+    used_namespaces: Set[str],
     name_env: Optional[NameEnv],
     program_db: Optional[ProgramDB],
 ) -> Tuple[ModuleOp, List[Diagnostic], bool]:
@@ -114,6 +121,9 @@ def _convert_module(
             ref_file_id = None
             resolved_qualified = False
             if ref is not None and "." in ref:
+                namespace, symbol = ref.split(".", 1)
+                if namespace and name_env is not None and namespace in name_env.bindings:
+                    used_namespaces.add(namespace)
                 if name_env is None or program_db is None:
                     diagnostics.append(
                         _diagnostic(
@@ -124,7 +134,6 @@ def _convert_module(
                     )
                     had_error = True
                     continue
-                namespace, symbol = ref.split(".", 1)
                 if not namespace or not symbol:
                     diagnostics.append(
                         _diagnostic(
@@ -267,12 +276,17 @@ def _loc_attr(loc: Optional[Locatable]) -> Optional[LocationAttr]:
     return FileLineColLoc(StringAttr(loc.file), IntAttr(loc.start_line), IntAttr(loc.start_col))
 
 
-def _diagnostic(code: str, message: str, loc: Optional[Locatable]) -> Diagnostic:
+def _diagnostic(
+    code: str,
+    message: str,
+    loc: Optional[Locatable],
+    severity: Severity = Severity.ERROR,
+) -> Diagnostic:
     span = loc.to_source_span() if loc is not None else None
     notes = None if span is not None else [NO_SPAN_NOTE]
     return Diagnostic(
         code=code,
-        severity=Severity.ERROR,
+        severity=severity,
         message=message,
         primary_span=span,
         notes=notes,
@@ -293,6 +307,23 @@ def _collect_local_symbols(
     if document.devices:
         symbols.update(document.devices.keys())
     return symbols
+
+
+def _unused_import_diagnostics(
+    name_env: NameEnv, used_namespaces: Set[str]
+) -> List[Diagnostic]:
+    diagnostics: List[Diagnostic] = []
+    unused = sorted(set(name_env.bindings.keys()) - used_namespaces)
+    for namespace in unused:
+        diagnostics.append(
+            _diagnostic(
+                UNUSED_IMPORT,
+                f"Unused import namespace '{namespace}'.",
+                None,
+                severity=Severity.WARNING,
+            )
+        )
+    return diagnostics
 
 
 __all__ = ["convert_document"]
