@@ -71,7 +71,7 @@ Architecture Decision Records capture durable decisions. Follow these rules:
 - The shared `workbench` branch is for periodic integration sync PRs to `main` after the user has reviewed the accumulated changes.
 - After a sync PR lands in `main`, update `workbench` to the new `main` head.
 - When extra isolation is needed, create short-lived feature branches off `main`, run the DoD there, and merge those branches into `main` through PRs.
-- When the user says "sync with main", follow this exact sequence: checkout `main`, pull `main`, checkout `workbench`, and if `workbench` has commits ahead of `main` then create a PR to `main` and merge it; if there are no commits ahead, skip PR creation. Afterward, checkout `main`, pull `main`, checkout `workbench`, then fast-forward `workbench` to the new `main` head.
+- When the user says "sync with main", follow this exact sequence: checkout `main`, pull `main` (always pull before any compare), checkout `workbench`, and if `workbench` has commits ahead of `main` then create a PR to `main` and merge it; if there are no commits ahead, skip PR creation. Afterward, checkout `main`, pull `main`, checkout `workbench`, then fast-forward `workbench` to the new `main` head.
 
 ---
 
@@ -152,8 +152,8 @@ Maintain these sections (keep them short):
 - `exploration_candidates`: optional list of strings
 
 `agents/context/tasks_state.yaml`
-- `schema_version: 1`
-- `statuses`: map of `T-00X` -> Backlog | Ready | In Progress | Blocked | In Review | Done
+- `schema_version: 2`
+- top-level map of `T-00X` -> `{status, pr, merged}` (status is one of the supported workflow states; `pr` is null or a non-negative integer PR number; `merged` is boolean)
 
 `agents/context/tasks_icebox.yaml`
 - `schema_version: 1`
@@ -187,7 +187,7 @@ ArchivedTask fields (required unless noted):
 Rules:
 - Status lives only in `agents/context/tasks_state.yaml`; do not add status fields elsewhere.
 - Only the Architect edits task cards/archives.
-- Architect, Reviewer, and Executor may edit `agents/context/tasks_state.yaml` for status changes only.
+- Architect, Reviewer, and Executor may edit `agents/context/tasks_state.yaml` for status/PR/merge fields only.
 
 ---
 

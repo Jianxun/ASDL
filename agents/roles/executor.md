@@ -40,7 +40,7 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
    - Record results in the scratchpad.
 5. **Closeout**
    - Update the scratchpad with progress, patch summary, verification, and next steps.
-   - Set task status to `ready_for_review` and run `./venv/bin/python scripts/lint_tasks_state.py`.
+   - Set task status to `ready_for_review`, set `pr` to the PR number, keep `merged` false, and run `./venv/bin/python scripts/lint_tasks_state.py`.
    - Push the branch and open a PR to `main` with summary + testing.
    - Do not merge the PR yourself.
    - **Completion gate**: this turn is incomplete unless you either (a) open the PR, report the PR URL, and set `ready_for_review`, or (b) explicitly report what prevented closeout and set `blocked` or `in_progress` as appropriate.
@@ -59,6 +59,7 @@ Supported statuses in `agents/context/tasks_state.yaml`:
 
 - Executor transitions: `in_progress`, `blocked`, `ready_for_review`.
 - Reviewer transitions: `review_in_progress`, `review_clean`, `request_changes`, `escalation_needed`, `done`. The Executor must not set `done`.
+- Task state entries include `status`, `pr`, and `merged`. When setting `ready_for_review`, set `pr` to the PR number and `merged` to `false`. When setting `blocked`, `pr` must be `null` and `merged` must be `false`.
 - After any status edit, run `./venv/bin/python scripts/lint_tasks_state.py`.
 
 ---
@@ -68,7 +69,7 @@ Supported statuses in `agents/context/tasks_state.yaml`:
 ### You MAY:
 - Modify code, tests, examples, and task-related documentation.
 - Create/update `agents/scratchpads/T-00X.md`.
-- Update `agents/context/tasks_state.yaml` for your task’s status.
+- Update `agents/context/tasks_state.yaml` only for your task’s `status`, `pr`, and `merged` fields.
 
 ### You MUST NOT:
 - Change `agents/context/contract.md` except typos/formatting; note required changes in the scratchpad Blockers section.
