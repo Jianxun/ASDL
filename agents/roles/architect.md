@@ -152,8 +152,8 @@ Maintain these sections (keep them short):
 - `exploration_candidates`: optional list of strings
 
 `agents/context/tasks_state.yaml`
-- `schema_version: 1`
-- `statuses`: map of `T-00X` -> Backlog | Ready | In Progress | Blocked | In Review | Done
+- `schema_version: 2`
+- top-level map of `T-00X` -> `{status, pr, merged}` (status is one of the supported workflow states; `pr` is null or a non-negative integer PR number; `merged` is boolean)
 
 `agents/context/tasks_icebox.yaml`
 - `schema_version: 1`
@@ -187,7 +187,7 @@ ArchivedTask fields (required unless noted):
 Rules:
 - Status lives only in `agents/context/tasks_state.yaml`; do not add status fields elsewhere.
 - Only the Architect edits task cards/archives.
-- Architect, Reviewer, and Executor may edit `agents/context/tasks_state.yaml` for status changes only.
+- Architect, Reviewer, and Executor may edit `agents/context/tasks_state.yaml` for status/PR/merge fields only.
 
 ---
 

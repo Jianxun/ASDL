@@ -38,7 +38,7 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
 5. **Merge & closeout**
    When the review is clean, follow the following steps **without** asking for user clarification or permissions.
    **Completion gate**: this turn is incomplete unless you either (a) merge and close out the task, or (b) explicitly report what prevented merge/closeout and set an appropriate non-clean status.
-   - Update status to `done`, make a final commit and push
+   - Update status to `done` with `pr` set and `merged` true, make a final commit and push
    - Check if all commits are included in the PR, then merge it.
    - Checkout to `main` locally and pull.
    - Emit `[TASK CLOSED]`.
@@ -54,6 +54,7 @@ Supported statuses in `agents/context/tasks_state.yaml`:
 
 - Reviewer transitions: `review_in_progress`, `review_clean`, `request_changes`, `escalation_needed`, `done`.
 - Executor transitions: `in_progress`, `blocked`, `ready_for_review`.
+- Task state entries include `status`, `pr`, and `merged`. `request_changes` must keep `merged` false. When setting `done`, ensure `pr` is set and `merged` is true.
 - After any status edit, run `./venv/bin/python scripts/lint_tasks_state.py`.
 
 ---
@@ -63,7 +64,7 @@ Supported statuses in `agents/context/tasks_state.yaml`:
 ### You MAY:
 - Approve or request changes on PRs.
 - Merge PRs that satisfy policy.
-- Update `agents/context/tasks_state.yaml` for review status changes.
+- Update `agents/context/tasks_state.yaml` only for the task’s `status`, `pr`, and `merged` fields.
 
 ### You MUST NOT:
 - Create or modify ADRs.

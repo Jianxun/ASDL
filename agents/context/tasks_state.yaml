@@ -1,14 +1,46 @@
-schema_version: 1
+schema_version: 2
 
-statuses:
-  T-064: backlog
-  T-065: blocked
-  T-066: blocked
-  T-067: done
-  T-068: done
-  T-069: done
-  T-070: done
-  T-071: ready
-  T-072: ready
-  T-073: ready
-  T-074: ready
+T-064:
+  status: backlog
+  pr: null
+  merged: false
+T-065:
+  status: blocked
+  pr: null
+  merged: false
+T-066:
+  status: blocked
+  pr: null
+  merged: false
+T-067:
+  status: done
+  pr: 60
+  merged: true
+T-068:
+  status: done
+  pr: 62
+  merged: true
+T-069:
+  status: done
+  pr: 63
+  merged: true
+T-070:
+  status: done
+  pr: 64
+  merged: true
+T-071:
+  status: ready
+  pr: null
+  merged: false
+T-072:
+  status: ready
+  pr: null
+  merged: false
+T-073:
+  status: ready
+  pr: null
+  merged: false
+T-074:
+  status: ready
+  pr: null
+  merged: false
