@@ -24,6 +24,7 @@ from .ir_utils import (
     _find_single_design,
     _resolve_top_name,
     _select_backend,
+    _select_symbol,
 )
 from .render import _ordered_conns
 from .templates import (
@@ -56,7 +57,23 @@ class VerifyNetlistPass(ModulePass):
         if design is None:
             return
 
-        modules, devices, module_ops = _collect_design_ops(design)
+        modules_by_name, devices_by_name, module_ops = _collect_design_ops(design)
+        module_index = {
+            (
+                op.sym_name.data,
+                op.file_id.data if op.file_id is not None else None,
+            ): op
+            for modules in modules_by_name.values()
+            for op in modules
+        }
+        device_index = {
+            (
+                op.sym_name.data,
+                op.file_id.data if op.file_id is not None else None,
+            ): op
+            for devices in devices_by_name.values()
+            for op in devices
+        }
         top_name = _resolve_top_name(design, module_ops, self.state.diagnostics)
         if top_name is None:
             return
@@ -71,11 +88,20 @@ class VerifyNetlistPass(ModulePass):
                 if not isinstance(op, InstanceOp):
                     continue
                 ref_name = op.ref.root_reference.data
-                if ref_name in modules:
-                    port_order = [attr.data for attr in modules[ref_name].port_order.data]
+                ref_file_id = (
+                    op.ref_file_id.data if op.ref_file_id is not None else None
+                )
+                module = _select_symbol(
+                    modules_by_name, module_index, ref_name, ref_file_id
+                )
+                if module is not None:
+                    port_order = [attr.data for attr in module.port_order.data]
                     _ordered_conns(op, port_order, self.state.diagnostics)
                     continue
-                if ref_name not in devices:
+                device = _select_symbol(
+                    devices_by_name, device_index, ref_name, ref_file_id
+                )
+                if device is None:
                     self.state.diagnostics.emit(
                         _diagnostic(
                             UNKNOWN_REFERENCE,
@@ -89,7 +115,6 @@ class VerifyNetlistPass(ModulePass):
                     )
                     continue
 
-                device = devices[ref_name]
                 backend = _select_backend(device, self.state.backend_name)
                 if backend is None:
                     self.state.diagnostics.emit(

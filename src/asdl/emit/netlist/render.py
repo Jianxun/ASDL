@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Tuple
 
 from asdl.diagnostics import Diagnostic, Severity
@@ -17,21 +19,45 @@ from .diagnostics import (
     _diagnostic,
     _emit_diagnostic,
 )
-from .ir_utils import _collect_design_ops, _select_backend
+from .ir_utils import _collect_design_ops, _select_backend, _select_symbol
 from .params import _dict_attr_to_strings, _merge_params
 from .templates import _template_field_roots, _validate_template
 
+
+@dataclass(frozen=True)
+class _SymbolMaps:
+    modules_by_name: Dict[str, List[ModuleOp]]
+    module_index: Dict[Tuple[str, Optional[str]], ModuleOp]
+    module_emitted_names: Dict[Tuple[str, Optional[str]], str]
+    devices_by_name: Dict[str, List[DeviceOp]]
+    device_index: Dict[Tuple[str, Optional[str]], DeviceOp]
 
 def _emit_design(
     design: "DesignOp", options: "EmitOptions"
 ) -> Tuple[Optional[str], List[Diagnostic]]:
     diagnostics: List[Diagnostic] = []
-    modules, devices, module_ops = _collect_design_ops(design)
+    modules_by_name, devices_by_name, module_ops = _collect_design_ops(design)
+    module_index = _build_module_index(modules_by_name)
+    device_index = _build_device_index(devices_by_name)
+    module_emitted_names = _build_module_emitted_names(module_ops, modules_by_name)
 
     top_name = design.top.data if design.top is not None else None
+    entry_file_id = _entry_file_id(design)
+    top_module: Optional[ModuleOp] = None
     if top_name is None:
         if len(module_ops) == 1:
-            top_name = module_ops[0].sym_name.data
+            top_module = module_ops[0]
+            module_file_id = _module_file_id(top_module)
+            if entry_file_id is not None and module_file_id != entry_file_id:
+                diagnostics.append(
+                    _diagnostic(
+                        MISSING_TOP,
+                        "Top module is required when entry file has no local modules",
+                        Severity.ERROR,
+                    )
+                )
+                return None, diagnostics
+            top_name = top_module.sym_name.data
         else:
             diagnostics.append(
                 _diagnostic(
@@ -41,7 +67,7 @@ def _emit_design(
                 )
             )
             return None, diagnostics
-    if top_name not in modules:
+    if top_name not in modules_by_name:
         diagnostics.append(
             _diagnostic(
                 MISSING_TOP,
@@ -50,11 +76,30 @@ def _emit_design(
             )
         )
         return None, diagnostics
+    if top_module is None:
+        top_module = _select_symbol(
+            modules_by_name, module_index, top_name, entry_file_id
+        )
+    if top_module is None:
+        diagnostics.append(
+            _diagnostic(
+                MISSING_TOP,
+                f"Top module '{top_name}' is not defined in entry file",
+                Severity.ERROR,
+            )
+        )
+        return None, diagnostics
 
     lines: List[str] = []
     had_error = False
 
-    header_context = {"backend": options.backend_name, "top": top_name}
+    top_emitted_name = _module_emitted_name(top_module, module_emitted_names)
+    header_context = {
+        "backend": options.backend_name,
+        "top": top_emitted_name,
+        "top_sym_name": top_name,
+        "file_id": _entry_file_id_value(entry_file_id, top_module),
+    }
     header, header_error = _render_system_device(
         "__netlist_header__",
         options.backend_config,
@@ -65,12 +110,18 @@ def _emit_design(
         lines.append(header)
     had_error = had_error or header_error
 
+    symbol_maps = _SymbolMaps(
+        modules_by_name=modules_by_name,
+        module_index=module_index,
+        module_emitted_names=module_emitted_names,
+        devices_by_name=devices_by_name,
+        device_index=device_index,
+    )
     for module in module_ops:
-        is_top = module.sym_name.data == top_name
+        is_top = module is top_module
         module_lines, module_error = _emit_module(
             module,
-            devices,
-            modules,
+            symbol_maps,
             is_top=is_top,
             options=options,
             diagnostics=diagnostics,
@@ -78,7 +129,12 @@ def _emit_design(
         lines.extend(module_lines)
         had_error = had_error or module_error
 
-    footer_context = {"backend": options.backend_name, "top": top_name}
+    footer_context = {
+        "backend": options.backend_name,
+        "top": top_emitted_name,
+        "top_sym_name": top_name,
+        "file_id": _entry_file_id_value(entry_file_id, top_module),
+    }
     footer, footer_error = _render_system_device(
         "__netlist_footer__",
         options.backend_config,
@@ -96,8 +152,7 @@ def _emit_design(
 
 def _emit_module(
     module: ModuleOp,
-    devices: Dict[str, DeviceOp],
-    modules: Dict[str, ModuleOp],
+    symbols: _SymbolMaps,
     *,
     is_top: bool,
     options: "EmitOptions",
@@ -108,8 +163,15 @@ def _emit_module(
 
     ports = [attr.data for attr in module.port_order.data]
 
+    module_name = _module_emitted_name(module, symbols.module_emitted_names)
+    module_file_id = _module_file_id(module) or ""
     if not (is_top and not options.top_as_subckt):
-        header_context = {"name": module.sym_name.data, "ports": " ".join(ports)}
+        header_context = {
+            "name": module_name,
+            "sym_name": module.sym_name.data,
+            "ports": " ".join(ports),
+            "file_id": module_file_id,
+        }
         header, header_error = _render_system_device(
             "__subckt_header__",
             options.backend_config,
@@ -125,8 +187,7 @@ def _emit_module(
             continue
         line, inst_error = _emit_instance(
             op,
-            devices,
-            modules,
+            symbols,
             options=options,
             diagnostics=diagnostics,
         )
@@ -135,7 +196,11 @@ def _emit_module(
         had_error = had_error or inst_error
 
     if not (is_top and not options.top_as_subckt):
-        footer_context = {"name": module.sym_name.data}
+        footer_context = {
+            "name": module_name,
+            "sym_name": module.sym_name.data,
+            "file_id": module_file_id,
+        }
         footer, footer_error = _render_system_device(
             "__subckt_footer__",
             options.backend_config,
@@ -151,23 +216,32 @@ def _emit_module(
 
 def _emit_instance(
     instance: InstanceOp,
-    devices: Dict[str, DeviceOp],
-    modules: Dict[str, ModuleOp],
+    symbols: _SymbolMaps,
     *,
     options: "EmitOptions",
     diagnostics: List[Diagnostic],
 ) -> Tuple[Optional[str], bool]:
     ref_name = instance.ref.root_reference.data
-    if ref_name in modules:
-        port_order = [attr.data for attr in modules[ref_name].port_order.data]
+    ref_file_id = _instance_ref_file_id(instance)
+    module = _select_symbol(
+        symbols.modules_by_name,
+        symbols.module_index,
+        ref_name,
+        ref_file_id,
+    )
+    if module is not None:
+        port_order = [attr.data for attr in module.port_order.data]
         conns, had_error = _ordered_conns(instance, port_order, diagnostics)
         if had_error:
             return None, True
 
+        ref_name = _module_emitted_name(module, symbols.module_emitted_names)
         call_context = {
             "name": instance.name_attr.data,
             "ports": " ".join(conns),
             "ref": ref_name,
+            "sym_name": module.sym_name.data,
+            "file_id": _module_file_id(module) or "",
         }
         return _render_system_device(
             "__subckt_call__",
@@ -176,7 +250,13 @@ def _emit_instance(
             diagnostics,
         )
 
-    if ref_name not in devices:
+    device = _select_symbol(
+        symbols.devices_by_name,
+        symbols.device_index,
+        ref_name,
+        ref_file_id,
+    )
+    if device is None:
         diagnostics.append(
             _diagnostic(
                 UNKNOWN_REFERENCE,
@@ -190,7 +270,6 @@ def _emit_instance(
         )
         return None, True
 
-    device = devices[ref_name]
     backend = _select_backend(device, options.backend_name)
     if backend is None:
         diagnostics.append(
@@ -269,6 +348,86 @@ def _emit_instance(
     if should_collapse:
         rendered = _collapse_whitespace(rendered)
     return rendered, False
+
+
+def _entry_file_id(design: "DesignOp") -> Optional[str]:
+    return design.entry_file_id.data if design.entry_file_id is not None else None
+
+
+def _entry_file_id_value(entry_file_id: Optional[str], top_module: ModuleOp) -> str:
+    if entry_file_id is not None:
+        return entry_file_id
+    module_file_id = _module_file_id(top_module)
+    return module_file_id or ""
+
+
+def _module_file_id(module: ModuleOp) -> Optional[str]:
+    return module.file_id.data if module.file_id is not None else None
+
+
+def _device_file_id(device: DeviceOp) -> Optional[str]:
+    return device.file_id.data if device.file_id is not None else None
+
+
+def _instance_ref_file_id(instance: InstanceOp) -> Optional[str]:
+    return instance.ref_file_id.data if instance.ref_file_id is not None else None
+
+
+def _module_key(module: ModuleOp) -> Tuple[str, Optional[str]]:
+    return module.sym_name.data, _module_file_id(module)
+
+
+def _device_key(device: DeviceOp) -> Tuple[str, Optional[str]]:
+    return device.sym_name.data, _device_file_id(device)
+
+
+def _build_module_index(
+    modules_by_name: Dict[str, List[ModuleOp]],
+) -> Dict[Tuple[str, Optional[str]], ModuleOp]:
+    module_index: Dict[Tuple[str, Optional[str]], ModuleOp] = {}
+    for modules in modules_by_name.values():
+        for module in modules:
+            module_index[_module_key(module)] = module
+    return module_index
+
+
+def _build_device_index(
+    devices_by_name: Dict[str, List[DeviceOp]],
+) -> Dict[Tuple[str, Optional[str]], DeviceOp]:
+    device_index: Dict[Tuple[str, Optional[str]], DeviceOp] = {}
+    for devices in devices_by_name.values():
+        for device in devices:
+            device_index[_device_key(device)] = device
+    return device_index
+
+
+def _hash_file_id(file_id: str) -> str:
+    return hashlib.sha1(file_id.encode("utf-8")).hexdigest()[:8]
+
+
+def _build_module_emitted_names(
+    module_ops: List[ModuleOp],
+    modules_by_name: Dict[str, List[ModuleOp]],
+) -> Dict[Tuple[str, Optional[str]], str]:
+    duplicate_names = {
+        name for name, modules in modules_by_name.items() if len(modules) > 1
+    }
+    emitted_names: Dict[Tuple[str, Optional[str]], str] = {}
+    for module in module_ops:
+        name = module.sym_name.data
+        file_id = _module_file_id(module)
+        if name in duplicate_names and file_id is not None:
+            emitted = f"{name}__{_hash_file_id(file_id)}"
+        else:
+            emitted = name
+        emitted_names[_module_key(module)] = emitted
+    return emitted_names
+
+
+def _module_emitted_name(
+    module: ModuleOp, emitted_names: Dict[Tuple[str, Optional[str]], str]
+) -> str:
+    return emitted_names.get(_module_key(module), module.sym_name.data)
 
 
 def _ordered_conns(

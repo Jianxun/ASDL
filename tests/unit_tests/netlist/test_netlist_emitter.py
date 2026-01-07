@@ -1,3 +1,4 @@
+import hashlib
 import pytest
 
 pytest.importorskip("xdsl")
@@ -5,6 +6,7 @@ pytest.importorskip("xdsl")
 from xdsl.dialects.builtin import DictionaryAttr, FileLineColLoc, IntAttr, StringAttr
 
 from asdl.diagnostics import Severity, format_code
+from asdl.emit.backend_config import BackendConfig, SystemDeviceTemplate
 from asdl.emit.netlist import emit_netlist
 from asdl.ir.ifir import (
     BackendOp,
@@ -25,6 +27,18 @@ def _dict_attr(values: dict[str, str]) -> DictionaryAttr:
 
 def _loc(line: int, col: int) -> FileLineColLoc:
     return FileLineColLoc(StringAttr("design.asdl"), IntAttr(line), IntAttr(col))
+
+
+def _backend_config(templates: dict[str, str]) -> BackendConfig:
+    return BackendConfig(
+        name="test.backend",
+        extension="",
+        comment_prefix="*",
+        templates={
+            name: SystemDeviceTemplate(template=template)
+            for name, template in templates.items()
+        },
+    )
 
 
 def test_emit_netlist_device_params_and_top_default() -> None:
@@ -120,6 +134,25 @@ def test_emit_netlist_requires_top_when_multiple_modules() -> None:
     module_a = ModuleOp(name="a", port_order=[], region=[])
     module_b = ModuleOp(name="b", port_order=[], region=[])
     design = DesignOp(region=[module_a, module_b])
+
+    netlist, diagnostics = emit_netlist(design)
+
+    assert netlist is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.ERROR
+    assert diagnostics[0].code == format_code("EMIT", 1)
+
+
+def test_emit_netlist_requires_top_when_entry_has_no_modules() -> None:
+    entry_file_id = "entry.asdl"
+    imported_file_id = "lib.asdl"
+    module = ModuleOp(
+        name="top",
+        port_order=[],
+        file_id=imported_file_id,
+        region=[],
+    )
+    design = DesignOp(region=[module], entry_file_id=entry_file_id)
 
     netlist, diagnostics = emit_netlist(design)
 
@@ -241,3 +274,123 @@ def test_emit_netlist_expands_patterns() -> None:
         ".ends top",
         ".end",
     ]
+
+
+def test_emit_netlist_exposes_file_id_placeholders() -> None:
+    backend_config = _backend_config(
+        {
+            "__subckt_header__": ".subckt {name} {ports} ; {sym_name} {file_id}",
+            "__subckt_footer__": ".ends {name}",
+            "__subckt_call__": "X{name} {ports} {ref} ; {sym_name} {file_id}",
+            "__netlist_header__": "HEADER {top} {top_sym_name} {file_id}",
+            "__netlist_footer__": "FOOTER {top} {top_sym_name} {file_id}",
+        }
+    )
+    entry_file_id = "entry.asdl"
+    imported_file_id = "lib.asdl"
+
+    child = ModuleOp(
+        name="child",
+        port_order=["A"],
+        file_id=imported_file_id,
+        region=[NetOp(name="A")],
+    )
+    instance = InstanceOp(
+        name="U1",
+        ref="child",
+        ref_file_id=imported_file_id,
+        conns=[ConnAttr(StringAttr("A"), StringAttr("A"))],
+    )
+    top = ModuleOp(
+        name="top",
+        port_order=["A"],
+        file_id=entry_file_id,
+        region=[NetOp(name="A"), instance],
+    )
+    design = DesignOp(
+        region=[top, child],
+        top="top",
+        entry_file_id=entry_file_id,
+    )
+
+    netlist, diagnostics = emit_netlist(
+        design,
+        backend_name="test.backend",
+        backend_config=backend_config,
+        top_as_subckt=True,
+    )
+
+    assert diagnostics == []
+    assert netlist == "\n".join(
+        [
+            "HEADER top top entry.asdl",
+            ".subckt top A ; top entry.asdl",
+            "XU1 A child ; child lib.asdl",
+            ".ends top",
+            ".subckt child A ; child lib.asdl",
+            ".ends child",
+            "FOOTER top top entry.asdl",
+        ]
+    )
+
+
+def test_emit_netlist_hashes_duplicate_module_names() -> None:
+    backend_config = _backend_config(
+        {
+            "__subckt_header__": ".subckt {name} {ports}",
+            "__subckt_footer__": ".ends {name}",
+            "__subckt_call__": "X{name} {ports} {ref}",
+            "__netlist_header__": "HEADER {top}",
+            "__netlist_footer__": "FOOTER {top}",
+        }
+    )
+    entry_file_id = "entry.asdl"
+    imported_file_id = "lib.asdl"
+    entry_hash = hashlib.sha1(entry_file_id.encode("utf-8")).hexdigest()[:8]
+    imported_hash = hashlib.sha1(imported_file_id.encode("utf-8")).hexdigest()[:8]
+    entry_name = f"amp__{entry_hash}"
+    imported_name = f"amp__{imported_hash}"
+
+    imported = ModuleOp(
+        name="amp",
+        port_order=["A"],
+        file_id=imported_file_id,
+        region=[NetOp(name="A")],
+    )
+    instance = InstanceOp(
+        name="U1",
+        ref="amp",
+        ref_file_id=imported_file_id,
+        conns=[ConnAttr(StringAttr("A"), StringAttr("A"))],
+    )
+    top = ModuleOp(
+        name="amp",
+        port_order=["A"],
+        file_id=entry_file_id,
+        region=[NetOp(name="A"), instance],
+    )
+    design = DesignOp(
+        region=[top, imported],
+        top="amp",
+        entry_file_id=entry_file_id,
+    )
+
+    netlist, diagnostics = emit_netlist(
+        design,
+        backend_name="test.backend",
+        backend_config=backend_config,
+        top_as_subckt=True,
+    )
+
+    assert diagnostics == []
+    assert netlist == "\n".join(
+        [
+            f"HEADER {entry_name}",
+            f".subckt {entry_name} A",
+            f"XU1 A {imported_name}",
+            f".ends {entry_name}",
+            f".subckt {imported_name} A",
+            f".ends {imported_name}",
+            f"FOOTER {entry_name}",
+        ]
+    )

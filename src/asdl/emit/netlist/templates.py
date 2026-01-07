@@ -28,11 +28,11 @@ SYSTEM_DEVICE_REQUIRED_PLACEHOLDERS: Dict[str, set[str]] = {
 }
 
 SYSTEM_DEVICE_ALLOWED_PLACEHOLDERS: Dict[str, set[str]] = {
-    "__subckt_header__": {"name", "ports"},
-    "__subckt_footer__": {"name"},
-    "__subckt_call__": {"name", "ports", "ref"},
-    "__netlist_header__": {"backend", "top"},
-    "__netlist_footer__": {"backend", "top"},
+    "__subckt_header__": {"name", "ports", "file_id", "sym_name"},
+    "__subckt_footer__": {"name", "sym_name"},
+    "__subckt_call__": {"name", "ports", "ref", "file_id", "sym_name"},
+    "__netlist_header__": {"backend", "top", "file_id", "top_sym_name"},
+    "__netlist_footer__": {"backend", "top", "file_id", "top_sym_name"},
 }
 
 
