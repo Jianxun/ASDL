@@ -37,8 +37,8 @@ T-072:
   pr: 69
   merged: true
 T-073:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 70
   merged: false
 T-074:
   status: ready
