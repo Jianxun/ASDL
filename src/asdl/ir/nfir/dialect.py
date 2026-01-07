@@ -201,6 +201,7 @@ class InstanceOp(IRDLOperation):
 
     name_attr = attr_def(StringAttr, attr_name="name")
     ref = attr_def(StringAttr)
+    ref_file_id = opt_attr_def(StringAttr)
     params = opt_attr_def(DictionaryAttr)
     doc = opt_attr_def(StringAttr)
     src = opt_attr_def(LocationAttr)
@@ -212,6 +213,7 @@ class InstanceOp(IRDLOperation):
         *,
         name: StringAttr | str,
         ref: StringAttr | str,
+        ref_file_id: StringAttr | str | None = None,
         params: DictionaryAttr | None = None,
         doc: StringAttr | str | None = None,
         src: LocationAttr | None = None,
@@ -220,12 +222,16 @@ class InstanceOp(IRDLOperation):
             name = StringAttr(name)
         if isinstance(ref, str):
             ref = StringAttr(ref)
+        if isinstance(ref_file_id, str):
+            ref_file_id = StringAttr(ref_file_id)
         if isinstance(doc, str):
             doc = StringAttr(doc)
         attributes = {
             "name": name,
             "ref": ref,
         }
+        if ref_file_id is not None:
+            attributes["ref_file_id"] = ref_file_id
         if params is not None:
             attributes["params"] = params
         if doc is not None:
