@@ -33,9 +33,9 @@ T-071:
   pr: 66
   merged: true
 T-072:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 69
+  merged: true
 T-073:
   status: ready
   pr: null

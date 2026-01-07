@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from xdsl.dialects.builtin import DictionaryAttr, FileLineColLoc, IntAttr, LocationAttr, StringAttr
 
 from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
 from asdl.ast.location import Locatable
 from asdl.diagnostics import Diagnostic, Severity, format_code
+from asdl.imports import NameEnv, ProgramDB
 from asdl.ir.nfir import (
     BackendOp,
     DesignOp,
@@ -19,18 +20,29 @@ from asdl.ir.nfir import (
 
 INVALID_INSTANCE_EXPR = format_code("IR", 1)
 INVALID_ENDPOINT_EXPR = format_code("IR", 2)
+UNRESOLVED_UNQUALIFIED = format_code("IR", 11)
 NO_SPAN_NOTE = "No source span available."
 
 
-def convert_document(document: AsdlDocument) -> Tuple[Optional[DesignOp], List[Diagnostic]]:
+def convert_document(
+    document: AsdlDocument,
+    *,
+    name_env: Optional[NameEnv] = None,
+    program_db: Optional[ProgramDB] = None,
+) -> Tuple[Optional[DesignOp], List[Diagnostic]]:
     diagnostics: List[Diagnostic] = []
     had_error = False
     modules: List[ModuleOp] = []
     devices: List[DeviceOp] = []
+    local_symbols = _collect_local_symbols(document, name_env, program_db)
 
     if document.modules:
         for name, module in document.modules.items():
-            module_op, module_diags, module_error = _convert_module(name, module)
+            module_op, module_diags, module_error = _convert_module(
+                name,
+                module,
+                local_symbols=local_symbols,
+            )
             diagnostics.extend(module_diags)
             had_error = had_error or module_error
             modules.append(module_op)
@@ -49,7 +61,7 @@ def convert_document(document: AsdlDocument) -> Tuple[Optional[DesignOp], List[D
 
 
 def _convert_module(
-    name: str, module: ModuleDecl
+    name: str, module: ModuleDecl, *, local_symbols: Set[str]
 ) -> Tuple[ModuleOp, List[Diagnostic], bool]:
     diagnostics: List[Diagnostic] = []
     had_error = False
@@ -85,6 +97,16 @@ def _convert_module(
                     _diagnostic(
                         INVALID_INSTANCE_EXPR,
                         f"{instance_error} in module '{name}'",
+                        module._loc,
+                    )
+                )
+                had_error = True
+                continue
+            if ref is not None and "." not in ref and ref not in local_symbols:
+                diagnostics.append(
+                    _diagnostic(
+                        UNRESOLVED_UNQUALIFIED,
+                        f"Unresolved symbol '{ref}' in module '{name}'",
                         module._loc,
                     )
                 )
@@ -201,6 +223,21 @@ def _diagnostic(code: str, message: str, loc: Optional[Locatable]) -> Diagnostic
         notes=notes,
         source="ir",
     )
+
+
+def _collect_local_symbols(
+    document: AsdlDocument,
+    name_env: Optional[NameEnv],
+    program_db: Optional[ProgramDB],
+) -> Set[str]:
+    if name_env is not None and program_db is not None:
+        return set(program_db.symbols.get(name_env.file_id, {}).keys())
+    symbols: Set[str] = set()
+    if document.modules:
+        symbols.update(document.modules.keys())
+    if document.devices:
+        symbols.update(document.devices.keys())
+    return symbols
 
 
 __all__ = ["convert_document"]
