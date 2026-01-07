@@ -16,12 +16,25 @@
 2. Emit `IR-011` for missing locals and ensure diagnostics include spans.
 3. Add focused IR tests and run the verify command.
 
+## Todo
+- [x] Add IR tests for local resolution and missing-symbol diagnostics.
+- [x] Enforce local-only unqualified resolution in AST->NFIR conversion.
+- [x] Run `pytest tests/unit_tests/ir -v`.
+
 ## Progress log
-- Not started yet.
+- Added IR tests for local-only resolution and missing-symbol diagnostics.
+- Implemented local symbol checks with `IR-011` emission in AST->NFIR converter.
+- Verified with `pytest tests/unit_tests/ir -v`.
+
+## Patch summary
+- Added unqualified-resolution coverage for local symbols and missing imports.
+- Added `NameEnv.resolve_local` and local symbol checks in AST->NFIR conversion.
+
+## Verification
+- `pytest tests/unit_tests/ir -v`
 
 ## Status request
 - None.
 
 ## Blockers / Questions
 - None.
-
