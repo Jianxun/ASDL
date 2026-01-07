@@ -25,6 +25,7 @@
 - Added IR tests for local-only resolution and missing-symbol diagnostics.
 - Implemented local symbol checks with `IR-011` emission in AST->NFIR converter.
 - Verified with `pytest tests/unit_tests/ir -v`.
+- Opened PR #69 for review.
 
 ## Patch summary
 - Added unqualified-resolution coverage for local symbols and missing imports.
@@ -34,7 +35,10 @@
 - `pytest tests/unit_tests/ir -v`
 
 ## Status request
-- None.
+- Ready for review.
 
 ## Blockers / Questions
 - None.
+
+## Next steps
+- Await review feedback on PR #69.
