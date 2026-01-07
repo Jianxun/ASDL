@@ -1,0 +1,28 @@
+# T-075 Simplify import path resolution roots
+
+## Task summary
+- **DoD**: Update import resolution so logical paths search only CLI `--lib` roots (in order) followed by `ASDL_LIB_PATH` entries. Preserve explicit relative and absolute path handling plus env expansion. Remove project root / include-root lookups from the resolution path, and adjust ambiguity ordering to reflect the new root order. Update unit tests to match the simplified resolution behavior, including a precedence test for CLI `--lib` roots over `ASDL_LIB_PATH`.
+- **Verify**: `pytest tests/unit_tests/parser -v`
+
+## Read
+- `agents/context/lessons.md`
+- `agents/context/contract.md`
+- `agents/context/tasks.yaml`
+- `agents/context/tasks_state.yaml`
+- `agents/context/project_status.md`
+- `docs/specs/spec_asdl_import.md`
+- `src/asdl/imports/resolver.py`
+- `tests/unit_tests/parser/test_import_resolution.py`
+
+## Plan
+1. Update resolution tests to remove project/include roots and add `--lib` precedence coverage.
+2. Simplify resolver logic to only consider `lib_roots` + `ASDL_LIB_PATH` for logical paths.
+3. Run parser unit tests.
+
+## Todo
+- [ ] Update import resolution tests for new root order.
+- [ ] Simplify resolver logic and ambiguity ordering.
+- [ ] Run parser unit tests.
+
+## Blockers / Questions
+- None.
