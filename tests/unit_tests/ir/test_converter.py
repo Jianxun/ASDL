@@ -186,9 +186,14 @@ def test_convert_document_unqualified_missing_symbol_emits_error(
     design, diagnostics = convert_document(entry_doc, name_env=name_env, program_db=program_db)
 
     assert design is None
-    assert len(diagnostics) == 1
-    assert diagnostics[0].code == "IR-011"
-    assert diagnostics[0].severity is Severity.ERROR
+    assert len(diagnostics) == 2
+    assert {diag.code for diag in diagnostics} == {"IR-011", "LINT-001"}
+    assert any(
+        diag.code == "IR-011" and diag.severity is Severity.ERROR for diag in diagnostics
+    )
+    assert any(
+        diag.code == "LINT-001" and diag.severity is Severity.WARNING for diag in diagnostics
+    )
 
 
 def test_convert_document_resolves_qualified_symbol(tmp_path: Path) -> None:
