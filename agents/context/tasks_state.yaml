@@ -5,9 +5,9 @@ T-064:
   pr: null
   merged: false
 T-065:
-  status: ready_for_review
+  status: done
   pr: 72
-  merged: false
+  merged: true
 T-066:
   status: ready
   pr: null
