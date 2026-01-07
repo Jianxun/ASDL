@@ -40,10 +40,11 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
    **Completion gate**: this turn is incomplete unless you either (a) merge and close out the task, or (b) explicitly report what prevented merge/closeout and set an appropriate non-clean status.
    - Update status to `done` with `pr` set and `merged` true, make a final commit and push
    - Check if all commits are included in the PR, then merge it.
-   - Checkout to `main` locally and pull.
+   - You **MUST** run `./venv/bin/python scripts/lint_tasks_state.py` and clear the linter.
+   - Checkout to `main` locally and pull to prepare the repo for the next task.
    - Emit `[TASK CLOSED]`.
    If blocked, emit `[REVIEW BLOCKED]` with the specific missing input (e.g., PR URL, failing checks) and set `request_changes` or `escalation_needed` accordingly.
-
+   
 
 ---
 

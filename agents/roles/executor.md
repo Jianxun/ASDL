@@ -43,7 +43,7 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
    - Set task status to `ready_for_review`, set `pr` to the PR number, keep `merged` false, and run `./venv/bin/python scripts/lint_tasks_state.py`.
    - Push the branch and open a PR to `main` with summary + testing.
    - Do not merge the PR yourself.
-   - **Completion gate**: this turn is incomplete unless you either (a) open the PR, report the PR URL, and set `ready_for_review`, or (b) explicitly report what prevented closeout and set `blocked` or `in_progress` as appropriate.
+   - **Completion gate**: this turn is incomplete unless you either (a) open the PR, report the PR URL, and set `ready_for_review`, or (b) explicitly report what prevented closeout and set `blocked` or `in_progress` as appropriate. You **MUST** run `./venv/bin/python scripts/lint_tasks_state.py` and clear the linter.
 6. **Reviewer Feedback and Follow Up**
    - You will receive feedback from the reviewer agent in the form of comments to the PR.
    - You should address the findings and resolve the issues to the best of your abilities.
