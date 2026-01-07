@@ -186,9 +186,14 @@ def test_convert_document_unqualified_missing_symbol_emits_error(
     design, diagnostics = convert_document(entry_doc, name_env=name_env, program_db=program_db)
 
     assert design is None
-    assert len(diagnostics) == 1
-    assert diagnostics[0].code == "IR-011"
-    assert diagnostics[0].severity is Severity.ERROR
+    assert len(diagnostics) == 2
+    assert {diag.code for diag in diagnostics} == {"IR-011", "LINT-001"}
+    assert any(
+        diag.code == "IR-011" and diag.severity is Severity.ERROR for diag in diagnostics
+    )
+    assert any(
+        diag.code == "LINT-001" and diag.severity is Severity.WARNING for diag in diagnostics
+    )
 
 
 def test_convert_document_resolves_qualified_symbol(tmp_path: Path) -> None:
@@ -247,3 +252,60 @@ def test_convert_document_unresolved_qualified_symbol_emits_error(
     assert len(diagnostics) == 1
     assert diagnostics[0].code == "IR-010"
     assert diagnostics[0].severity is Severity.ERROR
+
+
+def test_convert_document_used_import_namespace_no_warning(tmp_path: Path) -> None:
+    entry_file = tmp_path / "entry.asdl"
+    dep_file = tmp_path / "dep.asdl"
+    entry_doc = AsdlDocument(
+        imports={"lib": "dep.asdl"},
+        modules={"top": ModuleDecl(instances={"M1": "lib.res"})},
+    )
+    dep_doc = AsdlDocument(
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        }
+    )
+
+    program_db, diagnostics = ProgramDB.build({entry_file: entry_doc, dep_file: dep_doc})
+    assert diagnostics == []
+
+    name_env = NameEnv(file_id=entry_file, bindings={"lib": dep_file})
+    design, diagnostics = convert_document(entry_doc, name_env=name_env, program_db=program_db)
+
+    assert design is not None
+    assert diagnostics == []
+
+
+def test_convert_document_unused_import_emits_warning(tmp_path: Path) -> None:
+    entry_file = tmp_path / "entry.asdl"
+    dep_file = tmp_path / "dep.asdl"
+    entry_doc = AsdlDocument(
+        imports={"lib": "dep.asdl"},
+        modules={"top": ModuleDecl(instances={"M1": "res"})},
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+    dep_doc = AsdlDocument(
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        }
+    )
+
+    program_db, diagnostics = ProgramDB.build({entry_file: entry_doc, dep_file: dep_doc})
+    assert diagnostics == []
+
+    name_env = NameEnv(file_id=entry_file, bindings={"lib": dep_file})
+    design, diagnostics = convert_document(entry_doc, name_env=name_env, program_db=program_db)
+
+    assert design is not None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "LINT-001"
+    assert diagnostics[0].severity is Severity.WARNING

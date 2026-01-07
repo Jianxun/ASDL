@@ -17,11 +17,23 @@
 3. Add IR tests for used/unused cases and run the verify command.
 
 ## Progress log
-- Not started yet.
+- Added IR tests for used/unused import namespaces.
+- Implemented LINT-001 warnings for unused namespaces during AST->NFIR conversion.
+- Adjusted error-path test expectations to allow lint warnings.
+- Verified `pytest tests/unit_tests/ir -v`.
+
+## Patch summary
+- `src/asdl/ir/converters/ast_to_nfir.py`: track qualified namespace usage and emit LINT-001 warnings.
+- `tests/unit_tests/ir/test_converter.py`: add used/unused namespace coverage and accept lint warnings on error cases.
+
+## Verification
+- `./venv/bin/pytest tests/unit_tests/ir -v`
 
 ## Status request
-- None.
+- Ready for review.
+
+## Next steps
+- Open PR and hand off to Reviewer.
 
 ## Blockers / Questions
 - None.
-
