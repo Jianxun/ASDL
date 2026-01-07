@@ -55,8 +55,6 @@ def resolve_import_path(
         return None, diagnostics
 
     importer_dir = Path(importing_file).absolute().parent
-    root = _normalize_root(project_root) if project_root is not None else importer_dir
-    include_paths = _normalize_roots(include_roots)
     lib_paths = _normalize_roots(lib_roots)
     env_paths = _env_lib_roots()
 
@@ -70,10 +68,8 @@ def resolve_import_path(
     seen: set[Path] = set()
     for candidate in _iter_logical_candidates(
         expanded,
-        root,
-        include_paths,
-        env_paths,
         lib_paths,
+        env_paths,
     ):
         if not candidate.is_file():
             continue
@@ -200,12 +196,10 @@ def _resolve_candidate(
 
 def _iter_logical_candidates(
     logical_path: str,
-    project_root: Path,
-    include_roots: Iterable[Path],
-    env_roots: Iterable[Path],
     lib_roots: Iterable[Path],
+    env_roots: Iterable[Path],
 ) -> Iterable[Path]:
-    for root in (project_root, *include_roots, *env_roots, *lib_roots):
+    for root in (*lib_roots, *env_roots):
         yield root / logical_path
 
 
