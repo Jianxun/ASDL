@@ -143,6 +143,25 @@ def test_emit_netlist_requires_top_when_multiple_modules() -> None:
     assert diagnostics[0].code == format_code("EMIT", 1)
 
 
+def test_emit_netlist_requires_top_when_entry_has_no_modules() -> None:
+    entry_file_id = "entry.asdl"
+    imported_file_id = "lib.asdl"
+    module = ModuleOp(
+        name="top",
+        port_order=[],
+        file_id=imported_file_id,
+        region=[],
+    )
+    design = DesignOp(region=[module], entry_file_id=entry_file_id)
+
+    netlist, diagnostics = emit_netlist(design)
+
+    assert netlist is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.ERROR
+    assert diagnostics[0].code == format_code("EMIT", 1)
+
+
 def test_emit_netlist_allows_instruction_template() -> None:
     backend = BackendOp(
         name=BACKEND_NAME,
