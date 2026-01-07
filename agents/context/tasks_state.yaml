@@ -45,9 +45,9 @@ T-074:
   pr: 71
   merged: true
 T-075:
-  status: ready_for_review
+  status: done
   pr: 76
-  merged: false
+  merged: true
 T-076:
   status: ready
   pr: null
