@@ -9,9 +9,9 @@ T-065:
   pr: 72
   merged: true
 T-066:
-  status: ready_for_review
+  status: done
   pr: 73
-  merged: false
+  merged: true
 T-067:
   status: done
   pr: 60
