@@ -1,0 +1,18 @@
+imports:
+  gf: ./gf180mcu.asdl
+modules:
+  ota_5t:
+    instances:
+      MP<P|N>: gf.pfet_03v3 m=3
+      MN_IN<P|N>: gf.nfet_03v3 m=1
+      MN_TAIL: gf.nfet_03v3 m=2
+      MN_DIO: gf.nfet_03v3 m=1
+
+    nets:
+      $IN<P|N>: [MN_IN<P|N>.G]
+      $OUT: [MN_IN<N>.D, MP_IN<N>.D]
+      D: [MN_IN<P>.D, MP<P>.D, MP<P>.G]
+      TAIL: [MN_TAIL.D, MN_IN<P|N>.S]
+
+      $VSS: [MN_TAIL.S, MN_DIO.S]
+      $VDD: [MP<P|N>.S]
