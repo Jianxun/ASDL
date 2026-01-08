@@ -38,6 +38,9 @@
 - src/asdl/patterns.py: add pattern expansion engine with diagnostics and size checks.
 - tests/unit_tests/parser/test_pattern_expansion.py: add expansion and diagnostics tests.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/47
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/parser -v` (passed)
 

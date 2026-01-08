@@ -41,6 +41,9 @@
 - `src/asdl/emit/ngspice.py`: enforce required placeholders, catch malformed templates, and guard reserved props.
 - `tests/unit_tests/netlist/test_ngspice_emitter.py`: add template validation and prop collision coverage.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/29
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/netlist`
 

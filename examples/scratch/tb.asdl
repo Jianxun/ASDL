@@ -1,0 +1,16 @@
+top: tb
+
+imports:
+  dut: ./current_mirror_array.asdl
+  gf: ./gf180mcu.asdl
+
+modules:
+  tb:
+    instances:
+      dut: dut.current_mirror_array
+      spice_model: gf.gf180mcu_models
+      #MN1: gf.nfet_3p3 L=0.2u W=5u NF=2 m=1
+    nets:
+      VSS: [dut.VSS]
+      IREF: [dut.IREF2]
+      IOUT<P|N>: [dut.IOUT<P|N>]

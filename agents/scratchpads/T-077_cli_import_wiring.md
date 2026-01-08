@@ -34,6 +34,9 @@
 - Added CLI tests for import resolution via `--lib` and env fallback.
 - Added `--lib` option to the netlist command and switched to entry-file pipeline invocation.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/78
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/cli -v`
 

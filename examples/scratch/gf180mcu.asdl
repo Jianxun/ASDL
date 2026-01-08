@@ -1,0 +1,34 @@
+devices:
+  nfet_3p3:
+    ports: [D, G, S, B]
+    params:
+      L: 0.2u
+      W: 5u
+      NF: 1
+      m: 1
+    backends:
+      sim.ngspice:
+        model: nfet_03v3
+        template: 'X_{name} {ports} {model} L={L} W={W} NF={NF} m={m} ad=1'
+      sim.spectre:
+        model: nmos_3p3
+        template: '{name} ({ports}) {model} L={L} W={W} NF={NF} m={m}'
+      lvs.klayout:
+        model: nfet_03v3
+        template: 'M_{name} {ports} {model} L={L} W={W} NF={NF} m={m}'
+      
+  gf180mcu_models:
+    backends:
+      sim.ngspice:
+        template: |- 
+          * GF180MCU Model Card:
+          .include $PDK_MODEL_PATH/design.ngspice
+          .lib $PDK_MODEL_PATH/sm141064.ngspice typical
+      sim.spectre:
+        template: |-
+          // GF180MCU Model Card:
+          include $PDK_MODEL_PATH/design.ngspice
+          lib $PDK_MODEL_PATH/sm141064.ngspice typical    
+      lvs.klayout:
+        template: ""
+      

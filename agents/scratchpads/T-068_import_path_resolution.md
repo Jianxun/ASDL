@@ -37,6 +37,9 @@
 - Implemented import path diagnostics in `src/asdl/imports/diagnostics.py`.
 - Implemented path resolution logic in `src/asdl/imports/resolver.py`.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/62
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/parser/test_import_resolution.py -v`
 - `./venv/bin/pytest tests/unit_tests/parser -v`

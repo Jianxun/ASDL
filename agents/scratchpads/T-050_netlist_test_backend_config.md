@@ -30,6 +30,9 @@
 - `tests/unit_tests/cli/test_netlist.py`: write temp backend config + set `ASDL_BACKEND_CONFIG` fixture for CLI tests.
 - `tests/unit_tests/e2e/test_pipeline_mvp.py`: add temp backend config fixture to make e2e netlist emission deterministic.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/45
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/cli -v`
 - `venv/bin/pytest tests/unit_tests/e2e -v`

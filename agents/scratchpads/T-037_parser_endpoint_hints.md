@@ -25,6 +25,9 @@
 - `src/asdl/ast/parser.py`: add endpoint/instance hint notes and tidy endpoint validation message.
 - `tests/unit_tests/parser/test_parser.py`: add hint assertions for endpoint list and instance expression diagnostics.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/33
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/parser` (pass)
 

@@ -36,6 +36,9 @@
 - agents/context/tasks.md: mark T-041 in progress.
 - agents/scratchpads/T-041_device_ports_optional.md: update logs.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/34
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ast` (pass)
 - `venv/bin/pytest tests/unit_tests/ir` (pass)

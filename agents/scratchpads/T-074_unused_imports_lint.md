@@ -26,6 +26,9 @@
 - `src/asdl/ir/converters/ast_to_nfir.py`: track qualified namespace usage and emit LINT-001 warnings.
 - `tests/unit_tests/ir/test_converter.py`: add used/unused namespace coverage and accept lint warnings on error cases.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/71
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/ir -v`
 

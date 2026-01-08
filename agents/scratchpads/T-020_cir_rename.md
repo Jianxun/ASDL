@@ -43,6 +43,9 @@
 - `agents/context/codebase_map.md`: reflect `src/asdl/ir` and remove deleted `syntax-highlighter`.
 - `src/asdl/__init__.py`: update active refactor surface note.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/24
+
 ## Verification
 - `./venv/bin/python -m pytest tests/unit_tests/ir` (passed).
 

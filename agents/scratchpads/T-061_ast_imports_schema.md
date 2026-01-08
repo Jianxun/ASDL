@@ -25,6 +25,9 @@
 ## Patch summary
 - TBD.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/52
+
 ## Verification
 - TBD.
 

@@ -34,6 +34,9 @@
 - Added import-aware lowering and error gating in `run_mvp_pipeline`.
 - Added e2e import-graph coverage for success and missing-import failure.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/77
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/e2e -v`
 

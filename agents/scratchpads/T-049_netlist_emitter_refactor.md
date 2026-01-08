@@ -39,6 +39,9 @@
 - `src/asdl/emit/netlist/render.py`: preserve line breaks when collapsing whitespace for empty ports/params.
 - `tests/unit_tests/netlist/test_netlist_emitter.py`: ignore header comment lines for top-as-subckt assertion.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/41
+
 ## Verification
 - `venv/bin/python -m py_compile src/asdl/emit/netlist/*.py`
 - `venv/bin/pytest tests/unit_tests/emit -v`

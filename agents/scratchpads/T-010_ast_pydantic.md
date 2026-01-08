@@ -31,6 +31,9 @@
 - `src/asdl/ast/__init__.py`: public exports and `model_json_schema` helper.
 - `tests/unit_tests/ast/test_ast_models.py`: validation edge-case coverage for AST requirements.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/18
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ast` (pass)
 

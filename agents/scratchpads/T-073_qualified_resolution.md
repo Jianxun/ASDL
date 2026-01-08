@@ -28,6 +28,9 @@
 - Added qualified-symbol resolution coverage in IR converter tests.
 - Added optional `ref_file_id` on NFIR instances and resolved `ns.symbol` via imports.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/70
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/ir -v`
 

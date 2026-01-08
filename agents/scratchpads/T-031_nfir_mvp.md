@@ -55,6 +55,9 @@
 - `src/asdl/ir/converters/ast_to_nfir.py`: return diagnostics on invalid tokens.
 - `tests/unit_tests/ir/test_converter.py`: expect diagnostics for invalid tokens.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/27
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir`
 - `venv/bin/pytest tests/unit_tests/parser`

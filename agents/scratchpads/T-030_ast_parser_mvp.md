@@ -35,6 +35,9 @@
 ## Patch summary
 - `src/asdl/ast/models.py`: replaced legacy AST classes with MVP-only models and validators.\n+- `src/asdl/ast/__init__.py`: updated exports for MVP AST types.\n+- `src/asdl/__init__.py`: aligned top-level exports with MVP AST types.\n+- `tests/unit_tests/parser/test_parser.py`: replaced legacy parser tests with MVP cases and new location checks.\n+- `tests/unit_tests/ast/test_models.py`: added MVP AST validation tests.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/26
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/parser`\n+- `venv/bin/pytest tests/unit_tests/ast`
 

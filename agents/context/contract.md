@@ -17,7 +17,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - `agents/context/tasks.yaml`: active task cards (current_sprint/backlog) without status fields; tasks may include optional `depends_on` lists of `T-00X`.
 - `agents/context/tasks_state.yaml`: per-task state map (`status`, `pr`, `merged`) for active tasks; `pr` is a non-negative integer PR number or null; edited by Architect, Reviewer, and Executor.
 - `agents/context/tasks_icebox.yaml`: deferred task cards (icebox).
-- `agents/context/tasks_archived.yaml`: archived done tasks; compact records with optional `completed_on`.
+- `agents/context/tasks_archived.yaml`: archived done tasks; one-line entries keyed by task id (suffix allowed for historical duplicates) with `completed_on`, `owner`, `scratchpad`, and `pr`.
 - `agents/context/tasks_archived.md`: legacy snapshot (read-only).
 - `agents/context/project_status.md`: project status, last verified status, next 1-3 steps, risks; updated by Architect.
 - `agents/context/codebase_map.md`: navigation reference; update when files move or new subsystems appear.

@@ -28,6 +28,9 @@
 - Parser now detects duplicate import namespaces and validates namespace/path types with AST-011/AST-013 diagnostics.
 - Documented top-level `imports` in `docs/specs/spec_ast.md`.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/60
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/ast tests/unit_tests/parser -v`
 

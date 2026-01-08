@@ -28,6 +28,9 @@ This allows templates to reference:
 - `{model}`, etc.: backend props (existing)
 - `{params}`: formatted param string (backward compat)
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/38
+
 ## Verification
 - Tested with user's `examples/scratch/test.asdl` - successfully generated correct netlist with individual param substitution
 - All existing unit tests pass: `pytest tests/unit_tests/netlist tests/unit_tests/ir tests/unit_tests/cli tests/unit_tests/e2e`
