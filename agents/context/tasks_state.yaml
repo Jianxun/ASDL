@@ -4,55 +4,11 @@ T-064:
   status: backlog
   pr: null
   merged: false
-T-065:
-  status: done
-  pr: 72
-  merged: true
-T-066:
-  status: done
-  pr: 73
-  merged: true
-T-067:
-  status: done
-  pr: 60
-  merged: true
-T-068:
-  status: done
-  pr: 62
-  merged: true
-T-069:
-  status: done
-  pr: 63
-  merged: true
-T-070:
-  status: done
-  pr: 64
-  merged: true
-T-071:
-  status: done
-  pr: 66
-  merged: true
-T-072:
-  status: done
-  pr: 69
-  merged: true
-T-073:
-  status: done
-  pr: 70
-  merged: true
-T-074:
-  status: done
-  pr: 71
-  merged: true
-T-075:
-  status: done
-  pr: 76
-  merged: true
-T-076:
-  status: done
-  pr: 77
-  merged: true
-T-077:
-  status: done
-  pr: 78
-  merged: true
+T-078:
+  status: ready
+  pr: null
+  merged: false
+T-079:
+  status: ready
+  pr: null
+  merged: false

@@ -37,6 +37,9 @@
 - `agents/context/tasks.md`: mark T-034 Done.
 - `agents/context/handoff.md`: record pipeline completion and verification.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/30
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir` (pass)
 - `venv/bin/pytest tests/unit_tests/e2e` (pass)

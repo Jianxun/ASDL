@@ -35,6 +35,9 @@
 - `src/asdl/__init__.py`: re-export parser and location helpers at top level.
 - `tests/unit_tests/parser/test_parser.py`: coverage for parsing success, root errors, and location mapping.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/20
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/parser`
 

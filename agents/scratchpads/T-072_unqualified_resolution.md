@@ -31,6 +31,9 @@
 - Added unqualified-resolution coverage for local symbols and missing imports.
 - Added `NameEnv.resolve_local` and local symbol checks in AST->NFIR conversion.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/69
+
 ## Verification
 - `pytest tests/unit_tests/ir -v`
 

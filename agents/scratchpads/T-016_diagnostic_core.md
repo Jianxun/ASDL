@@ -37,6 +37,9 @@
 - `agents/context/tasks.md`: updated T-016 status and PR link.
 - `docs/specs/spec_diagnostics.md`: clarified missing-span behavior and text rendering.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/19
+
 ## Verification
 - `venv/bin/python -m pytest tests/unit_tests/diagnostics`
 

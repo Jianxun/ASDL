@@ -26,6 +26,9 @@
 - Added `AST-012` diagnostics helper in `src/asdl/imports/diagnostics.py`.
 - Added import graph resolver with cycle detection in `src/asdl/imports/resolver.py`.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/64
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/parser/test_import_resolution.py -v`
 - `./venv/bin/pytest tests/unit_tests/parser -v`

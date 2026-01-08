@@ -29,6 +29,9 @@
 - Updated logical-path resolution to collect all matches and fail on ambiguity.
 - Adjusted import-resolution tests for project-root selection and ambiguity ordering.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/63
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/parser -v`
 

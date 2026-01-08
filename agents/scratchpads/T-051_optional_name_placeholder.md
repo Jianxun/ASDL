@@ -35,6 +35,9 @@
 - `src/asdl/emit/netlist/templates.py`: allow device templates without required placeholders.
 - `tests/unit_tests/netlist/test_netlist_emitter.py`: replace missing-placeholder test with instruction-template allowance.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/42
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/emit -v` (passed)
 - `venv/bin/pytest tests/unit_tests/netlist -v` (passed)

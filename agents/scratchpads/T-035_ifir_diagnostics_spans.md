@@ -91,6 +91,9 @@ ngspice emitter (`src/asdl/emit/ngspice.py`):
 - `tests/unit_tests/ir/test_ifir_converter.py`: add span assertions for converter errors.
 - `tests/unit_tests/netlist/test_ngspice_emitter.py`: add span assertions for emitter diagnostics.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/35
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir tests/unit_tests/netlist`
   - Result: 28 passed.

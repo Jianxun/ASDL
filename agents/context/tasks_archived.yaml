@@ -1,109 +1,31 @@
 schema_version: 1
 
 archive:
-  - id: T-054
-    title: Imports spec
-    owner: Architect
-    completed_on: 2026-01-06
-    dod: >
-      Define multi-file import/dependency spec (syntax, resolution rules,
-      cycles, diagnostics). Capture proposed schema and pass boundaries in
-      `docs/specs/` plus a migration note for MVP pipeline.
-    verify: []
-    links:
-      scratchpad: agents/scratchpads/T-054_imports_spec.md
-  - id: T-055
-    title: Specs reconciliation
-    owner: Architect
-    completed_on: 2026-01-06
-    dod: >
-      Reconcile `docs/specs/` with the MVP pipeline (AST -> NFIR -> IFIR ->
-      emit), deprecate CIR/NLIR or merge into IFIR in spec docs, and update
-      `spec_compiler_stack.md` accordingly.
-    verify: []
-    links:
-      scratchpad: agents/scratchpads/T-055_specs_reconciliation.md
-  - id: T-048
-    title: Unified netlist emitter
-    owner: Architect
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-048_unified_netlist_emitter.md
-  - id: T-049
-    title: Netlist emitter refactor
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-049_netlist_emitter_refactor.md
-      pr: https://github.com/Jianxun/ASDL/pull/41
-  - id: T-047
-    title: System devices
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-047_system_devices.md
-      adr: agents/adr/ADR-0006-system-devices.md
-      spec: docs/specs_mvp/spec_netlist_emission_mvp.md
-      pr: https://github.com/Jianxun/ASDL/pull/39
-  - id: T-046
-    title: Individual param placeholders
-    owner: Architect
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-046_individual_param_placeholders.md
-      pr: https://github.com/Jianxun/ASDL/pull/38
-  - id: T-038
-    title: Template placeholders
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-038_template_placeholders.md
-      pr: https://github.com/Jianxun/ASDL/pull/36
-  - id: T-050
-    title: Netlist test backend config
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-050_netlist_test_backend_config.md
-  - id: T-051
-    title: Optional name placeholder
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-051_optional_name_placeholder.md
-  - id: T-053
-    title: Pattern expansion
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-053_pattern_expansion.md
-  - id: T-057
-    title: Pattern expansion engine
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-057_pattern_expansion_engine.md
-  - id: T-058
-    title: Pattern binding verification
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-058_pattern_binding_verification.md
-  - id: T-059
-    title: Pattern elaboration pass
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-059_pattern_elaboration_pass.md
-  - id: T-060
-    title: CLI schema command
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-060_cli_schema_command.md
-  - id: T-065
-    title: Pattern enumeration validation
-    owner: Executor
-    completed_on: null
-    links:
-      scratchpad: agents/scratchpads/T-065_pattern_enumeration_validation.md
+  - T-054: {completed_on: 2026-01-06, owner: Architect, scratchpad: agents/scratchpads/T-054_imports_spec.md, pr: null}
+  - T-055: {completed_on: 2026-01-06, owner: Architect, scratchpad: agents/scratchpads/T-055_specs_reconciliation.md, pr: null}
+  - T-048: {completed_on: 2026-01-04, owner: Architect, scratchpad: agents/scratchpads/T-048_unified_netlist_emitter.md, pr: https://github.com/Jianxun/ASDL/pull/41}
+  - T-049: {completed_on: 2026-01-04, owner: Executor, scratchpad: agents/scratchpads/T-049_netlist_emitter_refactor.md, pr: https://github.com/Jianxun/ASDL/pull/41}
+  - T-047: {completed_on: 2026-01-04, owner: Executor, scratchpad: agents/scratchpads/T-047_system_devices.md, pr: https://github.com/Jianxun/ASDL/pull/39}
+  - T-046: {completed_on: 2026-01-03, owner: Architect, scratchpad: agents/scratchpads/T-046_individual_param_placeholders.md, pr: https://github.com/Jianxun/ASDL/pull/38}
+  - T-038: {completed_on: 2026-01-03, owner: Executor, scratchpad: agents/scratchpads/T-038_template_placeholders.md, pr: https://github.com/Jianxun/ASDL/pull/36}
+  - T-050: {completed_on: 2026-01-05, owner: Executor, scratchpad: agents/scratchpads/T-050_netlist_test_backend_config.md, pr: https://github.com/Jianxun/ASDL/pull/45}
+  - T-051: {completed_on: 2026-01-05, owner: Executor, scratchpad: agents/scratchpads/T-051_optional_name_placeholder.md, pr: https://github.com/Jianxun/ASDL/pull/42}
+  - T-053: {completed_on: 2026-01-05, owner: Executor, scratchpad: agents/scratchpads/T-053_pattern_expansion.md, pr: https://github.com/Jianxun/ASDL/pull/46}
+  - T-057: {completed_on: 2026-01-05, owner: Executor, scratchpad: agents/scratchpads/T-057_pattern_expansion_engine.md, pr: https://github.com/Jianxun/ASDL/pull/47}
+  - T-058: {completed_on: 2026-01-05, owner: Executor, scratchpad: agents/scratchpads/T-058_pattern_binding_verification.md, pr: https://github.com/Jianxun/ASDL/pull/48}
+  - T-059: {completed_on: 2026-01-05, owner: Executor, scratchpad: agents/scratchpads/T-059_pattern_elaboration_pass.md, pr: https://github.com/Jianxun/ASDL/pull/49}
+  - T-060: {completed_on: 2026-01-05, owner: Executor, scratchpad: agents/scratchpads/T-060_cli_schema_command.md, pr: https://github.com/Jianxun/ASDL/pull/43}
+  - T-065A: {completed_on: 2026-01-05, owner: Executor, scratchpad: agents/scratchpads/T-065_pattern_enumeration_validation.md, pr: https://github.com/Jianxun/ASDL/pull/50}
+  - T-065B: {completed_on: 2026-01-06, owner: Executor, scratchpad: agents/scratchpads/T-065_file_id_propagation.md, pr: https://github.com/Jianxun/ASDL/pull/72}
+  - T-066: {completed_on: 2026-01-07, owner: Executor, scratchpad: agents/scratchpads/T-066_netlist_file_id_templates.md, pr: https://github.com/Jianxun/ASDL/pull/73}
+  - T-067: {completed_on: 2026-01-06, owner: Executor, scratchpad: agents/scratchpads/T-067_ast_imports_schema.md, pr: https://github.com/Jianxun/ASDL/pull/60}
+  - T-068: {completed_on: 2026-01-06, owner: Executor, scratchpad: agents/scratchpads/T-068_import_path_resolution.md, pr: https://github.com/Jianxun/ASDL/pull/62}
+  - T-069: {completed_on: 2026-01-06, owner: Executor, scratchpad: agents/scratchpads/T-069_import_ambiguity.md, pr: https://github.com/Jianxun/ASDL/pull/63}
+  - T-070: {completed_on: 2026-01-06, owner: Executor, scratchpad: agents/scratchpads/T-070_import_cycles.md, pr: https://github.com/Jianxun/ASDL/pull/64}
+  - T-071: {completed_on: 2026-01-06, owner: Executor, scratchpad: agents/scratchpads/T-071_program_db_name_env.md, pr: https://github.com/Jianxun/ASDL/pull/66}
+  - T-072: {completed_on: 2026-01-06, owner: Executor, scratchpad: agents/scratchpads/T-072_unqualified_resolution.md, pr: https://github.com/Jianxun/ASDL/pull/69}
+  - T-073: {completed_on: 2026-01-06, owner: Executor, scratchpad: agents/scratchpads/T-073_qualified_resolution.md, pr: https://github.com/Jianxun/ASDL/pull/70}
+  - T-074: {completed_on: 2026-01-06, owner: Executor, scratchpad: agents/scratchpads/T-074_unused_imports_lint.md, pr: https://github.com/Jianxun/ASDL/pull/71}
+  - T-075: {completed_on: 2026-01-07, owner: Executor, scratchpad: agents/scratchpads/T-075_import_path_simplification.md, pr: https://github.com/Jianxun/ASDL/pull/76}
+  - T-076: {completed_on: 2026-01-07, owner: Executor, scratchpad: agents/scratchpads/T-076_import_pipeline.md, pr: https://github.com/Jianxun/ASDL/pull/77}
+  - T-077: {completed_on: 2026-01-07, owner: Executor, scratchpad: agents/scratchpads/T-077_cli_import_wiring.md, pr: https://github.com/Jianxun/ASDL/pull/78}

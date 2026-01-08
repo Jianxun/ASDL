@@ -1,215 +1,42 @@
 schema_version: 2
 
-current_sprint:
-  - id: T-075
-    title: Simplify import path resolution roots
-    owner: Executor
-    dod: >
-      Update import resolution so logical paths search only CLI `--lib` roots
-      (in order) followed by `ASDL_LIB_PATH` entries. Preserve explicit
-      relative and absolute path handling plus env expansion. Remove project
-      root / include-root lookups from the resolution path, and adjust
-      ambiguity ordering to reflect the new root order. Update unit tests to
-      match the simplified resolution behavior, including a precedence test
-      for CLI `--lib` roots over `ASDL_LIB_PATH`.
-    verify:
-      - pytest tests/unit_tests/parser -v
-    files:
-      - src/asdl/imports/resolver.py
-      - tests/unit_tests/parser/test_import_resolution.py
-    links:
-      scratchpad: agents/scratchpads/T-075_import_path_simplification.md
-  - id: T-076
-    title: Import-aware MVP pipeline
-    owner: Executor
-    dod: >
-      Extend `run_mvp_pipeline` to accept an entry file path and optional
-      `--lib` roots, resolve the import graph, and lower all loaded documents
-      into a single NFIR design. Ignore `top` declarations from non-entry
-      files; use only the entry file's `top` when building the design. Abort
-      the pipeline on any error-severity diagnostics from import resolution or
-      lowering, but allow warnings to flow through. Preserve the existing
-      document-only behavior for single-file callers. Add e2e tests that
-      exercise import-aware pipeline success and import failure gating.
-    verify:
-      - pytest tests/unit_tests/e2e -v
-    files:
-      - src/asdl/ir/pipeline.py
-      - tests/unit_tests/e2e/test_pipeline_mvp.py
-    links:
-      scratchpad: agents/scratchpads/T-076_import_pipeline.md
-  - id: T-077
-    title: CLI import wiring and --lib roots
-    owner: Executor
-    depends_on:
-      - T-075
-      - T-076
-    dod: >
-      Add a repeatable `--lib` option to `asdlc netlist` and pass the paths
-      into the import-aware pipeline entrypoint. Use the pipeline's import
-      diagnostics to gate output (errors abort, warnings allow netlist
-      emission). Update CLI tests to cover `--lib`-driven resolution and
-      `ASDL_LIB_PATH` fallback.
-    verify:
-      - pytest tests/unit_tests/cli -v
-    files:
-      - src/asdl/cli/__init__.py
-      - tests/unit_tests/cli/test_netlist.py
-    links:
-      scratchpad: agents/scratchpads/T-077_cli_import_wiring.md
+current_sprint: []
 
 backlog:
-  - id: T-067
-    title: AST imports schema
+  - id: T-078
+    title: Propagate per-entry source spans into NFIR/IFIR
     owner: Executor
     dod: >
-      Add the top-level `imports: Dict[str, str]` mapping to the AST models
-      and parser per `docs/specs/spec_asdl_import.md`. Validate namespace
-      syntax, reject non-string paths with `AST-011`, detect duplicate
-      namespaces (`AST-013`), and enforce that a document defines at least one
-      module or device (import-only files are invalid). Update
-      `docs/specs/spec_ast.md` to include `imports`. Add AST/parser tests for
-      valid imports, invalid namespaces, duplicate namespaces, invalid path
-      types, and import-only documents.
+      Capture YAML locations for `nets` and `instances` map entries during parsing
+      and store them as ModuleDecl private metadata. Use these locations to set
+      `src` on NFIR NetOp/InstanceOp and carry them through NFIR->IFIR so
+      downstream diagnostics resolve to file/line/col. Update IR diagnostics
+      tests so errors tied to net/instance data include non-null spans.
     verify:
-      - pytest tests/unit_tests/ast tests/unit_tests/parser -v
+      - pytest tests/unit_tests/ir -v
     files:
       - src/asdl/ast/models.py
       - src/asdl/ast/parser.py
-      - docs/specs/spec_ast.md
-      - tests/unit_tests/ast/test_models.py
-      - tests/unit_tests/parser/test_parser.py
-    links:
-      scratchpad: agents/scratchpads/T-067_ast_imports_schema.md
-  - id: T-068
-    title: Import path resolution core
-    owner: Executor
-    depends_on:
-      - T-067
-    dod: >
-      Implement import path resolution per
-      `docs/specs/spec_asdl_import.md`: expand `~`/`$VAR`, resolve relative
-      paths against the importing file, accept absolute paths as-is, and search
-      logical roots in order (project root, `-I` roots, `ASDL_LIB_PATH`, `--lib`
-      roots). Normalize matches by collapsing `.`/`..` and converting to an
-      absolute path (no symlink resolution). Emit `AST-010` for missing paths
-      and `AST-011` for malformed paths. Add tests for resolution order,
-      relative/absolute handling, environment expansion, and missing paths.
-    verify:
-      - pytest tests/unit_tests/parser -v
-    files:
-      - src/asdl/imports/resolver.py
-      - src/asdl/imports/diagnostics.py
-      - tests/unit_tests/parser/test_import_resolution.py
-    links:
-      scratchpad: agents/scratchpads/T-068_import_path_resolution.md
-  - id: T-069
-    title: Import ambiguity diagnostics
-    owner: Executor
-    depends_on:
-      - T-068
-    dod: >
-      Detect ambiguous logical-path matches across roots and emit `AST-015`
-      with an ordered list of matches. Ensure resolution fails when multiple
-      matches exist. Add tests that cover ambiguity ordering.
-    verify:
-      - pytest tests/unit_tests/parser -v
-    files:
-      - src/asdl/imports/resolver.py
-      - src/asdl/imports/diagnostics.py
-      - tests/unit_tests/parser/test_import_resolution.py
-    links:
-      scratchpad: agents/scratchpads/T-069_import_ambiguity.md
-  - id: T-070
-    title: Import cycle diagnostics
-    owner: Executor
-    depends_on:
-      - T-068
-    dod: >
-      Detect import cycles and emit `AST-012` with a readable import chain.
-      Add tests for single-cycle and multi-hop cycle reporting.
-    verify:
-      - pytest tests/unit_tests/parser -v
-    files:
-      - src/asdl/imports/resolver.py
-      - src/asdl/imports/diagnostics.py
-      - tests/unit_tests/parser/test_import_resolution.py
-    links:
-      scratchpad: agents/scratchpads/T-070_import_cycles.md
-  - id: T-071
-    title: ProgramDB + NameEnv
-    owner: Executor
-    depends_on:
-      - T-068
-    dod: >
-      Build `ProgramDB` keyed by `file_id` and a per-file `NameEnv` mapping
-      namespaces to `file_id`s. Deduplicate loads of the same `file_id` across
-      different paths and allow multiple namespaces to bind the same file.
-      Detect duplicate symbol names within a file (regardless of kind) and
-      emit `AST-014`. Add tests for deduping and duplicate symbol detection.
-    verify:
-      - pytest tests/unit_tests/parser -v
-    files:
-      - src/asdl/imports/program_db.py
-      - src/asdl/imports/name_env.py
-      - src/asdl/imports/resolver.py
-      - src/asdl/imports/diagnostics.py
-      - tests/unit_tests/parser/test_import_resolution.py
-    links:
-      scratchpad: agents/scratchpads/T-071_program_db_name_env.md
-  - id: T-072
-    title: AST->NFIR unqualified resolution
-    owner: Executor
-    depends_on:
-      - T-071
-    dod: >
-      Resolve unqualified symbols only within the current file during
-      AST->NFIR conversion. Emit `IR-011` for unresolved unqualified symbols.
-      Add IR tests for local resolution and missing-symbol diagnostics.
-    verify:
-      - pytest tests/unit_tests/ir -v
-    files:
       - src/asdl/ir/converters/ast_to_nfir.py
-      - src/asdl/imports/name_env.py
+      - src/asdl/ir/converters/nfir_to_ifir.py
       - tests/unit_tests/ir/test_converter.py
     links:
-      scratchpad: agents/scratchpads/T-072_unqualified_resolution.md
-  - id: T-073
-    title: AST->NFIR qualified resolution
+      scratchpad: agents/scratchpads/T-078_diagnostics_spans_ir.md
+  - id: T-079
+    title: End-to-end diagnostics span coverage
     owner: Executor
-    depends_on:
-      - T-071
     dod: >
-      Resolve qualified `ns.symbol` references during AST->NFIR conversion
-      using `NameEnv` and `ProgramDB`. Set instance `ref` + `ref_file_id` and
-      emit `IR-010` for unresolved qualified symbols. Add IR tests for
-      imported resolution and unresolved diagnostics.
+      Add e2e diagnostics tests that run parse/lower/emit flows with known
+      failures and assert each emitted diagnostic has a populated
+      `primary_span` (no `NO_SPAN_NOTE`). Cover at least one error from the
+      parser, IR lowering, and netlist verification/emission stages.
     verify:
-      - pytest tests/unit_tests/ir -v
+      - pytest tests/unit_tests/e2e -v
     files:
-      - src/asdl/ir/converters/ast_to_nfir.py
-      - src/asdl/imports/name_env.py
-      - src/asdl/imports/program_db.py
-      - tests/unit_tests/ir/test_converter.py
+      - tests/unit_tests/e2e/test_pipeline_mvp.py
+      - tests/unit_tests/netlist/test_netlist_emitter.py
     links:
-      scratchpad: agents/scratchpads/T-073_qualified_resolution.md
-  - id: T-074
-    title: Unused import lint
-    owner: Executor
-    depends_on:
-      - T-072
-      - T-073
-    dod: >
-      Emit `LINT-001` warnings for unused import namespaces during AST->NFIR
-      conversion. Add IR tests covering unused and used import namespaces.
-    verify:
-      - pytest tests/unit_tests/ir -v
-    files:
-      - src/asdl/ir/converters/ast_to_nfir.py
-      - src/asdl/imports/name_env.py
-      - tests/unit_tests/ir/test_converter.py
-    links:
-      scratchpad: agents/scratchpads/T-074_unused_imports_lint.md
+      scratchpad: agents/scratchpads/T-079_diagnostics_spans_e2e.md
   - id: T-064
     title: Pattern endpoint equivalence
     owner: Executor
@@ -225,67 +52,6 @@ backlog:
       - examples/scratch/test.asdl
     links:
       scratchpad: agents/scratchpads/T-064_pattern_equivalence.md
-  - id: T-065
-    title: File_id propagation in IR
-    owner: Executor
-    depends_on:
-      - T-071
-      - T-072
-      - T-073
-    dod: >
-      Carry `file_id` metadata from import resolution through NFIR/IFIR:
-      add `entry_file_id` on design ops, `file_id` on module/device ops, and
-      `ref_file_id` on instance ops. Update AST->NFIR and NFIR->IFIR converters
-      to set/copy these attributes from the import ProgramDB/NameEnv. Adjust
-      IR verification to allow same-name modules/devices across files (uniqueness
-      per `file_id`) while still enforcing same-file uniqueness. Ensure `top`
-      resolves within the entry file only (via `entry_file_id`). Add IR tests
-      covering duplicate names across files and entry-top resolution.
-    verify:
-      - pytest tests/unit_tests/ir -v
-    files:
-      - src/asdl/ir/nfir/dialect.py
-      - src/asdl/ir/ifir/dialect.py
-      - src/asdl/ir/converters/ast_to_nfir.py
-      - src/asdl/ir/converters/nfir_to_ifir.py
-      - src/asdl/imports
-      - tests/unit_tests/ir
-    links:
-      scratchpad: agents/scratchpads/T-065_file_id_propagation.md
-  - id: T-066
-    title: Netlist templates file_id placeholders
-    owner: Executor
-    depends_on:
-      - T-065
-    dod: >
-      Expose `file_id` to system-device templates without changing emission
-      behavior. Allow `{file_id}` in `__subckt_header__`,
-      `__subckt_call__`, `__netlist_header__`, and `__netlist_footer__`
-      placeholder validation, plus `{sym_name}` for module templates and
-      `{top_sym_name}` for netlist header/footer. Pass the module's `file_id`
-      into `__subckt_header__`, the referenced module `file_id` into
-      `__subckt_call__`, and the entry `file_id` into netlist header/footer
-      contexts. When `design.top` is absent and `entry_file_id` is set, only
-      allow implicit top selection if the sole module's `file_id` matches the
-      entry file; otherwise emit `MISSING_TOP`. Implement deterministic subckt
-      renaming for duplicate module names across files using
-      `{sym_name}__{hash8}` (first 8 hex chars of `sha1(file_id)`), applied
-      consistently to `__subckt_header__`, module calls, and `{top}` in netlist
-      header/footer. Add or update emission tests to cover template usage,
-      duplicate-name disambiguation, and implicit-top rejection when the entry
-      file has no local modules.
-    verify:
-      - pytest tests/unit_tests/emit -v
-      - pytest tests/unit_tests/netlist -v
-    files:
-      - src/asdl/emit/netlist/render.py
-      - src/asdl/emit/netlist/templates.py
-      - src/asdl/emit/backend_config.py
-      - config/backends.yaml
-      - tests/unit_tests/emit
-    links:
-      scratchpad: agents/scratchpads/T-066_netlist_file_id_templates.md
-
 exploration_candidates:
   - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.
   - CLI pipeline UX: command flow, error messaging, and file layout.

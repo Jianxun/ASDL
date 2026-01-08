@@ -33,6 +33,9 @@
 - tests updated to remove project/include roots and assert lib/env ordering.
 - resolver logical candidates now only include CLI lib roots followed by `ASDL_LIB_PATH`.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/76
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/parser -v`
 

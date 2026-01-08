@@ -161,7 +161,7 @@ Maintain these sections (keep them short):
 
 `agents/context/tasks_archived.yaml`
 - `schema_version: 1`
-- `archive`: list of ArchivedTask
+- `archive`: list of one-line ArchivedTask records as inline maps keyed by task id
 
 Task fields (required unless noted):
 - `id`: `T-00X`
@@ -175,14 +175,11 @@ Task fields (required unless noted):
 - `files` (optional list)
 
 ArchivedTask fields (required unless noted):
-- `id`
-- `title`
-- `owner` (optional)
+- inline map keyed by `T-00X` (allow a suffix like `T-065A` only to resolve historical duplicates)
 - `completed_on` (nullable `YYYY-MM-DD`)
-- `dod` (optional)
-- `verify` (optional)
-- `links` (optional; include `scratchpad` when available)
-- `files` (optional)
+- `owner` (optional)
+- `scratchpad` (optional)
+- `pr` (optional)
 
 Rules:
 - Status lives only in `agents/context/tasks_state.yaml`; do not add status fields elsewhere.
@@ -196,6 +193,7 @@ Rules:
 - Keep active/backlog tasks in `agents/context/tasks.yaml`.
 - Keep deferred work in `agents/context/tasks_icebox.yaml`.
 - Move Done tasks into `agents/context/tasks_archived.yaml`, remove them from `agents/context/tasks.yaml` and `agents/context/tasks_state.yaml`, and keep the archive compact.
+- Archive entries must be single-line inline maps that only include `completed_on`, `owner`, `scratchpad`, and `pr`.
 - Legacy snapshots (`agents/context/tasks_archived.md`) remain read-only.
 
 ---

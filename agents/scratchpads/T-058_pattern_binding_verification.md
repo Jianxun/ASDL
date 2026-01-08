@@ -33,6 +33,9 @@
 - `tests/unit_tests/ir/test_ifir_converter.py`: add binding verification tests and adjust pattern-preservation fixture.
 - `tests/unit_tests/ir/test_ifir_converter.py`: add spliced-instance regression test.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/48
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir -v`
 

@@ -40,6 +40,9 @@
 - `agents/context/codebase_map.md`: noted new `src/asdl/cli/` directory.
 - `agents/context/tasks.md`: moved T-036 into Done section.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/31
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/cli`
 

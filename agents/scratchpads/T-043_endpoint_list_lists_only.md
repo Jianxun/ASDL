@@ -38,6 +38,9 @@
 - `tests/unit_tests/e2e/test_pipeline_mvp.py`: update nets fixtures to list syntax.
 - `tests/unit_tests/cli/test_netlist.py`: update nets fixtures to list syntax.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/32
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/parser` (pass)
 - `venv/bin/pytest tests/unit_tests/ir` (pass)

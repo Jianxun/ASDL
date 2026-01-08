@@ -40,6 +40,7 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
    - Record results in the scratchpad.
 5. **Closeout**
    - Update the scratchpad with progress, patch summary, verification, and next steps.
+   - Record the PR URL in the scratchpad.
    - Set task status to `ready_for_review`, set `pr` to the PR number, keep `merged` false, and run `./venv/bin/python scripts/lint_tasks_state.py`.
    - Push the branch and open a PR to `main` with summary + testing.
    - Do not merge the PR yourself.
@@ -87,6 +88,7 @@ Supported statuses in `agents/context/tasks_state.yaml`:
 - Plan
 - Progress log
 - Patch summary
+- PR URL
 - Verification
 - Status request (Done / Blocked / In Progress)
 - Blockers / Questions

@@ -30,6 +30,9 @@
 - `tests/unit_tests/parser/test_pattern_expansion.py`: cover comma delimiter rejection.
 - `tests/unit_tests/ir/test_ifir_converter.py`: cover invalid enumeration diagnostic in IFIR conversion.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/50
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/parser -v`
 - `./venv/bin/pytest tests/unit_tests/ir -v`

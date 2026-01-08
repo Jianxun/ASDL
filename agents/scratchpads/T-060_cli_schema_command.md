@@ -32,6 +32,9 @@
 - `tests/unit_tests/cli/test_netlist.py`: extend help assertions for `schema`.
 - `tests/unit_tests/cli/test_schema.py`: new CLI schema output test.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/43
+
 ## Verification
 - `venv/bin/pytest tests/unit_tests/cli -v`
 

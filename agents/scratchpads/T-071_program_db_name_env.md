@@ -27,6 +27,9 @@
 - Normalized `file_id` paths to collapse `.`/`..` for deduped loads.
 - Added parser tests for deduped imports and duplicate symbol names.
 
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/66
+
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/parser -v`
 
