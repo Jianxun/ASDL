@@ -1,9 +1,5 @@
 schema_version: 2
 
-T-064:
-  status: backlog
-  pr: null
-  merged: false
 T-078:
   status: done
   pr: 81
@@ -12,3 +8,19 @@ T-079:
   status: done
   pr: 82
   merged: true
+T-080:
+  status: ready
+  pr: null
+  merged: false
+T-081:
+  status: ready
+  pr: null
+  merged: false
+T-082:
+  status: ready
+  pr: null
+  merged: false
+T-083:
+  status: ready
+  pr: null
+  merged: false

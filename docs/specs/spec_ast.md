@@ -48,6 +48,7 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 
 ### Notes
 - Connectivity is net-first: `nets` own endpoint lists.
+- Inline instance pin-bindings are an equally valid binding source; any endpoint bound in both `nets` and inline bindings is a semantic error (deferred).
 - Module ports are derived from `$`-prefixed net names (plus forwarded ports from `exports`).
 
 ---
@@ -72,8 +73,14 @@ instances:
   <TypeName> <ParamTokens...> ( <PinBind>... )?
   ```
 - `ParamTokens` are preserved as raw text.
-- Inline pin-bindings are preserved as raw text; conflicts are resolved later.
+- Inline pin-bindings are preserved as raw text; they are an alternative binding source alongside `nets` (conflict checks are deferred).
 - `<TypeName>` may be either `symbol` or `ns.symbol`; pattern syntax is forbidden.
+
+#### Inline pin binding syntax (informative)
+- **Form**: `(<port>:<net> ...)` with bindings separated by whitespace only.
+- **Port**: literal name only (no patterns or qualifiers).
+- **Net**: literal net name; `$` prefix is allowed for exported nets.
+- Only named bindings are supported; positional bindings are not allowed.
 
 ---
 
@@ -154,7 +161,7 @@ instances:
 ## Deferred to IR verification / passes
 - Name resolution (module/device lookup, instance refs).
 - Pattern expansion and binding verification (`<...>`, `[...]`, `;`); enforce expansion size limits.
-- Inline pin-bind parsing and conflict detection vs `nets`.
+- Inline pin-bind parsing; enforce one net binding per endpoint across `nets` and inline bindings (no overlaps).
 - Export forwarding resolution and collision checks.
 - Endpoint uniqueness checks (an endpoint bound to multiple nets).
 - Template placeholder validity and backend-specific constraints.
