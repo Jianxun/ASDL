@@ -9,6 +9,8 @@ from asdl.diagnostics import Severity
 from asdl.emit.netlist import emit_netlist
 from asdl.ir.pipeline import run_mvp_pipeline
 
+NO_SPAN_NOTE = "No source span available."
+
 
 def _write_backend_config(tmp_path: Path) -> Path:
     config_path = tmp_path / "backends.yaml"
@@ -69,6 +71,56 @@ def _pipeline_yaml() -> str:
             "        template: \"{name} {ports} {params}\"",
         ]
     )
+
+
+def _invalid_instance_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      U1: leaf badparam",
+            "    nets:",
+            "      N1:",
+            "        - U1.IN",
+            "devices:",
+            "  leaf:",
+            "    ports: [IN]",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports}\"",
+        ]
+    )
+
+
+def _missing_conn_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      R1: res",
+            "    nets:",
+            "      N1:",
+            "        - R1.P",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports}\"",
+        ]
+    )
+
+
+def _assert_span_coverage(diagnostics) -> None:
+    assert diagnostics
+    for diagnostic in diagnostics:
+        assert diagnostic.primary_span is not None
+        if diagnostic.notes:
+            assert NO_SPAN_NOTE not in diagnostic.notes
 
 
 def _write_import_entry(path: Path, import_path: str) -> None:
@@ -201,3 +253,39 @@ def test_pipeline_import_graph_missing_import(
     assert design is None
     assert any(diag.code == "AST-010" for diag in diagnostics)
     assert any(diag.severity is Severity.ERROR for diag in diagnostics)
+
+
+def test_parser_diagnostics_have_spans() -> None:
+    document, diagnostics = parse_string("- just-a-list\n")
+
+    assert document is None
+    _assert_span_coverage(diagnostics)
+
+
+def test_lowering_diagnostics_have_spans() -> None:
+    document, diagnostics = parse_string(_invalid_instance_yaml())
+
+    assert diagnostics == []
+    assert document is not None
+
+    design, pipeline_diags = run_mvp_pipeline(document)
+
+    assert design is None
+    _assert_span_coverage(pipeline_diags)
+
+
+def test_netlist_diagnostics_have_spans(backend_config: Path) -> None:
+    document, diagnostics = parse_string(_missing_conn_yaml())
+
+    assert diagnostics == []
+    assert document is not None
+
+    design, pipeline_diags = run_mvp_pipeline(document)
+
+    assert pipeline_diags == []
+    assert design is not None
+
+    netlist, emit_diags = emit_netlist(design)
+
+    assert netlist is None
+    _assert_span_coverage(emit_diags)
