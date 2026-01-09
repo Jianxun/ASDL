@@ -9,7 +9,7 @@ T-079:
   pr: 82
   merged: true
 T-080:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-081:
