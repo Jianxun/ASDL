@@ -19,27 +19,32 @@
 - docs/specs/spec_asdl_import.md
 
 ## Plan
-- [ ] Add/extend tests for import/env expansion and malformed/empty cases.
-- [ ] Update import resolver expansion/diagnostics for imports + `ASDL_LIB_PATH`.
-- [ ] Align import spec wording with expansion/error behavior.
+- [x] Add/extend tests for import/env expansion and malformed/empty cases.
+- [x] Update import resolver expansion/diagnostics for imports + `ASDL_LIB_PATH`.
+- [x] Align import spec wording with expansion/error behavior.
 
 ## Progress log
 - 2026-01-08: Set T-081 status to in_progress and created feature branch.
+- 2026-01-08: Added env expansion/failure tests and resolver validation updates.
+- 2026-01-08: Updated import spec language and ran parser import tests.
+- 2026-01-08: Opened PR for review.
 
 ## Patch summary
-- Pending.
+- Added env/tilde expansion validation and `ASDL_LIB_PATH` diagnostics for malformed roots.
+- Added parser tests for env expansion, empty/missing vars, and env-root lookup.
+- Documented expansion/error handling in the import spec.
 
 ## PR URL
-- Pending.
+- https://github.com/Jianxun/ASDL/pull/85
 
 ## Verification
-- Pending.
+- `./venv/bin/pytest tests/unit_tests/parser/test_import_resolution.py -v`
 
 ## Status request
-- In Progress.
+- Ready for review.
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Implement plan items and update verification.
+- Await reviewer feedback.
