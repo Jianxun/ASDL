@@ -94,12 +94,14 @@ def _emit_design(
     had_error = False
 
     top_emitted_name = _module_emitted_name(top_module, module_emitted_names)
+    emit_context = _emit_timestamp_context(options.emit_timestamp)
     header_context = {
         "backend": options.backend_name,
         "top": top_emitted_name,
         "top_sym_name": top_name,
         "file_id": _entry_file_id_value(entry_file_id, top_module),
     }
+    header_context.update(emit_context)
     header, header_error = _render_system_device(
         "__netlist_header__",
         options.backend_config,
@@ -135,6 +137,7 @@ def _emit_design(
         "top_sym_name": top_name,
         "file_id": _entry_file_id_value(entry_file_id, top_module),
     }
+    footer_context.update(emit_context)
     footer, footer_error = _render_system_device(
         "__netlist_footer__",
         options.backend_config,
@@ -352,6 +355,13 @@ def _emit_instance(
 
 def _entry_file_id(design: "DesignOp") -> Optional[str]:
     return design.entry_file_id.data if design.entry_file_id is not None else None
+
+
+def _emit_timestamp_context(emit_timestamp) -> Dict[str, str]:
+    return {
+        "emit_date": emit_timestamp.strftime("%Y-%m-%d"),
+        "emit_time": emit_timestamp.strftime("%H:%M:%S"),
+    }
 
 
 def _entry_file_id_value(entry_file_id: Optional[str], top_module: ModuleOp) -> str:
