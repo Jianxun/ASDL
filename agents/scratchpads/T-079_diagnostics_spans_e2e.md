@@ -31,13 +31,13 @@
 - Added e2e span-coverage helpers and tests for parser, IR lowering, and netlist diagnostics.
 
 ## PR URL
-- Pending.
+- https://github.com/Jianxun/ASDL/pull/82
 
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/e2e -v`
 
 ## Status request
-- In Progress.
+- Done.
 
 ## Blockers / Questions
 - None.
