@@ -1,8 +1,6 @@
 schema_version: 2
 
-current_sprint: []
-
-backlog:
+current_sprint:
   - id: T-078
     title: Propagate per-entry source spans into NFIR/IFIR
     owner: Executor
@@ -37,21 +35,86 @@ backlog:
       - tests/unit_tests/netlist/test_netlist_emitter.py
     links:
       scratchpad: agents/scratchpads/T-079_diagnostics_spans_e2e.md
-  - id: T-064
-    title: Pattern endpoint equivalence
+  - id: T-080
+    title: Netlist header timestamp placeholders
     owner: Executor
     dod: >
-      Ensure NFIR verification treats word-sense-equivalent pattern tokens as the same instance (e.g., `MN_OUT<P,N>` vs `MN_OUT<P|N>`) by comparing the expansion outputs instead of raw strings. Add IR/unit tests plus the `examples/scratch/test.asdl` netlist run to prove the pipeline no longer rejects those bindings.
+      Add `emit_date` and `emit_time` placeholders for `__netlist_header__` and
+      `__netlist_footer__` system devices. Capture a single emit timestamp per
+      netlist (plumbed via `EmitOptions`/`emit_netlist`) and format it into the
+      new placeholders. Template validation must accept the new placeholders.
+      Update the MVP netlist emission spec to document the placeholders and
+      that emission depends entirely on backend templates. Netlist tests must
+      cover substitution with a deterministic timestamp.
     verify:
-      - pytest tests/unit_tests/ir -v
-      - ./venv/bin/asdlc netlist examples/scratch/test.asdl
+      - pytest tests/unit_tests/netlist -v
     files:
-      - src/asdl/ir/nfir/dialect.py
-      - src/asdl/ir/converters/nfir_to_ifir.py
-      - tests/unit_tests/ir/test_ifir_converter.py
-      - examples/scratch/test.asdl
+      - src/asdl/emit/netlist/api.py
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/templates.py
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+      - docs/specs_mvp/spec_netlist_emission_mvp.md
     links:
-      scratchpad: agents/scratchpads/T-064_pattern_equivalence.md
+      scratchpad: agents/scratchpads/T-080_netlist_header_time.md
+  - id: T-081
+    title: Import path env var expansion
+    owner: Executor
+    dod: >
+      Ensure import path resolution expands `~` and `$VAR`/`${VAR}` in `imports`
+      path values and in `ASDL_LIB_PATH` entries. Add tests that cover env var
+      expansion for direct import paths and logical-path resolution via
+      `ASDL_LIB_PATH` (including `~`). If expansion fails or yields empty paths,
+      emit `AST-011` malformed import diagnostics.
+    verify:
+      - pytest tests/unit_tests/parser/test_import_resolution.py -v
+    files:
+      - src/asdl/imports/resolver.py
+      - tests/unit_tests/parser/test_import_resolution.py
+      - docs/specs/spec_asdl_import.md
+    links:
+      scratchpad: agents/scratchpads/T-081_import_env_expansion.md
+  - id: T-082
+    title: Inline pin bindings in AST->NFIR conversion
+    owner: Executor
+    dod: >
+      Parse inline pin bindings in instance expressions using the
+      `(<port>:<net> ...)` whitespace-separated form. Merge bindings into the
+      module net map (creating nets as needed), and allow `$`-prefixed inline
+      net names to create ports when not declared in `nets`. Port order is
+      `$` nets from `nets` first, then `$` nets first-seen in inline bindings.
+      Emit conversion diagnostics for malformed pin-binding tokens and for
+      endpoints bound in both `nets` and inline bindings. Update MVP AST/NFIR
+      specs to allow inline bindings and describe the rules. Add unit tests that
+      cover inline bindings, overlap errors, and inline-created ports.
+    verify:
+      - pytest tests/unit_tests/ir/test_converter.py -v
+    files:
+      - src/asdl/ir/converters/ast_to_nfir.py
+      - tests/unit_tests/ir/test_converter.py
+      - docs/specs_mvp/spec_ast_mvp.md
+      - docs/specs_mvp/spec_asdl_nfir_mvp.md
+    links:
+      scratchpad: agents/scratchpads/T-082_inline_pin_bindings.md
+  - id: T-083
+    title: Inline pin bindings netlist coverage
+    owner: Executor
+    depends_on:
+      - T-082
+    dod: >
+      Add netlist or end-to-end tests that exercise inline pin bindings and
+      confirm emitted connectivity matches expected ports/nets without listing
+      every endpoint in `nets`. Cover at least one case that relies solely on
+      inline bindings for internal nets, and one case where `$` inline bindings
+      create ports and affect emitted port order.
+    verify:
+      - pytest tests/unit_tests/netlist/test_netlist_emitter.py -v
+    files:
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+      - tests/unit_tests/e2e/test_pipeline_mvp.py
+    links:
+      scratchpad: agents/scratchpads/T-083_inline_pin_bindings_netlist.md
+
+backlog: []
 exploration_candidates:
   - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.
   - CLI pipeline UX: command flow, error messaging, and file layout.
