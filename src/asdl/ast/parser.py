@@ -11,7 +11,7 @@ from ruamel.yaml.nodes import MappingNode, ScalarNode
 
 from ..diagnostics import Diagnostic, Severity, SourcePos, SourceSpan
 from .location import Locatable, LocationIndex, PathSegment, to_plain
-from .models import AsdlDocument, AstBaseModel
+from .models import AsdlDocument, AstBaseModel, ModuleDecl
 
 PARSE_YAML_ERROR = "PARSE-001"
 PARSE_ROOT_ERROR = "PARSE-002"
@@ -268,6 +268,8 @@ def _attach_locations(value: Any, location_index: LocationIndex, path: Iterable[
         loc = location_index.lookup_with_fallback(path)
         if loc is not None:
             value.set_loc(loc)
+        if isinstance(value, ModuleDecl):
+            _attach_module_entry_locations(value, location_index, path)
         for field_name in value.__class__.model_fields:
             field_value = getattr(value, field_name)
             _attach_locations(field_value, location_index, (*path, field_name))
@@ -281,6 +283,22 @@ def _attach_locations(value: Any, location_index: LocationIndex, path: Iterable[
     if isinstance(value, list):
         for index, item in enumerate(value):
             _attach_locations(item, location_index, (*path, index))
+
+
+def _attach_module_entry_locations(
+    module: ModuleDecl, location_index: LocationIndex, path: Iterable[PathSegment]
+) -> None:
+    base_path = tuple(path)
+    if module.nets:
+        for net_name in module.nets.keys():
+            loc = location_index.lookup((*base_path, "nets", net_name), prefer_key=True)
+            if loc is not None:
+                module._nets_loc[net_name] = loc
+    if module.instances:
+        for inst_name in module.instances.keys():
+            loc = location_index.lookup((*base_path, "instances", inst_name), prefer_key=True)
+            if loc is not None:
+                module._instances_loc[inst_name] = loc
 
 
 def _format_path(path: Iterable[PathSegment]) -> str:

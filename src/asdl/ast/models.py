@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, Dict, List, Optional, Union
+from typing import Annotated, Any, Dict, List, Optional, TYPE_CHECKING, Union
 
 from pydantic import (
     BaseModel,
@@ -62,6 +62,12 @@ class DeviceDecl(AstBaseModel):
 class ModuleDecl(AstBaseModel):
     instances: Optional[InstancesBlock] = None
     nets: Optional[NetsBlock] = None
+    _instances_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+    _nets_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+
+
+if TYPE_CHECKING:
+    from .location import Locatable
 
 
 class AsdlDocument(AstBaseModel):

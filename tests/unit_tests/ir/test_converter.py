@@ -4,7 +4,7 @@ import pytest
 
 pytest.importorskip("xdsl")
 
-from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
+from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl, parse_string
 from asdl.diagnostics import Severity
 from asdl.imports import NameEnv, ProgramDB
 from asdl.ir import convert_document
@@ -121,25 +121,57 @@ def test_convert_document_allows_portless_device() -> None:
 
 
 def test_convert_document_rejects_invalid_instance_params() -> None:
-    doc = AsdlDocument(
-        modules={"m": ModuleDecl(instances={"M1": "nfet_3p3 badtoken"})}
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  m:",
+            "    instances:",
+            "      M1: nfet_3p3 badtoken",
+        ]
     )
+    doc, parse_diagnostics = parse_string(
+        yaml_content,
+        file_path=Path("design.asdl"),
+    )
+    assert parse_diagnostics == []
+    assert doc is not None
 
     design, diagnostics = convert_document(doc)
     assert design is None
     assert len(diagnostics) == 1
     assert diagnostics[0].code == "IR-001"
     assert diagnostics[0].severity is Severity.ERROR
+    assert diagnostics[0].primary_span is not None
+    assert diagnostics[0].primary_span.file == "design.asdl"
+    assert diagnostics[0].primary_span.start.line == 4
+    assert diagnostics[0].primary_span.start.col == 7
 
 
 def test_convert_document_rejects_invalid_endpoints() -> None:
-    doc = AsdlDocument(modules={"m": ModuleDecl(nets={"$VIN": ["M1G"]})})
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  m:",
+            "    nets:",
+            "      VIN: [M1G]",
+        ]
+    )
+    doc, parse_diagnostics = parse_string(
+        yaml_content,
+        file_path=Path("design.asdl"),
+    )
+    assert parse_diagnostics == []
+    assert doc is not None
 
     design, diagnostics = convert_document(doc)
     assert design is None
     assert len(diagnostics) == 1
     assert diagnostics[0].code == "IR-002"
     assert diagnostics[0].severity is Severity.ERROR
+    assert diagnostics[0].primary_span is not None
+    assert diagnostics[0].primary_span.file == "design.asdl"
+    assert diagnostics[0].primary_span.start.line == 4
+    assert diagnostics[0].primary_span.start.col == 7
 
 
 def test_convert_document_resolves_unqualified_locally(tmp_path: Path) -> None:
