@@ -82,6 +82,8 @@ result params:       w=1u l=120n m=4
   - `{ports}` space-joined nets in port order (may be empty)
 - `{params}` is deprecated; templates should not rely on it.
 - Additional placeholders may be populated from backend `props`.
+- Emission is template-driven; the emitter does not inject backend syntax beyond
+  device and system-device templates.
 
 ---
 
@@ -101,8 +103,8 @@ Every backend must define the following system devices in `backends.yaml`:
 | `__subckt_header__` | Non-top module header | `{name}` | `{ports}`, `{file_id}`, `{sym_name}` |
 | `__subckt_footer__` | Non-top module footer | - | `{name}` |
 | `__subckt_call__` | Module instantiation | `{name}`, `{ports}`, `{ref}` | `{file_id}`, `{sym_name}` |
-| `__netlist_header__` | File-level preamble | - | `{backend}`, `{top}`, `{file_id}`, `{top_sym_name}` |
-| `__netlist_footer__` | File-level postamble | - | `{backend}`, `{top}`, `{file_id}`, `{top_sym_name}` |
+| `__netlist_header__` | File-level preamble | - | `{backend}`, `{top}`, `{file_id}`, `{top_sym_name}`, `{emit_date}`, `{emit_time}` |
+| `__netlist_footer__` | File-level postamble | - | `{backend}`, `{top}`, `{file_id}`, `{top_sym_name}`, `{emit_date}`, `{emit_time}` |
 
 ### Backend configuration file
 - Location: Determined by environment variable `ASDL_BACKEND_CONFIG`; defaults to `config/backends.yaml`
@@ -129,6 +131,8 @@ Every backend must define the following system devices in `backends.yaml`:
 - Missing required system devices emit `MISSING_BACKEND` error and abort emission
 - Netlist header/footer are rendered once per file via `__netlist_header__` and
   `__netlist_footer__` (empty templates emit no line)
+- `emit_date`/`emit_time` are captured once per netlist emission and formatted
+  as `YYYY-MM-DD` and `HH:MM:SS` (local time)
 
 ### Top module handling
 - If `top_as_subckt` is true: use `__subckt_header__` and `__subckt_footer__`
