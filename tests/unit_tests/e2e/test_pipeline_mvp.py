@@ -91,6 +91,34 @@ def _inline_binding_internal_yaml() -> str:
     )
 
 
+def _inline_binding_port_order_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      U1: leaf",
+            "    nets:",
+            "      $VDD:",
+            "        - U1.IN",
+            "      $VSS:",
+            "        - U1.OUT",
+            "  leaf:",
+            "    instances:",
+            "      R1: res (P:$OUT N:$IN)",
+            "    nets:",
+            "      $IN: []",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports}\"",
+        ]
+    )
+
+
 def _invalid_instance_yaml() -> str:
     return "\n".join(
         [
@@ -230,6 +258,30 @@ def test_pipeline_inline_bindings_internal_nets(
 
     assert emit_diags == []
     assert netlist == "\n".join(["R1 N1 N2", ".end"])
+
+
+def test_pipeline_inline_bindings_port_order(
+    backend_config: Path,
+) -> None:
+    document, diagnostics = parse_string(_inline_binding_port_order_yaml())
+
+    assert diagnostics == []
+    assert document is not None
+
+    design, pipeline_diags = run_mvp_pipeline(document)
+    assert pipeline_diags == []
+    assert design is not None
+
+    netlist, emit_diags = emit_netlist(design)
+
+    assert emit_diags == []
+    assert netlist is not None
+    lines = netlist.splitlines()
+    assert lines[0] == "XU1 VDD VSS leaf"
+    assert lines[1] == ".subckt leaf IN OUT"
+    assert lines[2] == "R1 OUT IN"
+    assert lines[3] == ".ends leaf"
+    assert lines[4] == ".end"
 
 
 def test_pipeline_import_graph_success(
