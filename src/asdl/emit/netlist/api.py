@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -21,6 +22,7 @@ class EmitOptions:
     top_as_subckt: bool = False
     backend_name: str = "sim.ngspice"
     backend_config: Optional[BackendConfig] = None
+    emit_timestamp: datetime = field(default_factory=datetime.now)
 
 
 def load_backend(
@@ -48,6 +50,7 @@ def emit_netlist(
     top_as_subckt: bool = False,
     backend_config_path: Optional[Path] = None,
     backend_config: Optional[BackendConfig] = None,
+    emit_timestamp: Optional[datetime] = None,
 ) -> Tuple[Optional[str], List[Diagnostic]]:
     diagnostics: List[Diagnostic] = []
 
@@ -75,6 +78,7 @@ def emit_netlist(
         top_as_subckt=top_as_subckt,
         backend_name=backend_name,
         backend_config=backend_config,
+        emit_timestamp=emit_timestamp or datetime.now(),
     )
     netlist, emit_diags = _emit_design(elaborated, options)
     diagnostics.extend(emit_diags)

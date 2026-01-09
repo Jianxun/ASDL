@@ -1,4 +1,6 @@
+import datetime
 import hashlib
+from pathlib import Path
 import pytest
 
 pytest.importorskip("xdsl")
@@ -19,6 +21,37 @@ from asdl.ir.ifir import (
 )
 
 BACKEND_NAME = "sim.ngspice"
+
+
+def _write_backend_config(tmp_path: Path) -> Path:
+    config_path = tmp_path / "backends.yaml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "sim.ngspice:",
+                '  extension: ".spice"',
+                '  comment_prefix: "*"',
+                "  templates:",
+                '    __subckt_header__: ".subckt {name} {ports}"',
+                '    __subckt_footer__: ".ends {name}"',
+                '    __subckt_call__: "X{name} {ports} {ref}"',
+                '    __netlist_header__: ""',
+                '    __netlist_footer__: ".end"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return config_path
+
+
+@pytest.fixture(autouse=True)
+def default_backend_config(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Path:
+    config_path = _write_backend_config(tmp_path)
+    monkeypatch.setenv("ASDL_BACKEND_CONFIG", str(config_path))
+    return config_path
 
 
 def _dict_attr(values: dict[str, str]) -> DictionaryAttr:
@@ -330,6 +363,43 @@ def test_emit_netlist_exposes_file_id_placeholders() -> None:
             ".subckt child A ; child lib.asdl",
             ".ends child",
             "FOOTER top top entry.asdl",
+        ]
+    )
+
+
+def test_emit_netlist_exposes_emit_timestamp_placeholders() -> None:
+    backend_config = _backend_config(
+        {
+            "__subckt_header__": ".subckt {name} {ports}",
+            "__subckt_footer__": ".ends {name}",
+            "__subckt_call__": "X{name} {ports} {ref}",
+            "__netlist_header__": "HEADER {emit_date} {emit_time} {top}",
+            "__netlist_footer__": "FOOTER {emit_date} {emit_time} {top}",
+        }
+    )
+    emit_timestamp = datetime.datetime(2026, 1, 2, 3, 4, 5)
+    module = ModuleOp(
+        name="top",
+        port_order=["IN"],
+        region=[NetOp(name="IN")],
+    )
+    design = DesignOp(region=[module], top="top")
+
+    netlist, diagnostics = emit_netlist(
+        design,
+        backend_name="test.backend",
+        backend_config=backend_config,
+        top_as_subckt=True,
+        emit_timestamp=emit_timestamp,
+    )
+
+    assert diagnostics == []
+    assert netlist == "\n".join(
+        [
+            "HEADER 2026-01-02 03:04:05 top",
+            ".subckt top IN",
+            ".ends top",
+            "FOOTER 2026-01-02 03:04:05 top",
         ]
     )
 
