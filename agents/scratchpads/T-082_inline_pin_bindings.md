@@ -26,12 +26,14 @@
 ## Progress log
 - 2026-01-09: Understood task: parse `(pin:net ...)` groups in instance expressions, fold into nets, add ports for inline `$` nets after `nets` ports, and emit errors on malformed bindings or endpoint overlaps.
 - 2026-01-09: Implemented converter changes + tests; updated MVP specs and parser note; tests passing.
+- 2026-01-09: Fixed inline `$` port promotion to only occur on first inline creation and added regression test; tests passing.
 
 ## Patch summary
 - Added inline pin binding parsing/merging with overlap diagnostics in `src/asdl/ir/converters/ast_to_nfir.py`.
 - Added inline binding unit tests in `tests/unit_tests/ir/test_converter.py`.
 - Updated MVP AST/NFIR specs for inline bindings and port order in `docs/specs_mvp/spec_ast_mvp.md` and `docs/specs_mvp/spec_asdl_nfir_mvp.md`.
 - Updated instance expression hint in `src/asdl/ast/parser.py`.
+- Prevented inline `$` bindings from promoting existing nets to ports and added regression coverage in `src/asdl/ir/converters/ast_to_nfir.py` and `tests/unit_tests/ir/test_converter.py`.
 
 ## PR URL
 - https://github.com/Jianxun/ASDL/pull/86
