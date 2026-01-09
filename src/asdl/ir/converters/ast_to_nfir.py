@@ -91,6 +91,7 @@ def _convert_module(
 
     if module.nets:
         for net_name, endpoint_expr in module.nets.items():
+            net_loc = module._nets_loc.get(net_name)
             is_port = net_name.startswith("$")
             if is_port:
                 stripped_name = net_name[1:]
@@ -102,22 +103,23 @@ def _convert_module(
                     _diagnostic(
                         INVALID_ENDPOINT_EXPR,
                         f"{endpoint_error} in module '{name}'",
-                        module._loc,
+                        net_loc or module._loc,
                     )
                 )
                 had_error = True
                 continue
-            nets.append(NetOp(name=net_name, endpoints=endpoints))
+            nets.append(NetOp(name=net_name, endpoints=endpoints, src=_loc_attr(net_loc)))
 
     if module.instances:
         for inst_name, expr in module.instances.items():
+            inst_loc = module._instances_loc.get(inst_name)
             ref, params, instance_error = _parse_instance_expr(expr)
             if instance_error is not None:
                 diagnostics.append(
                     _diagnostic(
                         INVALID_INSTANCE_EXPR,
                         f"{instance_error} in module '{name}'",
-                        module._loc,
+                        inst_loc or module._loc,
                     )
                 )
                 had_error = True
@@ -133,7 +135,7 @@ def _convert_module(
                         _diagnostic(
                             UNRESOLVED_QUALIFIED,
                             f"Unresolved symbol '{ref}' in module '{name}'",
-                            module._loc,
+                            inst_loc or module._loc,
                         )
                     )
                     had_error = True
@@ -143,7 +145,7 @@ def _convert_module(
                         _diagnostic(
                             UNRESOLVED_QUALIFIED,
                             f"Unresolved symbol '{ref}' in module '{name}'",
-                            module._loc,
+                            inst_loc or module._loc,
                         )
                     )
                     had_error = True
@@ -159,7 +161,7 @@ def _convert_module(
                         _diagnostic(
                             UNRESOLVED_QUALIFIED,
                             f"Unresolved symbol '{ref}' in module '{name}'",
-                            module._loc,
+                            inst_loc or module._loc,
                         )
                     )
                     had_error = True
@@ -172,7 +174,7 @@ def _convert_module(
                     _diagnostic(
                         UNRESOLVED_UNQUALIFIED,
                         f"Unresolved symbol '{ref}' in module '{name}'",
-                        module._loc,
+                        inst_loc or module._loc,
                     )
                 )
                 had_error = True
@@ -185,6 +187,7 @@ def _convert_module(
                     ref=ref,
                     ref_file_id=str(ref_file_id) if ref_file_id is not None else None,
                     params=_to_string_dict_attr(params),
+                    src=_loc_attr(inst_loc),
                 )
             )
 
