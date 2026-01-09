@@ -34,13 +34,13 @@
 - Updated MVP netlist emission spec with emit timestamp placeholders and template-driven note.
 
 ## PR URL
-- Pending.
+- https://github.com/Jianxun/ASDL/pull/84
 
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/netlist -v`
 
 ## Status request
-- In Progress.
+- Done.
 
 ## Blockers / Questions
 - None.
