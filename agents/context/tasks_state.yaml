@@ -9,9 +9,9 @@ T-079:
   pr: 82
   merged: true
 T-080:
-  status: ready_for_review
+  status: done
   pr: 84
-  merged: false
+  merged: true
 T-081:
   status: ready
   pr: null
