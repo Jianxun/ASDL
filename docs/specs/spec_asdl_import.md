@@ -73,7 +73,9 @@ file as written.
 
 Given an importing file `F` and an import path `P`:
 
-0. Expand `~` and `$VAR` segments in `P` (environment variable expansion).
+0. Expand `~` and `$VAR`/`${VAR}` segments in `P` (environment variable expansion).
+   If expansion fails or yields an empty path, emit `AST-011` malformed import
+   diagnostics.
 1. If `P` starts with `./` or `../`:
    - resolve relative to directory of `F`.
 
@@ -92,8 +94,9 @@ matches exist, it is an error (no shadowing); the error MUST list all matches
 in root order. If no match is found, it is an error.
 
 `ASDL_LIB_PATH` is a PATH-style list of directories (OS path separator).
-Relative entries are resolved against the current working directory; empty
-entries are ignored.
+Entries expand `~` and `$VAR`/`${VAR}`; if expansion fails or yields an empty
+path, emit `AST-011` and ignore that entry. Relative entries are resolved
+against the current working directory; empty entries are ignored.
 
 ---
 
