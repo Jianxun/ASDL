@@ -9,6 +9,6 @@ T-078:
   pr: 81
   merged: true
 T-079:
-  status: review_clean
+  status: done
   pr: 82
-  merged: false
+  merged: true
