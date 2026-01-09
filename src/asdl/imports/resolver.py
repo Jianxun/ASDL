@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
@@ -40,12 +41,8 @@ def resolve_import_path(
     diagnostics: List[Diagnostic] = []
     try:
         expanded = _expand_import_path(import_path)
-    except Exception as exc:
+    except ValueError as exc:
         diagnostics.append(import_path_malformed(import_path, str(exc), loc))
-        return None, diagnostics
-
-    if expanded.strip() == "":
-        diagnostics.append(import_path_malformed(import_path, "Import path is empty.", loc))
         return None, diagnostics
 
     try:
@@ -56,7 +53,8 @@ def resolve_import_path(
 
     importer_dir = Path(importing_file).absolute().parent
     lib_paths = _normalize_roots(lib_roots)
-    env_paths = _env_lib_roots()
+    env_paths, env_diags = _env_lib_roots()
+    diagnostics.extend(env_diags)
 
     if _is_explicit_relative(expanded):
         return _resolve_candidate(importer_dir / expanded, import_path, loc)
@@ -171,8 +169,23 @@ def resolve_import_graph(
     ), diagnostics
 
 
+_ENV_VAR_PATTERN = re.compile(r"\$(\w+|\{[^}]+\})")
+
+
 def _expand_import_path(import_path: str) -> str:
-    return os.path.expanduser(os.path.expandvars(import_path))
+    return _expand_path(import_path)
+
+
+def _expand_path(path: str) -> str:
+    expanded = os.path.expandvars(path)
+    expanded = os.path.expanduser(expanded)
+    if expanded.strip() == "":
+        raise ValueError("Expanded path is empty.")
+    if path.startswith("~") and expanded.startswith("~"):
+        raise ValueError("User home expansion failed.")
+    if _ENV_VAR_PATTERN.search(path) and _ENV_VAR_PATTERN.search(expanded):
+        raise ValueError("Environment variable expansion failed.")
+    return expanded
 
 
 def _is_explicit_relative(path: str) -> bool:
@@ -203,18 +216,24 @@ def _iter_logical_candidates(
         yield root / logical_path
 
 
-def _env_lib_roots() -> List[Path]:
+def _env_lib_roots() -> Tuple[List[Path], List[Diagnostic]]:
     raw = os.environ.get("ASDL_LIB_PATH", "")
     if not raw:
-        return []
+        return [], []
     roots: List[Path] = []
+    diagnostics: List[Diagnostic] = []
     for entry in raw.split(os.pathsep):
         entry = entry.strip()
         if not entry:
             continue
-        root = _normalize_root(entry)
+        try:
+            expanded = _expand_path(entry)
+        except ValueError as exc:
+            diagnostics.append(import_path_malformed(entry, str(exc), None))
+            continue
+        root = _normalize_root(expanded)
         roots.append(root)
-    return roots
+    return roots, diagnostics
 
 
 def _normalize_roots(roots: Optional[Iterable[Path]]) -> List[Path]:
