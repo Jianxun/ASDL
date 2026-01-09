@@ -27,22 +27,23 @@
 - 2026-01-10: Initialized task, captured task context.
 - 2026-01-10: Stored per-entry net/instance locations on ModuleDecl and threaded src to NFIR ops.
 - 2026-01-10: Updated IR diagnostics tests to assert entry spans and ran unit tests.
+- 2026-01-10: Opened PR #81 and set task status to ready for review.
 
 ## Patch summary
 - Added ModuleDecl private maps for net/instance entry locations, captured during parsing, and used to set net/instance src plus diagnostics in AST->NFIR.
 - Updated IR converter tests to parse YAML and assert primary spans on net/instance errors.
 
 ## PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/81
 
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/ir -v`
 
 ## Status request
-- In Progress.
+- Done.
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Implement parser metadata capture and IR span propagation.
+- Await review feedback.
