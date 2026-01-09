@@ -164,6 +164,44 @@ def test_convert_document_inline_pin_bindings_create_ports() -> None:
     assert [item.data for item in module.port_order.data] == ["VDD", "VIN", "VSS"]
 
 
+def test_convert_document_inline_pin_bindings_do_not_promote_existing_nets() -> None:
+    doc = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={
+                    "M1": "nfet (D:$VSS G:SIG)",
+                    "M2": "nfet (G:$SIG)",
+                    "M3": "nfet",
+                },
+                nets={"VSS": ["M3.S"]},
+            )
+        },
+        devices={
+            "nfet": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="M{inst} {ports}")}
+            )
+        },
+    )
+
+    design, diagnostics = convert_document(doc)
+    assert diagnostics == []
+    assert isinstance(design, DesignOp)
+
+    module = next(op for op in design.body.block.ops if isinstance(op, ModuleOp))
+    nets = {
+        op.name_attr.data: op
+        for op in module.body.block.ops
+        if isinstance(op, NetOp)
+    }
+
+    assert [item.data for item in module.port_order.data] == []
+    assert set(nets) == {"VSS", "SIG"}
+    vss_endpoints = [(ep.inst.data, ep.pin.data) for ep in nets["VSS"].endpoints.data]
+    sig_endpoints = [(ep.inst.data, ep.pin.data) for ep in nets["SIG"].endpoints.data]
+    assert vss_endpoints == [("M3", "S"), ("M1", "D")]
+    assert sig_endpoints == [("M1", "G"), ("M2", "G")]
+
+
 def test_convert_document_preserves_pattern_tokens() -> None:
     doc = AsdlDocument(
         modules={

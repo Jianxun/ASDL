@@ -155,16 +155,18 @@ def _convert_module(
                     continue
                 bound_endpoints.add(endpoint_key)
                 is_port = net_name.startswith("$")
+                port_name = None
                 if is_port:
-                    stripped_name = net_name[1:]
-                    if stripped_name not in port_names:
-                        port_order.append(stripped_name)
-                        port_names.add(stripped_name)
-                    net_name = stripped_name
-                if net_name not in net_data:
+                    port_name = net_name[1:]
+                    net_name = port_name
+                is_new_net = net_name not in net_data
+                if is_new_net:
                     net_data[net_name] = []
                     net_src[net_name] = None
                     net_order.append(net_name)
+                if is_port and is_new_net and port_name not in port_names:
+                    port_order.append(port_name)
+                    port_names.add(port_name)
                 net_data[net_name].append(
                     EndpointAttr(StringAttr(inst_name), StringAttr(pin))
                 )
