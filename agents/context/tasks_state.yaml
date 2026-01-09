@@ -9,6 +9,6 @@ T-078:
   pr: 81
   merged: true
 T-079:
-  status: ready_for_review
+  status: review_clean
   pr: 82
   merged: false
