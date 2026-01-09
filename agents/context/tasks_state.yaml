@@ -17,9 +17,9 @@ T-081:
   pr: 85
   merged: true
 T-082:
-  status: ready_for_review
+  status: done
   pr: 86
-  merged: false
+  merged: true
 T-083:
   status: ready
   pr: null
