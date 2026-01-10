@@ -21,6 +21,6 @@ T-082:
   pr: 86
   merged: true
 T-083:
-  status: done
-  pr: 87
-  merged: true
+  status: ready
+  pr: null
+  merged: false
