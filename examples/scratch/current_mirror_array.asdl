@@ -6,8 +6,8 @@ imports:
 modules:
   current_mirror_array:
     instances:
-      MN_REF: gf.nfet_3p3 L=0.2u W=5u NF=2 m=1
-      MN_OUT<P|N>: gf.nfet_3p3 m=1
+      MN_REF: gf.nfet_03v3 L=0.2u W=5u NF=2 m=1
+      MN_OUT<P|N>: gf.nfet_03v3 m=1
 
     nets:
       $IREF: [MN_REF.D, MN_REF.G, MN_OUT<P|N>.G]

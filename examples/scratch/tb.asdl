@@ -1,16 +1,33 @@
 top: tb
 
 imports:
-  dut: ./current_mirror_array.asdl
+  #dut: ./current_mirror_array.asdl
   gf: ./gf180mcu.asdl
+  sim: ./simulation.asdl
+  al: ./analogLib.asdl
 
 modules:
   tb:
     instances:
-      dut: dut.current_mirror_array
       spice_model: gf.gf180mcu_models
-      #MN1: gf.nfet_3p3 L=0.2u W=5u NF=2 m=1
+      # device
+      MN1: gf.nfet_03v3 L=0.5u W=5u NF=2 m=1
+      R1: al.res value=1k
+      # stimulus
+      vd: al.vdc dc=1
+      vg: al.vdc dc=1
+      vs: al.vdc dc=0
+      vb: al.vdc dc=0
+
+      # simulations
+
+      sim: sim.dc source=vg from=0 to=3.3 step=0.01
+
+
     nets:
-      VSS: [dut.VSS]
-      IREF: [dut.IREF2]
-      IOUT<P|N>: [dut.IOUT<P|N>]
+      GND: [vg.N, vd.N, vs.N, vb.N]
+      g: [vg.P, MN1.G, R1.A]
+      d: [vd.P, MN1.D]
+      s: [vs.P, MN1.S, R1.B]
+      b: [vb.P, MN1.B]
+

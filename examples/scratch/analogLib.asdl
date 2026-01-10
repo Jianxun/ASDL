@@ -1,0 +1,24 @@
+devices:
+  vdc:
+    ports: [P, N]
+    params:
+      dc: 0
+    backends:
+      sim.ngspice:
+        template: 'V_{name} {ports} DC {dc}'
+      sim.spectre:
+        template: '{name} ({ports}) DC {dc}'
+      lvs.klayout:
+        template: ''
+
+  res:
+    ports: [A, B]
+    params:
+      value: 1k
+    backends:
+      sim.ngspice:
+        template: 'R_{name} {ports} {value}'
+      sim.spectre:
+        template: '{name} ({ports}) resistor r={value}'
+      lvs.klayout:
+        template: 'R_{name} {ports} {value}'

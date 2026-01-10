@@ -1,0 +1,22 @@
+
+devices:
+  dc:
+    params:
+      source: 'V1'
+      from: 0
+      to: 3.3
+      step: 0.01
+
+    backends:
+      sim.ngspice:
+        template: |
+          .control
+          dc V_{source} {from} {to} {step}
+          write dc_{name}.raw
+          show all
+          .endc
+      sim.spectre:
+        template: |
+          dc {source} {from} {to} {step}
+      lvs.klayout:
+        template: ''

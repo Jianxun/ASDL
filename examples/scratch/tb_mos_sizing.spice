@@ -1,0 +1,88 @@
+** sch_path: /foss/designs/libs/tb_mosbius/tb_mos_sizing/tb_mos_sizing.sch
+**.subckt tb_mos_sizing
+x2 net3 net3 GND GND unit_nmos_1x
+x1 net1 net1 net2 net2 unit_pmos_1x
+VG net1 GND 1
+VP net2 GND 0
+VN net1 net3 0
+**** begin user architecture code
+
+.include /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/ngspice/design.ngspice
+.lib /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/ngspice/sm141064.ngspice typical
+
+
+
+
+.param ibias=100u
+.param vdd=1
+
+.control
+
+save @m.x1.xm1.m0[gm]
+save @m.x1.xm1.m0[gds]
+save @m.x1.xm1.m0[id]
+save @m.x1.xm1.m0[vdsat]
+save @m.x1.xm1.m0[cgg]
+
+save @m.x2.xm1.m0[gm]
+save @m.x2.xm1.m0[gds]
+save @m.x2.xm1.m0[id]
+save @m.x2.xm1.m0[vdsat]
+save @m.x2.xm1.m0[cgg]
+
+dc vg 0.2 1.5 0.01
+
+let gm_p = @m.x1.xm1.m0[gm]
+let gds_p = @m.x1.xm1.m0[gds]
+let id_p = @m.x1.xm1.m0[id]
+let id_p_log = log(id_p/100e-6)
+let vdsat_p = @m.x1.xm1.m0[vdsat]
+let cgg_p = @m.x1.xm1.m0[cgg]
+
+let gm_n = @m.x2.xm1.m0[gm]
+let gds_n = @m.x2.xm1.m0[gds]
+let id_n = @m.x2.xm1.m0[id]
+let id_n_log = log(id_n/100e-6)
+let vdsat_n = @m.x2.xm1.m0[vdsat]
+let cgg_n = @m.x2.xm1.m0[cgg]
+
+plot gm_n/id_n vs id_n_log, gm_p/id_p vs id_p_log
+plot db(gm_n/gds_n) vs id_n_log, db(gm_p/gds_p) vs id_p_log
+plot vdsat_n vs id_n_log, vdsat_p vs id_p_log
+plot gm_n/cgg_n vs id_n_log, gm_p/cgg_p vs id_p_log
+
+write mos_sizing.raw
+
+.endc
+
+
+**** end user architecture code
+**.ends
+
+* expanding   symbol:  mosbius_devices/unit_nmos/unit_nmos_1x.sym # of pins=4
+** sym_path: /foss/designs/libs/mosbius_devices/unit_nmos/unit_nmos_1x.sym
+** sch_path: /foss/designs/libs/mosbius_devices/unit_nmos/unit_nmos_1x.sch
+.subckt unit_nmos_1x D G S B
+*.iopin D
+*.iopin G
+*.iopin S
+*.iopin B
+XM1 D G S B nfet_03v3 L=0.5u W=30u nf=6 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+
+
+* expanding   symbol:  mosbius_devices/unit_pmos/unit_pmos_1x.sym # of pins=4
+** sym_path: /foss/designs/libs/mosbius_devices/unit_pmos/unit_pmos_1x.sym
+** sch_path: /foss/designs/libs/mosbius_devices/unit_pmos/unit_pmos_1x.sch
+.subckt unit_pmos_1x S B G D
+*.iopin D
+*.iopin G
+*.iopin S
+*.iopin B
+XM1 D G S B pfet_03v3 L=0.5u W=30u nf=6 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1*3
+.ends
+
+.GLOBAL GND
+.end

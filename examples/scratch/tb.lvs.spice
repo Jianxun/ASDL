@@ -1,11 +1,11 @@
 * ===============================================
 subckt tb
-X_dut IREF IOUT_P IOUT_N VSS current_mirror_array
 
-ends
-* ===============================================
-subckt current_mirror_array IREF IOUT_P IOUT_N VSS
-M_MN_REF IREF IREF VSS VSS nfet_03v3 L=0.2u W=5u NF=2 m=1
-M_MN_OUT_P IOUT_P IREF VSS VSS nfet_03v3 L=0.2u W=5u NF=1 m=1
-M_MN_OUT_N IOUT_N IREF VSS VSS nfet_03v3 L=0.2u W=5u NF=1 m=1
+M_MN1 d g s b nfet_03v3 L=0.5u W=5u NF=2 m=1
+R_R1 g s 1k
+
+
+
+
+
 ends
