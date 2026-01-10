@@ -35,13 +35,13 @@
 - Added converter tests for substitution and diagnostics.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/92
 
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/ir/test_converter.py -v`
 
 ## Status request
-- In Progress
+- Done
 
 ## Blockers / Questions
 - None yet.
