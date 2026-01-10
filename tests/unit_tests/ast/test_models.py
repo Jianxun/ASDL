@@ -60,3 +60,24 @@ def test_module_instances_require_string_values() -> None:
 def test_module_rejects_extra_fields() -> None:
     with pytest.raises(ValidationError):
         ModuleDecl.model_validate({"exports": {"A": "B"}})
+
+
+def test_module_accepts_patterns_and_instance_defaults() -> None:
+    module = ModuleDecl.model_validate(
+        {
+            "patterns": {"k": "<1|2>"},
+            "instance_defaults": {"mos": {"bindings": {"B": "$VSS"}}},
+        }
+    )
+    assert module.patterns == {"k": "<1|2>"}
+    assert module.instance_defaults["mos"].bindings == {"B": "$VSS"}
+
+
+def test_module_rejects_invalid_pattern_group() -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"patterns": {"k": "MN<1|2>"}})
+
+
+def test_module_rejects_instance_defaults_missing_bindings() -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"instance_defaults": {"mos": {}}})
