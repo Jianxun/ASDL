@@ -23,6 +23,7 @@ INVALID_ENDPOINT_EXPR = format_code("IR", 2)
 UNRESOLVED_QUALIFIED = format_code("IR", 10)
 UNRESOLVED_UNQUALIFIED = format_code("IR", 11)
 UNUSED_IMPORT = format_code("LINT", 1)
+DEFAULT_OVERRIDE = format_code("LINT", 2)
 NO_SPAN_NOTE = "No source span available."
 
 
@@ -84,9 +85,13 @@ def _convert_module(
 ) -> Tuple[ModuleOp, List[Diagnostic], bool]:
     diagnostics: List[Diagnostic] = []
     had_error = False
-    nets: List[NetOp] = []
     instances: List[InstanceOp] = []
+    nets_by_name: Dict[str, List[EndpointAttr]] = {}
+    net_order: List[str] = []
+    net_locs: Dict[str, Locatable] = {}
     port_order: List[str] = []
+    explicit_endpoints: Dict[Tuple[str, str], Tuple[str, bool, Optional[Locatable]]] = {}
+    instance_refs: Dict[str, str] = {}
     local_file_id = name_env.file_id if name_env is not None else None
 
     if module.nets:
@@ -95,9 +100,10 @@ def _convert_module(
             is_port = net_name.startswith("$")
             if is_port:
                 stripped_name = net_name[1:]
-                port_order.append(stripped_name)
+                if stripped_name not in port_order:
+                    port_order.append(stripped_name)
                 net_name = stripped_name
-            endpoints, endpoint_error = _parse_endpoints(endpoint_expr)
+            endpoints, suppressed_endpoints, endpoint_error = _parse_endpoints(endpoint_expr)
             if endpoint_error is not None:
                 diagnostics.append(
                     _diagnostic(
@@ -108,7 +114,21 @@ def _convert_module(
                 )
                 had_error = True
                 continue
-            nets.append(NetOp(name=net_name, endpoints=endpoints, src=_loc_attr(net_loc)))
+            if net_name not in nets_by_name:
+                nets_by_name[net_name] = []
+                net_order.append(net_name)
+                if net_loc is not None:
+                    net_locs[net_name] = net_loc
+            for endpoint in endpoints:
+                nets_by_name[net_name].append(endpoint)
+                key = (endpoint.inst.data, endpoint.pin.data)
+                suppressed = key in suppressed_endpoints
+                if key not in explicit_endpoints:
+                    explicit_endpoints[key] = (net_name, suppressed, net_loc)
+                else:
+                    existing_net, existing_suppressed, existing_loc = explicit_endpoints[key]
+                    if existing_suppressed and not suppressed:
+                        explicit_endpoints[key] = (existing_net, False, existing_loc)
 
     if module.instances:
         for inst_name, expr in module.instances.items():
@@ -124,6 +144,7 @@ def _convert_module(
                 )
                 had_error = True
                 continue
+            raw_ref = ref
             ref_file_id = None
             resolved_qualified = False
             if ref is not None and "." in ref:
@@ -190,6 +211,69 @@ def _convert_module(
                     src=_loc_attr(inst_loc),
                 )
             )
+            if raw_ref is not None:
+                instance_refs[inst_name] = raw_ref
+
+    if module.instance_defaults and instance_refs:
+        instances_by_ref: Dict[str, List[str]] = {}
+        for inst_name, ref in instance_refs.items():
+            instances_by_ref.setdefault(ref, []).append(inst_name)
+
+        for ref, defaults in module.instance_defaults.items():
+            inst_names = instances_by_ref.get(ref)
+            if not inst_names:
+                continue
+            for port_name, net_token in defaults.bindings.items():
+                net_name, is_port = _split_net_token(net_token)
+                if not is_port or net_name in port_order:
+                    continue
+                if any(
+                    (inst_name, port_name) not in explicit_endpoints
+                    for inst_name in inst_names
+                ):
+                    port_order.append(net_name)
+
+        for ref, defaults in module.instance_defaults.items():
+            inst_names = instances_by_ref.get(ref)
+            if not inst_names:
+                continue
+            for inst_name in inst_names:
+                for port_name, net_token in defaults.bindings.items():
+                    net_name, _is_port = _split_net_token(net_token)
+                    key = (inst_name, port_name)
+                    explicit = explicit_endpoints.get(key)
+                    if explicit is not None:
+                        explicit_net, suppressed, explicit_loc = explicit
+                        if explicit_net != net_name and not suppressed:
+                            diagnostics.append(
+                                _diagnostic(
+                                    DEFAULT_OVERRIDE,
+                                    (
+                                        "Default binding for"
+                                        f" '{inst_name}.{port_name}' to '{net_name}'"
+                                        f" overridden by explicit net '{explicit_net}'."
+                                    ),
+                                    explicit_loc or module._loc,
+                                    severity=Severity.WARNING,
+                                )
+                            )
+                        continue
+                    if net_name not in nets_by_name:
+                        nets_by_name[net_name] = []
+                        net_order.append(net_name)
+                    nets_by_name[net_name].append(
+                        EndpointAttr(StringAttr(inst_name), StringAttr(port_name))
+                    )
+
+    nets: List[NetOp] = []
+    for net_name in net_order:
+        nets.append(
+            NetOp(
+                name=net_name,
+                endpoints=nets_by_name.get(net_name, []),
+                src=_loc_attr(net_locs.get(net_name)),
+            )
+        )
 
     ops: List[object] = []
     ops.extend(nets)
@@ -250,18 +334,34 @@ def _parse_instance_expr(expr: str) -> Tuple[Optional[str], Dict[str, str], Opti
     return ref, params, None
 
 
-def _parse_endpoints(expr: List[str]) -> Tuple[List[EndpointAttr], Optional[str]]:
+def _parse_endpoints(
+    expr: List[str],
+) -> Tuple[List[EndpointAttr], Set[Tuple[str, str]], Optional[str]]:
     endpoints: List[EndpointAttr] = []
+    suppressed: Set[Tuple[str, str]] = set()
     if isinstance(expr, str):
-        return [], "Endpoint lists must be YAML lists of '<instance>.<pin>' strings"
+        return [], suppressed, "Endpoint lists must be YAML lists of '<instance>.<pin>' strings"
     for token in expr:
+        raw_token = token
+        suppress_override = False
+        if token.startswith("!"):
+            suppress_override = True
+            token = token[1:]
         if token.count(".") != 1:
-            return [], f"Invalid endpoint token '{token}'; expected inst.pin"
+            return [], suppressed, f"Invalid endpoint token '{raw_token}'; expected inst.pin"
         inst, pin = token.split(".", 1)
         if not inst or not pin:
-            return [], f"Invalid endpoint token '{token}'; expected inst.pin"
+            return [], suppressed, f"Invalid endpoint token '{raw_token}'; expected inst.pin"
         endpoints.append(EndpointAttr(StringAttr(inst), StringAttr(pin)))
-    return endpoints, None
+        if suppress_override:
+            suppressed.add((inst, pin))
+    return endpoints, suppressed, None
+
+
+def _split_net_token(net_token: str) -> Tuple[str, bool]:
+    if net_token.startswith("$"):
+        return net_token[1:], True
+    return net_token, False
 
 
 def _to_string_dict_attr(

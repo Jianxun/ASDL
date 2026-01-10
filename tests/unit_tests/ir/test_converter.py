@@ -102,6 +102,78 @@ def test_convert_document_preserves_pattern_tokens() -> None:
     assert out_net.endpoints.data[0].pin.data == "D<0|1>"
 
 
+def test_convert_document_applies_instance_defaults_and_ports() -> None:
+    doc = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"M1": "mos", "M2": "mos"},
+                nets={"$VIN": ["M1.G"]},
+                instance_defaults={
+                    "mos": {"bindings": {"D": "$VOUT", "S": "VSS", "B": "$VBULK"}}
+                },
+            )
+        },
+        devices={
+            "mos": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="X{inst} {ports}")}
+            )
+        },
+    )
+
+    design, diagnostics = convert_document(doc)
+    assert diagnostics == []
+    assert isinstance(design, DesignOp)
+
+    module = next(op for op in design.body.block.ops if isinstance(op, ModuleOp))
+    nets = [op for op in module.body.block.ops if isinstance(op, NetOp)]
+    net_map = {
+        net.name_attr.data: {(ep.inst.data, ep.pin.data) for ep in net.endpoints.data}
+        for net in nets
+    }
+
+    assert set(net_map.keys()) == {"VIN", "VOUT", "VSS", "VBULK"}
+    assert net_map["VIN"] == {("M1", "G")}
+    assert net_map["VOUT"] == {("M1", "D"), ("M2", "D")}
+    assert net_map["VSS"] == {("M1", "S"), ("M2", "S")}
+    assert net_map["VBULK"] == {("M1", "B"), ("M2", "B")}
+    assert [item.data for item in module.port_order.data] == ["VIN", "VOUT", "VBULK"]
+
+
+def test_convert_document_instance_defaults_override_warnings() -> None:
+    doc = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"M1": "mos", "M2": "mos"},
+                nets={
+                    "VSS": ["M1.D", "M2.S"],
+                    "VDD": ["!M1.S", "M2.D"],
+                },
+                instance_defaults={"mos": {"bindings": {"D": "VDD", "S": "VSS"}}},
+            )
+        },
+        devices={
+            "mos": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="X{inst} {ports}")}
+            )
+        },
+    )
+
+    design, diagnostics = convert_document(doc)
+    assert isinstance(design, DesignOp)
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "LINT-002"
+    assert diagnostics[0].severity is Severity.WARNING
+
+    module = next(op for op in design.body.block.ops if isinstance(op, ModuleOp))
+    nets = [op for op in module.body.block.ops if isinstance(op, NetOp)]
+    net_map = {
+        net.name_attr.data: {(ep.inst.data, ep.pin.data) for ep in net.endpoints.data}
+        for net in nets
+    }
+    assert net_map["VSS"] == {("M1", "D"), ("M2", "S")}
+    assert net_map["VDD"] == {("M1", "S"), ("M2", "D")}
+
+
 def test_convert_document_allows_portless_device() -> None:
     doc = AsdlDocument(
         devices={
