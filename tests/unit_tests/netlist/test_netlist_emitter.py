@@ -301,9 +301,9 @@ def test_emit_netlist_expands_patterns() -> None:
         if line and not line.startswith("*")
     ]
     assert lines == [
-        ".subckt top OUT_P OUT_N VSS",
-        "M_1 OUT_P VSS VSS nfet",
-        "M_2 OUT_N VSS VSS nfet",
+        ".subckt top OUTP OUTN VSS",
+        "M1 OUTP VSS VSS nfet",
+        "M2 OUTN VSS VSS nfet",
         ".ends top",
         ".end",
     ]
