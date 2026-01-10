@@ -68,6 +68,32 @@ def test_parse_string_preserves_pattern_tokens() -> None:
     assert module.nets["BUS[3:0];BUS<4|5>"] == ["MN<1|2>.S"]
 
 
+def test_parse_string_accepts_patterns_and_instance_defaults() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  top:",
+            "    patterns:",
+            "      k: \"<1|2>\"",
+            "    instance_defaults:",
+            "      mos:",
+            "        bindings:",
+            "          B: $VSS",
+            "    nets:",
+            "      $OUT:",
+            "        - I1.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert diagnostics == []
+    assert document is not None
+    module = document.modules["top"]
+    assert module.patterns == {"k": "<1|2>"}
+    assert module.instance_defaults["mos"].bindings == {"B": "$VSS"}
+
+
 def test_parse_string_accepts_imports() -> None:
     yaml_content = "\n".join(
         [
@@ -147,6 +173,72 @@ def test_parse_string_rejects_non_string_import_path() -> None:
     assert diag.code == "AST-011"
     assert diag.severity is Severity.ERROR
     assert "path" in diag.message
+
+
+def test_parse_string_rejects_top_level_patterns() -> None:
+    yaml_content = "\n".join(
+        [
+            "patterns:",
+            "  k: \"<1|2>\"",
+            "modules:",
+            "  top:",
+            "    nets:",
+            "      $OUT:",
+            "        - I1.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert "patterns" in diag.message
+
+
+def test_parse_string_rejects_invalid_pattern_group() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  top:",
+            "    patterns:",
+            "      k: \"MN<1|2>\"",
+            "    nets:",
+            "      $OUT:",
+            "        - I1.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert "group token" in diag.message
+
+
+def test_parse_string_rejects_instance_defaults_missing_bindings() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  top:",
+            "    instance_defaults:",
+            "      mos: {}",
+            "    nets:",
+            "      $OUT:",
+            "        - I1.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert "bindings" in diag.message
 
 
 def test_parse_string_invalid_root_type() -> None:
