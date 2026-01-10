@@ -285,7 +285,7 @@ def _range_values(start: int, end: int) -> Iterable[int]:
 
 def _join_with_suffix(prefix: str, suffix: str) -> str:
     if prefix:
-        return f"{prefix}_{suffix}"
+        return f"{prefix}{suffix}"
     return suffix
 
 

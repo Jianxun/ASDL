@@ -14,21 +14,21 @@ def test_expand_range_ordering() -> None:
     expanded, diagnostics = expand_pattern("DATA[3:0]")
 
     assert diagnostics == []
-    assert expanded == ["DATA_3", "DATA_2", "DATA_1", "DATA_0"]
+    assert expanded == ["DATA3", "DATA2", "DATA1", "DATA0"]
 
 
 def test_expand_enum_and_splice() -> None:
     expanded, diagnostics = expand_pattern("OUT<P|N>;CLK[1:0]")
 
     assert diagnostics == []
-    assert expanded == ["OUT_P", "OUT_N", "CLK_1", "CLK_0"]
+    assert expanded == ["OUTP", "OUTN", "CLK1", "CLK0"]
 
 
 def test_expand_left_to_right_order() -> None:
     expanded, diagnostics = expand_pattern("MN<1|2>.D<0|1>")
 
     assert diagnostics == []
-    assert expanded == ["MN_1.D_0", "MN_1.D_1", "MN_2.D_0", "MN_2.D_1"]
+    assert expanded == ["MN1.D0", "MN1.D1", "MN2.D0", "MN2.D1"]
 
 
 def test_expand_detects_duplicate_atoms() -> None:
