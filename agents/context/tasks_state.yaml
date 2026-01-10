@@ -21,8 +21,8 @@ T-084:
   pr: 90
   merged: true
 T-085:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 91
   merged: false
 T-086:
   status: ready

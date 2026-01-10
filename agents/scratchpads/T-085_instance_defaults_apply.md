@@ -35,16 +35,16 @@
 - Applied instance_defaults during AST->NFIR conversion, including override warnings and port-order handling.
 
 ## PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/91
 
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/ir/test_converter.py -v`
 
 ## Status request
-- In progress.
+- Done.
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Implement instance_defaults behavior in AST->NFIR and add tests.
+- Await review feedback.
