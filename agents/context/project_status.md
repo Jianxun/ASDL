@@ -27,6 +27,7 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - Imports spec work landed: AST `imports` schema + parser validation + import resolver + ProgramDB/NameEnv exist in `src/asdl/imports/`, but import resolution is not yet wired into CLI/pipeline.
 - Pattern expansion/elaboration engine exists (`src/asdl/patterns.py`, `src/asdl/ir/pattern_elaboration.py`) and is used by netlist emission after IFIR, but NFIR/IFIR metadata fields and pattern-aware verifiers remain incomplete.
 - Netlist emission supports system devices + `{ports}` + merged param placeholders; `{file_id}`/`{sym_name}`/`{top_sym_name}` placeholders and subckt disambiguation are still pending.
+- Inline pin bindings are deprecated in favor of `instance_defaults` and module-local named patterns; explicit joiner semantics and patterned params are queued (ADRs 0007-0010).
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ast`

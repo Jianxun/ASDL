@@ -9,7 +9,8 @@ list extraction.
 
 ## MVP scope
 - Self-contained design (no imports/exports/includes).
-- No pattern domains or wildcards; names are explicit.
+- Pattern tokens may appear in instance names, net names, and endpoint tokens;
+  expansion is deferred to elaboration.
 - No inline pin-binds; connectivity is declared only in `nets`.
 - NFIR mirrors AST 1:1, except that:
   - a deterministic `port_order` is stored, and

@@ -1,0 +1,15 @@
+modules:
+  current_mirror_array_nmos:
+    instance_defaults:
+      mos.nmos_unit:
+        bindings: 
+          B: $VSS
+          S: $VSS
+    patterns:
+      k: <1|2|4|8|16>
+    instances:
+      mn_ref: mos.nmos_unit m=1
+      mn_out{k}: mos.nmos_unit m={k}
+    nets:
+      $iref: [mn_ref.D, mn_ref.G, mn_out{k}.G]
+      $iout{k}: [mn_out{k}.D]

@@ -24,7 +24,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - `agents/context/lessons.md`: durable lessons/best practices; ADRs go in `agents/adr/` and are referenced here.
 - Netlist emission uses backend names (e.g., `sim.ngspice`) as stable identifiers in CLI and config; the CLI exposes `--backend` with default `sim.ngspice`.
 - Backend config schema (`config/backends.yaml` or `ASDL_BACKEND_CONFIG`) must include per-backend `templates`, `extension` (verbatim output suffix), and `comment_prefix`.
-- Net-first authoring uses YAML map order for `nets:` when order matters; port order derives from `$`-prefixed net keys in `nets` first, then `$`-prefixed nets referenced by inline bindings (first-seen order). The parser must preserve source order. Internal IR uses explicit lists; uniqueness is enforced by verification passes, not by dict key uniqueness.
+- Net-first authoring uses YAML map order for `nets:` when order matters; port order derives from `$`-prefixed net keys in `nets` first, then `$`-prefixed nets first-seen in `instance_defaults` bindings (deterministic order). The parser must preserve source order. Internal IR uses explicit lists; uniqueness is enforced by verification passes, not by dict key uniqueness.
 - Diagnostic schema is centralized (code, severity, message, primary span, labels, notes, help, fix-its, source); locations use file + line/col spans; all pipeline stages emit diagnostics via this contract.
 - AST->NFIR converter returns `(DesignOp | None, diagnostics)`; invalid instance or endpoint tokens emit `IR-001`/`IR-002` with `Severity.ERROR` and return `None`.
 
@@ -58,7 +58,11 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 
 ## Decision log
 - 2026-01-01: Net-first authoring schema infers ports only from `$`-prefixed net keys in `nets:`; inline pin bindings never create ports. Port order follows YAML source order of `$` nets. LHS `*` is invalid without an explicit domain (`<...>` or `[...]`). (Superseded 2026-01-11)
-- 2026-01-11: Inline pin bindings may introduce `$`-prefixed nets, which create ports if not already declared in `nets:`. Port order is `$` nets from `nets` first, then `$` nets first-seen in inline bindings. Rationale: avoid declaring ports solely for hierarchy wiring. Migration: remove `$` prefix in inline bindings to keep nets internal; or keep ports explicit in `nets` to control order.
+- 2026-01-11: Inline pin bindings may introduce `$`-prefixed nets, which create ports if not already declared in `nets:`. Port order is `$` nets from `nets` first, then `$` nets first-seen in inline bindings. Rationale: avoid declaring ports solely for hierarchy wiring. Migration: remove `$` prefix in inline bindings to keep nets internal; or keep ports explicit in `nets` to control order. (Superseded 2026-01-12, ADR-0007)
+- 2026-01-12: ADR-0007 -- Inline pin bindings are removed in favor of `instance_defaults`. Defaults apply per instance `ref`; explicit `nets` bindings override defaults and emit warnings unless suppressed by `!inst.pin`. `$` nets introduced by defaults create ports after explicit `$` nets.
+- 2026-01-12: ADR-0008 -- Module-local named patterns use `<@name>` and expand via macro substitution prior to AST->NFIR. Named patterns are group tokens only and do not recurse.
+- 2026-01-12: ADR-0009 -- Pattern expansion uses explicit concatenation with no implicit joiner; authors include separators explicitly (breaking change; implementation pending).
+- 2026-01-12: ADR-0010 -- Patterned instance parameters expand after instance-name expansion; scalar values broadcast and length-`N` values zip by instance index (no cross-product).
 - 2025-12-28: xDSL refactor adopted layered stack (ruamel -> formatter -> pydantic shape gate -> lowering -> xDSL semantic core -> passes/emit); semantic meaning lives only in xDSL.
 - 2025-12-28: For any ordered data, use YAML lists; uniqueness enforced by verification passes (no reliance on dict order/keys).
 - 2025-12-28: ADR-0001 -- Superseded by `docs/specs/spec_ast.md` / `docs/specs/spec_asdl_cir.md`; canonical v0 view kinds are `{subckt, subckt_ref, primitive, dummy, behav}`, reserved view names are `nominal` (alias `nom`) and `dummy`; dummy restricted to empty or `weak_gnd` in v0; `subckt_ref` assumes identity pin_map when omitted.
@@ -75,7 +79,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-01-05: Netlist emission is backend-selected via CLI `--backend` (default `sim.ngspice`); `config/backends.yaml` includes output `extension` per backend; `emit_ngspice` is removed in favor of a unified netlist emitter.
 - 2026-01-06: The canonical pipeline is AST -> NFIR -> IFIR -> emit; prior CIR/NLIR staging is superseded and will be reconciled in `docs/specs/`. NLIR and CIR are merged into IFIR.
 - 2026-01-06: Pattern expressions are preserved through AST/NFIR/IFIR; a dedicated elaboration pass expands patterns before backend emission.
-- 2026-01-06: Pattern splicing (`;`) is pure list concatenation; binding compares total expansion length only (no segment alignment). Canonical expansion uses `_` between basename and suffixes.
+- 2026-01-06: Pattern splicing (`;`) is pure list concatenation; binding compares total expansion length only (no segment alignment). Canonical expansion uses `_` between basename and suffixes. (Superseded 2026-01-12, ADR-0009)
 - 2026-01-06: Pattern bindings compare the fully expanded string tokens (e.g., `MN<A,B>` binds to `MN_A` and `MN_B`).
 - 2026-01-06: Patterns are allowed only on instance names, net names, and endpoint tokens (device + pin); patterns are forbidden in model names. `$` net ports preserve the pattern verbatim and forbid `;`. Literal names are limited to `[A-Za-z_][A-Za-z0-9_]*` (no pattern delimiters). Expansion size is capped at 10k atoms per token (for now).
 - 2026-01-06: Binding verification and elaboration must share an equivalence helper; scalar endpoints bind to exactly one net.

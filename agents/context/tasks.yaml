@@ -73,48 +73,102 @@ current_sprint:
       - docs/specs/spec_asdl_import.md
     links:
       scratchpad: agents/scratchpads/T-081_import_env_expansion.md
-  - id: T-082
-    title: Inline pin bindings in AST->NFIR conversion
+backlog:
+  - id: T-084
+    title: AST schema for instance_defaults + patterns
     owner: Executor
     dod: >
-      Parse inline pin bindings in instance expressions using the
-      `(<port>:<net> ...)` whitespace-separated form. Merge bindings into the
-      module net map (creating nets as needed), and allow `$`-prefixed inline
-      net names to create ports when not declared in `nets`. Port order is
-      `$` nets from `nets` first, then `$` nets first-seen in inline bindings.
-      Emit conversion diagnostics for malformed pin-binding tokens and for
-      endpoints bound in both `nets` and inline bindings. Update MVP AST/NFIR
-      specs to allow inline bindings and describe the rules. Add unit tests that
-      cover inline bindings, overlap errors, and inline-created ports.
+      Add module-level `patterns` and `instance_defaults` to the AST schema and
+      parser. Enforce shape validation for pattern entries and default binding
+      maps. Add parser/AST tests for valid and invalid shapes (including
+      module-local-only behavior and required `bindings` map).
+    verify:
+      - pytest tests/unit_tests/ast -v
+      - pytest tests/unit_tests/parser -v
+    files:
+      - src/asdl/ast/models.py
+      - src/asdl/ast/parser.py
+      - tests/unit_tests/ast/test_models.py
+      - tests/unit_tests/parser/test_parser.py
+    links:
+      adr: agents/adr/ADR-0007-instance-defaults.md
+  - id: T-085
+    title: Apply instance_defaults in AST->NFIR conversion
+    owner: Executor
+    dod: >
+      Apply `instance_defaults` during AST->NFIR conversion to create/augment
+      nets. Emit warnings on default overrides unless the endpoint token uses
+      `!inst.pin`, and suppress warnings when the explicit binding matches the
+      default. Ensure `$` nets introduced by defaults append to `port_order`
+      after explicit `$` nets in `nets`. Add IR tests for overrides and port
+      ordering.
     verify:
       - pytest tests/unit_tests/ir/test_converter.py -v
     files:
       - src/asdl/ir/converters/ast_to_nfir.py
       - tests/unit_tests/ir/test_converter.py
-      - docs/specs_mvp/spec_ast_mvp.md
-      - docs/specs_mvp/spec_asdl_nfir_mvp.md
     links:
-      scratchpad: agents/scratchpads/T-082_inline_pin_bindings.md
-  - id: T-083
-    title: Inline pin bindings netlist coverage
+      adr: agents/adr/ADR-0007-instance-defaults.md
+  - id: T-086
+    title: Named pattern macro expansion (<@name>)
     owner: Executor
-    depends_on:
-      - T-082
     dod: >
-      Add netlist or end-to-end tests that exercise inline pin bindings and
-      confirm emitted connectivity matches expected ports/nets without listing
-      every endpoint in `nets`. Cover at least one case that relies solely on
-      inline bindings for internal nets, and one case where `$` inline bindings
-      create ports and affect emitted port order.
+      Implement module-local named pattern substitution for `<@name>` prior to
+      AST->NFIR conversion (no recursion). Reject undefined names and invalid
+      pattern definitions (non-group tokens). Add IR tests for substitution and
+      diagnostics.
     verify:
+      - pytest tests/unit_tests/ir/test_converter.py -v
+    files:
+      - src/asdl/ir/converters/ast_to_nfir.py
+      - tests/unit_tests/ir/test_converter.py
+    links:
+      adr: agents/adr/ADR-0008-named-patterns.md
+  - id: T-087
+    title: Remove implicit joiner in pattern expansion
+    owner: Executor
+    dod: >
+      Update core pattern expansion to perform literal concatenation (no
+      implicit `_` insertion). Refresh pattern expansion unit tests to match the
+      new semantics and update any affected examples/fixtures.
+    verify:
+      - pytest tests/unit_tests/parser/test_pattern_expansion.py -v
+    files:
+      - src/asdl/patterns.py
+      - tests/unit_tests/parser/test_pattern_expansion.py
+    links:
+      adr: agents/adr/ADR-0009-pattern-joiner-explicit.md
+  - id: T-088
+    title: Pattern joiner fallout fixes in IR/elaboration tests
+    owner: Executor
+    dod: >
+      Update IR elaboration and netlist emission tests/fixtures to align with
+      literal-concatenation pattern expansion (no implicit `_`). Ensure pattern
+      expansion tests pass end-to-end.
+    verify:
+      - pytest tests/unit_tests/ir -v
+      - pytest tests/unit_tests/netlist -v
+    files:
+      - tests/unit_tests/ir/test_pattern_elaboration.py
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+    links:
+      adr: agents/adr/ADR-0009-pattern-joiner-explicit.md
+  - id: T-089
+    title: Patterned instance parameter expansion
+    owner: Executor
+    dod: >
+      Expand pattern tokens in instance parameter values after instance-name
+      expansion. Support scalar broadcast and length-N zip; reject mismatched
+      lengths. Add tests that cover broadcast, zip, and error cases.
+    verify:
+      - pytest tests/unit_tests/ir/test_pattern_elaboration.py -v
       - pytest tests/unit_tests/netlist/test_netlist_emitter.py -v
     files:
-      - tests/unit_tests/netlist/test_netlist_emitter.py
-      - tests/unit_tests/e2e/test_pipeline_mvp.py
+      - src/asdl/ir/pattern_elaboration.py
+      - tests/unit_tests/ir/test_pattern_elaboration.py
     links:
-      scratchpad: agents/scratchpads/T-083_inline_pin_bindings_netlist.md
+      adr: agents/adr/ADR-0010-patterned-params.md
 
-backlog: []
 exploration_candidates:
   - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.
   - CLI pipeline UX: command flow, error messaging, and file layout.

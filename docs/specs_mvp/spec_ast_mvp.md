@@ -12,7 +12,8 @@ ordered mappings but performs no semantic resolution.
 - Modules contain only `instances` and `nets`.
 - No `exports` block.
 - Connectivity is declared only in `nets` (no inline pin-binds).
-- Names and endpoints are explicit (no wildcards or pattern domains).
+- Pattern tokens are permitted in instance names, net names, and endpoint tokens;
+  expansion is deferred to a dedicated elaboration pass before emission.
 
 ---
 
