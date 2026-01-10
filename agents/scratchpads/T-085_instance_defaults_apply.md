@@ -26,15 +26,19 @@
 
 ## Progress log
 - 2026-01-12: Created scratchpad for T-085.
+- 2026-01-12: Added converter tests for instance_defaults overrides and port ordering.
+- 2026-01-12: Applied instance_defaults in AST->NFIR conversion with override warnings.
+- 2026-01-12: Verified IR converter tests.
 
 ## Patch summary
-- TBD.
+- Added converter coverage for instance_defaults overrides and port ordering.
+- Applied instance_defaults during AST->NFIR conversion, including override warnings and port-order handling.
 
 ## PR URL
 - TBD.
 
 ## Verification
-- TBD.
+- `./venv/bin/pytest tests/unit_tests/ir/test_converter.py -v`
 
 ## Status request
 - In progress.
