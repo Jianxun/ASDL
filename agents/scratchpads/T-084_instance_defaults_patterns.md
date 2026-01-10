@@ -39,7 +39,7 @@
 - Added AST/parser coverage for valid and invalid pattern/default shapes and module-local-only enforcement.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/90
 
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/ast -v`
