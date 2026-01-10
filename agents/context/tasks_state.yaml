@@ -29,7 +29,7 @@ T-086:
   pr: 92
   merged: true
 T-087:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-088:
