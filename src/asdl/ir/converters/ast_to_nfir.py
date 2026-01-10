@@ -20,7 +20,6 @@ from asdl.ir.nfir import (
 
 INVALID_INSTANCE_EXPR = format_code("IR", 1)
 INVALID_ENDPOINT_EXPR = format_code("IR", 2)
-OVERLAPPING_ENDPOINT = format_code("IR", 3)
 UNRESOLVED_QUALIFIED = format_code("IR", 10)
 UNRESOLVED_UNQUALIFIED = format_code("IR", 11)
 UNUSED_IMPORT = format_code("LINT", 1)
@@ -88,11 +87,6 @@ def _convert_module(
     nets: List[NetOp] = []
     instances: List[InstanceOp] = []
     port_order: List[str] = []
-    port_names: Set[str] = set()
-    net_data: Dict[str, List[EndpointAttr]] = {}
-    net_src: Dict[str, Optional[Locatable]] = {}
-    net_order: List[str] = []
-    bound_endpoints: Set[Tuple[str, str]] = set()
     local_file_id = name_env.file_id if name_env is not None else None
 
     if module.nets:
@@ -101,9 +95,7 @@ def _convert_module(
             is_port = net_name.startswith("$")
             if is_port:
                 stripped_name = net_name[1:]
-                if stripped_name not in port_names:
-                    port_order.append(stripped_name)
-                    port_names.add(stripped_name)
+                port_order.append(stripped_name)
                 net_name = stripped_name
             endpoints, endpoint_error = _parse_endpoints(endpoint_expr)
             if endpoint_error is not None:
@@ -116,18 +108,12 @@ def _convert_module(
                 )
                 had_error = True
                 continue
-            if net_name not in net_data:
-                net_data[net_name] = []
-                net_src[net_name] = net_loc
-                net_order.append(net_name)
-            net_data[net_name].extend(endpoints)
-            for endpoint in endpoints:
-                bound_endpoints.add((endpoint.inst.data, endpoint.pin.data))
+            nets.append(NetOp(name=net_name, endpoints=endpoints, src=_loc_attr(net_loc)))
 
     if module.instances:
         for inst_name, expr in module.instances.items():
             inst_loc = module._instances_loc.get(inst_name)
-            ref, params, inline_bindings, instance_error = _parse_instance_expr(expr)
+            ref, params, instance_error = _parse_instance_expr(expr)
             if instance_error is not None:
                 diagnostics.append(
                     _diagnostic(
@@ -138,38 +124,6 @@ def _convert_module(
                 )
                 had_error = True
                 continue
-            for pin, net_name in inline_bindings:
-                endpoint_key = (inst_name, pin)
-                if endpoint_key in bound_endpoints:
-                    diagnostics.append(
-                        _diagnostic(
-                            OVERLAPPING_ENDPOINT,
-                            (
-                                f"Endpoint '{inst_name}.{pin}' is bound more than once in "
-                                f"module '{name}'"
-                            ),
-                            inst_loc or module._loc,
-                        )
-                    )
-                    had_error = True
-                    continue
-                bound_endpoints.add(endpoint_key)
-                is_port = net_name.startswith("$")
-                port_name = None
-                if is_port:
-                    port_name = net_name[1:]
-                    net_name = port_name
-                is_new_net = net_name not in net_data
-                if is_new_net:
-                    net_data[net_name] = []
-                    net_src[net_name] = None
-                    net_order.append(net_name)
-                if is_port and is_new_net and port_name not in port_names:
-                    port_order.append(port_name)
-                    port_names.add(port_name)
-                net_data[net_name].append(
-                    EndpointAttr(StringAttr(inst_name), StringAttr(pin))
-                )
             ref_file_id = None
             resolved_qualified = False
             if ref is not None and "." in ref:
@@ -238,14 +192,6 @@ def _convert_module(
             )
 
     ops: List[object] = []
-    for net_name in net_order:
-        nets.append(
-            NetOp(
-                name=net_name,
-                endpoints=net_data[net_name],
-                src=_loc_attr(net_src.get(net_name)),
-            )
-        )
     ops.extend(nets)
     ops.extend(instances)
     return (
@@ -288,69 +234,20 @@ def _convert_backend(name: str, backend: DeviceBackendDecl) -> BackendOp:
     )
 
 
-def _parse_instance_expr(
-    expr: str,
-) -> Tuple[Optional[str], Dict[str, str], List[Tuple[str, str]], Optional[str]]:
+def _parse_instance_expr(expr: str) -> Tuple[Optional[str], Dict[str, str], Optional[str]]:
     tokens = expr.split()
     if not tokens:
-        return None, {}, [], "Instance expression must start with a model name"
+        return None, {}, "Instance expression must start with a model name"
     ref = tokens[0]
     params: Dict[str, str] = {}
-    inline_bindings: List[Tuple[str, str]] = []
-    binding_tokens: List[str] = []
-    in_bindings = False
-    saw_bindings = False
     for token in tokens[1:]:
-        if in_bindings:
-            if token.startswith("("):
-                return None, {}, [], "Inline pin bindings must use a single '(...)' group"
-            if token.endswith(")"):
-                in_bindings = False
-                token = token[:-1]
-            if token:
-                binding_tokens.append(token)
-            continue
-        if token.startswith("("):
-            if saw_bindings:
-                return None, {}, [], "Inline pin bindings must use a single '(...)' group"
-            saw_bindings = True
-            in_bindings = True
-            token = token[1:]
-            if token.endswith(")"):
-                in_bindings = False
-                token = token[:-1]
-            if token:
-                binding_tokens.append(token)
-            continue
         if "=" not in token:
-            return None, {}, [], f"Invalid instance param token '{token}'; expected key=value"
+            return None, {}, f"Invalid instance param token '{token}'; expected key=value"
         key, value = token.split("=", 1)
         if not key or not value:
-            return None, {}, [], f"Invalid instance param token '{token}'; expected key=value"
+            return None, {}, f"Invalid instance param token '{token}'; expected key=value"
         params[key] = value
-    if in_bindings:
-        return None, {}, [], "Inline pin bindings must end with ')'"
-    if saw_bindings:
-        if not binding_tokens:
-            return None, {}, [], "Inline pin bindings require at least one binding"
-        for binding in binding_tokens:
-            if binding.count(":") != 1:
-                return (
-                    None,
-                    {},
-                    [],
-                    f"Invalid pin binding token '{binding}'; expected pin:net",
-                )
-            pin, net = binding.split(":", 1)
-            if not pin or not net:
-                return (
-                    None,
-                    {},
-                    [],
-                    f"Invalid pin binding token '{binding}'; expected pin:net",
-                )
-            inline_bindings.append((pin, net))
-    return ref, params, inline_bindings, None
+    return ref, params, None
 
 
 def _parse_endpoints(expr: List[str]) -> Tuple[List[EndpointAttr], Optional[str]]:

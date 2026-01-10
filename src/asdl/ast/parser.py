@@ -21,7 +21,7 @@ AST_IMPORT_PATH_ERROR = "AST-011"
 AST_IMPORT_DUP_NAMESPACE_ERROR = "AST-013"
 NO_SPAN_NOTE = "No source span available."
 ENDPOINT_LIST_NOTE = "Endpoint lists must be YAML lists of '<instance>.<pin>' strings"
-INSTANCE_EXPR_NOTE = "Instance expressions use '<model> key=value ... (pin:net ...)' format"
+INSTANCE_EXPR_NOTE = "Instance expressions use '<model> key=value ...' format"
 IMPORT_NAMESPACE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
