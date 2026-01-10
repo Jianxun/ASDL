@@ -44,11 +44,14 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 ### Fields
 - `instances: Optional[InstancesBlock]`
 - `nets: Optional[NetsBlock]`
+- `patterns: Optional[PatternsBlock]`
+- `instance_defaults: Optional[InstanceDefaultsBlock]`
 - `exports: Optional[ExportsBlock]`
 
 ### Notes
 - Connectivity is net-first: `nets` own endpoint lists.
-- Inline instance pin-bindings are an equally valid binding source; any endpoint bound in both `nets` and inline bindings is a semantic error (deferred).
+- `instance_defaults` provide default bindings per instance `ref` and are
+  overridden by explicit `nets` bindings (override warnings are deferred).
 - Module ports are derived from `$`-prefixed net names (plus forwarded ports from `exports`).
 
 ---
@@ -59,8 +62,8 @@ Single authoring style for MVP: flat map.
 ### Style A — flat map
 ```yaml
 instances:
-  MN_IN<P,N>: nfet_3p3 m=8 (B:$VSS)
-  MP_LOAD<P,N>: pfet_3p3 m=2 (B:$VDD)
+  MN_IN<P,N>: nfet_3p3 m=8
+  MP_LOAD<P,N>: pfet_3p3 m=2
 ```
 
 ### AST shape
@@ -70,17 +73,45 @@ instances:
 - **Type**: `str` (raw inline instance expression).
 - **Grammar (opaque at AST)**:
   ```
-  <TypeName> <ParamTokens...> ( <PinBind>... )?
+  <TypeName> <ParamTokens...>
   ```
 - `ParamTokens` are preserved as raw text.
-- Inline pin-bindings are preserved as raw text; they are an alternative binding source alongside `nets` (conflict checks are deferred).
+- `ParamTokens` may include pattern syntax; expansion uses broadcast/zip semantics
+  after instance-name expansion (deferred).
 - `<TypeName>` may be either `symbol` or `ns.symbol`; pattern syntax is forbidden.
 
-#### Inline pin binding syntax (informative)
-- **Form**: `(<port>:<net> ...)` with bindings separated by whitespace only.
-- **Port**: literal name only (no patterns or qualifiers).
-- **Net**: literal net name; `$` prefix is allowed for exported nets.
-- Only named bindings are supported; positional bindings are not allowed.
+---
+
+---
+
+## `PatternsBlock`
+
+### AST shape
+- `PatternsBlock` is an ordered mapping: `Dict[str, str]`.
+- Values must be a **single group token**: either `<...>` (enum) or `[...]` (range).
+
+### Notes
+- Named pattern references use `<@name>`.
+- `patterns` are module-local only.
+- Named patterns must not reference other named patterns.
+- Pattern names must match `[A-Za-z_][A-Za-z0-9_]*`.
+
+---
+
+## `InstanceDefaultsBlock`
+
+### AST shape
+- `InstanceDefaultsBlock` is an ordered mapping: `Dict[str, InstanceDefaultsDecl]`.
+
+#### `InstanceDefaultsDecl`
+- `bindings: Dict[str, str]`
+  - Map of port name -> net token.
+  - Port names must be literal names (no patterns).
+  - Net tokens may include pattern syntax and `$` prefixes.
+
+### Notes
+- Defaults apply to all instances with matching `ref`.
+- Explicit `nets` bindings override defaults; overrides may emit warnings.
 
 ---
 
@@ -104,8 +135,10 @@ instances:
 ### Notes
 - `$` on the net name marks an **exported port**.
 - Port order is the appearance order of `$` nets in `nets`, followed by forwarded ports from `exports`.
-- `*`, `<...>`, `[...]`, and `;` pattern/domain markers are preserved as raw tokens for later expansion.
+- `*`, `<...>`, `[...]`, `<@name>`, and `;` pattern/domain markers are preserved as raw tokens for later expansion.
 - `$` net names may include pattern syntax, but `;` is forbidden in `$` net expressions.
+- Endpoint tokens may be prefixed with `!` to suppress default-override warnings; `!`
+  is not part of the endpoint name.
 
 ---
 
@@ -155,13 +188,16 @@ instances:
 - `DeviceBackendDecl.template` must exist and be a string.
 - `InstancesBlock` entries must be `InstanceExpr` strings.
 - `NetsBlock` values must be `EndpointListExpr` lists of strings.
+- `PatternsBlock` values must be strings.
+- `InstanceDefaultsDecl.bindings` values must be strings.
 
 ---
 
 ## Deferred to IR verification / passes
 - Name resolution (module/device lookup, instance refs).
-- Pattern expansion and binding verification (`<...>`, `[...]`, `;`); enforce expansion size limits.
-- Inline pin-bind parsing; enforce one net binding per endpoint across `nets` and inline bindings (no overlaps).
+- Named pattern expansion (`<@name>`) and pattern expansion/binding verification (`<...>`, `[...]`, `;`); enforce expansion size limits.
+- Patterned parameter expansion (broadcast/zip; no cross-product).
+- Apply `instance_defaults` and emit override warnings (suppressed by `!`).
 - Export forwarding resolution and collision checks.
 - Endpoint uniqueness checks (an endpoint bound to multiple nets).
 - Template placeholder validity and backend-specific constraints.

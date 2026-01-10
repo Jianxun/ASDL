@@ -9,11 +9,12 @@ list extraction.
 
 ## MVP scope
 - Self-contained design (no imports/exports/includes).
-- No pattern domains or wildcards; names are explicit.
-- Inline pin-binds are allowed in instance expressions and merged into `nets`.
+- Pattern tokens may appear in instance names, net names, and endpoint tokens;
+  expansion is deferred to elaboration.
+- No inline pin-binds; connectivity is declared only in `nets`.
 - NFIR mirrors AST 1:1, except that:
   - a deterministic `port_order` is stored, and
-  - instance expressions are parsed into model name + params + inline pin bindings.
+  - instance expressions are parsed into model name + params.
 
 ---
 
@@ -34,7 +35,6 @@ list extraction.
 - `sym_name: StringAttr`
 - `port_order: ArrayAttr<StringAttr>`
   - Ordered list of port names derived from `$` nets in AST.
-  - `$` nets from `nets` appear first, followed by `$` nets first-seen in inline bindings.
   - Port names are stored without the `$` prefix.
 - `doc: StringAttr?`
 - `src: LocAttr?`
@@ -93,22 +93,18 @@ list extraction.
 - `asdl_nfir.design.top` is copied from AST `top` (if present).
 - For each `$` net in AST, strip the `$` prefix for the NFIR net name.
 - `port_order` is the ordered list of those stripped names, in AST `nets` order.
-- Append `$` nets first-seen in inline bindings to `port_order`.
 - Non-port nets must not start with `$` in NFIR.
 - Parse `InstanceExpr` as:
   - first token is `ref` (model name),
-  - remaining tokens must be `<key>=<value>` pairs or a single inline binding group
-    `(<pin>:<net> ...)`,
-  - store params as a dict of raw strings,
-  - merge inline bindings into the module net map (create nets as needed).
+  - remaining tokens must be `<key>=<value>` pairs,
+  - store params as a dict of raw strings.
 - Devices and their backends are copied 1:1 from AST.
 
 ---
 
 ## Diagnostics (AST -> NFIR conversion)
-- `IR-001`: invalid instance token (bad param token or malformed pin binding); conversion returns no design.
+- `IR-001`: invalid instance param token (not `key=value`); conversion returns no design.
 - `IR-002`: invalid endpoint token (not `inst.pin`); conversion returns no design.
-- `IR-003`: endpoint bound in both `nets` and inline bindings; conversion returns no design.
 
 ---
 

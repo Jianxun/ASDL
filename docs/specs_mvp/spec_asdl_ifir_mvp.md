@@ -9,7 +9,8 @@ pipeline.
 
 ## MVP scope
 - Self-contained design (no imports/exports/includes).
-- No pattern domains or wildcards; names are explicit.
+- Pattern tokens may appear in instance names, net names, and endpoint tokens;
+  expansion is deferred to elaboration.
 - Named-only connections (no positional conns).
 - Explicit net objects are declared in each module.
 - No view system and no device kind inference.

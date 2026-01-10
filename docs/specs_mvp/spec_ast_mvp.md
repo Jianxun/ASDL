@@ -11,8 +11,9 @@ ordered mappings but performs no semantic resolution.
 - Top-level fields are limited to `top`, `modules`, `devices`.
 - Modules contain only `instances` and `nets`.
 - No `exports` block.
-- Connectivity is declared in `nets` and optional inline pin bindings.
-- Names and endpoints are explicit (no wildcards or pattern domains).
+- Connectivity is declared only in `nets` (no inline pin-binds).
+- Pattern tokens are permitted in instance names, net names, and endpoint tokens;
+  expansion is deferred to a dedicated elaboration pass before emission.
 
 ---
 
@@ -39,11 +40,9 @@ ordered mappings but performs no semantic resolution.
 - `nets: Optional[NetsBlock]`
 
 ### Notes
-- Connectivity is net-first: `nets` own endpoint lists; instance expressions may add inline
-  pin bindings.
-- Module ports are derived from `$`-prefixed net names in `nets`, plus `$` nets first-seen
-  in inline bindings.
-- Port order is `$` nets from `nets` first, then `$` nets from inline bindings.
+- Connectivity is net-first: `nets` own endpoint lists.
+- Module ports are derived from `$`-prefixed net names.
+- Port order is the appearance order of `$` nets in `nets`.
 
 ---
 
@@ -64,16 +63,11 @@ instances:
 - **Type**: `str` (raw inline instance expression).
 - **Grammar (opaque at AST)**:
   ```
-  <TypeName> <ParamTokens...> ( <PinBind>... )?
+  <TypeName> <ParamTokens...>
   ```
 - `ParamTokens` are preserved as raw text.
 - **MVP token form**: `<key>=<value>` (no spaces around `=`).
-- Inline pin-bindings are allowed as raw text and parsed during AST->NFIR conversion.
-
-#### Inline pin binding tokens (informative)
-- **Form**: `(<pin>:<net> ...)` with bindings separated by whitespace.
-- **Pin**: literal name only (no patterns or qualifiers).
-- **Net**: literal net name; `$` prefix is allowed for exported nets.
+- Inline pin-bindings are not permitted in MVP.
 
 ---
 

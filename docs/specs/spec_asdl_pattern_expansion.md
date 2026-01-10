@@ -22,8 +22,8 @@ Wildcard matching, aliasing, and exporting syntax are intentionally excluded.
    - Avoid `,` in ASDL micro-syntax to eliminate quoting friction in YAML flow lists
    - Use `|` for alternatives, `;` for splicing
 
-3. **Readable canonical naming**
-   - Expanded names insert `_` between base and suffix tokens
+3. **Explicit joining**
+   - Expansion performs literal concatenation with no implicit joiner
 
 4. **Semantics are allowed**
    - Expansion is syntactic, but downstream tools may consume structural meaning
@@ -50,14 +50,14 @@ Wildcard matching, aliasing, and exporting syntax are intentionally excluded.
 
 **Semantics**
 - Expands into a sequence of atoms by appending numeric suffixes
-- `_` is inserted between base and numeric suffix
+- No implicit joiner is inserted between base and numeric suffix
 - Range is **inclusive**
 - Expansion order follows the written direction
 
 **Examples**
 ```
-DATA[3:0] → DATA_3 DATA_2 DATA_1 DATA_0
-DATA[0:3] → DATA_0 DATA_1 DATA_2 DATA_3
+DATA[3:0] → DATA3 DATA2 DATA1 DATA0
+DATA_[3:0] → DATA_3 DATA_2 DATA_1 DATA_0
 ```
 
 **Rules**
@@ -76,13 +76,13 @@ DATA[0:3] → DATA_0 DATA_1 DATA_2 DATA_3
 
 **Semantics**
 - Expands into one atom per listed alternative
-- `_` is inserted between base and alternative token
+- No implicit joiner is inserted between base and alternative token
 - Alternatives are substituted literally
 
 **Examples**
 ```
-OUT<P|N> → OUT_P OUT_N
-BIAS<A|B|C> → BIAS_A BIAS_B BIAS_C
+OUT<P|N> → OUTP OUTN
+BIAS_<A|B|C> → BIAS_A BIAS_B BIAS_C
 ```
 
 **Rules**
@@ -106,10 +106,10 @@ BIAS<A|B|C> → BIAS_A BIAS_B BIAS_C
 
 **Examples**
 ```
-net1;net2[2:0]
+net1;net2_[2:0]
 → net1 net2_2 net2_1 net2_0
 
-OUT<P|N>;CLK[1:0]
+OUT_<P|N>;CLK_[1:0]
 → OUT_P OUT_N CLK_1 CLK_0
 ```
 
@@ -212,5 +212,5 @@ correctness of the expanded structural IR.
 
 After expansion:
 - Every endpoint/name is a plain atom (no `[]`, no `<>`, no `;`)
-- Canonical `_` insertion has been applied
+- No implicit joiner has been applied (atoms are literal concatenations)
 - The result is suitable for deterministic validation and lowering
