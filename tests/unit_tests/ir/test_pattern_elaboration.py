@@ -37,19 +37,19 @@ def test_elaborate_patterns_expands_names_and_conns() -> None:
         op for op in elaborated.body.block.ops if isinstance(op, ModuleOp)
     )
     port_order = [attr.data for attr in ifir_module.port_order.data]
-    assert port_order == ["OUT_P", "OUT_N", "VSS"]
+    assert port_order == ["OUTP", "OUTN", "VSS"]
 
     nets = [op for op in ifir_module.body.block.ops if isinstance(op, NetOp)]
-    assert [net.name_attr.data for net in nets] == ["OUT_P", "OUT_N", "VSS"]
+    assert [net.name_attr.data for net in nets] == ["OUTP", "OUTN", "VSS"]
 
     instances = [
         op for op in ifir_module.body.block.ops if isinstance(op, InstanceOp)
     ]
-    assert [inst.name_attr.data for inst in instances] == ["M_1", "M_2"]
+    assert [inst.name_attr.data for inst in instances] == ["M1", "M2"]
 
     conns = {
         inst.name_attr.data: [(conn.port.data, conn.net.data) for conn in inst.conns.data]
         for inst in instances
     }
-    assert conns["M_1"] == [("D", "OUT_P"), ("S", "VSS")]
-    assert conns["M_2"] == [("D", "OUT_N"), ("S", "VSS")]
+    assert conns["M1"] == [("D", "OUTP"), ("S", "VSS")]
+    assert conns["M2"] == [("D", "OUTN"), ("S", "VSS")]
