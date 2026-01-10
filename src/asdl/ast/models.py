@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from typing import Annotated, Any, Dict, List, Optional, TYPE_CHECKING, Union
 
 from pydantic import (
@@ -16,17 +15,30 @@ from pydantic import (
 ParamValue = Union[int, float, bool, str]
 InstanceExpr = StrictStr
 
-PATTERN_GROUP_RE = re.compile(r"^(<[^\\s<>\\[\\];]+>|\\[[^\\s<>\\[\\];]+\\])$")
-
-
 def _validate_pattern_group(value: object) -> object:
     if not isinstance(value, str):
         raise ValueError("Pattern values must be strings.")
     if value.startswith("<@") and value.endswith(">"):
         raise ValueError("Pattern values must not reference other named patterns.")
-    if not PATTERN_GROUP_RE.fullmatch(value):
+    if not _is_group_token(value):
         raise ValueError("Pattern values must be a single group token like <...> or [...].")
     return value
+
+
+def _is_group_token(value: str) -> bool:
+    if value.startswith("<") and value.endswith(">"):
+        return _is_valid_group_content(value[1:-1])
+    if value.startswith("[") and value.endswith("]"):
+        return _is_valid_group_content(value[1:-1])
+    return False
+
+
+def _is_valid_group_content(content: str) -> bool:
+    if not content:
+        return False
+    if any(char.isspace() for char in content):
+        return False
+    return not any(char in "<>[];" for char in content)
 
 
 def _reject_string_endpoint_list(value: object) -> object:
