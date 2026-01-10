@@ -33,9 +33,9 @@ T-087:
   pr: 93
   merged: true
 T-088:
-  status: review_clean
+  status: done
   pr: 94
-  merged: false
+  merged: true
 T-089:
   status: ready
   pr: null
