@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Dict, List, Optional, Set, Tuple
 
 from xdsl.dialects.builtin import DictionaryAttr, FileLineColLoc, IntAttr, LocationAttr, StringAttr
@@ -22,9 +23,12 @@ INVALID_INSTANCE_EXPR = format_code("IR", 1)
 INVALID_ENDPOINT_EXPR = format_code("IR", 2)
 UNRESOLVED_QUALIFIED = format_code("IR", 10)
 UNRESOLVED_UNQUALIFIED = format_code("IR", 11)
+INVALID_PATTERN_DEF = format_code("IR", 12)
+UNDEFINED_NAMED_PATTERN = format_code("IR", 13)
 UNUSED_IMPORT = format_code("LINT", 1)
 DEFAULT_OVERRIDE = format_code("LINT", 2)
 NO_SPAN_NOTE = "No source span available."
+NAMED_PATTERN_REF = re.compile(r"<@([^>]+)>")
 
 
 def convert_document(
@@ -93,17 +97,38 @@ def _convert_module(
     explicit_endpoints: Dict[Tuple[str, str], Tuple[str, bool, Optional[Locatable]]] = {}
     instance_refs: Dict[str, str] = {}
     local_file_id = name_env.file_id if name_env is not None else None
+    patterns, invalid_patterns, patterns_error = _collect_named_patterns(module, diagnostics)
+    had_error = had_error or patterns_error
+
+    def substitute_token(token: str, loc: Optional[Locatable]) -> str:
+        nonlocal had_error
+        updated, token_error = _substitute_named_patterns(
+            token, patterns, invalid_patterns, diagnostics, loc
+        )
+        had_error = had_error or token_error
+        return updated
 
     if module.nets:
         for net_name, endpoint_expr in module.nets.items():
             net_loc = module._nets_loc.get(net_name)
+            net_name = substitute_token(net_name, net_loc or module._loc)
             is_port = net_name.startswith("$")
             if is_port:
                 stripped_name = net_name[1:]
                 if stripped_name not in port_order:
                     port_order.append(stripped_name)
                 net_name = stripped_name
-            endpoints, suppressed_endpoints, endpoint_error = _parse_endpoints(endpoint_expr)
+            substituted_expr = endpoint_expr
+            if isinstance(endpoint_expr, list):
+                updated_tokens: List[str] = []
+                for token in endpoint_expr:
+                    prefix = "!" if isinstance(token, str) and token.startswith("!") else ""
+                    body = token[1:] if prefix else token
+                    if isinstance(body, str):
+                        body = substitute_token(body, net_loc or module._loc)
+                    updated_tokens.append(f"{prefix}{body}")
+                substituted_expr = updated_tokens
+            endpoints, suppressed_endpoints, endpoint_error = _parse_endpoints(substituted_expr)
             if endpoint_error is not None:
                 diagnostics.append(
                     _diagnostic(
@@ -133,6 +158,7 @@ def _convert_module(
     if module.instances:
         for inst_name, expr in module.instances.items():
             inst_loc = module._instances_loc.get(inst_name)
+            inst_name = substitute_token(inst_name, inst_loc or module._loc)
             ref, params, instance_error = _parse_instance_expr(expr)
             if instance_error is not None:
                 diagnostics.append(
@@ -144,6 +170,8 @@ def _convert_module(
                 )
                 had_error = True
                 continue
+            for key, value in list(params.items()):
+                params[key] = substitute_token(value, inst_loc or module._loc)
             raw_ref = ref
             ref_file_id = None
             resolved_qualified = False
@@ -224,6 +252,7 @@ def _convert_module(
             if not inst_names:
                 continue
             for port_name, net_token in defaults.bindings.items():
+                net_token = substitute_token(net_token, module._loc)
                 net_name, is_port = _split_net_token(net_token)
                 if not is_port or net_name in port_order:
                     continue
@@ -239,6 +268,7 @@ def _convert_module(
                 continue
             for inst_name in inst_names:
                 for port_name, net_token in defaults.bindings.items():
+                    net_token = substitute_token(net_token, module._loc)
                     net_name, _is_port = _split_net_token(net_token)
                     key = (inst_name, port_name)
                     explicit = explicit_endpoints.get(key)
@@ -316,6 +346,103 @@ def _convert_backend(name: str, backend: DeviceBackendDecl) -> BackendOp:
         props=_to_string_dict_attr(props),
         src=_loc_attr(backend._loc),
     )
+
+
+def _collect_named_patterns(
+    module: ModuleDecl,
+    diagnostics: List[Diagnostic],
+) -> Tuple[Dict[str, str], Set[str], bool]:
+    patterns: Dict[str, str] = {}
+    invalid: Set[str] = set()
+    had_error = False
+    for name, value in (module.patterns or {}).items():
+        if not isinstance(value, str):
+            diagnostics.append(
+                _diagnostic(
+                    INVALID_PATTERN_DEF,
+                    f"Named pattern '{name}' must be a string group token like <...> or [...].",
+                    module._loc,
+                )
+            )
+            invalid.add(name)
+            had_error = True
+            continue
+        if value.startswith("<@") and value.endswith(">"):
+            diagnostics.append(
+                _diagnostic(
+                    INVALID_PATTERN_DEF,
+                    (
+                        f"Named pattern '{name}' must not reference other named patterns;"
+                        " expected a group token like <...> or [...]."
+                    ),
+                    module._loc,
+                )
+            )
+            invalid.add(name)
+            had_error = True
+            continue
+        if not _is_group_token(value):
+            diagnostics.append(
+                _diagnostic(
+                    INVALID_PATTERN_DEF,
+                    f"Named pattern '{name}' must be a single group token like <...> or [...].",
+                    module._loc,
+                )
+            )
+            invalid.add(name)
+            had_error = True
+            continue
+        patterns[name] = value
+    return patterns, invalid, had_error
+
+
+def _substitute_named_patterns(
+    token: str,
+    patterns: Dict[str, str],
+    invalid_patterns: Set[str],
+    diagnostics: List[Diagnostic],
+    loc: Optional[Locatable],
+) -> Tuple[str, bool]:
+    if "<@" not in token:
+        return token, False
+    had_error = False
+
+    def replace(match: re.Match[str]) -> str:
+        nonlocal had_error
+        name = match.group(1)
+        if name in invalid_patterns:
+            had_error = True
+            return match.group(0)
+        replacement = patterns.get(name)
+        if replacement is None:
+            diagnostics.append(
+                _diagnostic(
+                    UNDEFINED_NAMED_PATTERN,
+                    f"Undefined named pattern '<@{name}>' in '{token}'.",
+                    loc,
+                )
+            )
+            had_error = True
+            return match.group(0)
+        return replacement
+
+    return NAMED_PATTERN_REF.sub(replace, token), had_error
+
+
+def _is_group_token(value: str) -> bool:
+    if value.startswith("<") and value.endswith(">"):
+        return _is_valid_group_content(value[1:-1])
+    if value.startswith("[") and value.endswith("]"):
+        return _is_valid_group_content(value[1:-1])
+    return False
+
+
+def _is_valid_group_content(content: str) -> bool:
+    if not content:
+        return False
+    if any(char.isspace() for char in content):
+        return False
+    return not any(char in "<>[];" for char in content)
 
 
 def _parse_instance_expr(expr: str) -> Tuple[Optional[str], Dict[str, str], Optional[str]]:
