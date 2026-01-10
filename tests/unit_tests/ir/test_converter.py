@@ -102,6 +102,89 @@ def test_convert_document_preserves_pattern_tokens() -> None:
     assert out_net.endpoints.data[0].pin.data == "D<0|1>"
 
 
+def test_convert_document_substitutes_named_patterns() -> None:
+    doc = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                patterns={"bus": "<A|B>", "idx": "[1:2]"},
+                instances={"MN<@bus>": "nfet w=<@idx>"},
+                nets={"$OUT<@bus>": ["MN<@bus>.D<@idx>"]},
+                instance_defaults={"nfet": {"bindings": {"S": "VSS<@bus>"}}},
+            )
+        },
+        devices={
+            "nfet": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="M{inst} {ports}")}
+            )
+        },
+    )
+
+    design, diagnostics = convert_document(doc)
+    assert diagnostics == []
+    assert isinstance(design, DesignOp)
+
+    module = next(op for op in design.body.block.ops if isinstance(op, ModuleOp))
+    nets = [op for op in module.body.block.ops if isinstance(op, NetOp)]
+    instances = [op for op in module.body.block.ops if isinstance(op, InstanceOp)]
+
+    assert [item.data for item in module.port_order.data] == ["OUT<A|B>"]
+    assert {net.name_attr.data for net in nets} == {"OUT<A|B>", "VSS<A|B>"}
+    assert len(instances) == 1
+    instance = instances[0]
+    assert instance.name_attr.data == "MN<A|B>"
+    assert instance.params is not None
+    assert instance.params.data["w"].data == "[1:2]"
+
+    out_net = next(net for net in nets if net.name_attr.data == "OUT<A|B>")
+    assert out_net.endpoints.data[0].inst.data == "MN<A|B>"
+    assert out_net.endpoints.data[0].pin.data == "D[1:2]"
+
+
+def test_convert_document_undefined_named_pattern_emits_error() -> None:
+    doc = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"M1": "res"},
+                nets={"OUT<@missing>": ["M1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+
+    design, diagnostics = convert_document(doc)
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "IR-013"
+    assert diagnostics[0].severity is Severity.ERROR
+
+
+def test_convert_document_invalid_named_pattern_definition_emits_error() -> None:
+    module = ModuleDecl.model_construct(
+        instances={"M1": "res"},
+        patterns={"bad": "oops"},
+    )
+    module._instances_loc = {}
+    module._nets_loc = {}
+    doc = AsdlDocument.model_construct(
+        modules={"top": module},
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+
+    design, diagnostics = convert_document(doc)
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "IR-012"
+    assert diagnostics[0].severity is Severity.ERROR
+
+
 def test_convert_document_applies_instance_defaults_and_ports() -> None:
     doc = AsdlDocument(
         modules={
