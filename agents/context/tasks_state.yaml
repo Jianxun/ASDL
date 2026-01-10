@@ -37,6 +37,6 @@ T-088:
   pr: 94
   merged: true
 T-089:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 95
+  merged: true

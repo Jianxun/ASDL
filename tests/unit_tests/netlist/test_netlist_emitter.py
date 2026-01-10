@@ -309,6 +309,47 @@ def test_emit_netlist_expands_patterns() -> None:
     ]
 
 
+def test_emit_netlist_expands_patterned_instance_params() -> None:
+    backend = BackendOp(
+        name=BACKEND_NAME,
+        template="{name} {ports} {model} {params}",
+        props=_dict_attr({"model": "nfet"}),
+    )
+    device = DeviceOp(
+        name="nfet",
+        ports=["D"],
+        params=_dict_attr({"w": "1u", "m": "1"}),
+        region=[backend],
+    )
+    instance = InstanceOp(
+        name="M<1|2>",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+        params=_dict_attr({"w": "<4>", "m": "<1|2>"}),
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[NetOp(name="OUT"), instance],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = emit_netlist(design)
+
+    assert diagnostics == []
+    assert netlist is not None
+    lines = [
+        line
+        for line in netlist.splitlines()
+        if line and not line.startswith("*")
+    ]
+    assert lines == [
+        "M1 OUT nfet w=4 m=1",
+        "M2 OUT nfet w=4 m=2",
+        ".end",
+    ]
+
+
 def test_emit_netlist_exposes_file_id_placeholders() -> None:
     backend_config = _backend_config(
         {
