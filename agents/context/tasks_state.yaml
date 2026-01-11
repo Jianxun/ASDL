@@ -25,6 +25,6 @@ T-092:
   pr: 103
   merged: true
 T-096:
-  status: ready_for_review
+  status: request_changes
   pr: 105
   merged: false
