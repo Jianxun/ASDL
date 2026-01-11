@@ -9,8 +9,6 @@ export ASDL_BACKEND_CONFIG=$PROJECT_ROOT/config/backends.yaml
 # PDK
 export PDK=gf180mcu
 export PDK_PATH=$PROJECT_ROOT/pdks/$PDK
-export PDK_ASDL_PATH=$PDK_PATH/asdl
-export PDK_MODEL_PATH=$PDK_PATH/ngspice
 
 # ASDL common libs
 export ASDL_COMMON_LIBS_PATH=$PROJECT_ROOT/libs_common

@@ -12,6 +12,11 @@ devices:
         template: |-
           X{name} {ports} {model} L={L} W={NF}*{W} nf={NF} ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
           + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m={m}
+      sim.xyce:
+        model: nfet_03v3
+        template: |-
+          X{name} {ports} {model} L={L} W={NF}*{W} nf={NF} ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+          + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m={m}
       sim.spectre:
         model: nmos_3p3
         template: '{name} ({ports}) {model} L={L} W={W} NF={NF} m={m}'
@@ -32,6 +37,11 @@ devices:
         template: |-
           X{name} {ports} {model} L={L} W={NF}*{W} nf={NF} ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
           + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m={m}
+      sim.xyce:
+        model: pfet_03v3
+        template: |-
+          X{name} {ports} {model} L={L} W={NF}*{W} nf={NF} ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+          + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m={m}
       sim.spectre:
         model: pmos_3p3
         template: '{name} ({ports}) {model} L={L} W={W} NF={NF} m={m}'
@@ -44,8 +54,13 @@ devices:
       sim.ngspice:
         template: |- 
           * GF180MCU Model Card1:
-          .include /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/ngspice/design.ngspice
-          .lib /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/ngspice/sm141064.ngspice typical
+          .include $PDK_PATH/ngspice/design.ngspice
+          .lib $PDK_PATH/ngspice/sm141064.ngspice typical
+      sim.xyce:
+        template: |-
+          * GF180MCU Model Card1:
+          .include $PDK_PATH/xyce/design.xyce
+          .lib $PDK_PATH/xyce/sm141064.xyce typical
       sim.spectre:
         template: |-
           // GF180MCU Model Card:

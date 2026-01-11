@@ -1,14 +1,14 @@
 
 imports:
-  mos: ./unit_mos.asdl
+  gf: ../gf180mcu.asdl
 modules:
   ota_nmos:
     instances:
-      MP_DIO: mos.pmos_unit m=3
-      MP_OUT: mos.pmos_unit m=3
-      MN_IN_P: mos.nmos_unit m=1
-      MN_IN_N: mos.nmos_unit m=1
-      MN_TAIL: mos.nmos_unit m=2
+      MP_DIO: gf.pfet_03v3 m=3
+      MP_OUT: gf.pfet_03v3 m=3
+      MN_IN_P: gf.nfet_03v3 m=1
+      MN_IN_N: gf.nfet_03v3 m=1
+      MN_TAIL: gf.nfet_03v3 m=2
     nets:
       $IN_P: [MN_IN_P.G]
       $IN_N: [MN_IN_N.G]

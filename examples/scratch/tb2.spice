@@ -10,11 +10,8 @@ V_vd d GND DC 1
 V_vg g GND DC 1
 V_vs s GND DC 0
 V_vb b GND DC 0
-.control
-dc V_vg 0 3.3 0.01
-write dc_sim.raw
-show all
-.endc
+
+.DC V_vg 0 3.3 0.01
 
 .global GND
 .end
