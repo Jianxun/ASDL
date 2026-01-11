@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 
 from xdsl.context import Context
 from xdsl.dialects import builtin
-from xdsl.dialects.builtin import ArrayAttr, LocationAttr, StringAttr
+from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, LocationAttr, StringAttr
 from xdsl.ir import Operation
 from xdsl.passes import ModulePass, PassPipeline
 from xdsl.utils.exceptions import VerifyException
@@ -22,6 +22,7 @@ ATOMIZE_DESIGN_MISSING = format_code("PASS", 8)
 ATOMIZE_INVALID_OP = format_code("PASS", 9)
 ATOMIZE_VERIFY_FAILED = format_code("PASS", 10)
 ATOMIZE_LITERAL_COLLISION = format_code("PASS", 11)
+ATOMIZE_UNKNOWN_ENDPOINT_INSTANCE = format_code("PASS", 12)
 ATOMIZE_CRASH = format_code("PASS", 997)
 
 
@@ -233,6 +234,15 @@ def _atomize_module(
     )
 
     conn_map: Dict[str, List[ConnAttr]] = {atom: [] for atom in instance_atoms}
+    param_map: Dict[str, Optional[DictionaryAttr]] = {}
+
+    for inst, atoms in instance_order:
+        params_per_atom, params_error = _atomize_instance_params(
+            inst, atoms, diagnostics, inst.src or module.src
+        )
+        had_error = had_error or params_error
+        for atom, params in zip(atoms, params_per_atom):
+            param_map[atom.token] = params
 
     for inst in instances:
         inst_token = inst.name_attr.data
@@ -273,6 +283,16 @@ def _atomize_module(
                 for endpoint in endpoint_atoms:
                     inst_atom = endpoint.inst.token
                     if inst_atom not in conn_map:
+                        diagnostics.emit(
+                            _diagnostic(
+                                ATOMIZE_UNKNOWN_ENDPOINT_INSTANCE,
+                                (
+                                    f"Endpoint '{inst_token}.{conn.port.data}' resolves "
+                                    f"to undeclared instance atom '{inst_atom}'"
+                                ),
+                                inst.src or module.src,
+                            )
+                        )
                         had_error = True
                         continue
                     conn_map[inst_atom].append(
@@ -283,6 +303,16 @@ def _atomize_module(
             for net_atom, endpoint in zip(net_atoms, endpoint_atoms):
                 inst_atom = endpoint.inst.token
                 if inst_atom not in conn_map:
+                    diagnostics.emit(
+                        _diagnostic(
+                            ATOMIZE_UNKNOWN_ENDPOINT_INSTANCE,
+                            (
+                                f"Endpoint '{inst_token}.{conn.port.data}' resolves "
+                                f"to undeclared instance atom '{inst_atom}'"
+                            ),
+                            inst.src or module.src,
+                        )
+                    )
                     had_error = True
                     continue
                 conn_map[inst_atom].append(
@@ -299,7 +329,7 @@ def _atomize_module(
                     ref=inst.ref,
                     conns=ArrayAttr(conns),
                     ref_file_id=inst.ref_file_id,
-                    params=inst.params,
+                    params=param_map.get(atom.token),
                     pattern_origin=atom.origin,
                     doc=inst.doc,
                     src=inst.src,
@@ -327,6 +357,64 @@ def _atomize_cached(
         diagnostics.extend(diags)
         cache[token] = atoms
     return cache[token]
+
+
+def _atomize_instance_params(
+    inst: InstanceOp,
+    atoms: List[AtomizedPattern],
+    diagnostics: DiagnosticCollector,
+    loc: LocationAttr | None,
+) -> Tuple[List[Optional[DictionaryAttr]], bool]:
+    if not atoms:
+        return [], False
+    params = inst.params
+    if params is None or not params.data:
+        return [None for _ in atoms], False
+
+    expanded_params: Dict[str, List[str]] = {}
+    had_error = False
+    instance_len = len(atoms)
+
+    for key, value in params.data.items():
+        value_str = _stringify_attr(value)
+        atomized, diags = atomize_pattern(value_str)
+        diagnostics.extend(diags)
+        if atomized is None:
+            had_error = True
+            continue
+        expanded = [atom.token for atom in atomized]
+        if len(expanded) not in (1, instance_len):
+            diagnostics.emit(
+                _diagnostic(
+                    ATOMIZE_VERIFY_FAILED,
+                    (
+                        f"Instance '{inst.name_attr.data}' parameter '{key}' atomizes to "
+                        f"{len(expanded)} values but instance atomizes to {instance_len}"
+                    ),
+                    loc,
+                )
+            )
+            had_error = True
+            continue
+        expanded_params[key] = expanded
+
+    params_per_atom: List[Optional[DictionaryAttr]] = []
+    for idx in range(instance_len):
+        items: Dict[str, StringAttr] = {}
+        for key, expanded in expanded_params.items():
+            value = expanded[0] if len(expanded) == 1 else expanded[idx]
+            items[key] = StringAttr(value)
+        params_per_atom.append(DictionaryAttr(items) if items else None)
+
+    return params_per_atom, had_error
+
+
+def _stringify_attr(value: object) -> str:
+    if isinstance(value, StringAttr):
+        return value.data
+    if hasattr(value, "data"):
+        return str(value.data)
+    return str(value)
 
 
 def _emit_literal_collisions(
