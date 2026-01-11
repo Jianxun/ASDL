@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import string
 from typing import Dict, Optional
 
@@ -49,6 +50,30 @@ SYSTEM_DEVICE_ALLOWED_PLACEHOLDERS: Dict[str, set[str]] = {
     },
 }
 
+_BRACED_ENV_VAR_PATTERN = re.compile(r"\$\{[^}]+\}")
+_ESCAPED_ENV_VAR_PATTERN = re.compile(r"\$(__ASDL_ENVVAR_\d+__)")
+
+
+def _escape_braced_env_vars(template: str) -> tuple[str, dict[str, str]]:
+    env_vars: dict[str, str] = {}
+
+    def replace(match: re.Match[str]) -> str:
+        placeholder = f"__ASDL_ENVVAR_{len(env_vars)}__"
+        env_vars[placeholder] = match.group(0)
+        return f"${placeholder}"
+
+    escaped = _BRACED_ENV_VAR_PATTERN.sub(replace, template)
+    return escaped, env_vars
+
+
+def _restore_braced_env_vars(rendered: str, env_vars: dict[str, str]) -> str:
+    def replace(match: re.Match[str]) -> str:
+        placeholder = match.group(1)
+        token = env_vars.get(placeholder)
+        return token if token is not None else match.group(0)
+
+    return _ESCAPED_ENV_VAR_PATTERN.sub(replace, rendered)
+
 
 def _validate_template(
     template: str,
@@ -74,6 +99,7 @@ def _validate_template(
 
 
 def _template_field_roots(template: str) -> set[str]:
+    template, _ = _escape_braced_env_vars(template)
     formatter = string.Formatter()
     fields: set[str] = set()
     for _, field_name, _, _ in formatter.parse(template):

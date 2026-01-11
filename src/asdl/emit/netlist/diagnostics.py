@@ -20,6 +20,7 @@ MISSING_PLACEHOLDER = format_code("EMIT", 7)
 MALFORMED_TEMPLATE = format_code("EMIT", 8)
 NETLIST_DESIGN_MISSING = format_code("EMIT", 9)
 NETLIST_VERIFY_CRASH = format_code("EMIT", 10)
+UNRESOLVED_ENV_VAR = format_code("EMIT", 11)
 
 
 def _emit_diagnostic(

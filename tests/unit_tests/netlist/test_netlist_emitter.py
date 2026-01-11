@@ -211,6 +211,81 @@ def test_emit_netlist_allows_instruction_template() -> None:
     assert netlist == "\n".join(["save all", ".end"])
 
 
+def test_emit_netlist_expands_env_vars_in_templates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PDK_PATH", "/pdk")
+    backend_config = _backend_config(
+        {
+            "__subckt_header__": ".subckt {name} {ports} ${PDK_PATH}",
+            "__subckt_footer__": ".ends {name}",
+            "__subckt_call__": "X{name} {ports} {ref}",
+            "__netlist_header__": "HEADER $PDK_PATH",
+            "__netlist_footer__": "FOOTER",
+        }
+    )
+    backend = BackendOp(
+        name="test.backend",
+        template="X{name} {ports} ${PDK_PATH}",
+    )
+    device = DeviceOp(name="nfet", ports=["D"], region=[backend])
+    instance = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[NetOp(name="OUT"), instance],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = emit_netlist(
+        design,
+        backend_name="test.backend",
+        backend_config=backend_config,
+        top_as_subckt=True,
+    )
+
+    assert diagnostics == []
+    assert netlist == "\n".join(
+        [
+            "HEADER /pdk",
+            ".subckt top OUT /pdk",
+            "XM1 OUT /pdk",
+            ".ends top",
+            "FOOTER",
+        ]
+    )
+
+
+def test_emit_netlist_reports_unresolved_env_vars() -> None:
+    backend = BackendOp(
+        name=BACKEND_NAME,
+        template="M{name} {ports} $MISSING_VAR",
+    )
+    device = DeviceOp(name="nfet", ports=["D"], region=[backend])
+    instance = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[NetOp(name="OUT"), instance],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = emit_netlist(design)
+
+    assert netlist is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.ERROR
+    assert diagnostics[0].code == format_code("EMIT", 11)
+
+
 def test_emit_netlist_reports_malformed_template() -> None:
     backend = BackendOp(
         name=BACKEND_NAME,
