@@ -264,7 +264,110 @@ def test_emit_netlist_allows_prop_override() -> None:
     assert diagnostics == []
 
 
-def test_emit_netlist_expands_patterns() -> None:
+def test_emit_netlist_assumes_atomized_patterns() -> None:
+    backend = BackendOp(
+        name=BACKEND_NAME,
+        template="{name} {ports} {model}",
+        props=_dict_attr({"model": "nfet"}),
+    )
+    device = DeviceOp(name="nfet", ports=["D", "G", "S"], region=[backend])
+    inst_p = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[
+            ConnAttr(StringAttr("D"), StringAttr("OUTP")),
+            ConnAttr(StringAttr("G"), StringAttr("VSS")),
+            ConnAttr(StringAttr("S"), StringAttr("VSS")),
+        ],
+    )
+    inst_n = InstanceOp(
+        name="M2",
+        ref="nfet",
+        conns=[
+            ConnAttr(StringAttr("D"), StringAttr("OUTN")),
+            ConnAttr(StringAttr("G"), StringAttr("VSS")),
+            ConnAttr(StringAttr("S"), StringAttr("VSS")),
+        ],
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUTP", "OUTN", "VSS"],
+        region=[
+            NetOp(name="OUTP"),
+            NetOp(name="OUTN"),
+            NetOp(name="VSS"),
+            inst_p,
+            inst_n,
+        ],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = emit_netlist(design, top_as_subckt=True)
+
+    assert diagnostics == []
+    assert netlist is not None
+    lines = [
+        line
+        for line in netlist.splitlines()
+        if line and not line.startswith("*")
+    ]
+    assert lines == [
+        ".subckt top OUTP OUTN VSS",
+        "M1 OUTP VSS VSS nfet",
+        "M2 OUTN VSS VSS nfet",
+        ".ends top",
+        ".end",
+    ]
+
+
+def test_emit_netlist_uses_atomized_instance_params() -> None:
+    backend = BackendOp(
+        name=BACKEND_NAME,
+        template="{name} {ports} {model} {params}",
+        props=_dict_attr({"model": "nfet"}),
+    )
+    device = DeviceOp(
+        name="nfet",
+        ports=["D"],
+        params=_dict_attr({"w": "1u", "m": "1"}),
+        region=[backend],
+    )
+    inst_a = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+        params=_dict_attr({"w": "4", "m": "1"}),
+    )
+    inst_b = InstanceOp(
+        name="M2",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+        params=_dict_attr({"w": "4", "m": "2"}),
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[NetOp(name="OUT"), inst_a, inst_b],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = emit_netlist(design)
+
+    assert diagnostics == []
+    assert netlist is not None
+    lines = [
+        line
+        for line in netlist.splitlines()
+        if line and not line.startswith("*")
+    ]
+    assert lines == [
+        "M1 OUT nfet w=4 m=1",
+        "M2 OUT nfet w=4 m=2",
+        ".end",
+    ]
+
+
+def test_emit_netlist_does_not_expand_patterns() -> None:
     backend = BackendOp(
         name=BACKEND_NAME,
         template="{name} {ports} {model}",
@@ -295,59 +398,10 @@ def test_emit_netlist_expands_patterns() -> None:
 
     assert diagnostics == []
     assert netlist is not None
-    lines = [
-        line
-        for line in netlist.splitlines()
-        if line and not line.startswith("*")
-    ]
-    assert lines == [
-        ".subckt top OUTP OUTN VSS",
-        "M1 OUTP VSS VSS nfet",
-        "M2 OUTN VSS VSS nfet",
-        ".ends top",
-        ".end",
-    ]
-
-
-def test_emit_netlist_expands_patterned_instance_params() -> None:
-    backend = BackendOp(
-        name=BACKEND_NAME,
-        template="{name} {ports} {model} {params}",
-        props=_dict_attr({"model": "nfet"}),
-    )
-    device = DeviceOp(
-        name="nfet",
-        ports=["D"],
-        params=_dict_attr({"w": "1u", "m": "1"}),
-        region=[backend],
-    )
-    instance = InstanceOp(
-        name="M<1|2>",
-        ref="nfet",
-        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
-        params=_dict_attr({"w": "<4>", "m": "<1|2>"}),
-    )
-    module = ModuleOp(
-        name="top",
-        port_order=["OUT"],
-        region=[NetOp(name="OUT"), instance],
-    )
-    design = DesignOp(region=[module, device], top="top")
-
-    netlist, diagnostics = emit_netlist(design)
-
-    assert diagnostics == []
-    assert netlist is not None
-    lines = [
-        line
-        for line in netlist.splitlines()
-        if line and not line.startswith("*")
-    ]
-    assert lines == [
-        "M1 OUT nfet w=4 m=1",
-        "M2 OUT nfet w=4 m=2",
-        ".end",
-    ]
+    assert "M<1|2>" in netlist
+    assert "OUT<P|N>" in netlist
+    assert "OUTP" not in netlist
+    assert "OUTN" not in netlist
 
 
 def test_emit_netlist_exposes_file_id_placeholders() -> None:
