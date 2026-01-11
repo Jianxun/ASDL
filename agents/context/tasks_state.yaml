@@ -17,7 +17,7 @@ T-094:
   pr: 101
   merged: true
 T-095:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-092:
