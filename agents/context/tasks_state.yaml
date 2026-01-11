@@ -9,9 +9,9 @@ T-091:
   pr: 99
   merged: true
 T-093:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 100
+  merged: true
 T-094:
   status: ready
   pr: null
