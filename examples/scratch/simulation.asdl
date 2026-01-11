@@ -15,6 +15,9 @@ devices:
           write dc_{name}.raw
           show all
           .endc
+      sim.xyce:
+        template: |
+          .DC V_{source} {from} {to} {step}
       sim.spectre:
         template: |
           dc {source} {from} {to} {step}

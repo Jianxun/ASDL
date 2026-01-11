@@ -102,6 +102,23 @@ current_sprint:
       - tests/unit_tests/ir/test_pattern_elaboration.py
     links:
       adr: agents/adr/ADR-0011-pattern-atomization-collisions.md
+  - id: T-096
+    title: Expand env vars in backend templates
+    owner: Executor
+    dod: >
+      Expand shell-style env vars (e.g., $PDK_PATH, ${PDK_PATH}) in rendered
+      backend templates for both system devices and device backends, using the
+      same failure rules as import path expansion (error if vars remain
+      unresolved). Emit a new EMIT diagnostic on unresolved env vars and add
+      netlist tests for success and failure cases.
+    verify:
+      - pytest tests/unit_tests/netlist/test_netlist_emitter.py -v
+    files:
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/diagnostics.py
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+    links:
+      scratchpad: agents/scratchpads/T-096.md
 backlog: []
 
 exploration_candidates:
