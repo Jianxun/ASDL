@@ -13,9 +13,9 @@ T-093:
   pr: 100
   merged: true
 T-094:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 101
+  merged: true
 T-095:
   status: ready
   pr: null

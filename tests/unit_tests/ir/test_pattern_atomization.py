@@ -2,7 +2,7 @@ import pytest
 
 pytest.importorskip("xdsl")
 
-from xdsl.dialects.builtin import StringAttr
+from xdsl.dialects.builtin import DictionaryAttr, StringAttr
 
 from asdl.ir.ifir import ConnAttr, DesignOp, InstanceOp, ModuleOp, NetOp
 from asdl.ir.pattern_atomization import run_pattern_atomization
@@ -96,3 +96,109 @@ def test_atomize_patterns_reports_literal_collisions() -> None:
     assert atomized is None
     assert any("Net literal name collision" in diag.message for diag in diagnostics)
     assert any("Instance literal name collision" in diag.message for diag in diagnostics)
+
+
+def test_atomize_patterns_allows_subset_endpoint_bindings() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[
+            NetOp(name="OUT"),
+            InstanceOp(
+                name="<P>",
+                ref="sw",
+                conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+            ),
+            InstanceOp(
+                name="<N>",
+                ref="sw",
+                conns=[],
+            ),
+        ],
+    )
+    design = DesignOp(region=[module], top="top")
+
+    atomized, diagnostics = run_pattern_atomization(design)
+
+    assert diagnostics == []
+    assert atomized is not None
+
+    ifir_module = next(
+        op for op in atomized.body.block.ops if isinstance(op, ModuleOp)
+    )
+    instances = [
+        op for op in ifir_module.body.block.ops if isinstance(op, InstanceOp)
+    ]
+    conns = {
+        inst.name_attr.data: [(conn.port.data, conn.net.data) for conn in inst.conns.data]
+        for inst in instances
+    }
+    assert conns["<P>"] == [("D", "OUT")]
+    assert conns["<N>"] == []
+
+
+def test_atomize_patterns_expands_instance_params() -> None:
+    instance = InstanceOp(
+        name="M<1|2>",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+        params=DictionaryAttr(
+            {
+                "m": StringAttr("<1|2>"),
+                "w": StringAttr("<4>"),
+            }
+        ),
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[NetOp(name="OUT"), instance],
+    )
+    design = DesignOp(region=[module], top="top")
+
+    atomized, diagnostics = run_pattern_atomization(design)
+
+    assert diagnostics == []
+    assert atomized is not None
+
+    ifir_module = next(
+        op for op in atomized.body.block.ops if isinstance(op, ModuleOp)
+    )
+    instances = [
+        op for op in ifir_module.body.block.ops if isinstance(op, InstanceOp)
+    ]
+    params = {
+        inst.name_attr.data: {
+            key: value.data for key, value in (inst.params.data if inst.params else {}).items()
+        }
+        for inst in instances
+    }
+    assert params["M<1>"] == {"m": "<1>", "w": "<4>"}
+    assert params["M<2>"] == {"m": "<2>", "w": "<4>"}
+
+
+def test_atomize_patterns_rejects_mismatched_param_lengths() -> None:
+    instance = InstanceOp(
+        name="M<1|2>",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+        params=DictionaryAttr(
+            {
+                "m": StringAttr("<1|2|3>"),
+            }
+        ),
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[NetOp(name="OUT"), instance],
+    )
+    design = DesignOp(region=[module], top="top")
+
+    atomized, diagnostics = run_pattern_atomization(design)
+
+    assert atomized is None
+    assert any(
+        "parameter 'm' atomizes to 3 values but instance atomizes to 2" in diag.message
+        for diag in diagnostics
+    )
