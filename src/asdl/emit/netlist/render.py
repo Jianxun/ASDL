@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import os
+import re
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -16,12 +18,18 @@ from .diagnostics import (
     MISSING_CONN,
     UNKNOWN_CONN_PORT,
     UNKNOWN_REFERENCE,
+    UNRESOLVED_ENV_VAR,
     _diagnostic,
     _emit_diagnostic,
 )
 from .ir_utils import _collect_design_ops, _select_backend, _select_symbol
 from .params import _dict_attr_to_strings, _merge_params
-from .templates import _template_field_roots, _validate_template
+from .templates import (
+    _escape_braced_env_vars,
+    _restore_braced_env_vars,
+    _template_field_roots,
+    _validate_template,
+)
 
 
 @dataclass(frozen=True)
@@ -31,6 +39,9 @@ class _SymbolMaps:
     module_emitted_names: Dict[Tuple[str, Optional[str]], str]
     devices_by_name: Dict[str, List[DeviceOp]]
     device_index: Dict[Tuple[str, Optional[str]], DeviceOp]
+
+
+_ENV_VAR_PATTERN = re.compile(r"\$(\w+|\{[^}]+\})")
 
 def _emit_design(
     design: "DesignOp", options: "EmitOptions"
@@ -305,6 +316,7 @@ def _emit_instance(
     diagnostics.extend(param_diags)
 
     template = backend.template.data
+    escaped_template, env_vars = _escape_braced_env_vars(template)
     placeholders = _validate_template(template, ref_name, diagnostics, loc=backend.src)
     if placeholders is None:
         return None, True
@@ -318,7 +330,7 @@ def _emit_instance(
     template_values.update(merged_params)
     template_values.update(props)
     try:
-        rendered = template.format_map(template_values)
+        rendered = escaped_template.format_map(template_values)
     except KeyError as exc:
         diagnostics.append(
             _diagnostic(
@@ -343,6 +355,8 @@ def _emit_instance(
         )
         return None, True
 
+    rendered = _restore_braced_env_vars(rendered, env_vars)
+
     should_collapse = False
     if "ports" in placeholders and not ports_str:
         should_collapse = True
@@ -350,6 +364,21 @@ def _emit_instance(
         should_collapse = True
     if should_collapse:
         rendered = _collapse_whitespace(rendered)
+    rendered, unresolved = _expand_env_vars(rendered)
+    if unresolved is not None:
+        unresolved_list = ", ".join(unresolved)
+        diagnostics.append(
+            _diagnostic(
+                UNRESOLVED_ENV_VAR,
+                (
+                    f"Backend template for '{ref_name}' contains unresolved "
+                    f"environment variables: {unresolved_list}"
+                ),
+                Severity.ERROR,
+                backend.src,
+            )
+        )
+        return None, True
     return rendered, False
 
 
@@ -508,6 +537,7 @@ def _render_system_device(
 
     sys_device = config.templates[device_name]
     template = sys_device.template
+    escaped_template, env_vars = _escape_braced_env_vars(template)
 
     try:
         placeholders = _template_field_roots(template)
@@ -522,7 +552,7 @@ def _render_system_device(
         return None, True
 
     try:
-        rendered = template.format_map(context)
+        rendered = escaped_template.format_map(context)
     except KeyError as exc:
         diagnostics.append(
             _diagnostic(
@@ -545,14 +575,41 @@ def _render_system_device(
         )
         return None, True
 
+    rendered = _restore_braced_env_vars(rendered, env_vars)
+
     should_collapse = False
     if "ports" in placeholders and context.get("ports", "") == "":
         should_collapse = True
     if should_collapse:
         rendered = _collapse_whitespace(rendered)
 
+    rendered, unresolved = _expand_env_vars(rendered)
+    if unresolved is not None:
+        unresolved_list = ", ".join(unresolved)
+        diagnostics.append(
+            _diagnostic(
+                UNRESOLVED_ENV_VAR,
+                (
+                    f"System device '{device_name}' template contains unresolved "
+                    f"environment variables: {unresolved_list}"
+                ),
+                Severity.ERROR,
+            )
+        )
+        return None, True
+
     return rendered, False
 
 
 def _collapse_whitespace(rendered: str) -> str:
     return "\n".join(" ".join(line.split()) for line in rendered.splitlines())
+
+
+def _expand_env_vars(rendered: str) -> Tuple[Optional[str], Optional[List[str]]]:
+    expanded = os.path.expandvars(rendered)
+    if _ENV_VAR_PATTERN.search(rendered) and _ENV_VAR_PATTERN.search(expanded):
+        unresolved = sorted(
+            {match.group(0) for match in _ENV_VAR_PATTERN.finditer(expanded)}
+        )
+        return None, unresolved
+    return expanded, None
