@@ -51,6 +51,7 @@ SYSTEM_DEVICE_ALLOWED_PLACEHOLDERS: Dict[str, set[str]] = {
 }
 
 _BRACED_ENV_VAR_PATTERN = re.compile(r"\$\{[^}]+\}")
+_ESCAPED_ENV_VAR_PATTERN = re.compile(r"\$(__ASDL_ENVVAR_\d+__)")
 
 
 def _escape_braced_env_vars(template: str) -> tuple[str, dict[str, str]]:
@@ -66,9 +67,12 @@ def _escape_braced_env_vars(template: str) -> tuple[str, dict[str, str]]:
 
 
 def _restore_braced_env_vars(rendered: str, env_vars: dict[str, str]) -> str:
-    for placeholder, token in env_vars.items():
-        rendered = rendered.replace(f"${placeholder}", token)
-    return rendered
+    def replace(match: re.Match[str]) -> str:
+        placeholder = match.group(1)
+        token = env_vars.get(placeholder)
+        return token if token is not None else match.group(0)
+
+    return _ESCAPED_ENV_VAR_PATTERN.sub(replace, rendered)
 
 
 def _validate_template(
