@@ -1,7 +1,7 @@
 schema_version: 2
 
 T-090:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-091:
