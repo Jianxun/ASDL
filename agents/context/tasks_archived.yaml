@@ -29,3 +29,13 @@ archive:
   - T-075: {completed_on: 2026-01-07, owner: Executor, scratchpad: agents/scratchpads/T-075_import_path_simplification.md, pr: https://github.com/Jianxun/ASDL/pull/76}
   - T-076: {completed_on: 2026-01-07, owner: Executor, scratchpad: agents/scratchpads/T-076_import_pipeline.md, pr: https://github.com/Jianxun/ASDL/pull/77}
   - T-077: {completed_on: 2026-01-07, owner: Executor, scratchpad: agents/scratchpads/T-077_cli_import_wiring.md, pr: https://github.com/Jianxun/ASDL/pull/78}
+  - T-078: {completed_on: 2026-01-10, owner: Executor, scratchpad: agents/scratchpads/T-078_diagnostics_spans_ir.md, pr: 81}
+  - T-079: {completed_on: 2026-01-10, owner: Executor, scratchpad: agents/scratchpads/T-079_diagnostics_spans_e2e.md, pr: 82}
+  - T-080: {completed_on: 2026-01-10, owner: Executor, scratchpad: agents/scratchpads/T-080_netlist_header_time.md, pr: 84}
+  - T-081: {completed_on: 2026-01-10, owner: Executor, scratchpad: agents/scratchpads/T-081_import_env_expansion.md, pr: 85}
+  - T-084: {completed_on: 2026-01-10, owner: Executor, pr: 90}
+  - T-085: {completed_on: 2026-01-10, owner: Executor, pr: 91}
+  - T-086: {completed_on: 2026-01-10, owner: Executor, pr: 92}
+  - T-087: {completed_on: 2026-01-10, owner: Executor, pr: 93}
+  - T-088: {completed_on: 2026-01-10, owner: Executor, pr: 94}
+  - T-089: {completed_on: 2026-01-10, owner: Executor, pr: 95}
