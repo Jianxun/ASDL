@@ -7,6 +7,7 @@ pytest.importorskip("xdsl")
 from asdl.ast import parse_string
 from asdl.diagnostics import Severity
 from asdl.emit.netlist import emit_netlist
+from asdl.ir.ifir import InstanceOp, ModuleOp, NetOp
 from asdl.ir.pipeline import run_mvp_pipeline
 
 NO_SPAN_NOTE = "No source span available."
@@ -69,6 +70,27 @@ def _pipeline_yaml() -> str:
             "    backends:",
             "      sim.ngspice:",
             "        template: \"{name} {ports} {params}\"",
+        ]
+    )
+
+
+def _pattern_pipeline_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      \"U<P|N>\": res",
+            "    nets:",
+            "      \"$OUT<P|N>\":",
+            "        - \"U<P|N>.P\"",
+            "devices:",
+            "  res:",
+            "    ports: [P]",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports}\"",
         ]
     )
 
@@ -194,6 +216,51 @@ def test_pipeline_end_to_end_deterministic_top_handling(
     assert lines[2] == "R1 IN OUT r=2k"
     assert lines[3] == ".ends leaf"
     assert lines[4] == ".end"
+
+
+def test_pipeline_atomizes_patterns_before_emission() -> None:
+    document, diagnostics = parse_string(_pattern_pipeline_yaml())
+
+    assert diagnostics == []
+    assert document is not None
+
+    design, pipeline_diags = run_mvp_pipeline(document)
+
+    assert pipeline_diags == []
+    assert design is not None
+
+    ifir_module = next(
+        op for op in design.body.block.ops if isinstance(op, ModuleOp)
+    )
+    port_order = [attr.data for attr in ifir_module.port_order.data]
+    assert port_order == ["OUT<P>", "OUT<N>"]
+
+    nets = [op for op in ifir_module.body.block.ops if isinstance(op, NetOp)]
+    instances = [
+        op for op in ifir_module.body.block.ops if isinstance(op, InstanceOp)
+    ]
+
+    assert [net.name_attr.data for net in nets] == ["OUT<P>", "OUT<N>"]
+    assert [inst.name_attr.data for inst in instances] == ["U<P>", "U<N>"]
+
+    net_origins = {
+        net.name_attr.data: net.pattern_origin.data
+        for net in nets
+        if net.pattern_origin is not None
+    }
+    inst_origins = {
+        inst.name_attr.data: inst.pattern_origin.data
+        for inst in instances
+        if inst.pattern_origin is not None
+    }
+    assert net_origins == {"OUT<P>": "OUT<P|N>", "OUT<N>": "OUT<P|N>"}
+    assert inst_origins == {"U<P>": "U<P|N>", "U<N>": "U<P|N>"}
+
+    conns = {
+        inst.name_attr.data: [(conn.port.data, conn.net.data) for conn in inst.conns.data]
+        for inst in instances
+    }
+    assert conns == {"U<P>": [("P", "OUT<P>")], "U<N>": [("P", "OUT<N>")]}
 
 
 def test_pipeline_import_graph_success(
