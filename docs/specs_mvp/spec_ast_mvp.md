@@ -13,7 +13,8 @@ ordered mappings but performs no semantic resolution.
 - No `exports` block.
 - Connectivity is declared only in `nets` (no inline pin-binds).
 - Pattern tokens are permitted in instance names, net names, and endpoint tokens;
-  expansion is deferred to a dedicated elaboration pass before emission.
+  atomization into single-atom patterns is deferred to a dedicated pass before
+  IFIR verification and emission.
 
 ---
 

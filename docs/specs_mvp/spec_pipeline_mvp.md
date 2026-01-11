@@ -39,12 +39,16 @@ Behavior:
 ```
 VerifyNfirPass (optional, gated by verify)
 NfirToIfirPass (required)
+PatternAtomizePass (required)
 VerifyIfirPass (optional, gated by verify)
 ```
 
 Pass requirements:
 - `NfirToIfirPass` must replace the `asdl_nfir.design` op with an
   `asdl_ifir.design` op in the module body.
+- `PatternAtomizePass` expands multi-atom patterns into single-atom patterns,
+  validates literal-name collisions, and ensures endpoint atoms map to declared
+  instance atoms.
 - Verify passes must use xDSL verifiers (or equivalent invariant checks) and
   emit diagnostics instead of raising user-facing exceptions.
 

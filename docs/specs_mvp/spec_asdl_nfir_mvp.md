@@ -10,7 +10,8 @@ list extraction.
 ## MVP scope
 - Self-contained design (no imports/exports/includes).
 - Pattern tokens may appear in instance names, net names, and endpoint tokens;
-  expansion is deferred to elaboration.
+  atomization into single-atom patterns is deferred to a later pass.
+- Pattern tokens may omit a literal prefix (e.g., `<INP|INN>` or `[2:0]`).
 - No inline pin-binds; connectivity is declared only in `nets`.
 - NFIR mirrors AST 1:1, except that:
   - a deterministic `port_order` is stored, and
@@ -112,7 +113,11 @@ list extraction.
 - Net names are unique within a module.
 - Instance names are unique within a module.
 - Each endpoint `(inst, pin)` binds to at most one net.
-- Every endpoint `inst` must reference a defined instance name.
+- Every endpoint `inst` must resolve to a declared instance atom after pattern
+  atomization (endpoint atoms must be a subset of instance atoms).
+- Literal names produced by atomization must be unique within instance names
+  and within net names; collisions are errors even across different pattern
+  origins.
 - `port_order` is a list of unique names, and each entry corresponds to a net.
 - `ref` is non-empty for every instance.
 - Device names are unique within a design.

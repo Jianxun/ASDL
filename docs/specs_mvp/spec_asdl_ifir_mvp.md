@@ -9,8 +9,8 @@ pipeline.
 
 ## MVP scope
 - Self-contained design (no imports/exports/includes).
-- Pattern tokens may appear in instance names, net names, and endpoint tokens;
-  expansion is deferred to elaboration.
+- Pattern tokens may appear in NFIR instance names, net names, and endpoint
+  tokens; IFIR carries only single-atom pattern tokens after atomization.
 - Named-only connections (no positional conns).
 - Explicit net objects are declared in each module.
 - No view system and no device kind inference.
@@ -48,6 +48,8 @@ pipeline.
 **Attributes**
 - `name: StringAttr`
 - `net_type: StringAttr?`
+- `pattern_origin: StringAttr?`
+  - Original multi-atom pattern token, if this net was derived from a pattern.
 - `src: LocAttr?`
 
 ### `asdl_ifir.instance`
@@ -57,6 +59,8 @@ pipeline.
   - References a module or device by name.
 - `params: DictAttr?`
 - `conns: ArrayAttr<asdl_ifir.conn>`  (**named-only**)
+- `pattern_origin: StringAttr?`
+  - Original multi-atom pattern token, if this instance was derived from a pattern.
 - `doc: StringAttr?`
 - `src: LocAttr?`
 
@@ -91,13 +95,16 @@ pipeline.
 ## Derivation rules (NFIR -> IFIR)
 - `asdl_ifir.design.top` is copied from `asdl_nfir.design.top` (if present).
 - For each NFIR module:
-  - copy `sym_name` and `port_order`.
-  - create `asdl_ifir.net` for every NFIR net (names already stripped of `$`).
+  - atomize `port_order` and net/instance names into single-atom patterns.
+  - create `asdl_ifir.net` for every atomized net and carry `pattern_origin`
+    when derived from a multi-atom pattern token.
   - invert NFIR net endpoints into instance conns:
-    - for each NFIR net `(net_name, endpoints)`,
-      add a conn `{port=<pin>, net=<net_name>}` to the matching instance.
+    - for each NFIR net `(net_name, endpoints)`, expand to atomized nets and
+      atomized endpoints, then add a conn `{port=<pin>, net=<net_name>}` to the
+      matching instance atom.
 - For each NFIR instance:
-  - copy `name`, `ref`, and `params`.
+  - create one IFIR instance per atomized name and carry `pattern_origin`
+    when derived from a multi-atom pattern token.
   - conns are populated by the inversion above.
 - Devices and their backends are copied 1:1 from NFIR.
 
@@ -112,3 +119,6 @@ pipeline.
 - Each `conn.net` must refer to a declared `asdl_ifir.net` in the same module.
 - `port_order` is a list of unique names, and each entry corresponds to a net.
 - Backend `name` keys are unique per device.
+- Literal names produced by atomization must be unique within instance names
+  and within net names; collisions are errors even across different pattern
+  origins.
