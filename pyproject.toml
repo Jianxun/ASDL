@@ -19,7 +19,8 @@ dependencies = [
     "pydantic",
     "ruamel.yaml",
     "PySpice",
-    "matplotlib"
+    "matplotlib",
+    "xdsl>=0.54.0"
 ]
 
 [project.scripts]
@@ -30,9 +31,6 @@ dev = [
     "pytest>=7.0.0",
     "black>=22.0.0",
     "flake8>=4.0.0",
-]
-xdsl = [
-    "xdsl"
 ]
 
 [tool.setuptools.packages.find]
