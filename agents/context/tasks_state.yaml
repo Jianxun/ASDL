@@ -17,8 +17,8 @@ T-094:
   pr: 101
   merged: true
 T-095:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 102
   merged: false
 T-092:
   status: ready
