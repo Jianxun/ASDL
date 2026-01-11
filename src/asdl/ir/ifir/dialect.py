@@ -222,6 +222,7 @@ class NetOp(IRDLOperation):
 
     name_attr = attr_def(StringAttr, attr_name="name")
     net_type = opt_attr_def(StringAttr)
+    pattern_origin = opt_attr_def(StringAttr)
     src = opt_attr_def(LocationAttr)
 
     assembly_format = "attr-dict"
@@ -231,15 +232,20 @@ class NetOp(IRDLOperation):
         *,
         name: StringAttr | str,
         net_type: StringAttr | str | None = None,
+        pattern_origin: StringAttr | str | None = None,
         src: LocationAttr | None = None,
     ):
         if isinstance(name, str):
             name = StringAttr(name)
         if isinstance(net_type, str):
             net_type = StringAttr(net_type)
+        if isinstance(pattern_origin, str):
+            pattern_origin = StringAttr(pattern_origin)
         attributes = {"name": name}
         if net_type is not None:
             attributes["net_type"] = net_type
+        if pattern_origin is not None:
+            attributes["pattern_origin"] = pattern_origin
         if src is not None:
             attributes["src"] = src
         super().__init__(attributes=attributes)
@@ -254,6 +260,7 @@ class InstanceOp(IRDLOperation):
     ref_file_id = opt_attr_def(StringAttr)
     params = opt_attr_def(DictionaryAttr)
     conns = attr_def(ArrayAttr[ConnAttr])
+    pattern_origin = opt_attr_def(StringAttr)
     doc = opt_attr_def(StringAttr)
     src = opt_attr_def(LocationAttr)
 
@@ -267,6 +274,7 @@ class InstanceOp(IRDLOperation):
         conns: ArrayAttr[ConnAttr] | Iterable[ConnAttr],
         ref_file_id: StringAttr | str | None = None,
         params: DictionaryAttr | None = None,
+        pattern_origin: StringAttr | str | None = None,
         doc: StringAttr | str | None = None,
         src: LocationAttr | None = None,
     ):
@@ -278,6 +286,8 @@ class InstanceOp(IRDLOperation):
             doc = StringAttr(doc)
         if isinstance(ref_file_id, str):
             ref_file_id = StringAttr(ref_file_id)
+        if isinstance(pattern_origin, str):
+            pattern_origin = StringAttr(pattern_origin)
         if not isinstance(conns, ArrayAttr):
             conns = ArrayAttr(list(conns))
         attributes = {
@@ -289,6 +299,8 @@ class InstanceOp(IRDLOperation):
             attributes["ref_file_id"] = ref_file_id
         if params is not None:
             attributes["params"] = params
+        if pattern_origin is not None:
+            attributes["pattern_origin"] = pattern_origin
         if doc is not None:
             attributes["doc"] = doc
         if src is not None:

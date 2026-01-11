@@ -128,6 +128,54 @@ def test_design_roundtrip_print_parse() -> None:
     assert _print_op(parsed_design) == text
 
 
+def test_design_roundtrip_pattern_origin() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=["VIN"],
+        region=[
+            NetOp(name="VIN", pattern_origin="BUS[2:0]"),
+            InstanceOp(
+                name="M1",
+                ref="nfet",
+                conns=[ConnAttr(StringAttr("G"), StringAttr("VIN"))],
+                pattern_origin="MN_<P|N>",
+            ),
+        ],
+    )
+    device = DeviceOp(
+        name="nfet",
+        ports=["D", "G", "S"],
+        region=[
+            BackendOp(name="ngspice", template="M{inst} {D} {G} {S} {model}")
+        ],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    text = _print_op(design)
+    ctx = Context()
+    ctx.load_dialect(builtin.Builtin)
+    ctx.load_dialect(ASDL_IFIR)
+    parsed_module = Parser(ctx, text).parse_module()
+    parsed_design = next(
+        op for op in parsed_module.body.block.ops if isinstance(op, DesignOp)
+    )
+    parsed_module_op = next(
+        op for op in parsed_design.body.block.ops if isinstance(op, ModuleOp)
+    )
+    parsed_net = next(
+        op for op in parsed_module_op.body.block.ops if isinstance(op, NetOp)
+    )
+    parsed_instance = next(
+        op for op in parsed_module_op.body.block.ops if isinstance(op, InstanceOp)
+    )
+
+    assert parsed_net.pattern_origin is not None
+    assert parsed_net.pattern_origin.data == "BUS[2:0]"
+    assert parsed_instance.pattern_origin is not None
+    assert parsed_instance.pattern_origin.data == "MN_<P|N>"
+    assert _print_op(parsed_design) == text
+
+
 def test_design_allows_duplicate_names_across_files() -> None:
     module_a = ModuleOp(
         name="top",
