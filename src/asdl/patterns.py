@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Iterable, List, Optional, Tuple
 
 from .diagnostics import Diagnostic, Severity, format_code
@@ -13,6 +14,19 @@ PATTERN_EMPTY_SPLICE = format_code("PASS", 103)
 PATTERN_DUPLICATE_ATOM = format_code("PASS", 104)
 PATTERN_TOO_LARGE = format_code("PASS", 105)
 PATTERN_UNEXPANDED = format_code("PASS", 106)
+
+
+@dataclass(frozen=True)
+class AtomizedPattern:
+    token: str
+    literal: str
+    origin: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class AtomizedEndpoint:
+    inst: AtomizedPattern
+    pin: AtomizedPattern
 
 
 def expand_pattern(
@@ -71,6 +85,65 @@ def expand_endpoint(
     for inst_atom in inst_expanded:
         for pin_atom in pin_expanded:
             endpoints.append((inst_atom, pin_atom))
+
+    return endpoints, diagnostics
+
+
+def atomize_pattern(
+    token: str, *, max_atoms: int = MAX_EXPANSION_SIZE
+) -> Tuple[Optional[List[AtomizedPattern]], List[Diagnostic]]:
+    diagnostics: List[Diagnostic] = []
+    if not token:
+        diagnostics.append(_diagnostic(PATTERN_UNEXPANDED, "Pattern token is empty."))
+        return None, diagnostics
+
+    segments, diag = _split_splice_segments(token)
+    if diag is not None:
+        return None, [diag]
+    if any(segment == "" for segment in segments):
+        return None, [_diagnostic(PATTERN_EMPTY_SPLICE, _empty_splice_message(token))]
+
+    atoms: List[Tuple[str, str]] = []
+    for segment in segments:
+        segment_atoms, diag = _atomize_segment(segment, token, max_atoms)
+        if diag is not None:
+            return None, [diag]
+        if len(atoms) + len(segment_atoms) > max_atoms:
+            return None, [_diagnostic(PATTERN_TOO_LARGE, _too_large_message(token, max_atoms))]
+        atoms.extend(segment_atoms)
+
+    duplicates = _find_duplicates(literal for _, literal in atoms)
+    if duplicates:
+        return None, [_diagnostic(PATTERN_DUPLICATE_ATOM, _duplicate_message(duplicates, token))]
+
+    origin = token if len(atoms) > 1 else None
+    return [
+        AtomizedPattern(token=atom_token, literal=literal, origin=origin)
+        for atom_token, literal in atoms
+    ], diagnostics
+
+
+def atomize_endpoint(
+    inst: str, pin: str, *, max_atoms: int = MAX_EXPANSION_SIZE
+) -> Tuple[Optional[List[AtomizedEndpoint]], List[Diagnostic]]:
+    token = f"{inst}.{pin}"
+    inst_atoms, inst_diags = atomize_pattern(inst, max_atoms=max_atoms)
+    if inst_atoms is None:
+        return None, inst_diags
+    pin_atoms, pin_diags = atomize_pattern(pin, max_atoms=max_atoms)
+    diagnostics = [*inst_diags, *pin_diags]
+    if pin_atoms is None:
+        return None, diagnostics
+
+    product_size = len(inst_atoms) * len(pin_atoms)
+    if product_size > max_atoms:
+        diagnostics.append(_diagnostic(PATTERN_TOO_LARGE, _too_large_message(token, max_atoms)))
+        return None, diagnostics
+
+    endpoints: List[AtomizedEndpoint] = []
+    for inst_atom in inst_atoms:
+        for pin_atom in pin_atoms:
+            endpoints.append(AtomizedEndpoint(inst=inst_atom, pin=pin_atom))
 
     return endpoints, diagnostics
 
@@ -163,6 +236,58 @@ def _expand_segment(
                 _join_with_suffix(prefix, str(value))
                 for prefix in current
                 for value in _range_values(start, end)
+            ]
+            continue
+
+        return None, _diagnostic(
+            PATTERN_UNEXPANDED,
+            f"Unhandled pattern token '{token}'.",
+        )
+
+    return current, None
+
+
+def _atomize_segment(
+    segment: str, token: str, max_atoms: int
+) -> Tuple[Optional[List[Tuple[str, str]]], Optional[Diagnostic]]:
+    if _has_whitespace(segment):
+        return None, _diagnostic(
+            PATTERN_UNEXPANDED,
+            f"Whitespace is not allowed in pattern token '{token}'.",
+        )
+
+    tokens, diag = _tokenize_segment(segment, token)
+    if diag is not None:
+        return None, diag
+
+    current: List[Tuple[str, str]] = [("", "")]
+    for kind, payload in tokens:
+        if kind == "literal":
+            current = [(value + payload, literal + payload) for value, literal in current]
+            continue
+
+        if kind == "enum":
+            alts = payload
+            next_size = len(current) * len(alts)
+            if next_size > max_atoms:
+                return None, _diagnostic(PATTERN_TOO_LARGE, _too_large_message(token, max_atoms))
+            current = [
+                (value + f"<{alt}>", literal + alt)
+                for value, literal in current
+                for alt in alts
+            ]
+            continue
+
+        if kind == "range":
+            start, end = payload
+            value_count = abs(end - start) + 1
+            next_size = len(current) * value_count
+            if next_size > max_atoms:
+                return None, _diagnostic(PATTERN_TOO_LARGE, _too_large_message(token, max_atoms))
+            current = [
+                (value + _format_range_atom(atom), literal + str(atom))
+                for value, literal in current
+                for atom in _range_values(start, end)
             ]
             continue
 
@@ -289,6 +414,10 @@ def _join_with_suffix(prefix: str, suffix: str) -> str:
     return suffix
 
 
+def _format_range_atom(value: int) -> str:
+    return f"[{value}:{value}]"
+
+
 def _find_duplicates(items: Iterable[str]) -> List[str]:
     seen: set[str] = set()
     duplicates: List[str] = []
@@ -341,6 +470,8 @@ def _duplicate_message(duplicates: Iterable[str], token: str) -> str:
 
 
 __all__ = [
+    "AtomizedEndpoint",
+    "AtomizedPattern",
     "MAX_EXPANSION_SIZE",
     "PATTERN_INVALID_RANGE",
     "PATTERN_EMPTY_ENUM",
@@ -348,6 +479,8 @@ __all__ = [
     "PATTERN_DUPLICATE_ATOM",
     "PATTERN_TOO_LARGE",
     "PATTERN_UNEXPANDED",
+    "atomize_endpoint",
+    "atomize_pattern",
     "expand_endpoint",
     "expand_pattern",
 ]
