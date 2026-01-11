@@ -9,7 +9,7 @@ T-091:
   pr: 99
   merged: true
 T-093:
-  status: review_in_progress
+  status: review_clean
   pr: 100
   merged: false
 T-094:
