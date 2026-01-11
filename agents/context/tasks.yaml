@@ -1,7 +1,6 @@
 schema_version: 2
 
-current_sprint: []
-backlog:
+current_sprint:
   - id: T-090
     title: Pattern atomization helpers
     owner: Executor
@@ -61,6 +60,7 @@ backlog:
       - tests/unit_tests/ir/test_pattern_elaboration.py
     links:
       adr: agents/adr/ADR-0011-pattern-atomization-collisions.md
+backlog: []
 
 exploration_candidates:
   - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.
