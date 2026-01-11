@@ -1,9 +1,9 @@
 schema_version: 2
 
 T-090:
-  status: ready_for_review
+  status: done
   pr: 98
-  merged: false
+  merged: true
 T-091:
   status: ready
   pr: null
