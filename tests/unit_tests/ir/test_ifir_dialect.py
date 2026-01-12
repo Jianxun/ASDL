@@ -81,6 +81,53 @@ def test_instance_unique_ports() -> None:
         module.verify()
 
 
+def test_module_rejects_pattern_delimiters_in_net_name() -> None:
+    module = ModuleOp(
+        name="m",
+        port_order=[],
+        region=[NetOp(name="BUS<0>")],
+    )
+
+    with pytest.raises(VerifyException):
+        module.verify()
+
+
+def test_module_rejects_pattern_delimiters_in_instance_name() -> None:
+    module = ModuleOp(
+        name="m",
+        port_order=["a"],
+        region=[
+            NetOp(name="a"),
+            InstanceOp(
+                name="M[0:1]",
+                ref="leaf",
+                conns=[ConnAttr(StringAttr("P"), StringAttr("a"))],
+            ),
+        ],
+    )
+
+    with pytest.raises(VerifyException):
+        module.verify()
+
+
+def test_module_rejects_pattern_delimiters_in_port_name() -> None:
+    module = ModuleOp(
+        name="m",
+        port_order=["a"],
+        region=[
+            NetOp(name="a"),
+            InstanceOp(
+                name="u1",
+                ref="leaf",
+                conns=[ConnAttr(StringAttr("P;Q"), StringAttr("a"))],
+            ),
+        ],
+    )
+
+    with pytest.raises(VerifyException):
+        module.verify()
+
+
 def test_device_requires_unique_backends() -> None:
     device = DeviceOp(
         name="d",
