@@ -23,7 +23,12 @@ from asdl.ir.nfir import (
     NetOp as NfirNetOp,
 )
 from asdl.ir.location import location_attr_to_span
-from asdl.patterns import expand_endpoint, expand_pattern
+from asdl.patterns import (
+    AtomizedEndpoint,
+    AtomizedPattern,
+    atomize_endpoint,
+    atomize_pattern,
+)
 
 INVALID_NFIR_DESIGN = format_code("IR", 3)
 INVALID_NFIR_DEVICE = format_code("IR", 4)
@@ -100,29 +105,61 @@ def _convert_module(
     conn_map: Dict[str, List[ConnAttr]] = {
         inst.name_attr.data: [] for inst in nfir_instances
     }
+    net_cache: Dict[str, List[AtomizedPattern] | None] = {}
+    endpoint_cache: Dict[Tuple[str, str], List[AtomizedEndpoint] | None] = {}
+    inst_cache: Dict[str, List[AtomizedPattern] | None] = {}
 
-    pattern_diags, pattern_error = _verify_pattern_bindings(module, nfir_nets)
+    pattern_diags, pattern_error = _verify_pattern_bindings(
+        module,
+        nfir_nets,
+        net_cache=net_cache,
+        endpoint_cache=endpoint_cache,
+    )
     diagnostics.extend(pattern_diags)
     had_error = had_error or pattern_error
+
+    inst_literal_map: Dict[str, str] = {}
+    for inst in nfir_instances:
+        token = inst.name_attr.data
+        atoms = _atomize_pattern_cached(token, inst_cache, diagnostics)
+        if atoms is None:
+            had_error = True
+            continue
+        for atom in atoms:
+            inst_literal_map.setdefault(atom.literal, token)
 
     for net in nfir_nets:
         net_name = net.name_attr.data
         net_ops.append(NetOp(name=net_name, src=net.src))
         for endpoint in net.endpoints.data:
-            conn_list = conn_map.get(endpoint.inst.data)
-            if conn_list is None:
-                diagnostics.append(
-                    _diagnostic(
-                        UNKNOWN_ENDPOINT_INSTANCE,
-                        f"Endpoint references unknown instance '{endpoint.inst.data}'",
-                        net.src or module.src,
-                    )
-                )
+            endpoint_atoms = _atomize_endpoint_cached(
+                (endpoint.inst.data, endpoint.pin.data),
+                endpoint_cache,
+                diagnostics,
+            )
+            if endpoint_atoms is None:
                 had_error = True
                 continue
-            conn_list.append(
-                ConnAttr(endpoint.pin, net.name_attr)
-            )
+            owners: set[str] = set()
+            unknown_literal = False
+            for atom in endpoint_atoms:
+                owner = inst_literal_map.get(atom.inst.literal)
+                if owner is None:
+                    diagnostics.append(
+                        _diagnostic(
+                            UNKNOWN_ENDPOINT_INSTANCE,
+                            f"Endpoint references unknown instance '{endpoint.inst.data}'",
+                            net.src or module.src,
+                        )
+                    )
+                    had_error = True
+                    unknown_literal = True
+                    break
+                owners.add(owner)
+            if unknown_literal:
+                continue
+            for owner in owners:
+                conn_map[owner].append(ConnAttr(endpoint.pin, net.name_attr))
 
     inst_ops: List[InstanceOp] = []
     for inst in nfir_instances:
@@ -213,30 +250,32 @@ def _diagnostic(
 def _verify_pattern_bindings(
     module: NfirModuleOp,
     nets: List[NfirNetOp],
+    *,
+    net_cache: Dict[str, List[AtomizedPattern] | None],
+    endpoint_cache: Dict[Tuple[str, str], List[AtomizedEndpoint] | None],
 ) -> Tuple[List[Diagnostic], bool]:
     diagnostics: List[Diagnostic] = []
     had_error = False
 
     for net in nets:
         net_token = net.name_attr.data
-        net_expanded, net_diags = expand_pattern(net_token)
-        diagnostics.extend(net_diags)
-        if net_expanded is None:
+        net_atoms = _atomize_pattern_cached(net_token, net_cache, diagnostics)
+        if net_atoms is None:
             had_error = True
             continue
-        net_len = len(net_expanded)
+        net_len = len(net_atoms)
 
         for endpoint in net.endpoints.data:
             endpoint_token = f"{endpoint.inst.data}.{endpoint.pin.data}"
-            endpoint_expanded, endpoint_diags = expand_endpoint(
-                endpoint.inst.data,
-                endpoint.pin.data,
+            endpoint_atoms = _atomize_endpoint_cached(
+                (endpoint.inst.data, endpoint.pin.data),
+                endpoint_cache,
+                diagnostics,
             )
-            diagnostics.extend(endpoint_diags)
-            if endpoint_expanded is None:
+            if endpoint_atoms is None:
                 had_error = True
                 continue
-            endpoint_len = len(endpoint_expanded)
+            endpoint_len = len(endpoint_atoms)
             if net_len > 1 and endpoint_len != net_len:
                 diagnostics.append(
                     _diagnostic(
@@ -251,6 +290,32 @@ def _verify_pattern_bindings(
                 had_error = True
 
     return diagnostics, had_error
+
+
+def _atomize_pattern_cached(
+    token: str,
+    cache: Dict[str, List[AtomizedPattern] | None],
+    diagnostics: List[Diagnostic],
+) -> List[AtomizedPattern] | None:
+    if token in cache:
+        return cache[token]
+    atoms, diags = atomize_pattern(token)
+    diagnostics.extend(diags)
+    cache[token] = atoms
+    return atoms
+
+
+def _atomize_endpoint_cached(
+    key: Tuple[str, str],
+    cache: Dict[Tuple[str, str], List[AtomizedEndpoint] | None],
+    diagnostics: List[Diagnostic],
+) -> List[AtomizedEndpoint] | None:
+    if key in cache:
+        return cache[key]
+    atoms, diags = atomize_endpoint(*key)
+    diagnostics.extend(diags)
+    cache[key] = atoms
+    return atoms
 
 
 __all__ = ["convert_design"]

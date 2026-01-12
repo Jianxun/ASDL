@@ -29,6 +29,6 @@ T-096:
   pr: 105
   merged: true
 T-097:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 107
+  merged: true

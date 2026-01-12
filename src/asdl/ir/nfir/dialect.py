@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Sequence
+from typing import Dict, Iterable, List, Sequence, Tuple
 
 from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, LocationAttr, StringAttr
 from xdsl.ir import Block, Dialect, Operation, ParametrizedAttribute, Region
@@ -17,6 +17,12 @@ from xdsl.irdl import (
 from xdsl.traits import IsolatedFromAbove, NoTerminator
 from xdsl.utils.exceptions import VerifyException
 
+from asdl.patterns import (
+    AtomizedEndpoint,
+    AtomizedPattern,
+    atomize_endpoint,
+    atomize_pattern,
+)
 
 @irdl_attr_definition
 class EndpointAttr(ParametrizedAttribute):
@@ -181,19 +187,51 @@ class ModuleOp(IRDLOperation):
             missing_str = ", ".join(missing_ports)
             raise VerifyException(f"port_order references missing nets: {missing_str}")
 
+        instance_literals: set[str] = set()
+        instance_cache: Dict[str, List[AtomizedPattern] | None] = {}
+        for inst in instances:
+            token = inst.name_attr.data
+            if token not in instance_cache:
+                atoms, diags = atomize_pattern(token)
+                instance_cache[token] = atoms
+                if atoms is None:
+                    message = diags[0].message if diags else f"Invalid instance token '{token}'"
+                    raise VerifyException(message)
+            atoms = instance_cache[token]
+            if atoms is None:
+                continue
+            for atom in atoms:
+                instance_literals.add(atom.literal)
+
         endpoint_pairs: set[tuple[str, str]] = set()
+        endpoint_cache: Dict[Tuple[str, str], List[AtomizedEndpoint] | None] = {}
         for net in nets:
             for endpoint in net.endpoints.data:
                 inst = endpoint.inst.data
                 pin = endpoint.pin.data
-                pair = (inst, pin)
-                if pair in endpoint_pairs:
-                    raise VerifyException(
-                        f"Endpoint {inst}.{pin} appears on more than one net"
-                    )
-                endpoint_pairs.add(pair)
-                if inst not in inst_names:
-                    raise VerifyException(f"Endpoint references unknown instance '{inst}'")
+                key = (inst, pin)
+                if key not in endpoint_cache:
+                    atoms, diags = atomize_endpoint(inst, pin)
+                    endpoint_cache[key] = atoms
+                    if atoms is None:
+                        message = diags[0].message if diags else f"Invalid endpoint '{inst}.{pin}'"
+                        raise VerifyException(message)
+                atoms = endpoint_cache[key]
+                if atoms is None:
+                    continue
+                for atom in atoms:
+                    inst_literal = atom.inst.literal
+                    pin_literal = atom.pin.literal
+                    pair = (inst_literal, pin_literal)
+                    if pair in endpoint_pairs:
+                        raise VerifyException(
+                            f"Endpoint {inst_literal}.{pin_literal} appears on more than one net"
+                        )
+                    endpoint_pairs.add(pair)
+                    if inst_literal not in instance_literals:
+                        raise VerifyException(
+                            f"Endpoint references unknown instance '{inst_literal}'"
+                        )
 
         for instance in instances:
             if not instance.ref.data:

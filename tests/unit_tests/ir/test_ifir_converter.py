@@ -152,6 +152,34 @@ def test_convert_nfir_preserves_pattern_tokens() -> None:
     ]
 
 
+def test_convert_nfir_allows_subset_endpoint_instance_tokens() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[
+            NetOp(
+                name="OUT",
+                endpoints=[EndpointAttr(StringAttr("M1"), StringAttr("D"))],
+            ),
+            InstanceOp(name="M<1|2>", ref="nfet"),
+        ],
+    )
+    design = DesignOp(region=[module])
+
+    ifir_design, diagnostics = convert_nfir_to_ifir(design)
+    assert diagnostics == []
+    assert isinstance(ifir_design, IfirDesignOp)
+
+    ifir_module = next(
+        op for op in ifir_design.body.block.ops if isinstance(op, IfirModuleOp)
+    )
+    instance = next(
+        op for op in ifir_module.body.block.ops if isinstance(op, IfirInstanceOp)
+    )
+    conns = [(conn.port.data, conn.net.data) for conn in instance.conns.data]
+    assert conns == [("D", "OUT")]
+
+
 def test_convert_nfir_rejects_unknown_instance_endpoint() -> None:
     module = ModuleOp(
         name="top",

@@ -57,6 +57,22 @@ def test_endpoint_requires_instance() -> None:
         module.verify()
 
 
+def test_endpoint_allows_subset_instance_pattern() -> None:
+    module = ModuleOp(
+        name="m",
+        port_order=["a"],
+        region=[
+            NetOp(
+                name="a",
+                endpoints=[EndpointAttr(StringAttr("M1"), StringAttr("D"))],
+            ),
+            InstanceOp(name="M<1|2>", ref="leaf"),
+        ],
+    )
+
+    module.verify()
+
+
 def test_endpoint_unique_across_nets() -> None:
     module = ModuleOp(
         name="m",
@@ -71,6 +87,27 @@ def test_endpoint_unique_across_nets() -> None:
                 endpoints=[EndpointAttr(StringAttr("u1"), StringAttr("P"))],
             ),
             InstanceOp(name="u1", ref="leaf"),
+        ],
+    )
+
+    with pytest.raises(VerifyException):
+        module.verify()
+
+
+def test_endpoint_detects_atomized_duplicates() -> None:
+    module = ModuleOp(
+        name="m",
+        port_order=["a", "b"],
+        region=[
+            NetOp(
+                name="a",
+                endpoints=[EndpointAttr(StringAttr("M1"), StringAttr("D"))],
+            ),
+            NetOp(
+                name="b",
+                endpoints=[EndpointAttr(StringAttr("M<1>"), StringAttr("D"))],
+            ),
+            InstanceOp(name="M<1|2>", ref="leaf"),
         ],
     )
 
