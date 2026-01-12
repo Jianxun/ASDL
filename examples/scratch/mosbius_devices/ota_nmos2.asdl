@@ -18,7 +18,7 @@ modules:
       $IN_<P|N>: [MN_IN_<P|N>.G]
       $OUT: [MN_IN_<N>.D, MP_LOAD<N>.D]
       TAIL: [MN_TAIL.D, MN_IN_<P|N>.S]
-      D: [MN_IN_<P>.D, MP_LOAD<P>.D, MP_LOAD<P|N>.<G>]
+      D: [MN_IN_<P>.D, MP_LOAD<P>.D, MP_LOAD<P|N>.G]
       $VBN: [MN_TAIL.G]
       $VSS: [MN_TAIL.S]
       $VDD: [MP_LOAD<P|N>.S]
