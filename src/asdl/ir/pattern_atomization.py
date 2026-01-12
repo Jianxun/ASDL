@@ -195,11 +195,12 @@ def _atomize_module(
             had_error = True
             continue
         for atom in atoms:
+            pattern_origin = net.pattern_origin if net.pattern_origin is not None else atom.origin
             net_ops.append(
                 NetOp(
                     name=atom.token,
                     net_type=net.net_type,
-                    pattern_origin=atom.origin,
+                    pattern_origin=pattern_origin,
                     src=net.src,
                 )
             )
@@ -322,6 +323,9 @@ def _atomize_module(
     inst_ops: List[InstanceOp] = []
     for inst, atoms in instance_order:
         for atom in atoms:
+            pattern_origin = (
+                inst.pattern_origin if inst.pattern_origin is not None else atom.origin
+            )
             conns = conn_map.get(atom.token, [])
             inst_ops.append(
                 InstanceOp(
@@ -330,7 +334,7 @@ def _atomize_module(
                     conns=ArrayAttr(conns),
                     ref_file_id=inst.ref_file_id,
                     params=param_map.get(atom.token),
-                    pattern_origin=atom.origin,
+                    pattern_origin=pattern_origin,
                     doc=inst.doc,
                     src=inst.src,
                 )

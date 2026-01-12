@@ -202,3 +202,53 @@ def test_atomize_patterns_rejects_mismatched_param_lengths() -> None:
         "parameter 'm' atomizes to 3 values but instance atomizes to 2" in diag.message
         for diag in diagnostics
     )
+
+
+def test_atomize_patterns_is_idempotent() -> None:
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT<P|N>"],
+        region=[
+            NetOp(name="OUT<P|N>"),
+            InstanceOp(
+                name="M<1|2>",
+                ref="sw",
+                conns=[ConnAttr(StringAttr("D"), StringAttr("OUT<P|N>"))],
+            ),
+        ],
+    )
+    design = DesignOp(region=[module], top="top")
+
+    atomized_first, diagnostics_first = run_pattern_atomization(design)
+    assert diagnostics_first == []
+    assert atomized_first is not None
+
+    atomized_second, diagnostics_second = run_pattern_atomization(atomized_first)
+    assert diagnostics_second == []
+    assert atomized_second is not None
+
+    def _snapshot(design_op: DesignOp) -> tuple[list[str], list[tuple[str, str | None]], list]:
+        ifir_module = next(
+            op for op in design_op.body.block.ops if isinstance(op, ModuleOp)
+        )
+        port_order = [attr.data for attr in ifir_module.port_order.data]
+        nets = [
+            (
+                net.name_attr.data,
+                net.pattern_origin.data if net.pattern_origin else None,
+            )
+            for net in ifir_module.body.block.ops
+            if isinstance(net, NetOp)
+        ]
+        instances = [
+            (
+                inst.name_attr.data,
+                inst.pattern_origin.data if inst.pattern_origin else None,
+                [(conn.port.data, conn.net.data) for conn in inst.conns.data],
+            )
+            for inst in ifir_module.body.block.ops
+            if isinstance(inst, InstanceOp)
+        ]
+        return port_order, nets, instances
+
+    assert _snapshot(atomized_first) == _snapshot(atomized_second)
