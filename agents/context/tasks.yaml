@@ -138,6 +138,26 @@ current_sprint:
       - tests/unit_tests/ir/test_ifir_converter.py
     links:
       adr: agents/adr/ADR-0012-nfir-atomized-endpoint-resolution.md
+  - id: T-098
+    title: Atomize NFIR endpoints before IFIR inversion
+    owner: Executor
+    dod: >
+      Update NFIR->IFIR conversion to atomize instances/nets/endpoints and
+      build IFIR conns per atom so subset endpoint tokens (e.g., `MN_IN_<N>`)
+      map to the correct atomized instance without producing duplicate ports.
+      Preserve `pattern_origin` metadata for atomized names. Ensure
+      PatternAtomizePass is idempotent or skips already-atomized IFIR.
+      Update IFIR converter tests to expect atomized names and add coverage for
+      subset endpoint bindings that would otherwise duplicate ports.
+    verify:
+      - pytest tests/unit_tests/ir/test_ifir_converter.py tests/unit_tests/ir/test_pattern_atomization.py -v
+    files:
+      - src/asdl/ir/converters/nfir_to_ifir.py
+      - src/asdl/ir/pattern_atomization.py
+      - tests/unit_tests/ir/test_ifir_converter.py
+      - tests/unit_tests/ir/test_pattern_atomization.py
+    links:
+      adr: agents/adr/ADR-0013-nfir-atomized-ifir-inversion.md
 backlog: []
 
 exploration_candidates:
