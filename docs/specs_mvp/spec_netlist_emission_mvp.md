@@ -11,8 +11,8 @@ Define MVP emission rules from ASDL_IFIR into backend-selected netlists.
 - Subckt parameters are not supported.
 - Device parameters are merged and rendered as `k=v` tokens.
 - Output extension is determined by backend config (`extension`).
-- Input IFIR is already pattern-atomized; emission performs no pattern
-  expansion and uses the literal name of each atomized token.
+- Input IFIR is already literalized; emission performs no pattern expansion
+  or name rewriting.
 
 ---
 

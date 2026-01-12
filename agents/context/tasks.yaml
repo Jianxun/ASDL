@@ -1,163 +1,67 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-090
-    title: Pattern atomization helpers
+  - id: T-099
+    title: Literalize IFIR names during atomization
     owner: Executor
     dod: >
-      Add atomization helpers in `src/asdl/patterns.py` that expand a pattern
-      token into single-atom pattern tokens with emitted literal names and
-      origin metadata, including base-less patterns. Provide endpoint
-      atomization helpers and diagnostics for malformed tokens. Add parser-level
-      unit tests for atomization outputs and error cases.
+      Emit literal names (no pattern delimiters) for IFIR port_order, nets,
+      instances, and conns during atomization. Treat any token that includes
+      pattern delimiters as a pattern token and carry its original token in
+      `pattern_origin`, including single-atom expansions. Update the NFIR->IFIR
+      converter to use literal names and propagate `pattern_origin` from
+      atomization. Refresh parser-level atomization tests to reflect the new
+      origin semantics.
     verify:
       - pytest tests/unit_tests/parser/test_pattern_atomization.py -v
     files:
       - src/asdl/patterns.py
+      - src/asdl/ir/pattern_atomization.py
+      - src/asdl/ir/converters/nfir_to_ifir.py
       - tests/unit_tests/parser/test_pattern_atomization.py
-    links:
-      adr: agents/adr/ADR-0011-pattern-atomization-collisions.md
-  - id: T-091
-    title: IFIR pattern_origin metadata
+  - id: T-100
+    title: Update IFIR unit tests for literal names
     owner: Executor
     dod: >
-      Add optional `pattern_origin` metadata to IFIR net/instance ops (dialect
-      definitions + constructors + assembly format) and cover round-trip
-      parsing/printing in `tests/unit_tests/ir/test_ifir_dialect.py`.
+      Update IFIR atomization and conversion tests to expect literal names
+      (no pattern delimiters) and verify `pattern_origin` values remain correct.
+    verify:
+      - pytest tests/unit_tests/ir/test_pattern_atomization.py tests/unit_tests/ir/test_ifir_converter.py -v
+    files:
+      - tests/unit_tests/ir/test_pattern_atomization.py
+      - tests/unit_tests/ir/test_ifir_converter.py
+  - id: T-101
+    title: Update pipeline MVP expectations for literal names
+    owner: Executor
+    dod: >
+      Update MVP pipeline tests to assert literal IFIR names for ports, nets,
+      instances, and connections while preserving `pattern_origin` metadata.
+    verify:
+      - pytest tests/unit_tests/e2e/test_pipeline_mvp.py -v
+    files:
+      - tests/unit_tests/e2e/test_pipeline_mvp.py
+  - id: T-102
+    title: Update netlist tests for literal names
+    owner: Executor
+    dod: >
+      Update netlist emission tests to expect literal names in IFIR fixtures and
+      emitted netlists after atomization.
+    verify:
+      - pytest tests/unit_tests/netlist/test_netlist_emitter.py -v
+    files:
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+  - id: T-103
+    title: Enforce literal-only IFIR names
+    owner: Executor
+    dod: >
+      Update IFIR verification to reject pattern delimiters in net, instance,
+      and port names after atomization. Add unit tests to cover delimiter
+      rejection for each name category.
     verify:
       - pytest tests/unit_tests/ir/test_ifir_dialect.py -v
     files:
       - src/asdl/ir/ifir/dialect.py
       - tests/unit_tests/ir/test_ifir_dialect.py
-    links:
-      adr: agents/adr/ADR-0011-pattern-atomization-collisions.md
-  - id: T-093
-    title: PatternAtomizePass core expansion
-    owner: Executor
-    depends_on:
-      - T-090
-      - T-091
-    dod: >
-      Implement PatternAtomizePass to expand multi-atom net/instance pattern
-      tokens into per-atom IFIR ops using the atomization helpers, carrying
-      `pattern_origin` metadata for derived names. Validate literal-name
-      collisions within nets and within instances with clear diagnostics, and
-      handle base-less pattern forwarding. Add tests for base-less forwarding
-      and collision diagnostics.
-    verify:
-      - pytest tests/unit_tests/ir/test_pattern_atomization.py -v
-    files:
-      - src/asdl/ir/pattern_atomization.py
-      - tests/unit_tests/ir/test_pattern_atomization.py
-    links:
-      adr: agents/adr/ADR-0011-pattern-atomization-collisions.md
-  - id: T-094
-    title: PatternAtomizePass endpoint validation and params
-    owner: Executor
-    depends_on:
-      - T-093
-    dod: >
-      Extend PatternAtomizePass to enforce that endpoint instance atoms resolve
-      to declared instance atoms and to materialize per-atom instance params
-      using patterned-parameter expansion rules (broadcast/zip with
-      diagnostics). Add tests for subset endpoint bindings and parameter
-      expansion diagnostics.
-    verify:
-      - pytest tests/unit_tests/ir/test_pattern_atomization.py -v
-    files:
-      - src/asdl/ir/pattern_atomization.py
-      - tests/unit_tests/ir/test_pattern_atomization.py
-    links:
-      adr: agents/adr/ADR-0011-pattern-atomization-collisions.md
-  - id: T-095
-    title: Wire PatternAtomizePass into MVP pipeline
-    owner: Executor
-    depends_on:
-      - T-094
-    dod: >
-      Run PatternAtomizePass after NFIR->IFIR in the MVP pipeline and add a
-      pipeline-level test proving pattern tokens are atomized before emission.
-    verify:
-      - pytest tests/unit_tests/e2e/test_pipeline_mvp.py -v
-    files:
-      - src/asdl/ir/pipeline.py
-      - tests/unit_tests/e2e/test_pipeline_mvp.py
-    links:
-      adr: agents/adr/ADR-0011-pattern-atomization-collisions.md
-  - id: T-092
-    title: Netlist emission assumes atomized IFIR
-    owner: Executor
-    depends_on:
-      - T-095
-    dod: >
-      Remove pattern elaboration from netlist emission and update netlist tests
-      to rely on atomized IFIR output. Replace or retire pattern elaboration
-      tests as needed and add coverage to ensure emit-time does not expand
-      patterns.
-    verify:
-      - pytest tests/unit_tests/netlist/test_netlist_emitter.py -v
-    files:
-      - src/asdl/emit/netlist/api.py
-      - tests/unit_tests/netlist/test_netlist_emitter.py
-      - tests/unit_tests/ir/test_pattern_elaboration.py
-    links:
-      adr: agents/adr/ADR-0011-pattern-atomization-collisions.md
-  - id: T-096
-    title: Expand env vars in backend templates
-    owner: Executor
-    dod: >
-      Expand shell-style env vars (e.g., $PDK_PATH, ${PDK_PATH}) in rendered
-      backend templates for both system devices and device backends, using the
-      same failure rules as import path expansion (error if vars remain
-      unresolved). Emit a new EMIT diagnostic on unresolved env vars and add
-      netlist tests for success and failure cases.
-    verify:
-      - pytest tests/unit_tests/netlist/test_netlist_emitter.py -v
-    files:
-      - src/asdl/emit/netlist/render.py
-      - src/asdl/emit/netlist/diagnostics.py
-      - tests/unit_tests/netlist/test_netlist_emitter.py
-    links:
-      scratchpad: agents/scratchpads/T-096.md
-  - id: T-097
-    title: NFIR endpoint resolution uses atomized equivalence
-    owner: Executor
-    dod: >
-      Update NFIR module verification to resolve endpoint instance names via
-      atomized literals (allowing subset pattern tokens) and to detect
-      duplicate endpoints after atomization. Update NFIR->IFIR conversion to
-      map endpoint instance tokens to owning instance ops using the same
-      atomized literal mapping. Add unit tests covering subset endpoint
-      bindings and atomized duplicate detection.
-    verify:
-      - pytest tests/unit_tests/ir/test_dialect.py tests/unit_tests/ir/test_ifir_converter.py -v
-    files:
-      - src/asdl/ir/nfir/dialect.py
-      - src/asdl/ir/converters/nfir_to_ifir.py
-      - tests/unit_tests/ir/test_dialect.py
-      - tests/unit_tests/ir/test_ifir_converter.py
-    links:
-      adr: agents/adr/ADR-0012-nfir-atomized-endpoint-resolution.md
-  - id: T-098
-    title: Atomize NFIR endpoints before IFIR inversion
-    owner: Executor
-    dod: >
-      Update NFIR->IFIR conversion to atomize instances/nets/endpoints and
-      build IFIR conns per atom so subset endpoint tokens (e.g., `MN_IN_<N>`)
-      map to the correct atomized instance without producing duplicate ports.
-      Preserve `pattern_origin` metadata for atomized names. Ensure
-      PatternAtomizePass is idempotent or skips already-atomized IFIR.
-      Update IFIR converter tests to expect atomized names and add coverage for
-      subset endpoint bindings that would otherwise duplicate ports.
-    verify:
-      - pytest tests/unit_tests/ir/test_ifir_converter.py tests/unit_tests/ir/test_pattern_atomization.py -v
-    files:
-      - src/asdl/ir/converters/nfir_to_ifir.py
-      - src/asdl/ir/pattern_atomization.py
-      - tests/unit_tests/ir/test_ifir_converter.py
-      - tests/unit_tests/ir/test_pattern_atomization.py
-    links:
-      adr: agents/adr/ADR-0013-nfir-atomized-ifir-inversion.md
 backlog: []
 
 exploration_candidates:

@@ -10,7 +10,7 @@ pipeline.
 ## MVP scope
 - Self-contained design (no imports/exports/includes).
 - Pattern tokens may appear in NFIR instance names, net names, and endpoint
-  tokens; IFIR carries only single-atom pattern tokens after atomization.
+  tokens; IFIR carries only literal names after atomization.
 - Named-only connections (no positional conns).
 - Explicit net objects are declared in each module.
 - No view system and no device kind inference.
@@ -49,7 +49,7 @@ pipeline.
 - `name: StringAttr`
 - `net_type: StringAttr?`
 - `pattern_origin: StringAttr?`
-  - Original multi-atom pattern token, if this net was derived from a pattern.
+  - Original pattern token, if this net was derived from a pattern token.
 - `src: LocAttr?`
 
 ### `asdl_ifir.instance`
@@ -60,7 +60,7 @@ pipeline.
 - `params: DictAttr?`
 - `conns: ArrayAttr<asdl_ifir.conn>`  (**named-only**)
 - `pattern_origin: StringAttr?`
-  - Original multi-atom pattern token, if this instance was derived from a pattern.
+  - Original pattern token, if this instance was derived from a pattern token.
 - `doc: StringAttr?`
 - `src: LocAttr?`
 
@@ -95,16 +95,16 @@ pipeline.
 ## Derivation rules (NFIR -> IFIR)
 - `asdl_ifir.design.top` is copied from `asdl_nfir.design.top` (if present).
 - For each NFIR module:
-  - atomize `port_order` and net/instance names into single-atom patterns.
-  - create `asdl_ifir.net` for every atomized net and carry `pattern_origin`
-    when derived from a multi-atom pattern token.
+  - atomize `port_order` and net/instance names into literal names.
+  - create `asdl_ifir.net` for every atomized net using the literal name and
+    carry `pattern_origin` when derived from a pattern token.
   - invert NFIR net endpoints into instance conns:
     - for each NFIR net `(net_name, endpoints)`, expand to atomized nets and
-      atomized endpoints, then add a conn `{port=<pin>, net=<net_name>}` to the
-      matching instance atom.
+      atomized endpoints, then add a conn `{port=<pin_literal>, net=<net_literal>}`
+      to the matching instance atom.
 - For each NFIR instance:
-  - create one IFIR instance per atomized name and carry `pattern_origin`
-    when derived from a multi-atom pattern token.
+  - create one IFIR instance per atomized name using the literal name and
+    carry `pattern_origin` when derived from a pattern token.
   - conns are populated by the inversion above.
 - Devices and their backends are copied 1:1 from NFIR.
 
@@ -122,3 +122,4 @@ pipeline.
 - Literal names produced by atomization must be unique within instance names
   and within net names; collisions are errors even across different pattern
   origins.
+- IFIR net, instance, and port names are literal (no pattern delimiters).
