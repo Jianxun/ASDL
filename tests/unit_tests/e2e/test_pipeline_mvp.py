@@ -8,7 +8,14 @@ from asdl.ast import parse_string
 from asdl.diagnostics import Severity
 from asdl.emit.netlist import emit_netlist
 from asdl.ir.ifir import InstanceOp, ModuleOp, NetOp
-from asdl.ir.pipeline import run_mvp_pipeline
+from asdl.ir.pipeline import (
+    DUMP_STAGE_ATOMIZED_IFIR,
+    DUMP_STAGE_IFIR,
+    DUMP_STAGE_NFIR,
+    PIPELINE_DUMP_FILENAMES,
+    PipelineDumpOptions,
+    run_mvp_pipeline,
+)
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -216,6 +223,65 @@ def test_pipeline_end_to_end_deterministic_top_handling(
     assert lines[2] == "R1 IN OUT r=2k"
     assert lines[3] == ".ends leaf"
     assert lines[4] == ".end"
+
+
+def test_pipeline_dump_dir_outputs(tmp_path: Path) -> None:
+    document, diagnostics = parse_string(_pipeline_yaml())
+
+    assert diagnostics == []
+    assert document is not None
+
+    dump_dir = tmp_path / "ir_dumps"
+    dump_options = PipelineDumpOptions(
+        stages=(DUMP_STAGE_NFIR, DUMP_STAGE_IFIR, DUMP_STAGE_ATOMIZED_IFIR),
+        dump_dir=dump_dir,
+    )
+
+    design, pipeline_diags = run_mvp_pipeline(
+        document,
+        verify=False,
+        dump_options=dump_options,
+    )
+
+    assert pipeline_diags == []
+    assert design is not None
+
+    for stage, expected in (
+        (DUMP_STAGE_NFIR, "asdl_nfir.design"),
+        (DUMP_STAGE_IFIR, "asdl_ifir.design"),
+        (DUMP_STAGE_ATOMIZED_IFIR, "asdl_ifir.design"),
+    ):
+        dump_path = dump_dir / PIPELINE_DUMP_FILENAMES[stage]
+        assert dump_path.exists()
+        assert expected in dump_path.read_text(encoding="utf-8")
+
+
+def test_pipeline_dump_callback_stage_selection() -> None:
+    document, diagnostics = parse_string(_pipeline_yaml())
+
+    assert diagnostics == []
+    assert document is not None
+
+    seen = {}
+
+    def _capture_dump(stage: str, text: str) -> None:
+        seen[stage] = text
+
+    dump_options = PipelineDumpOptions(
+        stages=(DUMP_STAGE_NFIR,),
+        dump_callback=_capture_dump,
+    )
+
+    design, pipeline_diags = run_mvp_pipeline(
+        document,
+        verify=False,
+        dump_options=dump_options,
+    )
+
+    assert pipeline_diags == []
+    assert design is not None
+    assert set(seen) == {DUMP_STAGE_NFIR}
+    assert "asdl_nfir.design" in seen[DUMP_STAGE_NFIR]
 
 
 def test_pipeline_atomizes_patterns_before_emission() -> None:
