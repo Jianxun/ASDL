@@ -27,3 +27,28 @@ icebox:
       - pytest tests/unit_tests/ir -v
     links:
       scratchpad: agents/scratchpads/T-056_exports_sugar.md
+  - id: T-104
+    title: Pipeline IR dump hooks
+    owner: Executor
+    dod: >
+      Add debug options to the MVP pipeline to dump NFIR/IFIR/atomized IFIR
+      modules to text for inspection. Support selecting stages and directing
+      output to a dump directory or callback; ensure dumps are emitted even when
+      verify is disabled. Add unit tests that run the pipeline on a small fixture
+      and assert the dump outputs exist and include expected op headers.
+    verify:
+      - pytest tests/unit_tests/e2e/test_pipeline_mvp.py -v
+    links:
+      scratchpad: agents/scratchpads/T-104_pipeline_ir_dump_hooks.md
+  - id: T-105
+    title: CLI IR dump options
+    owner: Executor
+    dod: >
+      Add asdlc netlist flags to dump NFIR/IFIR/atomized IFIR to disk
+      (for example, --dump-ir nfir,ifir,atom and --dump-dir). Use pipeline
+      debug hooks to emit dumps next to the output file by default. Update CLI
+      help text and document file naming conventions.
+    verify:
+      - pytest tests/unit_tests/e2e/test_pipeline_mvp.py -v
+    links:
+      scratchpad: agents/scratchpads/T-105_cli_ir_dump_options.md
