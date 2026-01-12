@@ -9,7 +9,7 @@ T-100:
   pr: 112
   merged: true
 T-101:
-  status: ready_for_review
+  status: review_in_progress
   pr: 113
   merged: false
 T-102:
