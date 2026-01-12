@@ -1,3 +1,5 @@
+"""Parse ASDL YAML into AST models with diagnostics."""
+
 from __future__ import annotations
 
 import re
@@ -26,6 +28,14 @@ IMPORT_NAMESPACE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]:
+    """Parse an ASDL file from disk.
+
+    Args:
+        filepath: Path to the YAML file.
+
+    Returns:
+        The parsed document (or None) and any diagnostics emitted.
+    """
     file_path = Path(filepath)
     if not file_path.exists():
         return (
@@ -63,6 +73,15 @@ def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]
 def parse_string(
     yaml_content: str, file_path: Optional[Path] = None
 ) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]:
+    """Parse ASDL YAML content into an AST document.
+
+    Args:
+        yaml_content: Raw YAML source text.
+        file_path: Optional source file path for diagnostics and spans.
+
+    Returns:
+        The parsed document (or None) and any diagnostics emitted.
+    """
     diagnostics: List[Diagnostic] = []
     file_label = str(file_path) if file_path is not None else "<string>"
 
@@ -113,6 +132,7 @@ def parse_string(
 
 
 def _yaml_error_to_diagnostic(error: YAMLError, file_label: str) -> Diagnostic:
+    """Convert a YAML parser error into a diagnostic."""
     line = 1
     col = 1
     if isinstance(error, MarkedYAMLError) and error.problem_mark is not None:
@@ -131,6 +151,15 @@ def _yaml_error_to_diagnostic(error: YAMLError, file_label: str) -> Diagnostic:
 def _validation_errors_to_diagnostics(
     error: ValidationError, location_index: LocationIndex
 ) -> List[Diagnostic]:
+    """Translate Pydantic validation errors into diagnostics.
+
+    Args:
+        error: Validation error from Pydantic.
+        location_index: Lookup table for source spans.
+
+    Returns:
+        Diagnostics describing validation failures.
+    """
     diagnostics: List[Diagnostic] = []
     for entry in error.errors():
         loc = entry.get("loc", ())
@@ -160,6 +189,7 @@ def _validation_errors_to_diagnostics(
 def _duplicate_import_namespace_diagnostics(
     root_node: Optional[MappingNode], file_label: str
 ) -> List[Diagnostic]:
+    """Find duplicate import namespaces before YAML load normalizes keys."""
     if root_node is None or not isinstance(root_node, MappingNode):
         return []
 
@@ -194,6 +224,7 @@ def _duplicate_import_namespace_diagnostics(
 
 
 def _validate_imports(plain: Any, location_index: LocationIndex) -> List[Diagnostic]:
+    """Validate import namespace syntax and path types."""
     if not isinstance(plain, dict):
         return []
     imports = plain.get("imports")
@@ -252,6 +283,7 @@ def _hint_notes(entry: dict) -> List[str]:
 
 
 def _import_diagnostic(code: str, message: str, span: Optional[SourceSpan]) -> Diagnostic:
+    """Create an import-related diagnostic with span fallback notes."""
     notes = [NO_SPAN_NOTE] if span is None else None
     return Diagnostic(
         code=code,
@@ -264,6 +296,11 @@ def _import_diagnostic(code: str, message: str, span: Optional[SourceSpan]) -> D
 
 
 def _attach_locations(value: Any, location_index: LocationIndex, path: Iterable[PathSegment]) -> None:
+    """Recursively attach source locations to AST nodes.
+
+    Notes:
+        This mutates AST models in-place by setting private location fields.
+    """
     if isinstance(value, AstBaseModel):
         loc = location_index.lookup_with_fallback(path)
         if loc is not None:
@@ -288,6 +325,7 @@ def _attach_locations(value: Any, location_index: LocationIndex, path: Iterable[
 def _attach_module_entry_locations(
     module: ModuleDecl, location_index: LocationIndex, path: Iterable[PathSegment]
 ) -> None:
+    """Attach key locations for module instance/net entries."""
     base_path = tuple(path)
     if module.nets:
         for net_name in module.nets.keys():
@@ -302,6 +340,7 @@ def _attach_module_entry_locations(
 
 
 def _format_path(path: Iterable[PathSegment]) -> str:
+    """Format a location path into a dotted/ indexed string."""
     parts: List[str] = []
     for segment in path:
         if isinstance(segment, int):
@@ -326,6 +365,7 @@ def _span_at(file_label: str, line: int, col: int) -> SourceSpan:
 
 
 def _span_from_mark(file_label: str, mark: Any, length: int) -> Optional[SourceSpan]:
+    """Create a source span from a ruamel mark and scalar length."""
     if mark is None:
         return None
     line = getattr(mark, "line", None)

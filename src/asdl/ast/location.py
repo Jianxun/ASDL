@@ -1,3 +1,5 @@
+"""Source location utilities for AST diagnostics."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,6 +15,8 @@ Path = Tuple[PathSegment, ...]
 
 @dataclass(frozen=True)
 class Locatable:
+    """Source location for a YAML node or token."""
+
     file: str
     start_line: Optional[int]
     start_col: Optional[int]
@@ -20,6 +24,7 @@ class Locatable:
     end_col: Optional[int]
 
     def to_source_span(self) -> Optional[SourceSpan]:
+        """Convert to a SourceSpan when all coordinates are available."""
         if (
             self.start_line is None
             or self.start_col is None
@@ -35,6 +40,8 @@ class Locatable:
 
 
 class LocationIndex:
+    """Lookup table mapping YAML paths to source locations."""
+
     def __init__(self, file_label: str) -> None:
         self.file_label = file_label
         self._value_locations: Dict[Path, Locatable] = {}
@@ -42,11 +49,29 @@ class LocationIndex:
 
     @classmethod
     def from_yaml(cls, data: Any, file_label: str) -> "LocationIndex":
+        """Build a LocationIndex from a ruamel YAML structure.
+
+        Args:
+            data: ruamel CommentedMap/CommentedSeq or plain mappings.
+            file_label: File identifier for spans.
+
+        Returns:
+            The populated LocationIndex.
+        """
         index = cls(file_label)
         index._index_node(data, ())
         return index
 
     def lookup(self, path: Iterable[PathSegment], *, prefer_key: bool = False) -> Optional[Locatable]:
+        """Look up an exact path in the index.
+
+        Args:
+            path: Path segments into the YAML tree.
+            prefer_key: When true, prefer key spans over value spans.
+
+        Returns:
+            The matching location, if any.
+        """
         key = tuple(path)
         if prefer_key:
             return self._key_locations.get(key) or self._value_locations.get(key)
@@ -55,6 +80,7 @@ class LocationIndex:
     def lookup_with_fallback(
         self, path: Iterable[PathSegment], *, prefer_key: bool = False
     ) -> Optional[Locatable]:
+        """Look up a path, falling back to parent locations."""
         key = tuple(path)
         for idx in range(len(key), -1, -1):
             loc = self.lookup(key[:idx], prefer_key=prefer_key)
@@ -63,6 +89,7 @@ class LocationIndex:
         return None
 
     def _index_node(self, node: Any, path: Path) -> None:
+        """Recursively populate the index from a YAML node tree."""
         node_loc = _loc_from_node(node, self.file_label)
         if node_loc is not None:
             self._value_locations[path] = node_loc
@@ -89,6 +116,7 @@ class LocationIndex:
 
 
 def to_plain(node: Any) -> Any:
+    """Convert ruamel nodes to plain Python structures."""
     if isinstance(node, CommentedMap):
         return {key: to_plain(value) for key, value in node.items()}
     if isinstance(node, CommentedSeq):
@@ -146,6 +174,7 @@ def _node_line_col(node: Any) -> Optional[Tuple[int, int]]:
 
 
 def _safe_line_col(lc: Any, method: str, key: Any) -> Optional[Tuple[int, int]]:
+    """Safely read line/column data from ruamel without propagating errors."""
     if lc is None:
         return None
     try:
@@ -158,6 +187,7 @@ def _safe_line_col(lc: Any, method: str, key: Any) -> Optional[Tuple[int, int]]:
 
 
 def _loc_from_line_col(line_col: Tuple[int, int], file_label: str, length: int) -> Locatable:
+    """Create a Locatable from 0-based line/column with scalar length."""
     line, col = line_col
     start_line = line + 1
     start_col = col + 1

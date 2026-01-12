@@ -1,3 +1,5 @@
+"""Pydantic AST models and validators for ASDL documents."""
+
 from __future__ import annotations
 
 from typing import Annotated, Any, Dict, List, Optional, TYPE_CHECKING, Union
@@ -56,15 +58,27 @@ PatternsBlock = Dict[str, PatternGroup]
 
 
 class AstBaseModel(BaseModel):
+    """Base AST model with optional source location metadata."""
+
     model_config = ConfigDict(extra="forbid")
     _loc: Optional[Any] = PrivateAttr(default=None)
 
     def set_loc(self, loc: Any) -> "AstBaseModel":
+        """Attach a source location to this node.
+
+        Args:
+            loc: Location payload (usually a Locatable) from the YAML index.
+
+        Returns:
+            This model instance for chaining.
+        """
         self._loc = loc
         return self
 
 
 class DeviceBackendDecl(AstBaseModel):
+    """Backend-specific device template and parameters."""
+
     model_config = ConfigDict(extra="allow")
 
     template: StrictStr
@@ -72,6 +86,8 @@ class DeviceBackendDecl(AstBaseModel):
 
 
 class DeviceDecl(AstBaseModel):
+    """Device declaration with ports, params, and backend templates."""
+
     ports: Optional[List[StrictStr]] = None
     params: Optional[Dict[str, ParamValue]] = None
     backends: Dict[str, DeviceBackendDecl]
@@ -81,12 +97,25 @@ class DeviceDecl(AstBaseModel):
     def backends_must_be_non_empty(
         cls, value: Dict[str, DeviceBackendDecl]
     ) -> Dict[str, DeviceBackendDecl]:
+        """Reject empty backend maps for device declarations.
+
+        Args:
+            value: Mapping of backend names to backend declarations.
+
+        Returns:
+            The validated backend mapping.
+
+        Raises:
+            ValueError: If the mapping is empty.
+        """
         if not value:
             raise ValueError("backends must be a non-empty map")
         return value
 
 
 class InstanceDefaultsDecl(AstBaseModel):
+    """Default instance bindings keyed by instance reference."""
+
     bindings: Dict[str, StrictStr]
 
 
@@ -94,6 +123,8 @@ InstanceDefaultsBlock = Dict[str, InstanceDefaultsDecl]
 
 
 class ModuleDecl(AstBaseModel):
+    """Module declaration with nets, instances, and defaults."""
+
     instances: Optional[InstancesBlock] = None
     nets: Optional[NetsBlock] = None
     patterns: Optional[PatternsBlock] = None
@@ -107,6 +138,8 @@ if TYPE_CHECKING:
 
 
 class AsdlDocument(AstBaseModel):
+    """Top-level ASDL document containing modules and devices."""
+
     imports: Optional[ImportsBlock] = None
     top: Optional[StrictStr] = None
     modules: Optional[Dict[str, ModuleDecl]] = None
@@ -114,6 +147,14 @@ class AsdlDocument(AstBaseModel):
 
     @model_validator(mode="after")
     def validate_document(self) -> "AsdlDocument":
+        """Enforce document-level invariants.
+
+        Returns:
+            This document if validation succeeds.
+
+        Raises:
+            ValueError: If the document has no modules/devices or lacks a top.
+        """
         has_modules = bool(self.modules)
         has_devices = bool(self.devices)
         if not has_modules and not has_devices:
