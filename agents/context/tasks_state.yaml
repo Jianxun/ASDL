@@ -29,6 +29,6 @@ T-096:
   pr: 105
   merged: true
 T-097:
-  status: ready_for_review
+  status: done
   pr: 107
-  merged: false
+  merged: true
