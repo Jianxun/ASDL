@@ -1,67 +1,66 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-099
-    title: Literalize IFIR names during atomization
+  - id: T-104
+    title: Pipeline IR dump hooks
     owner: Executor
     dod: >
-      Emit literal names (no pattern delimiters) for IFIR port_order, nets,
-      instances, and conns during atomization. Treat any token that includes
-      pattern delimiters as a pattern token and carry its original token in
-      `pattern_origin`, including single-atom expansions. Update the NFIR->IFIR
-      converter to use literal names and propagate `pattern_origin` from
-      atomization. Refresh parser-level atomization tests to reflect the new
-      origin semantics.
-    verify:
-      - pytest tests/unit_tests/parser/test_pattern_atomization.py -v
-    files:
-      - src/asdl/patterns.py
-      - src/asdl/ir/pattern_atomization.py
-      - src/asdl/ir/converters/nfir_to_ifir.py
-      - tests/unit_tests/parser/test_pattern_atomization.py
-  - id: T-100
-    title: Update IFIR unit tests for literal names
-    owner: Executor
-    dod: >
-      Update IFIR atomization and conversion tests to expect literal names
-      (no pattern delimiters) and verify `pattern_origin` values remain correct.
-    verify:
-      - pytest tests/unit_tests/ir/test_pattern_atomization.py tests/unit_tests/ir/test_ifir_converter.py -v
-    files:
-      - tests/unit_tests/ir/test_pattern_atomization.py
-      - tests/unit_tests/ir/test_ifir_converter.py
-  - id: T-101
-    title: Update pipeline MVP expectations for literal names
-    owner: Executor
-    dod: >
-      Update MVP pipeline tests to assert literal IFIR names for ports, nets,
-      instances, and connections while preserving `pattern_origin` metadata.
+      Add debug options to the MVP pipeline to dump NFIR/IFIR/atomized IFIR
+      modules to text for inspection. Support selecting stages and directing
+      output to a dump directory or callback; ensure dumps are emitted even when
+      verify is disabled. Add unit tests that run the pipeline on a small fixture
+      and assert the dump outputs exist and include expected op headers.
     verify:
       - pytest tests/unit_tests/e2e/test_pipeline_mvp.py -v
-    files:
-      - tests/unit_tests/e2e/test_pipeline_mvp.py
-  - id: T-102
-    title: Update netlist tests for literal names
+    links:
+      scratchpad: agents/scratchpads/T-104_pipeline_ir_dump_hooks.md
+  - id: T-105
+    title: CLI IR dump options
     owner: Executor
     dod: >
-      Update netlist emission tests to expect literal names in IFIR fixtures and
-      emitted netlists after atomization.
+      Add asdlc netlist flags to dump NFIR/IFIR/atomized IFIR to disk
+      (for example, --dump-ir nfir,ifir,atom and --dump-dir). Use pipeline
+      debug hooks to emit dumps next to the output file by default. Update CLI
+      help text and document file naming conventions.
     verify:
-      - pytest tests/unit_tests/netlist/test_netlist_emitter.py -v
-    files:
-      - tests/unit_tests/netlist/test_netlist_emitter.py
-  - id: T-103
-    title: Enforce literal-only IFIR names
+      - pytest tests/unit_tests/e2e/test_pipeline_mvp.py -v
+    links:
+      scratchpad: agents/scratchpads/T-105_cli_ir_dump_options.md
+  - id: T-106
+    title: Preserve AST location spans
     owner: Executor
     dod: >
-      Update IFIR verification to reject pattern delimiters in net, instance,
-      and port names after atomization. Add unit tests to cover delimiter
-      rejection for each name category.
+      Preserve detailed AST locations for downstream diagnostics by retaining a
+      LocationIndex (or equivalent lookup helper) on the parsed document and
+      exposing key spans for module/device/patterns/instance_defaults entries.
+      Add unit tests that assert key and list-item spans for a fixture covering
+      modules, devices, patterns, instance_defaults, nets, and instances.
     verify:
-      - pytest tests/unit_tests/ir/test_ifir_dialect.py -v
+      - pytest tests/unit_tests/ast -v
     files:
-      - src/asdl/ir/ifir/dialect.py
-      - tests/unit_tests/ir/test_ifir_dialect.py
+      - src/asdl/ast/parser.py
+      - src/asdl/ast/models.py
+      - src/asdl/ast/location.py
+      - tests/unit_tests/ast/test_locations.py
+    links:
+      scratchpad: agents/scratchpads/T-106_ast_location_spans.md
+  - id: T-107
+    title: Add minimal AST token validation
+    owner: Executor
+    dod: >
+      Add minimal AST validation for endpoint tokens and instance expressions:
+      endpoint strings must contain exactly one '.' with non-empty instance and
+      pin segments and no whitespace; instance expressions must include a model
+      token and optional key=value tokens with non-empty key/value segments.
+      Extend parser/AST tests to cover invalid tokens with precise diagnostics.
+    verify:
+      - pytest tests/unit_tests/parser -v
+    files:
+      - src/asdl/ast/models.py
+      - src/asdl/ast/parser.py
+      - tests/unit_tests/parser/test_ast_validation.py
+    links:
+      scratchpad: agents/scratchpads/T-107_ast_token_validation.md
 backlog: []
 
 exploration_candidates:

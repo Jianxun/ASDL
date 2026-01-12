@@ -1,22 +1,17 @@
 schema_version: 2
-
-T-099:
-  status: done
-  pr: 111
-  merged: true
-T-100:
-  status: done
-  pr: 112
-  merged: true
-T-101:
-  status: done
-  pr: 113
-  merged: true
-T-102:
-  status: done
-  pr: 114
-  merged: true
-T-103:
-  status: done
-  pr: 115
-  merged: true
+T-104:
+  status: ready
+  pr: null
+  merged: false
+T-105:
+  status: ready
+  pr: null
+  merged: false
+T-106:
+  status: ready
+  pr: null
+  merged: false
+T-107:
+  status: ready
+  pr: null
+  merged: false
