@@ -1,6 +1,15 @@
 schema_version: 1
 
 archive:
+  - T-090: {completed_on: 2026-01-12, owner: Executor, pr: 98}
+  - T-091: {completed_on: 2026-01-12, owner: Executor, pr: 99}
+  - T-092: {completed_on: 2026-01-12, owner: Executor, pr: 103}
+  - T-093: {completed_on: 2026-01-12, owner: Executor, pr: 100}
+  - T-094: {completed_on: 2026-01-12, owner: Executor, pr: 101}
+  - T-095: {completed_on: 2026-01-12, owner: Executor, pr: 102}
+  - T-096: {completed_on: 2026-01-12, owner: Executor, scratchpad: agents/scratchpads/T-096.md, pr: 105}
+  - T-097: {completed_on: 2026-01-12, owner: Executor, pr: 107}
+  - T-098: {completed_on: 2026-01-12, owner: Executor, pr: 109}
   - T-054: {completed_on: 2026-01-06, owner: Architect, scratchpad: agents/scratchpads/T-054_imports_spec.md, pr: null}
   - T-055: {completed_on: 2026-01-06, owner: Architect, scratchpad: agents/scratchpads/T-055_specs_reconciliation.md, pr: null}
   - T-048: {completed_on: 2026-01-04, owner: Architect, scratchpad: agents/scratchpads/T-048_unified_netlist_emitter.md, pr: https://github.com/Jianxun/ASDL/pull/41}
