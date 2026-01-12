@@ -13,7 +13,7 @@ T-101:
   pr: 113
   merged: true
 T-102:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-103:
