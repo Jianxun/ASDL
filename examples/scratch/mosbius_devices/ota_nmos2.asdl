@@ -5,20 +5,24 @@ modules:
   ota_nmos2:
     instance_defaults:
       gf.pfet_03v3:
+        parameters:
+          L: 0.5u
+          W: 5u
+          NF: 6
         bindings:
           B: $VDD
       gf.nfet_03v3:
         bindings:
           B: $VSS
     instances:
-      MP_LOAD<P|N>: gf.pfet_03v3 m=3
+      MP_LOAD_<P|N>: gf.pfet_03v3 m=3
       MN_IN_<P|N>: gf.nfet_03v3 m=1
       MN_TAIL: gf.nfet_03v3 m=2
     nets:
       $IN_<P|N>: [MN_IN_<P|N>.G]
-      $OUT: [MN_IN_<N>.D, MP_LOAD<N>.D]
+      $OUT: [MN_IN_<N>.D, MP_LOAD_<N>.D]
       TAIL: [MN_TAIL.D, MN_IN_<P|N>.S]
-      D: [MN_IN_<P>.D, MP_LOAD<P>.D, MP_LOAD<P|N>.G]
+      D: [MN_IN_<P>.D, MP_LOAD_<P>.D, MP_LOAD_<P|N>.G]
       $VBN: [MN_TAIL.G]
       $VSS: [MN_TAIL.S]
-      $VDD: [MP_LOAD<P|N>.S]
+      $VDD: [MP_LOAD_<P|N>.S]
