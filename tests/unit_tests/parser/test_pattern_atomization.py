@@ -58,11 +58,12 @@ def test_atomize_pattern_base_less() -> None:
     ]
 
 
-def test_atomize_pattern_single_atom_origin_is_none() -> None:
-    atoms, diagnostics = atomize_pattern("OUT<P>")
+def test_atomize_pattern_single_atom_origin_preserves_pattern_token() -> None:
+    token = "OUT<P>"
+    atoms, diagnostics = atomize_pattern(token)
 
     assert diagnostics == []
-    assert atoms == [_atom("OUT<P>", "OUTP")]
+    assert atoms == [_atom("OUT<P>", "OUTP", token)]
 
 
 def test_atomize_pattern_rejects_invalid_range() -> None:
