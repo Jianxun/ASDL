@@ -25,6 +25,10 @@ from xdsl.traits import IsolatedFromAbove, NoTerminator
 from xdsl.utils.exceptions import VerifyException
 
 
+def _has_pattern_delimiters(name: str) -> bool:
+    return any(char in "<>[];|" for char in name)
+
+
 @irdl_attr_definition
 class ConnAttr(ParametrizedAttribute):
     name = "asdl_ifir.conn"
@@ -178,6 +182,10 @@ class ModuleOp(IRDLOperation):
                     raise VerifyException(f"Duplicate net name '{name}' in module")
                 if name.startswith("$"):
                     raise VerifyException("IFIR net names must not start with '$'")
+                if _has_pattern_delimiters(name):
+                    raise VerifyException(
+                        f"IFIR net name '{name}' must not include pattern delimiters"
+                    )
                 net_names.add(name)
                 nets.append(op)
                 continue
@@ -185,6 +193,10 @@ class ModuleOp(IRDLOperation):
                 name = op.name_attr.data
                 if name in inst_names:
                     raise VerifyException(f"Duplicate instance name '{name}' in module")
+                if _has_pattern_delimiters(name):
+                    raise VerifyException(
+                        f"IFIR instance name '{name}' must not include pattern delimiters"
+                    )
                 inst_names.add(name)
                 instances.append(op)
                 continue
@@ -204,6 +216,10 @@ class ModuleOp(IRDLOperation):
             seen_ports: set[str] = set()
             for conn in instance.conns.data:
                 port = conn.port.data
+                if _has_pattern_delimiters(port):
+                    raise VerifyException(
+                        f"IFIR port name '{port}' must not include pattern delimiters"
+                    )
                 if port in seen_ports:
                     raise VerifyException(
                         f"Instance '{instance.name_attr.data}' has duplicate port '{port}'"
