@@ -233,15 +233,15 @@ def test_pipeline_atomizes_patterns_before_emission() -> None:
         op for op in design.body.block.ops if isinstance(op, ModuleOp)
     )
     port_order = [attr.data for attr in ifir_module.port_order.data]
-    assert port_order == ["OUT<P>", "OUT<N>"]
+    assert port_order == ["OUTP", "OUTN"]
 
     nets = [op for op in ifir_module.body.block.ops if isinstance(op, NetOp)]
     instances = [
         op for op in ifir_module.body.block.ops if isinstance(op, InstanceOp)
     ]
 
-    assert [net.name_attr.data for net in nets] == ["OUT<P>", "OUT<N>"]
-    assert [inst.name_attr.data for inst in instances] == ["U<P>", "U<N>"]
+    assert [net.name_attr.data for net in nets] == ["OUTP", "OUTN"]
+    assert [inst.name_attr.data for inst in instances] == ["UP", "UN"]
 
     net_origins = {
         net.name_attr.data: net.pattern_origin.data
@@ -253,14 +253,14 @@ def test_pipeline_atomizes_patterns_before_emission() -> None:
         for inst in instances
         if inst.pattern_origin is not None
     }
-    assert net_origins == {"OUT<P>": "OUT<P|N>", "OUT<N>": "OUT<P|N>"}
-    assert inst_origins == {"U<P>": "U<P|N>", "U<N>": "U<P|N>"}
+    assert net_origins == {"OUTP": "OUT<P|N>", "OUTN": "OUT<P|N>"}
+    assert inst_origins == {"UP": "U<P|N>", "UN": "U<P|N>"}
 
     conns = {
         inst.name_attr.data: [(conn.port.data, conn.net.data) for conn in inst.conns.data]
         for inst in instances
     }
-    assert conns == {"U<P>": [("P", "OUT<P>")], "U<N>": [("P", "OUT<N>")]}
+    assert conns == {"UP": [("P", "OUTP")], "UN": [("P", "OUTN")]}
 
 
 def test_pipeline_import_graph_success(
