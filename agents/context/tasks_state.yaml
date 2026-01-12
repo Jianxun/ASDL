@@ -1,7 +1,7 @@
 schema_version: 2
 T-104:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 117
   merged: false
 T-105:
   status: ready

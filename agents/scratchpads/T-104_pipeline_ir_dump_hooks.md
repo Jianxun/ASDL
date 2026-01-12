@@ -12,21 +12,28 @@
 - tests/unit_tests/e2e/test_pipeline_mvp.py
 
 # Plan
-- [ ] Update task state + branch; outline subtasks.
-- [ ] Add pipeline debug options and wire to dump stages.
-- [ ] Add pipeline dump tests for NFIR/IFIR/atomized IFIR.
-- [ ] Run verify.
+- [x] Update task state + branch; outline subtasks.
+- [x] Add pipeline dump tests for NFIR/IFIR/atomized IFIR.
+- [x] Add pipeline debug options and wire to dump stages.
+- [x] Run verify.
 
 # Progress log
 - 2026-01-12: Initialized scratchpad.
+- 2026-01-12: Added IR dump tests and pipeline dump hooks with stage selection.
+- 2026-01-12: Opened PR #117.
 
 # Patch summary
+- Added pipeline dump options, stage constants, and dump pass hooks.
+- Added end-to-end tests for dump directory and callback outputs.
 
 # PR URL
+- https://github.com/Jianxun/ASDL/pull/117
 
 # Verification
+- ./venv/bin/pytest tests/unit_tests/e2e/test_pipeline_mvp.py -v
 
 # Status request (Done / Blocked / In Progress)
+- Done
 
 # Blockers / Questions
 
