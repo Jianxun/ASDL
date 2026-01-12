@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import io
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional, Type, TypeVar
+from typing import Callable, Iterable, Optional, Type, TypeVar
 
 from xdsl.context import Context
 from xdsl.dialects import builtin
 from xdsl.ir import Operation
 from xdsl.passes import ModulePass, PassPipeline
+from xdsl.printer import Printer
 from xdsl.utils.exceptions import VerifyException
 
 from asdl.ast import AsdlDocument
@@ -28,7 +30,18 @@ VERIFY_IFIR_FAILED = format_code("PASS", 3)
 IFIR_DESIGN_MISSING = format_code("PASS", 4)
 PIPELINE_CRASH = format_code("PASS", 999)
 
+DUMP_STAGE_NFIR = "nfir"
+DUMP_STAGE_IFIR = "ifir"
+DUMP_STAGE_ATOMIZED_IFIR = "ifir_atomized"
+PIPELINE_DUMP_FILENAMES = {
+    DUMP_STAGE_NFIR: "nfir.mlir",
+    DUMP_STAGE_IFIR: "ifir.mlir",
+    DUMP_STAGE_ATOMIZED_IFIR: "ifir_atomized.mlir",
+}
+PIPELINE_DUMP_STAGE_ORDER = tuple(PIPELINE_DUMP_FILENAMES.keys())
+
 DesignOpT = TypeVar("DesignOpT", bound=Operation)
+DumpCallback = Callable[[str, str], None]
 
 
 class PipelineAbort(Exception):
@@ -40,6 +53,21 @@ class PipelineState:
     diagnostics: DiagnosticCollector
     failed: bool = False
     ifir_design: Optional[IfirDesignOp] = None
+
+
+@dataclass(frozen=True)
+class PipelineDumpOptions:
+    """Configure optional IR dump hooks for the MVP pipeline.
+
+    Attributes:
+        stages: Stage names to dump; empty means all stages.
+        dump_dir: Directory to write dump files into.
+        dump_callback: Optional callback for capturing dump text.
+    """
+
+    stages: tuple[str, ...] = ()
+    dump_dir: Optional[Path] = None
+    dump_callback: Optional[DumpCallback] = None
 
 
 @dataclass(frozen=True)
@@ -129,12 +157,26 @@ class AtomizeIfirPass(ModulePass):
         self.state.ifir_design = atom_state.design
 
 
+@dataclass(frozen=True)
+class DumpIrPass(ModulePass):
+    """Pipeline pass that emits textual dumps of the current IR module."""
+
+    name = "dump-ir"
+
+    stage: str
+    dump_options: PipelineDumpOptions
+
+    def apply(self, ctx: Context, op: builtin.ModuleOp) -> None:
+        _dump_ir(self.stage, op, self.dump_options)
+
+
 def run_mvp_pipeline(
     document: Optional[AsdlDocument] = None,
     *,
     entry_file: Optional[Path] = None,
     lib_roots: Optional[Iterable[Path]] = None,
     verify: bool = True,
+    dump_options: Optional[PipelineDumpOptions] = None,
 ) -> tuple[IfirDesignOp | None, list[Diagnostic]]:
     diagnostics = DiagnosticCollector()
 
@@ -162,21 +204,41 @@ def run_mvp_pipeline(
     if nfir_design is None or _has_error_diagnostics(diagnostics.to_list()):
         return None, diagnostics.to_list()
 
-    return _run_pipeline(nfir_design, diagnostics, verify)
+    return _run_pipeline(nfir_design, diagnostics, verify, dump_options)
 
 
 def _run_pipeline(
     nfir_design: NfirDesignOp,
     diagnostics: DiagnosticCollector,
     verify: bool,
+    dump_options: Optional[PipelineDumpOptions],
 ) -> tuple[IfirDesignOp | None, list[Diagnostic]]:
     module = builtin.ModuleOp([nfir_design])
     state = PipelineState(diagnostics=diagnostics)
     passes: list[ModulePass] = []
+    dump_stages = _resolve_dump_stages(dump_options)
+    dump_enabled = dump_options is not None and (
+        dump_options.dump_dir is not None or dump_options.dump_callback is not None
+    )
+    if dump_enabled and DUMP_STAGE_NFIR in dump_stages:
+        passes.append(
+            DumpIrPass(stage=DUMP_STAGE_NFIR, dump_options=dump_options)
+        )
     if verify:
         passes.append(VerifyNfirPass(state=state))
     passes.append(NfirToIfirPass(state=state))
+    if dump_enabled and DUMP_STAGE_IFIR in dump_stages:
+        passes.append(
+            DumpIrPass(stage=DUMP_STAGE_IFIR, dump_options=dump_options)
+        )
     passes.append(AtomizeIfirPass(state=state))
+    if dump_enabled and DUMP_STAGE_ATOMIZED_IFIR in dump_stages:
+        passes.append(
+            DumpIrPass(
+                stage=DUMP_STAGE_ATOMIZED_IFIR,
+                dump_options=dump_options,
+            )
+        )
     if verify:
         passes.append(VerifyIfirPass(state=state))
 
@@ -266,6 +328,44 @@ def _build_context() -> Context:
     return ctx
 
 
+def _resolve_dump_stages(
+    dump_options: Optional[PipelineDumpOptions],
+) -> frozenset[str]:
+    """Normalize the dump stage selection into a set."""
+    if dump_options is None:
+        return frozenset()
+    if not dump_options.stages:
+        return frozenset(PIPELINE_DUMP_STAGE_ORDER)
+    return frozenset(dump_options.stages)
+
+
+def _dump_ir(
+    stage: str,
+    module: builtin.ModuleOp,
+    dump_options: PipelineDumpOptions,
+) -> None:
+    """Write or emit the textual IR dump for the selected stage."""
+    if (
+        dump_options.dump_dir is None
+        and dump_options.dump_callback is None
+    ):
+        return
+    output = _render_module_text(module)
+    if dump_options.dump_dir is not None:
+        dump_options.dump_dir.mkdir(parents=True, exist_ok=True)
+        dump_path = dump_options.dump_dir / PIPELINE_DUMP_FILENAMES[stage]
+        dump_path.write_text(output, encoding="utf-8")
+    if dump_options.dump_callback is not None:
+        dump_options.dump_callback(stage, output)
+
+
+def _render_module_text(module: builtin.ModuleOp) -> str:
+    """Render an xDSL module operation as text for debugging."""
+    buffer = io.StringIO()
+    Printer(stream=buffer).print_op(module)
+    return buffer.getvalue()
+
+
 def _find_single_design(
     module: builtin.ModuleOp,
     design_type: Type[DesignOpT],
@@ -303,4 +403,11 @@ def _diagnostic(code: str, message: str) -> Diagnostic:
     )
 
 
-__all__ = ["run_mvp_pipeline"]
+__all__ = [
+    "DUMP_STAGE_ATOMIZED_IFIR",
+    "DUMP_STAGE_IFIR",
+    "DUMP_STAGE_NFIR",
+    "PIPELINE_DUMP_FILENAMES",
+    "PipelineDumpOptions",
+    "run_mvp_pipeline",
+]
