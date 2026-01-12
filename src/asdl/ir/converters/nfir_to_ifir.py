@@ -128,7 +128,7 @@ def _convert_module(
         if atoms is None:
             had_error = True
             continue
-        port_order.extend(atom.token for atom in atoms)
+        port_order.extend(atom.literal for atom in atoms)
 
     inst_literal_map: Dict[str, str] = {}
     inst_atoms: List[str] = []
@@ -141,8 +141,8 @@ def _convert_module(
             atoms = []
         inst_order.append((inst, atoms))
         for atom in atoms:
-            inst_atoms.append(atom.token)
-            inst_literal_map.setdefault(atom.literal, atom.token)
+            inst_atoms.append(atom.literal)
+            inst_literal_map.setdefault(atom.literal, atom.literal)
 
     for net in nfir_nets:
         net_name = net.name_attr.data
@@ -153,7 +153,7 @@ def _convert_module(
         for atom in atoms:
             net_ops.append(
                 NetOp(
-                    name=atom.token,
+                    name=atom.literal,
                     pattern_origin=atom.origin,
                     src=net.src,
                 )
@@ -168,7 +168,7 @@ def _convert_module(
         )
         had_error = had_error or params_error
         for atom, params in zip(atoms, params_per_atom):
-            param_map[atom.token] = params
+            param_map[atom.literal] = params
 
     for net in nfir_nets:
         net_token = net.name_attr.data
@@ -189,7 +189,7 @@ def _convert_module(
                 had_error = True
                 continue
             if len(net_atoms) == 1:
-                net_name = net_atoms[0].token
+                net_name = net_atoms[0].literal
                 owners: List[str] = []
                 for atom in endpoint_atoms:
                     owner = inst_literal_map.get(atom.inst.literal)
@@ -212,7 +212,7 @@ def _convert_module(
                     continue
                 for owner, atom in zip(owners, endpoint_atoms):
                     conn_map[owner].append(
-                        ConnAttr(StringAttr(atom.pin.token), StringAttr(net_name))
+                        ConnAttr(StringAttr(atom.pin.literal), StringAttr(net_name))
                     )
                 continue
             owners: List[str] = []
@@ -238,22 +238,22 @@ def _convert_module(
             for net_atom, endpoint_atom, owner in zip(net_atoms, endpoint_atoms, owners):
                 conn_map[owner].append(
                     ConnAttr(
-                        StringAttr(endpoint_atom.pin.token),
-                        StringAttr(net_atom.token),
+                        StringAttr(endpoint_atom.pin.literal),
+                        StringAttr(net_atom.literal),
                     )
                 )
 
     inst_ops: List[InstanceOp] = []
     for inst, atoms in inst_order:
         for atom in atoms:
-            conns = conn_map.get(atom.token, [])
+            conns = conn_map.get(atom.literal, [])
             inst_ops.append(
                 InstanceOp(
-                    name=atom.token,
+                    name=atom.literal,
                     ref=SymbolRefAttr(inst.ref.data),
                     conns=ArrayAttr(conns),
                     ref_file_id=inst.ref_file_id,
-                    params=param_map.get(atom.token),
+                    params=param_map.get(atom.literal),
                     pattern_origin=atom.origin,
                     doc=inst.doc,
                     src=inst.src,

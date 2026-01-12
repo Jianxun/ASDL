@@ -116,7 +116,7 @@ def atomize_pattern(
     if duplicates:
         return None, [_diagnostic(PATTERN_DUPLICATE_ATOM, _duplicate_message(duplicates, token))]
 
-    origin = token if len(atoms) > 1 else None
+    origin = token if _has_pattern_delimiters(token) else None
     return [
         AtomizedPattern(token=atom_token, literal=literal, origin=origin)
         for atom_token, literal in atoms
@@ -431,6 +431,10 @@ def _find_duplicates(items: Iterable[str]) -> List[str]:
 
 def _has_whitespace(value: str) -> bool:
     return any(char.isspace() for char in value)
+
+
+def _has_pattern_delimiters(token: str) -> bool:
+    return any(char in "<>[];" for char in token)
 
 
 def _diagnostic(code: str, message: str) -> Diagnostic:

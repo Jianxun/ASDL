@@ -184,7 +184,7 @@ def _atomize_module(
         if atoms is None:
             had_error = True
             continue
-        port_order.extend(atom.token for atom in atoms)
+        port_order.extend(atom.literal for atom in atoms)
 
     net_ops: List[NetOp] = []
     net_literals: List[Tuple[str, str, LocationAttr | None]] = []
@@ -198,7 +198,7 @@ def _atomize_module(
             pattern_origin = net.pattern_origin if net.pattern_origin is not None else atom.origin
             net_ops.append(
                 NetOp(
-                    name=atom.token,
+                    name=atom.literal,
                     net_type=net.net_type,
                     pattern_origin=pattern_origin,
                     src=net.src,
@@ -218,7 +218,7 @@ def _atomize_module(
             atoms = []
         instance_order.append((inst, atoms))
         for atom in atoms:
-            instance_atoms.append(atom.token)
+            instance_atoms.append(atom.literal)
             instance_literals.append((atom.literal, atom.token, inst.src or module.src))
 
     had_error = _emit_literal_collisions(
@@ -243,7 +243,7 @@ def _atomize_module(
         )
         had_error = had_error or params_error
         for atom, params in zip(atoms, params_per_atom):
-            param_map[atom.token] = params
+            param_map[atom.literal] = params
 
     for inst in instances:
         inst_token = inst.name_attr.data
@@ -280,9 +280,9 @@ def _atomize_module(
                 continue
 
             if len(net_atoms) == 1:
-                net_name = net_atoms[0].token
+                net_name = net_atoms[0].literal
                 for endpoint in endpoint_atoms:
-                    inst_atom = endpoint.inst.token
+                    inst_atom = endpoint.inst.literal
                     if inst_atom not in conn_map:
                         diagnostics.emit(
                             _diagnostic(
@@ -297,12 +297,12 @@ def _atomize_module(
                         had_error = True
                         continue
                     conn_map[inst_atom].append(
-                        ConnAttr(StringAttr(endpoint.pin.token), StringAttr(net_name))
+                        ConnAttr(StringAttr(endpoint.pin.literal), StringAttr(net_name))
                     )
                 continue
 
             for net_atom, endpoint in zip(net_atoms, endpoint_atoms):
-                inst_atom = endpoint.inst.token
+                inst_atom = endpoint.inst.literal
                 if inst_atom not in conn_map:
                     diagnostics.emit(
                         _diagnostic(
@@ -317,7 +317,7 @@ def _atomize_module(
                     had_error = True
                     continue
                 conn_map[inst_atom].append(
-                    ConnAttr(StringAttr(endpoint.pin.token), StringAttr(net_atom.token))
+                    ConnAttr(StringAttr(endpoint.pin.literal), StringAttr(net_atom.literal))
                 )
 
     inst_ops: List[InstanceOp] = []
@@ -326,14 +326,14 @@ def _atomize_module(
             pattern_origin = (
                 inst.pattern_origin if inst.pattern_origin is not None else atom.origin
             )
-            conns = conn_map.get(atom.token, [])
+            conns = conn_map.get(atom.literal, [])
             inst_ops.append(
                 InstanceOp(
-                    name=atom.token,
+                    name=atom.literal,
                     ref=inst.ref,
                     conns=ArrayAttr(conns),
                     ref_file_id=inst.ref_file_id,
-                    params=param_map.get(atom.token),
+                    params=param_map.get(atom.literal),
                     pattern_origin=pattern_origin,
                     doc=inst.doc,
                     src=inst.src,

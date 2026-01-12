@@ -1,9 +1,9 @@
 schema_version: 2
 
 T-099:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 111
+  merged: true
 T-100:
   status: ready
   pr: null
