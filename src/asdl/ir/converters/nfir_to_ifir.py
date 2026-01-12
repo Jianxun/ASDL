@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
 
-from xdsl.dialects.builtin import ArrayAttr, LocationAttr, SymbolRefAttr
+from xdsl.dialects.builtin import (
+    ArrayAttr,
+    DictionaryAttr,
+    LocationAttr,
+    StringAttr,
+    SymbolRefAttr,
+)
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.ir.ifir import (
@@ -102,9 +108,7 @@ def _convert_module(
         had_error = True
 
     net_ops: List[NetOp] = []
-    conn_map: Dict[str, List[ConnAttr]] = {
-        inst.name_attr.data: [] for inst in nfir_instances
-    }
+    port_order: List[str] = []
     net_cache: Dict[str, List[AtomizedPattern] | None] = {}
     endpoint_cache: Dict[Tuple[str, str], List[AtomizedEndpoint] | None] = {}
     inst_cache: Dict[str, List[AtomizedPattern] | None] = {}
@@ -118,19 +122,60 @@ def _convert_module(
     diagnostics.extend(pattern_diags)
     had_error = had_error or pattern_error
 
+    for port_attr in module.port_order.data:
+        token = port_attr.data
+        atoms = _atomize_pattern_cached(token, net_cache, diagnostics)
+        if atoms is None:
+            had_error = True
+            continue
+        port_order.extend(atom.token for atom in atoms)
+
     inst_literal_map: Dict[str, str] = {}
+    inst_atoms: List[str] = []
+    inst_order: List[Tuple[NfirInstanceOp, List[AtomizedPattern]]] = []
     for inst in nfir_instances:
         token = inst.name_attr.data
         atoms = _atomize_pattern_cached(token, inst_cache, diagnostics)
         if atoms is None:
             had_error = True
-            continue
+            atoms = []
+        inst_order.append((inst, atoms))
         for atom in atoms:
-            inst_literal_map.setdefault(atom.literal, token)
+            inst_atoms.append(atom.token)
+            inst_literal_map.setdefault(atom.literal, atom.token)
 
     for net in nfir_nets:
         net_name = net.name_attr.data
-        net_ops.append(NetOp(name=net_name, src=net.src))
+        atoms = _atomize_pattern_cached(net_name, net_cache, diagnostics)
+        if atoms is None:
+            had_error = True
+            continue
+        for atom in atoms:
+            net_ops.append(
+                NetOp(
+                    name=atom.token,
+                    pattern_origin=atom.origin,
+                    src=net.src,
+                )
+            )
+
+    conn_map: Dict[str, List[ConnAttr]] = {atom: [] for atom in inst_atoms}
+    param_map: Dict[str, Optional[DictionaryAttr]] = {}
+
+    for inst, atoms in inst_order:
+        params_per_atom, params_error = _atomize_instance_params(
+            inst, atoms, diagnostics, inst.src or module.src
+        )
+        had_error = had_error or params_error
+        for atom, params in zip(atoms, params_per_atom):
+            param_map[atom.token] = params
+
+    for net in nfir_nets:
+        net_token = net.name_attr.data
+        net_atoms = _atomize_pattern_cached(net_token, net_cache, diagnostics)
+        if net_atoms is None:
+            had_error = True
+            continue
         for endpoint in net.endpoints.data:
             endpoint_atoms = _atomize_endpoint_cached(
                 (endpoint.inst.data, endpoint.pin.data),
@@ -140,50 +185,89 @@ def _convert_module(
             if endpoint_atoms is None:
                 had_error = True
                 continue
-            owners: set[str] = set()
-            unknown_literal = False
-            for atom in endpoint_atoms:
-                owner = inst_literal_map.get(atom.inst.literal)
+            if len(net_atoms) > 1 and len(endpoint_atoms) != len(net_atoms):
+                had_error = True
+                continue
+            if len(net_atoms) == 1:
+                net_name = net_atoms[0].token
+                owners: List[str] = []
+                for atom in endpoint_atoms:
+                    owner = inst_literal_map.get(atom.inst.literal)
+                    if owner is None:
+                        diagnostics.append(
+                            _diagnostic(
+                                UNKNOWN_ENDPOINT_INSTANCE,
+                                (
+                                    "Endpoint references unknown instance "
+                                    f"'{endpoint.inst.data}'"
+                                ),
+                                net.src or module.src,
+                            )
+                        )
+                        had_error = True
+                        owners = []
+                        break
+                    owners.append(owner)
+                if not owners:
+                    continue
+                for owner, atom in zip(owners, endpoint_atoms):
+                    conn_map[owner].append(
+                        ConnAttr(StringAttr(atom.pin.token), StringAttr(net_name))
+                    )
+                continue
+            owners: List[str] = []
+            for endpoint_atom in endpoint_atoms:
+                owner = inst_literal_map.get(endpoint_atom.inst.literal)
                 if owner is None:
                     diagnostics.append(
                         _diagnostic(
                             UNKNOWN_ENDPOINT_INSTANCE,
-                            f"Endpoint references unknown instance '{endpoint.inst.data}'",
+                            (
+                                "Endpoint references unknown instance "
+                                f"'{endpoint.inst.data}'"
+                            ),
                             net.src or module.src,
                         )
                     )
                     had_error = True
-                    unknown_literal = True
+                    owners = []
                     break
-                owners.add(owner)
-            if unknown_literal:
+                owners.append(owner)
+            if not owners:
                 continue
-            for owner in owners:
-                conn_map[owner].append(ConnAttr(endpoint.pin, net.name_attr))
+            for net_atom, endpoint_atom, owner in zip(net_atoms, endpoint_atoms, owners):
+                conn_map[owner].append(
+                    ConnAttr(
+                        StringAttr(endpoint_atom.pin.token),
+                        StringAttr(net_atom.token),
+                    )
+                )
 
     inst_ops: List[InstanceOp] = []
-    for inst in nfir_instances:
-        conns = conn_map.get(inst.name_attr.data, [])
-        inst_ops.append(
-            InstanceOp(
-                name=inst.name_attr,
-                ref=SymbolRefAttr(inst.ref.data),
-                conns=ArrayAttr(conns),
-                ref_file_id=inst.ref_file_id,
-                params=inst.params,
-                doc=inst.doc,
-                src=inst.src,
+    for inst, atoms in inst_order:
+        for atom in atoms:
+            conns = conn_map.get(atom.token, [])
+            inst_ops.append(
+                InstanceOp(
+                    name=atom.token,
+                    ref=SymbolRefAttr(inst.ref.data),
+                    conns=ArrayAttr(conns),
+                    ref_file_id=inst.ref_file_id,
+                    params=param_map.get(atom.token),
+                    pattern_origin=atom.origin,
+                    doc=inst.doc,
+                    src=inst.src,
+                )
             )
-        )
 
     return (
         ModuleOp(
-        name=module.sym_name,
-        port_order=module.port_order,
-        region=[*net_ops, *inst_ops],
-        file_id=module.file_id,
-        doc=module.doc,
-        src=module.src,
+            name=module.sym_name,
+            port_order=port_order,
+            region=[*net_ops, *inst_ops],
+            file_id=module.file_id,
+            doc=module.doc,
+            src=module.src,
         ),
         diagnostics,
         had_error,
@@ -316,6 +400,64 @@ def _atomize_endpoint_cached(
     diagnostics.extend(diags)
     cache[key] = atoms
     return atoms
+
+
+def _atomize_instance_params(
+    inst: NfirInstanceOp,
+    atoms: List[AtomizedPattern],
+    diagnostics: List[Diagnostic],
+    loc: LocationAttr | None,
+) -> Tuple[List[Optional[DictionaryAttr]], bool]:
+    if not atoms:
+        return [], False
+    params = inst.params
+    if params is None or not params.data:
+        return [None for _ in atoms], False
+
+    expanded_params: Dict[str, List[str]] = {}
+    had_error = False
+    instance_len = len(atoms)
+
+    for key, value in params.data.items():
+        value_str = _stringify_attr(value)
+        atomized, diags = atomize_pattern(value_str)
+        diagnostics.extend(diags)
+        if atomized is None:
+            had_error = True
+            continue
+        expanded = [atom.token for atom in atomized]
+        if len(expanded) not in (1, instance_len):
+            diagnostics.append(
+                _diagnostic(
+                    PATTERN_BINDING_MISMATCH,
+                    (
+                        f"Instance '{inst.name_attr.data}' parameter '{key}' atomizes to "
+                        f"{len(expanded)} values but instance atomizes to {instance_len}"
+                    ),
+                    loc,
+                )
+            )
+            had_error = True
+            continue
+        expanded_params[key] = expanded
+
+    params_per_atom: List[Optional[DictionaryAttr]] = []
+    for idx in range(instance_len):
+        items: Dict[str, StringAttr] = {}
+        for key, expanded in expanded_params.items():
+            value = expanded[0] if len(expanded) == 1 else expanded[idx]
+            items[key] = StringAttr(value)
+        params_per_atom.append(DictionaryAttr(items) if items else None)
+
+    return params_per_atom, had_error
+
+
+def _stringify_attr(value: object) -> str:
+    if isinstance(value, StringAttr):
+        return value.data
+    if hasattr(value, "data"):
+        return str(value.data)
+    return str(value)
 
 
 __all__ = ["convert_design"]
