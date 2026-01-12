@@ -94,3 +94,4 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-01-10: Import logical-path resolution is simplified to search only CLI `--lib` roots (in order) followed by `ASDL_LIB_PATH`; project-root and `-I` roots are removed from the spec. Relative (`./`/`../`) and absolute paths remain unchanged.
 - 2026-01-13: ADR-0011 -- Pattern atomization expands multi-atom tokens into single-atom patterns before IFIR verification/emission, preserves `pattern_origin` metadata, enforces subset-of-atoms endpoint validity, and treats literal-name collisions as fatal errors.
 - 2026-01-14: ADR-0012 -- NFIR verification and NFIR->IFIR inversion resolve endpoint instances via atomized literal equivalence, enabling subset endpoint tokens while detecting atomized endpoint collisions.
+- 2026-01-14: ADR-0013 -- NFIR->IFIR conversion atomizes endpoints and assigns conns per atom, while PatternAtomizePass is idempotent or skipped for already-atomized IFIR.
