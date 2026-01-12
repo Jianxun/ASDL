@@ -4,10 +4,10 @@
 * ota_nmos2
 * /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/scratch/mosbius_devices/ota_nmos2.asdl
 * ===============================================
-.subckt ota_nmos2 IN_<P> IN_<N> OUT VBN VSS VDD
-MMP_LOAD<P> D D VDD VDD pfet_03v3 L=0.28u W=1u NF=1 m=3
-MMP_LOAD<N> OUT D VDD VDD pfet_03v3 L=0.28u W=1u NF=1 m=3
-MMN_IN_<P> D IN_<P> TAIL VSS nfet_03v3 L=0.28u W=1u NF=1 m=1
-MMN_IN_<N> OUT IN_<N> TAIL VSS nfet_03v3 L=0.28u W=1u NF=1 m=1
+.subckt ota_nmos2 IN_P IN_N OUT VBN VSS VDD
+MMP_LOAD_P D D VDD VDD pfet_03v3 L=0.28u W=1u NF=1 m=3
+MMP_LOAD_N OUT D VDD VDD pfet_03v3 L=0.28u W=1u NF=1 m=3
+MMN_IN_P D IN_P TAIL VSS nfet_03v3 L=0.28u W=1u NF=1 m=1
+MMN_IN_N OUT IN_N TAIL VSS nfet_03v3 L=0.28u W=1u NF=1 m=1
 MMN_TAIL TAIL VBN VSS VSS nfet_03v3 L=0.28u W=1u NF=1 m=2
 .ends

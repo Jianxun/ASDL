@@ -51,6 +51,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - `agents/context/project_status.md` is updated only by the Architect.
 - Legacy `context/todo_*.md` remain unchanged until explicitly migrated.
 - Architect direct-to-main is allowed only for commits that touch files under `agents/` and/or `docs/` exclusively; all other changes require a PR.
+- Public Python modules/classes/functions and non-trivial private helpers MUST include PEP 257 docstrings using Google-style sections; docstrings capture purpose, inputs/outputs, side effects, and relevant invariants or ordering rules for agent readability.
+- Comments MUST explain intent, rationale, or tricky logic (not restate code) and remain accurate; prefer docstrings over inline comments for API-level behavior.
 
 ## Verification protocol
 - Manual check: `agents/context` contains lessons.md, contract.md, tasks.yaml, tasks_state.yaml, tasks_icebox.yaml, tasks_archived.yaml, project_status.md, codebase_map.md.
