@@ -138,57 +138,57 @@ def test_convert_nfir_atomizes_pattern_tokens() -> None:
     ifir_module = next(
         op for op in ifir_design.body.block.ops if isinstance(op, IfirModuleOp)
     )
-    assert [attr.data for attr in ifir_module.port_order.data] == ["OUT<P>", "OUT<N>"]
+    assert [attr.data for attr in ifir_module.port_order.data] == ["OUTP", "OUTN"]
     nets = [op for op in ifir_module.body.block.ops if isinstance(op, IfirNetOp)]
     assert [net.name_attr.data for net in nets] == [
-        "OUT<P>",
-        "OUT<N>",
-        "BUS[3:3]",
-        "BUS[2:2]",
-        "BUS[1:1]",
-        "BUS[0:0]",
-        "BUS<4>",
-        "BUS<5>",
+        "OUTP",
+        "OUTN",
+        "BUS3",
+        "BUS2",
+        "BUS1",
+        "BUS0",
+        "BUS4",
+        "BUS5",
     ]
     net_origins = {
         net.name_attr.data: net.pattern_origin.data for net in nets if net.pattern_origin
     }
     assert net_origins == {
-        "OUT<P>": "OUT<P|N>",
-        "OUT<N>": "OUT<P|N>",
-        "BUS[3:3]": "BUS[3:0];BUS<4|5>",
-        "BUS[2:2]": "BUS[3:0];BUS<4|5>",
-        "BUS[1:1]": "BUS[3:0];BUS<4|5>",
-        "BUS[0:0]": "BUS[3:0];BUS<4|5>",
-        "BUS<4>": "BUS[3:0];BUS<4|5>",
-        "BUS<5>": "BUS[3:0];BUS<4|5>",
+        "OUTP": "OUT<P|N>",
+        "OUTN": "OUT<P|N>",
+        "BUS3": "BUS[3:0];BUS<4|5>",
+        "BUS2": "BUS[3:0];BUS<4|5>",
+        "BUS1": "BUS[3:0];BUS<4|5>",
+        "BUS0": "BUS[3:0];BUS<4|5>",
+        "BUS4": "BUS[3:0];BUS<4|5>",
+        "BUS5": "BUS[3:0];BUS<4|5>",
     }
 
     instances = [
         op for op in ifir_module.body.block.ops if isinstance(op, IfirInstanceOp)
     ]
-    assert [inst.name_attr.data for inst in instances] == ["MN<1>", "MN<2>"]
+    assert [inst.name_attr.data for inst in instances] == ["MN1", "MN2"]
     inst_origins = {
         inst.name_attr.data: inst.pattern_origin.data
         for inst in instances
         if inst.pattern_origin
     }
-    assert inst_origins == {"MN<1>": "MN<1|2>", "MN<2>": "MN<1|2>"}
+    assert inst_origins == {"MN1": "MN<1|2>", "MN2": "MN<1|2>"}
     conns = {
         inst.name_attr.data: [(conn.port.data, conn.net.data) for conn in inst.conns.data]
         for inst in instances
     }
-    assert conns["MN<1>"] == [
-        ("D", "OUT<P>"),
-        ("S<0>", "BUS[3:3]"),
-        ("S<1>", "BUS[2:2]"),
-        ("S<2>", "BUS[1:1]"),
+    assert conns["MN1"] == [
+        ("D", "OUTP"),
+        ("S0", "BUS3"),
+        ("S1", "BUS2"),
+        ("S2", "BUS1"),
     ]
-    assert conns["MN<2>"] == [
-        ("D", "OUT<N>"),
-        ("S<0>", "BUS[0:0]"),
-        ("S<1>", "BUS<4>"),
-        ("S<2>", "BUS<5>"),
+    assert conns["MN2"] == [
+        ("D", "OUTN"),
+        ("S0", "BUS0"),
+        ("S1", "BUS4"),
+        ("S2", "BUS5"),
     ]
 
 
@@ -216,13 +216,13 @@ def test_convert_nfir_allows_subset_endpoint_instance_tokens() -> None:
     instances = [
         op for op in ifir_module.body.block.ops if isinstance(op, IfirInstanceOp)
     ]
-    assert [inst.name_attr.data for inst in instances] == ["M<1>", "M<2>"]
+    assert [inst.name_attr.data for inst in instances] == ["M1", "M2"]
     conns = {
         inst.name_attr.data: [(conn.port.data, conn.net.data) for conn in inst.conns.data]
         for inst in instances
     }
-    assert conns["M<1>"] == [("D", "OUT")]
-    assert conns["M<2>"] == []
+    assert conns["M1"] == [("D", "OUT")]
+    assert conns["M2"] == []
 
 
 def test_convert_nfir_rejects_unknown_instance_endpoint() -> None:
