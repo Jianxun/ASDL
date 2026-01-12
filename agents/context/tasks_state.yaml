@@ -5,9 +5,9 @@ T-099:
   pr: 111
   merged: true
 T-100:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 112
+  merged: true
 T-101:
   status: ready
   pr: null

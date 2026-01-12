@@ -43,31 +43,31 @@ def test_atomize_patterns_base_less_forwarding() -> None:
         op for op in atomized.body.block.ops if isinstance(op, ModuleOp)
     )
     port_order = [attr.data for attr in ifir_module.port_order.data]
-    assert port_order == ["<INP>", "<INN>", "OUT"]
+    assert port_order == ["INP", "INN", "OUT"]
 
     nets = [op for op in ifir_module.body.block.ops if isinstance(op, NetOp)]
-    assert [net.name_attr.data for net in nets] == ["<INP>", "<INN>", "OUT"]
+    assert [net.name_attr.data for net in nets] == ["INP", "INN", "OUT"]
     origins = {net.name_attr.data: net.pattern_origin.data for net in nets if net.pattern_origin}
-    assert origins == {"<INP>": "<INP|INN>", "<INN>": "<INP|INN>"}
+    assert origins == {"INP": "<INP|INN>", "INN": "<INP|INN>"}
 
     instances = [
         op for op in ifir_module.body.block.ops if isinstance(op, InstanceOp)
     ]
-    assert [inst.name_attr.data for inst in instances] == ["U", "<P>", "<N>"]
+    assert [inst.name_attr.data for inst in instances] == ["U", "P", "N"]
     inst_origins = {
         inst.name_attr.data: inst.pattern_origin.data
         for inst in instances
         if inst.pattern_origin
     }
-    assert inst_origins == {"<P>": "<P|N>", "<N>": "<P|N>"}
+    assert inst_origins == {"P": "<P|N>", "N": "<P|N>"}
 
     conns = {
         inst.name_attr.data: [(conn.port.data, conn.net.data) for conn in inst.conns.data]
         for inst in instances
     }
-    assert conns["U"] == [("<P>", "<INP>"), ("<N>", "<INN>"), ("D", "OUT")]
-    assert conns["<P>"] == [("D", "OUT")]
-    assert conns["<N>"] == [("D", "OUT")]
+    assert conns["U"] == [("P", "INP"), ("N", "INN"), ("D", "OUT")]
+    assert conns["P"] == [("D", "OUT")]
+    assert conns["N"] == [("D", "OUT")]
 
 
 def test_atomize_patterns_reports_literal_collisions() -> None:
@@ -133,8 +133,14 @@ def test_atomize_patterns_allows_subset_endpoint_bindings() -> None:
         inst.name_attr.data: [(conn.port.data, conn.net.data) for conn in inst.conns.data]
         for inst in instances
     }
-    assert conns["<P>"] == [("D", "OUT")]
-    assert conns["<N>"] == []
+    assert conns["P"] == [("D", "OUT")]
+    assert conns["N"] == []
+    origins = {
+        inst.name_attr.data: inst.pattern_origin.data
+        for inst in instances
+        if inst.pattern_origin
+    }
+    assert origins == {"P": "<P>", "N": "<N>"}
 
 
 def test_atomize_patterns_expands_instance_params() -> None:
@@ -173,8 +179,14 @@ def test_atomize_patterns_expands_instance_params() -> None:
         }
         for inst in instances
     }
-    assert params["M<1>"] == {"m": "<1>", "w": "<4>"}
-    assert params["M<2>"] == {"m": "<2>", "w": "<4>"}
+    assert params["M1"] == {"m": "<1>", "w": "<4>"}
+    assert params["M2"] == {"m": "<2>", "w": "<4>"}
+    origins = {
+        inst.name_attr.data: inst.pattern_origin.data
+        for inst in instances
+        if inst.pattern_origin
+    }
+    assert origins == {"M1": "M<1|2>", "M2": "M<1|2>"}
 
 
 def test_atomize_patterns_rejects_mismatched_param_lengths() -> None:
