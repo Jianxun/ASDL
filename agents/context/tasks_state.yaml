@@ -13,9 +13,9 @@ T-101:
   pr: 113
   merged: true
 T-102:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 114
+  merged: true
 T-103:
   status: ready
   pr: null

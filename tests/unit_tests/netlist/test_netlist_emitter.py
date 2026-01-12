@@ -442,29 +442,42 @@ def test_emit_netlist_uses_atomized_instance_params() -> None:
     ]
 
 
-def test_emit_netlist_does_not_expand_patterns() -> None:
+def test_emit_netlist_uses_literal_names_from_atomized_patterns() -> None:
     backend = BackendOp(
         name=BACKEND_NAME,
         template="{name} {ports} {model}",
         props=_dict_attr({"model": "nfet"}),
     )
     device = DeviceOp(name="nfet", ports=["D", "G", "S"], region=[backend])
-    instance = InstanceOp(
-        name="M<1|2>",
+    inst_p = InstanceOp(
+        name="M1",
         ref="nfet",
         conns=[
-            ConnAttr(StringAttr("D"), StringAttr("OUT<P|N>")),
+            ConnAttr(StringAttr("D"), StringAttr("OUTP")),
             ConnAttr(StringAttr("G"), StringAttr("VSS")),
             ConnAttr(StringAttr("S"), StringAttr("VSS")),
         ],
+        pattern_origin="M<1|2>",
+    )
+    inst_n = InstanceOp(
+        name="M2",
+        ref="nfet",
+        conns=[
+            ConnAttr(StringAttr("D"), StringAttr("OUTN")),
+            ConnAttr(StringAttr("G"), StringAttr("VSS")),
+            ConnAttr(StringAttr("S"), StringAttr("VSS")),
+        ],
+        pattern_origin="M<1|2>",
     )
     module = ModuleOp(
         name="top",
-        port_order=["OUT<P|N>", "VSS"],
+        port_order=["OUTP", "OUTN", "VSS"],
         region=[
-            NetOp(name="OUT<P|N>"),
+            NetOp(name="OUTP", pattern_origin="OUT<P|N>"),
+            NetOp(name="OUTN", pattern_origin="OUT<P|N>"),
             NetOp(name="VSS"),
-            instance,
+            inst_p,
+            inst_n,
         ],
     )
     design = DesignOp(region=[module, device], top="top")
@@ -473,10 +486,10 @@ def test_emit_netlist_does_not_expand_patterns() -> None:
 
     assert diagnostics == []
     assert netlist is not None
-    assert "M<1|2>" in netlist
-    assert "OUT<P|N>" in netlist
-    assert "OUTP" not in netlist
-    assert "OUTN" not in netlist
+    assert "M<1|2>" not in netlist
+    assert "OUT<P|N>" not in netlist
+    assert "M1 OUTP VSS VSS nfet" in netlist
+    assert "M2 OUTN VSS VSS nfet" in netlist
 
 
 def test_emit_netlist_exposes_file_id_placeholders() -> None:
