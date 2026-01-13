@@ -1,7 +1,7 @@
 # Contract
 
 ## Project overview
-ASDL (Analog Structured Description Language) is a Python framework for analog circuit design: parse YAML ASDL, elaborate/validate, and emit SPICE/netlist artifacts. The MVP refactor uses a Pydantic AST with ruamel-based parsing and xDSL dialects for NFIR/IFIR; ngspice emission is the initial backend. The MVP pipeline (AST -> NFIR -> IFIR -> emit) supersedes older main spec staging and will be reconciled in `docs/specs/`.
+ASDL (Analog Structured Description Language) is a Python framework for analog circuit design: parse YAML ASDL, elaborate/validate, and emit SPICE/netlist artifacts. The MVP refactor uses a Pydantic AST with ruamel-based parsing and xDSL dialects for NFIR/GraphIR/IFIR; ngspice emission is the initial backend. The MVP pipeline (AST -> NFIR -> GraphIR -> IFIR -> emit) supersedes older main spec staging and is reconciled in `docs/specs/`.
 
 ## System boundaries / components
 - Active refactor surface under `src/asdl/ast/` and `src/asdl/ir/`; other pipeline modules are archived under `legacy/src/asdl/`.
@@ -30,6 +30,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 
 ## Invariants
 - xDSL is the single source of semantic truth; pydantic is a shape/type gate only.
+- GraphIR is the canonical semantic core; NFIR/IFIR are projections for authoring and emission.
 - Preserve declared port/pin ordering end-to-end (AST -> NFIR -> IFIR -> emit); deterministic outputs.
 - Lowering must not crash on bad designs; verifiers/passes emit diagnostics instead.
 - No user-facing errors via raw exceptions; emit diagnostics through the shared diagnostic core.
@@ -56,7 +57,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 
 ## Verification protocol
 - Manual check: `agents/context` contains lessons.md, contract.md, tasks.yaml, tasks_state.yaml, tasks_icebox.yaml, tasks_archived.yaml, project_status.md, codebase_map.md.
-- Spot-check that contract reflects current architecture (AST -> NFIR -> IFIR -> emit, ordering-as-lists rule) and that codebase_map lists active subsystems.
+- Spot-check that contract reflects current architecture (AST -> NFIR -> GraphIR -> IFIR -> emit, ordering-as-lists rule) and that codebase_map lists active subsystems.
 
 ## Decision log
 - 2026-01-01: Net-first authoring schema infers ports only from `$`-prefixed net keys in `nets:`; inline pin bindings never create ports. Port order follows YAML source order of `$` nets. LHS `*` is invalid without an explicit domain (`<...>` or `[...]`). (Superseded 2026-01-11)

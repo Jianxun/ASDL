@@ -1,4 +1,4 @@
-# Spec C — Diagnostics v0 (Shared Emission Contract)
+# Spec — Diagnostics v0 (Shared Emission Contract)
 
 ## Purpose
 Define a single diagnostic data contract used by all pipeline stages (parser, AST validation, IR conversion, passes, emission) so every surface (CLI, tests, future linter/LSP) consumes the same schema and location rules.

@@ -1,4 +1,4 @@
-# Spec A — ASDL_A (Tier-1 Authoring AST) v0.3 (Net-First)
+# Spec — ASDL_A (Authoring AST) v0.3 (Net-First)
 
 ## Purpose
 A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.

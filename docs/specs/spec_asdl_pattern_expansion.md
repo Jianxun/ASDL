@@ -1,4 +1,4 @@
-# ASDL — Core Pattern Expansion Rules (Tier-1 Minimal Spec, Revised Delimiters)
+# ASDL — Core Pattern Expansion Rules
 
 This document defines the **minimal, mandatory pattern expansion rules** for ASDL.
 Expansion is performed during parsing/elaboration to produce a fully explicit,
@@ -197,7 +197,7 @@ correctness of the expanded structural IR.
 
 ---
 
-## 10. Explicit Non-Goals (Tier-1 Core)
+## 10. Explicit Non-Goals
 
 - Wildcard or glob matching (`*`)
 - Regex or predicate patterns
