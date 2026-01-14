@@ -98,6 +98,45 @@ class GraphIdAttr(ParametrizedAttribute):
     value: StringAttr = param_def()
 
 
+@irdl_attr_definition
+class GraphSymbolRefAttr(ParametrizedAttribute):
+    """Resolved symbol reference for GraphIR instances.
+
+    Attributes:
+        kind: Symbol kind ("module" or "device").
+        sym_id: Stable symbol identifier.
+    """
+
+    name = "graphir.symbol_ref"
+
+    kind: StringAttr = param_def()
+    sym_id: GraphIdAttr = param_def()
+
+
+def _coerce_graph_symbol_ref(
+    value: GraphSymbolRefAttr | tuple[str | StringAttr, GraphIdAttr | StringAttr | str | int],
+) -> GraphSymbolRefAttr:
+    """Coerce a Python value into a GraphSymbolRefAttr.
+
+    Args:
+        value: GraphSymbolRefAttr or (kind, id) tuple.
+
+    Returns:
+        A GraphSymbolRefAttr instance.
+    """
+    if isinstance(value, GraphSymbolRefAttr):
+        return value
+    if isinstance(value, tuple) and len(value) == 2:
+        kind, sym_id = value
+        if isinstance(kind, str):
+            kind = StringAttr(kind)
+        if not isinstance(kind, StringAttr):
+            raise TypeError(f"Unsupported symbol kind: {kind!r}")
+        sym_id = _coerce_graph_id(sym_id)
+        return GraphSymbolRefAttr(kind, sym_id)
+    raise TypeError(f"Unsupported symbol ref: {value!r}")
+
+
 @irdl_op_definition
 class ModuleOp(IRDLOperation):
     """GraphIR module graph container.
@@ -187,20 +226,62 @@ class ModuleOp(IRDLOperation):
 
     def verify_(self) -> None:
         """Verify module attributes for GraphIR invariants."""
-        if self.attrs is None:
-            return
-        port_attr = self.attrs.data.get(PORT_ORDER_KEY)
-        if port_attr is None:
-            return
-        if not isinstance(port_attr, ArrayAttr):
-            raise VerifyException("module attrs.port_order must be an array")
-        port_names: list[str] = []
-        for attr in port_attr.data:
-            if not isinstance(attr, StringAttr):
-                raise VerifyException("module attrs.port_order must contain strings")
-            port_names.append(attr.data)
-        if len(port_names) != len(set(port_names)):
-            raise VerifyException("port_order must contain unique names")
+        if self.attrs is not None:
+            port_attr = self.attrs.data.get(PORT_ORDER_KEY)
+            if port_attr is not None:
+                if not isinstance(port_attr, ArrayAttr):
+                    raise VerifyException("module attrs.port_order must be an array")
+                port_names: list[str] = []
+                for attr in port_attr.data:
+                    if not isinstance(attr, StringAttr):
+                        raise VerifyException(
+                            "module attrs.port_order must contain strings"
+                        )
+                    port_names.append(attr.data)
+                if len(port_names) != len(set(port_names)):
+                    raise VerifyException("port_order must contain unique names")
+
+        net_names: set[str] = set()
+        inst_names: set[str] = set()
+        inst_ids: set[str] = set()
+        for op in self.body.block.ops:
+            if isinstance(op, NetOp):
+                net_name = op.name_attr.data
+                if net_name in net_names:
+                    raise VerifyException(f"Duplicate net name '{net_name}'")
+                net_names.add(net_name)
+                continue
+            if isinstance(op, InstanceOp):
+                inst_name = op.name_attr.data
+                if inst_name in inst_names:
+                    raise VerifyException(f"Duplicate instance name '{inst_name}'")
+                inst_names.add(inst_name)
+                inst_ids.add(op.inst_id.value.data)
+                continue
+            if isinstance(op, EndpointOp):
+                raise VerifyException("graphir.endpoint must be nested under graphir.net")
+
+        endpoint_keys: set[tuple[str, str]] = set()
+        for op in self.body.block.ops:
+            if not isinstance(op, NetOp):
+                continue
+            for endpoint in op.body.block.ops:
+                if not isinstance(endpoint, EndpointOp):
+                    raise VerifyException(
+                        "graphir.net region must contain only endpoint ops"
+                    )
+                inst_id = endpoint.inst_id.value.data
+                if inst_id not in inst_ids:
+                    raise VerifyException(
+                        f"Endpoint inst_id '{inst_id}' is not defined in module"
+                    )
+                key = (inst_id, endpoint.port_path.data)
+                if key in endpoint_keys:
+                    raise VerifyException(
+                        "Duplicate endpoint for instance "
+                        f"'{inst_id}' and port_path '{endpoint.port_path.data}'"
+                    )
+                endpoint_keys.add(key)
 
 
 @irdl_op_definition
@@ -352,21 +433,196 @@ class ProgramOp(IRDLOperation):
             raise VerifyException(f"Entry module_id '{entry_id}' is not defined")
 
 
+@irdl_op_definition
+class NetOp(IRDLOperation):
+    """GraphIR net definition.
+
+    Attributes:
+        net_id: Stable net identifier.
+        name: Net name.
+        attrs: Optional net attributes.
+        annotations: Optional annotations.
+    """
+
+    name = "graphir.net"
+
+    net_id = attr_def(GraphIdAttr)
+    name_attr = attr_def(StringAttr, attr_name="name")
+    attrs = opt_attr_def(DictionaryAttr)
+    annotations = opt_attr_def(DictionaryAttr)
+    body = region_def("single_block")
+
+    traits = traits_def(IsolatedFromAbove(), NoTerminator())
+    assembly_format = "$body attr-dict"
+
+    def __init__(
+        self,
+        *,
+        net_id: GraphIdAttr | StringAttr | str | int,
+        name: StringAttr | str,
+        region: Region | Sequence[Operation],
+        attrs: DictionaryAttr | None = None,
+        annotations: DictionaryAttr | None = None,
+    ) -> None:
+        """Initialize a net op.
+
+        Args:
+            net_id: Stable net identifier.
+            name: Net name.
+            region: Region containing endpoint ops.
+            attrs: Optional net attributes.
+            annotations: Optional annotations dictionary.
+        """
+        if isinstance(name, str):
+            name = StringAttr(name)
+        net_id = _coerce_graph_id(net_id)
+        attributes = {"net_id": net_id, "name": name}
+        if attrs is not None:
+            attributes["attrs"] = attrs
+        if annotations is not None:
+            attributes["annotations"] = annotations
+        if isinstance(region, Region):
+            body = region
+        else:
+            body = Region(Block(region))
+        super().__init__(attributes=attributes, regions=[body])
+
+    def verify_(self) -> None:
+        """Verify net region contents."""
+        for op in self.body.block.ops:
+            if not isinstance(op, EndpointOp):
+                raise VerifyException("graphir.net region must contain only endpoint ops")
+
+
+@irdl_op_definition
+class InstanceOp(IRDLOperation):
+    """GraphIR instance definition.
+
+    Attributes:
+        inst_id: Stable instance identifier.
+        name: Instance name.
+        module_ref: Resolved module/device reference.
+        module_ref_raw: Original textual reference.
+        props: Optional properties.
+        annotations: Optional annotations.
+    """
+
+    name = "graphir.instance"
+
+    inst_id = attr_def(GraphIdAttr)
+    name_attr = attr_def(StringAttr, attr_name="name")
+    module_ref = attr_def(GraphSymbolRefAttr)
+    module_ref_raw = attr_def(StringAttr)
+    props = opt_attr_def(DictionaryAttr)
+    annotations = opt_attr_def(DictionaryAttr)
+
+    assembly_format = "attr-dict"
+
+    def __init__(
+        self,
+        *,
+        inst_id: GraphIdAttr | StringAttr | str | int,
+        name: StringAttr | str,
+        module_ref: GraphSymbolRefAttr | tuple[str | StringAttr, GraphIdAttr | StringAttr | str | int],
+        module_ref_raw: StringAttr | str,
+        props: DictionaryAttr | None = None,
+        annotations: DictionaryAttr | None = None,
+    ) -> None:
+        """Initialize an instance op.
+
+        Args:
+            inst_id: Stable instance identifier.
+            name: Instance name.
+            module_ref: Resolved module/device reference.
+            module_ref_raw: Original textual reference.
+            props: Optional property dictionary.
+            annotations: Optional annotations dictionary.
+        """
+        if isinstance(name, str):
+            name = StringAttr(name)
+        if isinstance(module_ref_raw, str):
+            module_ref_raw = StringAttr(module_ref_raw)
+        inst_id = _coerce_graph_id(inst_id)
+        module_ref = _coerce_graph_symbol_ref(module_ref)
+        attributes = {
+            "inst_id": inst_id,
+            "name": name,
+            "module_ref": module_ref,
+            "module_ref_raw": module_ref_raw,
+        }
+        if props is not None:
+            attributes["props"] = props
+        if annotations is not None:
+            attributes["annotations"] = annotations
+        super().__init__(attributes=attributes)
+
+
+@irdl_op_definition
+class EndpointOp(IRDLOperation):
+    """GraphIR endpoint definition.
+
+    Attributes:
+        endpoint_id: Stable endpoint identifier.
+        inst_id: Stable instance identifier.
+        port_path: Port path string.
+    """
+
+    name = "graphir.endpoint"
+
+    endpoint_id = attr_def(GraphIdAttr)
+    inst_id = attr_def(GraphIdAttr)
+    port_path = attr_def(StringAttr)
+
+    assembly_format = "attr-dict"
+
+    def __init__(
+        self,
+        *,
+        endpoint_id: GraphIdAttr | StringAttr | str | int,
+        inst_id: GraphIdAttr | StringAttr | str | int,
+        port_path: StringAttr | str,
+    ) -> None:
+        """Initialize an endpoint op.
+
+        Args:
+            endpoint_id: Stable endpoint identifier.
+            inst_id: Stable instance identifier.
+            port_path: Port path string.
+        """
+        if isinstance(port_path, str):
+            port_path = StringAttr(port_path)
+        endpoint_id = _coerce_graph_id(endpoint_id)
+        inst_id = _coerce_graph_id(inst_id)
+        attributes = {
+            "endpoint_id": endpoint_id,
+            "inst_id": inst_id,
+            "port_path": port_path,
+        }
+        super().__init__(attributes=attributes)
+
+
 ASDL_GRAPHIR = Dialect(
     "graphir",
     [
         ProgramOp,
         ModuleOp,
         DeviceOp,
+        NetOp,
+        InstanceOp,
+        EndpointOp,
     ],
-    [GraphIdAttr],
+    [GraphIdAttr, GraphSymbolRefAttr],
 )
 
 
 __all__ = [
     "ASDL_GRAPHIR",
     "DeviceOp",
+    "EndpointOp",
     "GraphIdAttr",
+    "GraphSymbolRefAttr",
+    "InstanceOp",
     "ModuleOp",
+    "NetOp",
     "ProgramOp",
 ]
