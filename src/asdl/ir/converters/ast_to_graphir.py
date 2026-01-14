@@ -1,17 +1,25 @@
-"""AST to GraphIR conversion for a single ASDL document."""
+"""AST to GraphIR conversion for ASDL documents and import graphs."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
-from xdsl.dialects.builtin import DictionaryAttr, StringAttr
+from xdsl.dialects.builtin import (
+    DictionaryAttr,
+    FileLineColLoc,
+    IntAttr,
+    LocationAttr,
+    StringAttr,
+)
 
-from asdl.ast import AsdlDocument, DeviceDecl, ModuleDecl
+from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
 from asdl.ast.location import Locatable
 from asdl.diagnostics import Diagnostic, Severity, format_code
-from asdl.imports import NameEnv, ProgramDB
+from asdl.imports import ImportGraph, NameEnv, ProgramDB
 from asdl.ir.graphir import DeviceOp, EndpointOp, InstanceOp, ModuleOp, NetOp, ProgramOp
+from asdl.ir.ifir import BackendOp
 
 INVALID_INSTANCE_EXPR = format_code("IR", 1)
 INVALID_ENDPOINT_EXPR = format_code("IR", 2)
@@ -68,12 +76,11 @@ def convert_document(
     Args:
         document: Parsed AST document.
         name_env: Optional name environment for file identity.
-        program_db: Optional program database (unused for local-only resolution).
+        program_db: Optional program database for symbol resolution.
 
     Returns:
         The GraphIR program op (or None on error) and diagnostics.
     """
-    _ = program_db
     diagnostics: List[Diagnostic] = []
     had_error = False
 
@@ -87,30 +94,18 @@ def convert_document(
     }
     symbol_table = _build_symbol_table(module_ids, device_ids)
 
-    modules: List[ModuleOp] = []
-    for name, module in (document.modules or {}).items():
-        module_op, module_diags, module_error = _convert_module(
-            name,
-            module,
-            module_id=module_ids[name],
-            file_id=file_id,
-            symbol_table=symbol_table,
-            id_allocator=id_allocator,
-        )
-        modules.append(module_op)
-        diagnostics.extend(module_diags)
-        had_error = had_error or module_error
-
-    devices: List[DeviceOp] = []
-    for name, device in (document.devices or {}).items():
-        devices.append(
-            _convert_device(
-                name,
-                device,
-                device_id=device_ids[name],
-                file_id=file_id,
-            )
-        )
+    modules, devices, doc_diags, doc_error = _convert_document_ops(
+        document,
+        file_id=file_id,
+        module_ids=module_ids,
+        device_ids=device_ids,
+        symbol_table=symbol_table,
+        id_allocator=id_allocator,
+        name_env=name_env,
+        program_db=program_db,
+    )
+    diagnostics.extend(doc_diags)
+    had_error = had_error or doc_error
 
     entry_id: Optional[str] = None
     if document.top is not None:
@@ -131,6 +126,238 @@ def convert_document(
     return program, diagnostics
 
 
+def convert_import_graph(
+    graph: ImportGraph,
+) -> Tuple[Optional[ProgramOp], List[Diagnostic]]:
+    """Convert an import graph into a unified GraphIR program.
+
+    Args:
+        graph: Resolved import graph with documents, name envs, and ProgramDB.
+
+    Returns:
+        The GraphIR program op (or None on error) and diagnostics.
+    """
+    diagnostics: List[Diagnostic] = []
+    had_error = False
+    file_order = _import_graph_file_order(graph)
+    id_allocator = _GraphIdAllocator()
+    module_ids_by_file, device_ids_by_file = _allocate_symbol_ids(
+        graph,
+        file_order,
+        id_allocator,
+    )
+    symbols_by_file = _build_symbol_tables_by_file(
+        module_ids_by_file,
+        device_ids_by_file,
+    )
+
+    ops: List[object] = []
+    for file_id in file_order:
+        document = graph.documents.get(file_id)
+        if document is None:
+            diagnostics.append(
+                _diagnostic(
+                    UNRESOLVED_UNQUALIFIED,
+                    f"Import graph missing document '{file_id}'.",
+                    None,
+                )
+            )
+            had_error = True
+            continue
+        modules, devices, doc_diags, doc_error = _convert_document_ops(
+            document,
+            file_id=str(file_id),
+            module_ids=module_ids_by_file.get(file_id, {}),
+            device_ids=device_ids_by_file.get(file_id, {}),
+            symbol_table=symbols_by_file.get(file_id, {}),
+            id_allocator=id_allocator,
+            name_env=graph.name_envs.get(file_id),
+            program_db=graph.program_db,
+            global_symbols=symbols_by_file,
+        )
+        ops.extend(modules)
+        ops.extend(devices)
+        diagnostics.extend(doc_diags)
+        had_error = had_error or doc_error
+
+    entry_id: Optional[str] = None
+    entry_document = graph.documents.get(graph.entry_file)
+    if entry_document is None:
+        diagnostics.append(
+            _diagnostic(
+                UNRESOLVED_UNQUALIFIED,
+                f"Import graph missing entry document '{graph.entry_file}'.",
+                None,
+            )
+        )
+        had_error = True
+    elif entry_document.top is not None:
+        entry_id = module_ids_by_file.get(graph.entry_file, {}).get(entry_document.top)
+        if entry_id is None:
+            diagnostics.append(
+                _diagnostic(
+                    UNRESOLVED_UNQUALIFIED,
+                    f"Unresolved top module '{entry_document.top}'.",
+                    getattr(entry_document, "_loc", None),
+                )
+            )
+            had_error = True
+
+    program = ProgramOp(
+        region=ops,
+        entry=entry_id,
+        file_order=[str(file_id) for file_id in file_order],
+    )
+    if had_error:
+        return None, diagnostics
+    return program, diagnostics
+
+
+def _convert_document_ops(
+    document: AsdlDocument,
+    *,
+    file_id: str,
+    module_ids: Dict[str, str],
+    device_ids: Dict[str, str],
+    symbol_table: Dict[str, List[_ResolvedSymbol]],
+    id_allocator: _GraphIdAllocator,
+    name_env: Optional[NameEnv] = None,
+    program_db: Optional[ProgramDB] = None,
+    global_symbols: Optional[Dict[Path, Dict[str, List[_ResolvedSymbol]]]] = None,
+) -> Tuple[List[ModuleOp], List[DeviceOp], List[Diagnostic], bool]:
+    """Convert a document into GraphIR module/device ops.
+
+    Args:
+        document: Parsed AST document.
+        file_id: Source file identifier.
+        module_ids: Mapping from module names to IDs.
+        device_ids: Mapping from device names to IDs.
+        symbol_table: Mapping from symbol names to resolved IDs.
+        id_allocator: Shared ID allocator.
+        name_env: Optional name environment for import resolution.
+        program_db: Optional program database for qualified symbol resolution.
+        global_symbols: Optional symbol tables keyed by file ID.
+
+    Returns:
+        Tuple of module ops, device ops, diagnostics, and error flag.
+    """
+    diagnostics: List[Diagnostic] = []
+    had_error = False
+
+    modules: List[ModuleOp] = []
+    for name, module in (document.modules or {}).items():
+        module_op, module_diags, module_error = _convert_module(
+            name,
+            module,
+            module_id=module_ids[name],
+            file_id=file_id,
+            symbol_table=symbol_table,
+            id_allocator=id_allocator,
+            name_env=name_env,
+            program_db=program_db,
+            global_symbols=global_symbols,
+        )
+        modules.append(module_op)
+        diagnostics.extend(module_diags)
+        had_error = had_error or module_error
+
+    devices: List[DeviceOp] = []
+    for name, device in (document.devices or {}).items():
+        devices.append(
+            _convert_device(
+                name,
+                device,
+                device_id=device_ids[name],
+                file_id=file_id,
+            )
+        )
+
+    return modules, devices, diagnostics, had_error
+
+
+def _import_graph_file_order(graph: ImportGraph) -> List[Path]:
+    """Return the deterministic file order for an import graph.
+
+    Args:
+        graph: Import graph with resolved imports.
+
+    Returns:
+        Ordered list of file IDs (entry first, then imports in resolution order).
+    """
+    order: List[Path] = []
+    seen: Set[Path] = set()
+
+    def visit(file_id: Path) -> None:
+        if file_id in seen:
+            return
+        seen.add(file_id)
+        order.append(file_id)
+        for resolved in graph.imports.get(file_id, {}).values():
+            visit(resolved)
+
+    visit(graph.entry_file)
+    for file_id in graph.documents.keys():
+        if file_id not in seen:
+            order.append(file_id)
+    return order
+
+
+def _allocate_symbol_ids(
+    graph: ImportGraph,
+    file_order: Sequence[Path],
+    id_allocator: _GraphIdAllocator,
+) -> Tuple[Dict[Path, Dict[str, str]], Dict[Path, Dict[str, str]]]:
+    """Allocate stable IDs for modules and devices across files.
+
+    Args:
+        graph: Import graph with resolved documents.
+        file_order: Deterministic file ordering for ID assignment.
+        id_allocator: Shared ID allocator.
+
+    Returns:
+        Tuple of module IDs and device IDs keyed by file ID.
+    """
+    module_ids_by_file: Dict[Path, Dict[str, str]] = {}
+    device_ids_by_file: Dict[Path, Dict[str, str]] = {}
+    for file_id in file_order:
+        document = graph.documents.get(file_id)
+        if document is None:
+            module_ids_by_file[file_id] = {}
+            device_ids_by_file[file_id] = {}
+            continue
+        module_ids_by_file[file_id] = {
+            name: id_allocator.next("m") for name in (document.modules or {}).keys()
+        }
+        device_ids_by_file[file_id] = {
+            name: id_allocator.next("d") for name in (document.devices or {}).keys()
+        }
+    return module_ids_by_file, device_ids_by_file
+
+
+def _build_symbol_tables_by_file(
+    module_ids_by_file: Dict[Path, Dict[str, str]],
+    device_ids_by_file: Dict[Path, Dict[str, str]],
+) -> Dict[Path, Dict[str, List[_ResolvedSymbol]]]:
+    """Build per-file symbol tables for module/device IDs.
+
+    Args:
+        module_ids_by_file: Module ID mappings keyed by file ID.
+        device_ids_by_file: Device ID mappings keyed by file ID.
+
+    Returns:
+        Mapping from file IDs to symbol tables.
+    """
+    tables: Dict[Path, Dict[str, List[_ResolvedSymbol]]] = {}
+    for file_id, module_ids in module_ids_by_file.items():
+        device_ids = device_ids_by_file.get(file_id, {})
+        tables[file_id] = _build_symbol_table(module_ids, device_ids)
+    for file_id, device_ids in device_ids_by_file.items():
+        if file_id in tables:
+            continue
+        tables[file_id] = _build_symbol_table({}, device_ids)
+    return tables
+
+
 def _convert_module(
     name: str,
     module: ModuleDecl,
@@ -139,6 +366,9 @@ def _convert_module(
     file_id: str,
     symbol_table: Dict[str, List[_ResolvedSymbol]],
     id_allocator: _GraphIdAllocator,
+    name_env: Optional[NameEnv] = None,
+    program_db: Optional[ProgramDB] = None,
+    global_symbols: Optional[Dict[Path, Dict[str, List[_ResolvedSymbol]]]] = None,
 ) -> Tuple[ModuleOp, List[Diagnostic], bool]:
     """Convert a module declaration into GraphIR.
 
@@ -149,6 +379,9 @@ def _convert_module(
         file_id: Source file identifier.
         symbol_table: Mapping from symbol names to resolved IDs.
         id_allocator: Shared ID allocator.
+        name_env: Optional name environment for import resolution.
+        program_db: Optional program database for qualified symbol resolution.
+        global_symbols: Optional symbol tables keyed by file ID.
 
     Returns:
         The module op, diagnostics, and error flag.
@@ -187,6 +420,9 @@ def _convert_module(
                 symbol_table,
                 diagnostics,
                 inst_loc or module._loc,
+                name_env=name_env,
+                program_db=program_db,
+                global_symbols=global_symbols,
             )
             if resolved is None:
                 had_error = True
@@ -200,6 +436,7 @@ def _convert_module(
                     module_ref=(resolved.kind, resolved.sym_id),
                     module_ref_raw=ref,
                     props=_to_string_dict_attr(params),
+                    annotations=_maybe_src_annotations(inst_loc),
                 )
             )
 
@@ -290,6 +527,10 @@ def _convert_device(
     Returns:
         The device op.
     """
+    backends: List[BackendOp] = []
+    for backend_name, backend in device.backends.items():
+        backends.append(_convert_backend(backend_name, backend))
+
     ports = device.ports or []
     return DeviceOp(
         device_id=device_id,
@@ -297,7 +538,27 @@ def _convert_device(
         file_id=file_id,
         ports=ports,
         params=_to_string_dict_attr(device.params),
-        region=[],
+        region=backends,
+    )
+
+
+def _convert_backend(name: str, backend: DeviceBackendDecl) -> BackendOp:
+    """Convert a backend declaration into a GraphIR-compatible backend op.
+
+    Args:
+        name: Backend identifier.
+        backend: Backend declaration payload.
+
+    Returns:
+        IFIR backend op embedded under a GraphIR device.
+    """
+    props = backend.model_extra or None
+    return BackendOp(
+        name=name,
+        template=backend.template,
+        params=_to_string_dict_attr(backend.params),
+        props=_to_string_dict_attr(props),
+        src=_loc_attr(backend._loc),
     )
 
 
@@ -345,27 +606,84 @@ def _resolve_symbol_reference(
     symbol_table: Dict[str, List[_ResolvedSymbol]],
     diagnostics: List[Diagnostic],
     loc: Optional[Locatable],
+    *,
+    name_env: Optional[NameEnv] = None,
+    program_db: Optional[ProgramDB] = None,
+    global_symbols: Optional[Dict[Path, Dict[str, List[_ResolvedSymbol]]]] = None,
 ) -> Optional[_ResolvedSymbol]:
-    """Resolve an instance reference to a local symbol.
+    """Resolve an instance reference to a symbol.
 
     Args:
         ref: Instance reference token.
         symbol_table: Mapping of local symbols.
         diagnostics: Diagnostic collection to append errors to.
         loc: Optional source location.
+        name_env: Optional name environment for import resolution.
+        program_db: Optional program database for qualified symbol resolution.
+        global_symbols: Optional symbol tables keyed by file ID.
 
     Returns:
         Resolved symbol metadata or None if unresolved.
     """
     if "." in ref:
-        diagnostics.append(
-            _diagnostic(
-                UNRESOLVED_QUALIFIED,
-                f"Unresolved symbol '{ref}'.",
-                loc,
+        if name_env is None or program_db is None or global_symbols is None:
+            diagnostics.append(
+                _diagnostic(
+                    UNRESOLVED_QUALIFIED,
+                    f"Unresolved symbol '{ref}'.",
+                    loc,
+                )
             )
-        )
-        return None
+            return None
+        namespace, symbol = ref.split(".", 1)
+        if not namespace or not symbol:
+            diagnostics.append(
+                _diagnostic(
+                    UNRESOLVED_QUALIFIED,
+                    f"Unresolved symbol '{ref}'.",
+                    loc,
+                )
+            )
+            return None
+        resolved_file_id = name_env.resolve(namespace)
+        if resolved_file_id is None:
+            diagnostics.append(
+                _diagnostic(
+                    UNRESOLVED_QUALIFIED,
+                    f"Unresolved symbol '{ref}'.",
+                    loc,
+                )
+            )
+            return None
+        if program_db.lookup(resolved_file_id, symbol) is None:
+            diagnostics.append(
+                _diagnostic(
+                    UNRESOLVED_QUALIFIED,
+                    f"Unresolved symbol '{ref}'.",
+                    loc,
+                )
+            )
+            return None
+        candidates = global_symbols.get(resolved_file_id, {}).get(symbol)
+        if not candidates:
+            diagnostics.append(
+                _diagnostic(
+                    UNRESOLVED_QUALIFIED,
+                    f"Unresolved symbol '{ref}'.",
+                    loc,
+                )
+            )
+            return None
+        if len(candidates) > 1:
+            diagnostics.append(
+                _diagnostic(
+                    UNRESOLVED_QUALIFIED,
+                    f"Ambiguous symbol '{ref}' refers to multiple definitions.",
+                    loc,
+                )
+            )
+            return None
+        return candidates[0]
     candidates = symbol_table.get(ref)
     if not candidates:
         diagnostics.append(
@@ -479,6 +797,42 @@ def _to_string_dict_attr(
     return DictionaryAttr(items)
 
 
+def _loc_attr(loc: Optional[Locatable]) -> Optional[LocationAttr]:
+    """Convert a locatable payload into an xDSL location attribute.
+
+    Args:
+        loc: Optional location metadata from the AST.
+
+    Returns:
+        FileLineColLoc when location data is available; otherwise None.
+    """
+    if (
+        loc is None
+        or loc.start_line is None
+        or loc.start_col is None
+        or not loc.file
+    ):
+        return None
+    return FileLineColLoc(
+        StringAttr(loc.file), IntAttr(loc.start_line), IntAttr(loc.start_col)
+    )
+
+
+def _maybe_src_annotations(loc: Optional[Locatable]) -> Optional[DictionaryAttr]:
+    """Build an annotations dictionary containing source metadata.
+
+    Args:
+        loc: Optional location metadata from the AST.
+
+    Returns:
+        DictionaryAttr containing a "src" entry or None when unavailable.
+    """
+    src = _loc_attr(loc)
+    if src is None:
+        return None
+    return DictionaryAttr({"src": src})
+
+
 def _format_param_value(value: object) -> str:
     """Format parameter values as strings.
 
@@ -522,4 +876,4 @@ def _diagnostic(
     )
 
 
-__all__ = ["convert_document"]
+__all__ = ["convert_document", "convert_import_graph"]

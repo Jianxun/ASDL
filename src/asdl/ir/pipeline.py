@@ -13,17 +13,17 @@ from xdsl.utils.exceptions import VerifyException
 from asdl.ast import AsdlDocument
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.diagnostics.collector import DiagnosticCollector
-from asdl.imports.resolver import ImportGraph, resolve_import_graph
-from asdl.ir.converters.ast_to_nfir import convert_document
-from asdl.ir.converters.nfir_to_ifir import convert_design as convert_nfir_to_ifir
+from asdl.imports.resolver import resolve_import_graph
+from asdl.ir.converters.ast_to_graphir import convert_document, convert_import_graph
+from asdl.ir.converters.graphir_to_ifir import convert_program as convert_graphir_to_ifir
+from asdl.ir.graphir import ASDL_GRAPHIR, ProgramOp as GraphProgramOp
 from asdl.ir.ifir import ASDL_IFIR, DesignOp as IfirDesignOp
-from asdl.ir.nfir import ASDL_NFIR, DesignOp as NfirDesignOp
 from asdl.ir.pattern_atomization import PatternAtomizePass, PatternAtomizeState
 
 NO_SPAN_NOTE = "No source span available."
 
-VERIFY_NFIR_FAILED = format_code("PASS", 1)
-NFIR_DESIGN_MISSING = format_code("PASS", 2)
+VERIFY_GRAPHIR_FAILED = format_code("PASS", 1)
+GRAPHIR_PROGRAM_MISSING = format_code("PASS", 2)
 VERIFY_IFIR_FAILED = format_code("PASS", 3)
 IFIR_DESIGN_MISSING = format_code("PASS", 4)
 PIPELINE_CRASH = format_code("PASS", 999)
@@ -43,13 +43,13 @@ class PipelineState:
 
 
 @dataclass(frozen=True)
-class VerifyNfirPass(ModulePass):
-    name = "verify-nfir"
+class VerifyGraphirPass(ModulePass):
+    name = "verify-graphir"
 
     state: PipelineState
 
     def apply(self, ctx: Context, op: builtin.ModuleOp) -> None:
-        self._verify(op, "NFIR", VERIFY_NFIR_FAILED)
+        self._verify(op, "GraphIR", VERIFY_GRAPHIR_FAILED)
 
     def _verify(self, op: builtin.ModuleOp, label: str, code: str) -> None:
         try:
@@ -83,31 +83,30 @@ class VerifyIfirPass(ModulePass):
 
 
 @dataclass(frozen=True)
-class NfirToIfirPass(ModulePass):
-    name = "nfir-to-ifir"
+class GraphirToIfirPass(ModulePass):
+    name = "graphir-to-ifir"
 
     state: PipelineState
 
     def apply(self, ctx: Context, op: builtin.ModuleOp) -> None:
-        design = _find_single_design(
+        program = _find_single_program(
             op,
-            NfirDesignOp,
-            NFIR_DESIGN_MISSING,
+            GRAPHIR_PROGRAM_MISSING,
             diagnostics=self.state.diagnostics,
         )
-        if design is None:
+        if program is None:
             self.state.failed = True
             raise PipelineAbort()
 
-        ifir_design, diagnostics = convert_nfir_to_ifir(design)
+        ifir_design, diagnostics = convert_graphir_to_ifir(program)
         self.state.diagnostics.extend(diagnostics)
         if ifir_design is None:
             self.state.failed = True
             raise PipelineAbort()
 
         block = op.body.block
-        block.insert_op_before(ifir_design, design)
-        block.erase_op(design)
+        block.insert_op_before(ifir_design, program)
+        block.erase_op(program)
         self.state.ifir_design = ifir_design
 
 
@@ -147,7 +146,10 @@ def run_mvp_pipeline(
                 )
             )
             return None, diagnostics.to_list()
-        nfir_design = _lower_import_graph(entry_file, lib_roots, diagnostics)
+        program, program_diags = lower_import_graph_to_graphir(
+            entry_file, lib_roots=lib_roots
+        )
+        diagnostics.extend(program_diags)
     else:
         if document is None:
             diagnostics.emit(
@@ -157,25 +159,25 @@ def run_mvp_pipeline(
                 )
             )
             return None, diagnostics.to_list()
-        nfir_design, nfir_diags = convert_document(document)
-        diagnostics.extend(nfir_diags)
-    if nfir_design is None or _has_error_diagnostics(diagnostics.to_list()):
+        program, program_diags = convert_document(document)
+        diagnostics.extend(program_diags)
+    if program is None or _has_error_diagnostics(diagnostics.to_list()):
         return None, diagnostics.to_list()
 
-    return _run_pipeline(nfir_design, diagnostics, verify)
+    return _run_pipeline(program, diagnostics, verify)
 
 
 def _run_pipeline(
-    nfir_design: NfirDesignOp,
+    program: GraphProgramOp,
     diagnostics: DiagnosticCollector,
     verify: bool,
 ) -> tuple[IfirDesignOp | None, list[Diagnostic]]:
-    module = builtin.ModuleOp([nfir_design])
+    module = builtin.ModuleOp([program])
     state = PipelineState(diagnostics=diagnostics)
     passes: list[ModulePass] = []
     if verify:
-        passes.append(VerifyNfirPass(state=state))
-    passes.append(NfirToIfirPass(state=state))
+        passes.append(VerifyGraphirPass(state=state))
+    passes.append(GraphirToIfirPass(state=state))
     passes.append(AtomizeIfirPass(state=state))
     if verify:
         passes.append(VerifyIfirPass(state=state))
@@ -203,65 +205,40 @@ def _run_pipeline(
     return state.ifir_design, diagnostics.to_list()
 
 
-def _lower_import_graph(
+def lower_import_graph_to_graphir(
     entry_file: Path,
-    lib_roots: Optional[Iterable[Path]],
-    diagnostics: DiagnosticCollector,
-) -> Optional[NfirDesignOp]:
+    *,
+    lib_roots: Optional[Iterable[Path]] = None,
+) -> tuple[GraphProgramOp | None, list[Diagnostic]]:
+    """Resolve imports and build a GraphIR program.
+
+    Args:
+        entry_file: Entry file path.
+        lib_roots: Optional library roots for import resolution.
+
+    Returns:
+        Tuple of GraphIR program op (or None) and diagnostics.
+    """
+    diagnostics = DiagnosticCollector()
     graph, import_diags = resolve_import_graph(
         entry_file,
         lib_roots=lib_roots,
     )
     diagnostics.extend(import_diags)
     if graph is None:
-        return None
+        return None, diagnostics.to_list()
 
-    return _build_import_design(graph, diagnostics)
-
-
-def _build_import_design(
-    graph: ImportGraph,
-    diagnostics: DiagnosticCollector,
-) -> Optional[NfirDesignOp]:
-    ops: list[Operation] = []
-    had_error = False
-    entry_document = graph.documents.get(graph.entry_file)
-
-    for file_id, document in graph.documents.items():
-        name_env = graph.name_envs.get(file_id)
-        nfir_design, nfir_diags = convert_document(
-            document,
-            name_env=name_env,
-            program_db=graph.program_db,
-        )
-        diagnostics.extend(nfir_diags)
-        if nfir_design is None:
-            had_error = True
-            continue
-        ops.extend(op.clone() for op in nfir_design.body.block.ops)
-
-    if had_error:
-        return None
-    if entry_document is None:
-        diagnostics.emit(
-            _diagnostic(
-                PIPELINE_CRASH,
-                "Entry document missing from import graph.",
-            )
-        )
-        return None
-
-    return NfirDesignOp(
-        region=ops,
-        top=entry_document.top,
-        entry_file_id=str(graph.entry_file),
-    )
+    program, graph_diags = convert_import_graph(graph)
+    diagnostics.extend(graph_diags)
+    if program is None or _has_error_diagnostics(diagnostics.to_list()):
+        return None, diagnostics.to_list()
+    return program, diagnostics.to_list()
 
 
 def _build_context() -> Context:
     ctx = Context()
     ctx.load_dialect(builtin.Builtin)
-    ctx.load_dialect(ASDL_NFIR)
+    ctx.load_dialect(ASDL_GRAPHIR)
     ctx.load_dialect(ASDL_IFIR)
     return ctx
 
@@ -285,6 +262,26 @@ def _find_single_design(
     return None
 
 
+def _find_single_program(
+    module: builtin.ModuleOp,
+    code: str,
+    *,
+    diagnostics: Optional[DiagnosticCollector] = None,
+) -> Optional[GraphProgramOp]:
+    found = [op for op in module.body.block.ops if isinstance(op, GraphProgramOp)]
+    if len(found) == 1:
+        return found[0]
+    if diagnostics is not None:
+        count = len(found)
+        diagnostics.emit(
+            _diagnostic(
+                code,
+                f"Expected single {GraphProgramOp.name} in module, found {count}",
+            )
+        )
+    return None
+
+
 def _has_error_diagnostics(diagnostics: Iterable[Diagnostic]) -> bool:
     return any(
         diagnostic.severity in (Severity.ERROR, Severity.FATAL)
@@ -303,4 +300,4 @@ def _diagnostic(code: str, message: str) -> Diagnostic:
     )
 
 
-__all__ = ["run_mvp_pipeline"]
+__all__ = ["lower_import_graph_to_graphir", "run_mvp_pipeline"]
