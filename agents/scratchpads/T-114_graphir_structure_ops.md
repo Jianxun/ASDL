@@ -13,30 +13,37 @@
 - `agents/context/tasks.yaml`
 - `agents/context/tasks_state.yaml`
 - `agents/context/project_status.md`
+- `docs/specs/spec_asdl_graphir.md`
+- `docs/specs/spec_asdl_graphir_schema.md`
+- `src/asdl/ir/graphir/dialect.py`
+- `tests/unit_tests/ir/test_graphir_program.py`
 
 ## Plan
-- Inspect existing GraphIR dialect structure and tests.
-- Add net/instance/endpoint ops + verification rules per spec.
-- Write tests for valid/invalid module graphs.
-- Run verify command and update scratchpad.
+- [x] Inspect existing GraphIR dialect structure and tests.
+- [x] Add tests for valid/invalid module graphs.
+- [x] Add net/instance/endpoint ops + module verification rules per spec.
+- [x] Run verify command and update scratchpad.
 
 ## Progress log
 - 2026-01-XX: Initialized scratchpad and task context.
+- 2026-01-XX: Added GraphIR structure tests for module verification.
+- 2026-01-XX: Implemented net/instance/endpoint ops and module verification.
 
 ## Patch summary
-- TBD
+- Added GraphIR structure tests covering module uniqueness and endpoint rules.
+- Added net/instance/endpoint ops plus symbol refs and module-level verification.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/120
 
 ## Verification
-- TBD
+- `venv/bin/pytest tests/unit_tests/ir/test_graphir_structure.py -v`
 
 ## Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 ## Blockers / Questions
 - None
 
 ## Next steps
-- Inspect GraphIR dialect and spec for op definitions.
+- Await review feedback.
