@@ -53,3 +53,11 @@ archive:
   - T-103: {completed_on: 2026-01-12, owner: Executor, scratchpad: agents/scratchpads/T-103.md, pr: 115}
   - T-054: {completed_on: 2026-01-06, owner: Architect, scratchpad: agents/scratchpads/T-054_imports_spec.md, pr: null}
   - T-055: {completed_on: 2026-01-06, owner: Architect, scratchpad: agents/scratchpads/T-055_specs_reconciliation.md, pr: null}
+  - T-110: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-110_graphir_to_ifir_projection.md, pr: 125}
+  - T-111: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-111_graphir_pattern_bundles.md, pr: 124}
+  - T-113: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-113_graphir_program_ops.md, pr: 119}
+  - T-114: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-114_graphir_structure_ops.md, pr: 120}
+  - T-115: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-115_graphir_pattern_ops.md, pr: 122}
+  - T-116: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-116_ast_to_graphir_converter.md, pr: 123}
+  - T-117: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-117_graphir_import_graph.md, pr: 126}
+  - T-118: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-118_pipeline_graphir_switch.md, pr: 127}
