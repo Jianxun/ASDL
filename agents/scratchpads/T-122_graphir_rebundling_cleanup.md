@@ -12,22 +12,25 @@
 - `agents/context/project_status.md`
 
 ## Plan
-- [ ] Inspect current GraphIR rebundling helpers and call sites.
-- [ ] Move rebundling helpers into GraphIR->AST projection path and update imports.
-- [ ] Update pattern pass exports and call sites/tests to use the new location.
-- [ ] Run verification tests.
+- [x] Inspect current GraphIR rebundling helpers and call sites.
+- [x] Move rebundling helpers into GraphIR->AST projection path and update imports.
+- [x] Update pattern pass exports and call sites/tests to use the new location.
+- [x] Run verification tests.
 
 ## Progress log
 - 2026-02-06: Initialized scratchpad and started task.
+- 2026-02-06: Moved rebundling helpers into GraphIR->AST projection module and removed pass wrappers.
 
 ## Patch summary
-- TBD.
+- Added GraphIR->AST projection helper module for rebundling GraphIR pattern bundles.
+- Trimmed GraphIR pattern metadata helpers to remove rebundling logic.
+- Removed rebundling wrapper exports from pattern passes and updated tests to import from projection helpers.
 
 ## PR URL
 - TBD.
 
 ## Verification
-- TBD.
+- `venv/bin/pytest tests/unit_tests/ir/test_pattern_atomization.py -v`
 
 ## Status request
 - In Progress.
