@@ -12,12 +12,13 @@
 # Plan
 - [x] Inspect existing pattern implementation and tests to map responsibilities.
 - [x] Convert `patterns.py` into package shell (`patterns/__init__.py`) with preserved API.
-- [ ] Split tokenization, expansion, atomization, diagnostics into separate modules.
+- [x] Split tokenization, expansion, atomization, diagnostics into separate modules.
 - [ ] Update imports and ensure tests pass.
 
 # Progress log
 - 2026-02-08: Read task context and current pattern implementation/tests.
 - 2026-02-08: Converted `src/asdl/patterns.py` into package `src/asdl/patterns/__init__.py`.
+- 2026-02-08: Split patterns package into diagnostics, tokenize, expand, atomize modules.
 
 # Patch summary
 - 
