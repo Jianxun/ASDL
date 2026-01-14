@@ -108,6 +108,9 @@ def _graphir_from_ifir(design: DesignOp) -> GraphProgramOp:
                     ref_kind = "device"
                 if ref_id is None:
                     raise AssertionError(f"Unknown ref '{ref_name}' for GraphIR conversion")
+                annotations = None
+                if child.src is not None:
+                    annotations = DictionaryAttr({"src": child.src})
                 inst_ops.append(
                     GraphInstanceOp(
                         inst_id=inst_id,
@@ -115,6 +118,7 @@ def _graphir_from_ifir(design: DesignOp) -> GraphProgramOp:
                         module_ref=(ref_kind, ref_id),
                         module_ref_raw=ref_name,
                         props=child.params,
+                        annotations=annotations,
                     )
                 )
 
@@ -178,8 +182,11 @@ def _graphir_from_ifir(design: DesignOp) -> GraphProgramOp:
         entry_id = _select_symbol(module_names, module_ids, top_name, entry_file_id)
         if entry_id is None:
             raise AssertionError(f"Top module '{top_name}' missing for GraphIR conversion")
+    file_order = None
+    if design.entry_file_id is not None:
+        file_order = [design.entry_file_id.data]
 
-    return GraphProgramOp(region=program_ops, entry=entry_id)
+    return GraphProgramOp(region=program_ops, entry=entry_id, file_order=file_order)
 
 
 def _emit_from_graphir(

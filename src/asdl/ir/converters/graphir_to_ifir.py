@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
 
-from xdsl.dialects.builtin import StringAttr
+from xdsl.dialects.builtin import LocationAttr, StringAttr
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.ir.graphir import BundleOp, DeviceOp as GraphDeviceOp, EndpointOp
@@ -78,6 +78,9 @@ def convert_program(
         else:
             top_name = entry_module.name_attr.data
             entry_file_id = entry_module.file_id
+    if entry_file_id is None and program.file_order is not None:
+        if program.file_order.data:
+            entry_file_id = program.file_order.data[0]
 
     converted_ops = []
     for op in ordered_ops:
@@ -191,6 +194,7 @@ def _convert_module(
                 ref_file_id=ref_file_id,
                 params=inst.props,
                 conns=conns,
+                src=_extract_src(inst),
             )
         )
 
@@ -296,6 +300,15 @@ def _resolve_ref(
         )
     )
     return None, None, True
+
+
+def _extract_src(instance: GraphInstanceOp) -> LocationAttr | None:
+    if instance.annotations is None:
+        return None
+    value = instance.annotations.data.get("src")
+    if isinstance(value, LocationAttr):
+        return value
+    return None
 
 
 def _diagnostic(code: str, message: str) -> Diagnostic:
