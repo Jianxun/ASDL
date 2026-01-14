@@ -3,8 +3,6 @@
 from .atomization import (
     PatternAtomizePass,
     PatternAtomizeState,
-    rebundle_bundle,
-    rebundle_pattern_expr,
     run_pattern_atomization,
 )
 from .elaboration import (
@@ -18,8 +16,6 @@ __all__ = [
     "PatternAtomizePass",
     "PatternAtomizeState",
     "PatternElaborationState",
-    "rebundle_bundle",
-    "rebundle_pattern_expr",
     "run_pattern_atomization",
     "run_pattern_elaboration",
 ]
