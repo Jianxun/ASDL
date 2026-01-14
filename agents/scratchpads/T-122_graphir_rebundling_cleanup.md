@@ -20,6 +20,7 @@
 ## Progress log
 - 2026-02-06: Initialized scratchpad and started task.
 - 2026-02-06: Moved rebundling helpers into GraphIR->AST projection module and removed pass wrappers.
+- 2026-02-06: Opened PR #133.
 
 ## Patch summary
 - Added GraphIR->AST projection helper module for rebundling GraphIR pattern bundles.
@@ -27,13 +28,13 @@
 - Removed rebundling wrapper exports from pattern passes and updated tests to import from projection helpers.
 
 ## PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/133
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir/test_pattern_atomization.py -v`
 
 ## Status request
-- In Progress.
+- Done.
 
 ## Blockers / Questions
 - None yet.
