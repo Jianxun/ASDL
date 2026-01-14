@@ -12,7 +12,7 @@ T-126:
   pr: 131
   merged: true
 T-121:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-122:
