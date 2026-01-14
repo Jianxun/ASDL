@@ -7,7 +7,6 @@ from xdsl.utils.exceptions import VerifyException
 from asdl.ir.graphir import (
     BundleOp,
     EndpointOp,
-    GraphParamRefAttr,
     InstanceOp,
     ModuleOp,
     NetOp,
@@ -32,8 +31,8 @@ def _make_net(*, net_id: str, name: str, endpoints: list[EndpointOp]) -> NetOp:
     return NetOp(net_id=net_id, name=name, region=endpoints)
 
 
-def _make_param_ref(*, inst_id: str, name: str) -> GraphParamRefAttr:
-    return GraphParamRefAttr(inst_id, name)
+def _make_param_ref(*, inst_id: str, name: str) -> tuple[str, str]:
+    return (inst_id, name)
 
 
 def test_pattern_expr_net_owner_requires_net_id() -> None:
