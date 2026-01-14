@@ -1,0 +1,25 @@
+top: top
+modules:
+  top:
+    instances:
+      U1: child
+      M1: nfet w=1u
+    nets:
+      $VIN:
+        - M1.G
+        - U1.IN
+      VSS:
+        - M1.S
+        - U1.GND
+  child:
+    instances: {}
+    nets: {}
+devices:
+  nfet:
+    ports: [D, G, S]
+    params:
+      w: 1u
+    backends:
+      ngspice:
+        template: "M{inst} {D} {G} {S} {model}"
+        model: nfet
