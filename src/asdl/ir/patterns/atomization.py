@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from xdsl.context import Context
 from xdsl.dialects import builtin
@@ -12,11 +12,6 @@ from xdsl.utils.exceptions import VerifyException
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.diagnostics.collector import DiagnosticCollector
-from asdl.ir.graphir import BundleOp, PatternExprOp
-from asdl.ir.graphir.patterns import (
-    rebundle_bundle as _rebundle_bundle,
-    rebundle_pattern_expr as _rebundle_pattern_expr,
-)
 from asdl.ir.ifir import ASDL_IFIR, ConnAttr, DesignOp, DeviceOp, InstanceOp, ModuleOp, NetOp
 from asdl.ir.location import location_attr_to_span
 from asdl.patterns import (
@@ -475,33 +470,6 @@ def _emit_literal_collisions(
     return had_error
 
 
-def rebundle_bundle(bundle: BundleOp) -> str:
-    """Rebundle a GraphIR bundle into a pattern token string.
-
-    Args:
-        bundle: Bundle op containing pattern metadata.
-
-    Returns:
-        Rebundled pattern token string.
-    """
-    return _rebundle_bundle(bundle)
-
-
-def rebundle_pattern_expr(
-    pattern_expr: PatternExprOp, bundles: Mapping[str, BundleOp]
-) -> str:
-    """Rebundle a GraphIR pattern expression using bundle order.
-
-    Args:
-        pattern_expr: Pattern expression op to rebundle.
-        bundles: Mapping from bundle_id to BundleOp.
-
-    Returns:
-        Rebundled pattern token string with `;` boundaries preserved.
-    """
-    return _rebundle_pattern_expr(pattern_expr, bundles)
-
-
 def _build_context() -> Context:
     ctx = Context()
     ctx.load_dialect(builtin.Builtin)
@@ -548,7 +516,5 @@ def _diagnostic(
 
 __all__ = [
     "PatternAtomizePass",
-    "rebundle_bundle",
-    "rebundle_pattern_expr",
     "run_pattern_atomization",
 ]

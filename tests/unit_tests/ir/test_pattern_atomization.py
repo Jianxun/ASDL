@@ -6,7 +6,8 @@ from xdsl.dialects.builtin import DictionaryAttr, StringAttr
 
 from asdl.ir.graphir import BundleOp, PatternExprOp
 from asdl.ir.ifir import ConnAttr, DesignOp, InstanceOp, ModuleOp, NetOp
-from asdl.ir.patterns.atomization import rebundle_pattern_expr, run_pattern_atomization
+from asdl.ir.converters.graphir_to_ast import rebundle_pattern_expr
+from asdl.ir.patterns.atomization import run_pattern_atomization
 
 
 def test_atomize_patterns_base_less_forwarding() -> None:
