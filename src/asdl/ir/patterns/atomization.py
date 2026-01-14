@@ -19,7 +19,16 @@ from asdl.ir.graphir.patterns import (
 )
 from asdl.ir.ifir import ASDL_IFIR, ConnAttr, DesignOp, DeviceOp, InstanceOp, ModuleOp, NetOp
 from asdl.ir.location import location_attr_to_span
-from asdl.patterns import AtomizedEndpoint, AtomizedPattern, atomize_endpoint, atomize_pattern
+from asdl.patterns import (
+    AtomizedEndpoint,
+    AtomizedPattern,
+    atomize_endpoint,
+    atomize_pattern,
+    collect_literal_collisions,
+    format_endpoint_length_mismatch,
+    format_literal_collision_message,
+    format_param_length_mismatch,
+)
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -273,10 +282,12 @@ def _atomize_module(
                 diagnostics.emit(
                     _diagnostic(
                         ATOMIZE_VERIFY_FAILED,
-                        (
-                            f"Net '{net_token}' atomizes to {len(net_atoms)} atoms but "
-                            f"endpoint '{inst_token}.{conn.port.data}' atomizes to "
-                            f"{len(endpoint_atoms)}"
+                        format_endpoint_length_mismatch(
+                            net_token,
+                            len(net_atoms),
+                            f"{inst_token}.{conn.port.data}",
+                            len(endpoint_atoms),
+                            verb="atomizes",
                         ),
                         inst.src or module.src,
                     )
@@ -396,9 +407,12 @@ def _atomize_instance_params(
             diagnostics.emit(
                 _diagnostic(
                     ATOMIZE_VERIFY_FAILED,
-                    (
-                        f"Instance '{inst.name_attr.data}' parameter '{key}' atomizes to "
-                        f"{len(expanded)} values but instance atomizes to {instance_len}"
+                    format_param_length_mismatch(
+                        inst.name_attr.data,
+                        key,
+                        len(expanded),
+                        instance_len,
+                        verb="atomizes",
                     ),
                     loc,
                 )
@@ -433,42 +447,32 @@ def _emit_literal_collisions(
     kind: str,
     had_error: bool,
 ) -> bool:
-    collisions: Dict[str, List[Tuple[str, LocationAttr | None]]] = {}
-    for literal, token, loc in entries:
-        collisions.setdefault(literal, []).append((token, loc))
+    collisions = collect_literal_collisions(
+        [(literal, token) for literal, token, _ in entries]
+    )
+    if not collisions:
+        return had_error
 
-    for literal, token_infos in collisions.items():
-        if len(token_infos) < 2:
-            continue
-        tokens = [token for token, _ in token_infos]
-        loc = token_infos[0][1]
+    first_locations: Dict[str, LocationAttr | None] = {}
+    for literal, _, loc in entries:
+        if literal not in first_locations:
+            first_locations[literal] = loc
+
+    for literal, tokens in collisions.items():
         diagnostics.emit(
             _diagnostic(
                 ATOMIZE_LITERAL_COLLISION,
-                (
-                    f"{kind} literal name collision after atomization for '{literal}' "
-                    f"from tokens {_format_token_list(tokens)}"
+                format_literal_collision_message(
+                    kind,
+                    literal,
+                    tokens,
+                    phase="atomization",
                 ),
-                loc,
+                first_locations.get(literal),
             )
         )
         had_error = True
     return had_error
-
-
-def _format_token_list(tokens: List[str]) -> str:
-    unique: List[str] = []
-    seen = set()
-    for token in tokens:
-        if token in seen:
-            continue
-        seen.add(token)
-        unique.append(token)
-    preview = ", ".join(f"'{token}'" for token in unique[:5])
-    extra = ""
-    if len(unique) > 5:
-        extra = f" (+{len(unique) - 5} more)"
-    return f"{preview}{extra}."
 
 
 def rebundle_bundle(bundle: BundleOp) -> str:

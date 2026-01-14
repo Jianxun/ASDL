@@ -12,9 +12,9 @@ T-126:
   pr: 131
   merged: true
 T-121:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 132
+  merged: true
 T-122:
   status: ready
   pr: null
