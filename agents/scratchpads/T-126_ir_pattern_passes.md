@@ -10,21 +10,24 @@
 - `agents/context/project_status.md`
 
 # Plan
-- Inspect existing pattern pass modules and import sites.
-- Relocate files under `src/asdl/ir/patterns/` and update imports/exports.
-- Update tests and codebase map, then verify.
+- [x] Inspect existing pattern pass modules and import sites.
+- [x] Relocate files under `src/asdl/ir/patterns/` and update imports/exports.
+- [x] Update tests and codebase map, then verify.
 
 # Progress log
 - 2026-02-??: Initialized scratchpad.
+- 2026-02-??: Moved IR pattern passes under `src/asdl/ir/patterns/`, updated imports/tests, and refreshed codebase map.
 
 # Patch summary
-- (pending)
+- Moved IR pattern pass modules into `src/asdl/ir/patterns/` and added package exports.
+- Updated pipeline/tests to import pattern atomization from the new package.
+- Documented the new pattern pass package location in the codebase map.
 
 # PR URL
 - (pending)
 
 # Verification
-- (pending)
+- `venv/bin/pytest tests/unit_tests/ir/test_pattern_atomization.py -v`
 
 # Status request (Done / Blocked / In Progress)
 - In Progress
