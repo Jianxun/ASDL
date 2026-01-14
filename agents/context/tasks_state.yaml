@@ -28,7 +28,7 @@ T-117:
   pr: 126
   merged: true
 T-118:
-  status: review_in_progress
+  status: review_clean
   pr: 127
   merged: false
 T-112:
