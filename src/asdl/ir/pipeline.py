@@ -14,8 +14,10 @@ from asdl.ast import AsdlDocument
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.diagnostics.collector import DiagnosticCollector
 from asdl.imports.resolver import ImportGraph, resolve_import_graph
+from asdl.ir.converters.ast_to_graphir import convert_import_graph
 from asdl.ir.converters.ast_to_nfir import convert_document
 from asdl.ir.converters.nfir_to_ifir import convert_design as convert_nfir_to_ifir
+from asdl.ir.graphir import ProgramOp as GraphProgramOp
 from asdl.ir.ifir import ASDL_IFIR, DesignOp as IfirDesignOp
 from asdl.ir.nfir import ASDL_NFIR, DesignOp as NfirDesignOp
 from asdl.ir.pattern_atomization import PatternAtomizePass, PatternAtomizeState
@@ -219,6 +221,36 @@ def _lower_import_graph(
     return _build_import_design(graph, diagnostics)
 
 
+def lower_import_graph_to_graphir(
+    entry_file: Path,
+    *,
+    lib_roots: Optional[Iterable[Path]] = None,
+) -> tuple[GraphProgramOp | None, list[Diagnostic]]:
+    """Resolve imports and build a GraphIR program.
+
+    Args:
+        entry_file: Entry file path.
+        lib_roots: Optional library roots for import resolution.
+
+    Returns:
+        Tuple of GraphIR program op (or None) and diagnostics.
+    """
+    diagnostics = DiagnosticCollector()
+    graph, import_diags = resolve_import_graph(
+        entry_file,
+        lib_roots=lib_roots,
+    )
+    diagnostics.extend(import_diags)
+    if graph is None:
+        return None, diagnostics.to_list()
+
+    program, graph_diags = convert_import_graph(graph)
+    diagnostics.extend(graph_diags)
+    if program is None or _has_error_diagnostics(diagnostics.to_list()):
+        return None, diagnostics.to_list()
+    return program, diagnostics.to_list()
+
+
 def _build_import_design(
     graph: ImportGraph,
     diagnostics: DiagnosticCollector,
@@ -303,4 +335,4 @@ def _diagnostic(code: str, message: str) -> Diagnostic:
     )
 
 
-__all__ = ["run_mvp_pipeline"]
+__all__ = ["lower_import_graph_to_graphir", "run_mvp_pipeline"]
