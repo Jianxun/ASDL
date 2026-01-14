@@ -2,11 +2,13 @@
 
 ## Purpose
 ASDL_NFIR captures explicit net-first topology derived from the authoring
-AST. It preserves pattern tokens and is the staging IR for GraphIR construction.
+AST. It preserves pattern tokens and exists as an optional projection used for
+roundtrip/debugging rather than as a required pipeline stage.
 
 ---
 
 ## Role
+- NFIR is a projection-only IR; the canonical pipeline lowers AST -> GraphIR.
 - Nets own endpoint lists (connectivity is net-first).
 - Names may include pattern tokens; no expansion occurs in NFIR.
 - Port order is explicit and preserves `$` net tokens (without the `$`).

@@ -81,3 +81,52 @@ def test_convert_document_unresolved_reference_emits_error() -> None:
         diag.code == "IR-011" and diag.severity is Severity.ERROR
         for diag in diagnostics
     )
+
+
+def test_convert_document_invalid_instance_expr_emits_error() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"M1": "res bad"},
+                nets={"OUT": ["M1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert program is None
+    assert any(
+        diag.code == "IR-001" and diag.severity is Severity.ERROR
+        for diag in diagnostics
+    )
+
+
+def test_convert_document_invalid_endpoint_expr_emits_error() -> None:
+    module = ModuleDecl.model_construct(
+        instances={"M1": "res"},
+        nets={"OUT": "M1.P"},
+    )
+    module._instances_loc = {}
+    module._nets_loc = {}
+    document = AsdlDocument.model_construct(
+        modules={"top": module},
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert program is None
+    assert any(
+        diag.code == "IR-002" and diag.severity is Severity.ERROR
+        for diag in diagnostics
+    )

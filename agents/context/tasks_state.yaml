@@ -4,9 +4,9 @@ T-120:
   pr: 129
   merged: true
 T-125:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 130
+  merged: true
 T-126:
   status: ready
   pr: null
