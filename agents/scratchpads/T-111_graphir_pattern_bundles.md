@@ -10,6 +10,11 @@
 - agents/context/tasks.yaml
 - agents/context/tasks_state.yaml
 - agents/context/project_status.md
+- docs/specs/spec_asdl_graphir.md
+- src/asdl/ir/graphir/ops_pattern.py
+- src/asdl/ir/pattern_atomization.py
+- src/asdl/ir/pattern_elaboration.py
+- tests/unit_tests/ir/test_pattern_atomization.py
 
 ## Plan
 - Review GraphIR pattern spec + existing bundle ops to align metadata needs.
