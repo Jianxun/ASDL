@@ -6,15 +6,16 @@ Status: Draft
 
 GraphIR is the canonical semantic representation of ASDL designs. It is the
 single source of truth for connectivity, refactor operations, and structural
-verification. NFIR and IFIR are projections of GraphIR for authoring and
-backend emission, respectively.
+verification. IFIR is the emission projection, and NFIR is an optional
+authoring/roundtrip projection derived from GraphIR.
 
 GraphIR is defined as an xDSL dialect to reuse the existing pass infrastructure
 and diagnostics system while enforcing hypergraph semantics.
 
 Pipeline placement:
-AST -> NFIR -> pattern expansion (metadata + atoms) -> GraphIR (verify) -> IFIR
--> emission. GraphIR is the canonical semantic core in this flow.
+AST -> GraphIR (verify) -> IFIR -> emission. Pattern expansion metadata and
+atomization are part of GraphIR construction. GraphIR is the canonical semantic
+core in this flow; NFIR is optional and not part of the critical path.
 
 ## 2. Design Goals
 
@@ -72,12 +73,8 @@ explicit move/insert operations; renames never reorder.
 
 Module identity is `(file_id, name)`. Emitted subckt names are derived during
 emission:
-- If two reachable modules would emit the same name, rename the unlocked
+- If two reachable modules would emit the same name, rename the colliding
   module(s) with suffix `__{hash8(file_id)}` and emit a warning listing renames.
-- Modules may set `emit_name_locked = true` to prevent renaming (for external
-  netlists with fixed subckt names).
-- If a locked name collides with an unlocked one, rename the unlocked one.
-- If two locked names collide, emission fails with an error.
 Device symbols are emitted via backend templates and are not subject to
 subckt rename rules.
 
@@ -143,7 +140,18 @@ Unique key: `(inst_id, port_path)`; `id` is a stable opaque identifier.
 Port paths are single-segment strings; `.` is reserved for endpoint expressions
 (`inst.port`) and is forbidden in port names. Hierarchical paths are deferred.
 
-### 4.6 Device
+### 4.6 ParamRef
+
+Represents a specific instance parameter for pattern ownership.
+
+```
+ParamRef {
+  inst_id: InstID
+  param_name: str
+}
+```
+
+### 4.7 Device
 
 Represents a leaf symbol with ports and backend metadata.
 
@@ -190,12 +198,9 @@ GraphIR is implemented as a dialect under `src/asdl/ir/` with:
 - `graphir.endpoint` op with stable `endpoint_id`, `inst_id`, `port_path`.
 - `graphir.bundle` op for pattern bundles (see Section 7).
 - `graphir.pattern_expr` op for ordered bundle expressions with explicit owners.
-- `graphir.detached` op holding temporarily unconnected endpoints.
 
 Endpoints are stored as explicit ops nested under `graphir.net` regions, using
-region order to define endpoint order. A `graphir.detached` op may temporarily
-own endpoints during transactions; it must be empty on commit. Reverse indices
-are derived.
+region order to define endpoint order. Reverse indices are derived.
 
 ### 6.1 Dialect Schema
 
@@ -343,8 +348,9 @@ origin bundle IDs.
 
 ## 11. Projections and Round-Trip
 
-- GraphIR -> NFIR: deterministic, pattern-aware emission using bundle metadata.
 - GraphIR -> IFIR: normalization and backend-focused lowering.
+- GraphIR -> NFIR (optional): authoring/roundtrip projection; not required for
+  emission.
 
 Round-trip goal:
 - Preserve semantics and pattern structure when bundle metadata remains valid.
