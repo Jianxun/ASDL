@@ -6,13 +6,20 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
-from xdsl.dialects.builtin import DictionaryAttr, StringAttr
+from xdsl.dialects.builtin import (
+    DictionaryAttr,
+    FileLineColLoc,
+    IntAttr,
+    LocationAttr,
+    StringAttr,
+)
 
-from asdl.ast import AsdlDocument, DeviceDecl, ModuleDecl
+from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
 from asdl.ast.location import Locatable
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.imports import ImportGraph, NameEnv, ProgramDB
 from asdl.ir.graphir import DeviceOp, EndpointOp, InstanceOp, ModuleOp, NetOp, ProgramOp
+from asdl.ir.ifir import BackendOp
 
 INVALID_INSTANCE_EXPR = format_code("IR", 1)
 INVALID_ENDPOINT_EXPR = format_code("IR", 2)
@@ -429,6 +436,7 @@ def _convert_module(
                     module_ref=(resolved.kind, resolved.sym_id),
                     module_ref_raw=ref,
                     props=_to_string_dict_attr(params),
+                    annotations=_maybe_src_annotations(inst_loc),
                 )
             )
 
@@ -519,6 +527,10 @@ def _convert_device(
     Returns:
         The device op.
     """
+    backends: List[BackendOp] = []
+    for backend_name, backend in device.backends.items():
+        backends.append(_convert_backend(backend_name, backend))
+
     ports = device.ports or []
     return DeviceOp(
         device_id=device_id,
@@ -526,7 +538,27 @@ def _convert_device(
         file_id=file_id,
         ports=ports,
         params=_to_string_dict_attr(device.params),
-        region=[],
+        region=backends,
+    )
+
+
+def _convert_backend(name: str, backend: DeviceBackendDecl) -> BackendOp:
+    """Convert a backend declaration into a GraphIR-compatible backend op.
+
+    Args:
+        name: Backend identifier.
+        backend: Backend declaration payload.
+
+    Returns:
+        IFIR backend op embedded under a GraphIR device.
+    """
+    props = backend.model_extra or None
+    return BackendOp(
+        name=name,
+        template=backend.template,
+        params=_to_string_dict_attr(backend.params),
+        props=_to_string_dict_attr(props),
+        src=_loc_attr(backend._loc),
     )
 
 
@@ -763,6 +795,42 @@ def _to_string_dict_attr(
         return None
     items = {key: StringAttr(_format_param_value(value)) for key, value in values.items()}
     return DictionaryAttr(items)
+
+
+def _loc_attr(loc: Optional[Locatable]) -> Optional[LocationAttr]:
+    """Convert a locatable payload into an xDSL location attribute.
+
+    Args:
+        loc: Optional location metadata from the AST.
+
+    Returns:
+        FileLineColLoc when location data is available; otherwise None.
+    """
+    if (
+        loc is None
+        or loc.start_line is None
+        or loc.start_col is None
+        or not loc.file
+    ):
+        return None
+    return FileLineColLoc(
+        StringAttr(loc.file), IntAttr(loc.start_line), IntAttr(loc.start_col)
+    )
+
+
+def _maybe_src_annotations(loc: Optional[Locatable]) -> Optional[DictionaryAttr]:
+    """Build an annotations dictionary containing source metadata.
+
+    Args:
+        loc: Optional location metadata from the AST.
+
+    Returns:
+        DictionaryAttr containing a "src" entry or None when unavailable.
+    """
+    src = _loc_attr(loc)
+    if src is None:
+        return None
+    return DictionaryAttr({"src": src})
 
 
 def _format_param_value(value: object) -> str:
