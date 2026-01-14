@@ -28,13 +28,13 @@
 - Added GraphIR bundle-based length mismatch checks during GraphIR->IFIR conversion.
 
 ## PR URL
-- None yet.
+- https://github.com/Jianxun/ASDL/pull/132
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir/test_graphir_patterns.py tests/unit_tests/ir/test_pattern_atomization.py -v`
 
 ## Status request
-- In Progress.
+- Done.
 
 ## Blockers / Questions
 - None yet.
