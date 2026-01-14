@@ -23,7 +23,7 @@ def test_convert_import_graph_multi_file_resolution(tmp_path: Path) -> None:
         [
             "top: top",
             "imports:",
-            "  lib: dep.asdl",
+            "  lib: ./dep.asdl",
             "modules:",
             "  top:",
             "    instances:",
