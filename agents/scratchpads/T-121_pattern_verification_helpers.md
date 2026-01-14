@@ -12,22 +12,26 @@
 - `agents/context/project_status.md`
 
 ## Plan
-- Triage existing pattern-binding verification helpers and diagnostics usage in GraphIR->IFIR and atomization.
-- Introduce `src/asdl/patterns/verify.py` with pure helpers for expansion length mismatch + literal collision detection.
-- Rewire GraphIR->IFIR conversion and pattern atomization to use helpers, preserving diagnostics codes/messages.
-- Update `src/asdl/patterns/__init__.py` exports if needed and adjust tests.
+- [x] Review existing pattern-binding checks in GraphIR->IFIR and IFIR atomization.
+- [x] Add `src/asdl/patterns/verify.py` with pure helpers for length mismatch + literal collisions.
+- [x] Rewire IFIR atomization to use the centralized helpers.
+- [x] Wire helper usage into GraphIR->IFIR conversion for bundle-based length checks.
+- [x] Run verification tests.
 
 ## Progress log
-- 2026-01-XX: Initialized scratchpad.
+- 2026-01-14: Initialized scratchpad and set task status to in_progress.
+- 2026-01-14: Added pattern verify helpers, refactored atomization, and added GraphIR bundle length checks.
 
 ## Patch summary
-- None yet.
+- Added `src/asdl/patterns/verify.py` with length mismatch + literal collision helpers and exports.
+- Refactored IFIR pattern atomization to use centralized helpers for mismatch/collision messages.
+- Added GraphIR bundle-based length mismatch checks during GraphIR->IFIR conversion.
 
 ## PR URL
 - None yet.
 
 ## Verification
-- Not run yet.
+- `venv/bin/pytest tests/unit_tests/ir/test_graphir_patterns.py tests/unit_tests/ir/test_pattern_atomization.py -v`
 
 ## Status request
 - In Progress.
@@ -36,4 +40,4 @@
 - None yet.
 
 ## Next steps
-- Inspect current helpers and diagnostics usage for pattern binding verification.
+- Open PR and request review.
