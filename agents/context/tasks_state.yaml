@@ -12,8 +12,8 @@ T-116:
   pr: null
   merged: false
 T-115:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 122
   merged: false
 T-111:
   status: ready
