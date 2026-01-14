@@ -26,13 +26,13 @@
 - Re-exported public API from `src/asdl/patterns/__init__.py` with docstrings preserved.
 
 # PR URL
-- 
+- https://github.com/Jianxun/ASDL/pull/129
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/parser/test_pattern_expansion.py tests/unit_tests/parser/test_pattern_atomization.py -v`
 
 # Status request
-- In Progress
+- Ready for Review
 
 # Blockers / Questions
 - 
