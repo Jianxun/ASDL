@@ -16,27 +16,31 @@
 - `agents/roles/executor.md`
 
 ## Plan
-- Inspect existing GraphIR dialect/ops and any converter scaffolding.
-- Write test fixture + unit tests to encode single-file conversion expectations.
-- Implement converter with diagnostics, then re-run tests.
+- [x] Inspect existing GraphIR dialect/ops and converter patterns.
+- [x] Write fixture + unit tests for single-file conversion.
+- [x] Implement converter with diagnostics and stable IDs; run tests.
 
 ## Progress log
-- 2026-01-xx: Set task to in_progress, created feature branch, initialized scratchpad.
+- 2026-01-13: Clarified task scope (single-doc AST -> GraphIR with diagnostics/IDs) and created setup commit.
+- 2026-01-13: Added fixture-based tests for GraphIR conversion + unresolved symbol diagnostics.
+- 2026-01-13: Implemented AST -> GraphIR converter with stable IDs and ran tests.
 
 ## Patch summary
-- 
+- `src/asdl/ir/converters/ast_to_graphir.py`: implement single-document GraphIR conversion with diagnostics and stable IDs.
+- `tests/unit_tests/ir/test_graphir_converter.py`: add fixture-based conversion + unresolved symbol tests.
+- `tests/unit_tests/ir/fixtures/graphir_single_file.asdl`: add single-file conversion fixture.
 
 ## PR URL
-- 
+- https://github.com/Jianxun/ASDL/pull/123
 
 ## Verification
-- 
+- `venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v`
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - 
 
 ## Next steps
-- Inspect existing GraphIR ops and current AST/NFIR converters for reference.
+- Await review feedback.
