@@ -29,6 +29,10 @@
 - `src/asdl/ir/graphir/dialect.py`: dialect registry and exports.
 - `src/asdl/ir/converters/graphir_to_ast.py`: GraphIR -> AST normalized projection (rebundling lives in projection).
 
+## Quick Reference: IR Pattern Passes
+- `src/asdl/ir/patterns/atomization.py`: IFIR pattern atomization pass + rebundling helpers.
+- `src/asdl/ir/patterns/elaboration.py`: IFIR pattern elaboration pass for emission.
+
 ## Quick Reference: Emission Subsystem
 - `src/asdl/emit/netlist/`: netlist emitter package (API, verification, rendering, templates, params, IR helpers, diagnostics)
 - `src/asdl/emit/backend_config.py`: backend config loader and system device validation (created in T-047)
