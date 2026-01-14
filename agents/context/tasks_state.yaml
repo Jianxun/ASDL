@@ -1,37 +1,29 @@
 schema_version: 2
-T-113:
-  status: done
-  pr: 119
-  merged: true
-T-114:
-  status: done
-  pr: 120
-  merged: true
-T-116:
-  status: done
-  pr: 123
-  merged: true
-T-115:
-  status: done
-  pr: 122
-  merged: true
-T-111:
-  status: done
-  pr: 124
-  merged: true
-T-110:
-  status: done
-  pr: 125
-  merged: true
-T-117:
-  status: done
-  pr: 126
-  merged: true
-T-118:
-  status: done
-  pr: 127
-  merged: true
+T-120:
+  status: ready
+  pr: null
+  merged: false
+T-121:
+  status: ready
+  pr: null
+  merged: false
+T-122:
+  status: ready
+  pr: null
+  merged: false
+T-123:
+  status: ready
+  pr: null
+  merged: false
 T-112:
+  status: ready
+  pr: null
+  merged: false
+T-119:
+  status: ready
+  pr: null
+  merged: false
+T-124:
   status: ready
   pr: null
   merged: false
