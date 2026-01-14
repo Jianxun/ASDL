@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
+from xdsl.dialects.builtin import (
+    ArrayAttr,
+    BoolAttr,
+    DictionaryAttr,
+    IntegerAttr,
+    StringAttr,
+)
 from xdsl.ir import Attribute
 from xdsl.irdl import IRDLOperation, attr_def, irdl_op_definition, opt_attr_def
 from xdsl.utils.exceptions import VerifyException
@@ -18,6 +24,8 @@ from .attrs import (
 
 _PATTERN_KINDS = {"net", "endpoint", "param", "inst"}
 _PATTERN_TYPES = {"literal", "numeric"}
+BUNDLE_PATTERN_TOKENS_KEY = "pattern_tokens"
+BUNDLE_PATTERN_ELIGIBLE_KEY = "pattern_eligible"
 
 
 def _require_pattern_kind(kind: StringAttr, *, owner: str) -> str:
@@ -66,6 +74,103 @@ def _coerce_bundle_member(value: object) -> Attribute:
     raise TypeError(f"Unsupported bundle member: {value!r}")
 
 
+def _coerce_pattern_token(value: object) -> Attribute:
+    """Coerce a pattern token into an attribute.
+
+    Args:
+        value: Pattern token input (string or int).
+
+    Returns:
+        Attribute representing the token.
+    """
+    if isinstance(value, (StringAttr, IntegerAttr)):
+        return value
+    if isinstance(value, int):
+        return IntegerAttr.from_int_and_width(value, 64)
+    if isinstance(value, str):
+        return StringAttr(value)
+    raise TypeError(f"Unsupported pattern token: {value!r}")
+
+
+def _coerce_pattern_tokens(
+    tokens: ArrayAttr[Attribute] | Iterable[object],
+) -> ArrayAttr[Attribute]:
+    """Coerce a sequence of pattern tokens into an ArrayAttr.
+
+    Args:
+        tokens: Pattern token inputs.
+
+    Returns:
+        ArrayAttr of token attributes.
+    """
+    if isinstance(tokens, ArrayAttr):
+        return tokens
+    return ArrayAttr([_coerce_pattern_token(token) for token in tokens])
+
+
+def _coerce_pattern_eligible(
+    eligible: ArrayAttr[BoolAttr] | Iterable[bool],
+) -> ArrayAttr[BoolAttr]:
+    """Coerce pattern eligibility flags into an ArrayAttr.
+
+    Args:
+        eligible: Eligibility inputs.
+
+    Returns:
+        ArrayAttr of BoolAttr entries.
+    """
+    if isinstance(eligible, ArrayAttr):
+        return eligible
+    return ArrayAttr([BoolAttr.from_bool(bool(value)) for value in eligible])
+
+
+def _merge_bundle_annotations(
+    annotations: DictionaryAttr | None,
+    pattern_tokens: ArrayAttr[Attribute] | Iterable[object] | None,
+    pattern_eligible: ArrayAttr[BoolAttr] | Iterable[bool] | None,
+) -> DictionaryAttr | None:
+    """Merge bundle annotations with pattern metadata.
+
+    Args:
+        annotations: Existing annotations dictionary.
+        pattern_tokens: Optional pattern token metadata.
+        pattern_eligible: Optional eligibility metadata.
+
+    Returns:
+        Merged annotations dictionary or None.
+    """
+    merged = dict(annotations.data) if annotations is not None else {}
+    if pattern_tokens is not None:
+        if BUNDLE_PATTERN_TOKENS_KEY in merged:
+            raise ValueError("bundle annotations already define pattern_tokens")
+        merged[BUNDLE_PATTERN_TOKENS_KEY] = _coerce_pattern_tokens(pattern_tokens)
+    if pattern_eligible is not None:
+        if BUNDLE_PATTERN_ELIGIBLE_KEY in merged:
+            raise ValueError("bundle annotations already define pattern_eligible")
+        merged[BUNDLE_PATTERN_ELIGIBLE_KEY] = _coerce_pattern_eligible(pattern_eligible)
+    return DictionaryAttr(merged) if merged else None
+
+
+def _is_numeric_token(value: Attribute) -> bool:
+    """Return true if the attribute is a numeric token.
+
+    Args:
+        value: Attribute to inspect.
+
+    Returns:
+        True when the token is numeric.
+    """
+    if isinstance(value, IntegerAttr):
+        return True
+    if isinstance(value, StringAttr):
+        try:
+            int(value.data)
+            return True
+        except ValueError:
+            return False
+    return False
+
+
 @irdl_op_definition
 class BundleOp(IRDLOperation):
     """GraphIR bundle definition for pattern metadata.
@@ -76,6 +181,8 @@ class BundleOp(IRDLOperation):
         base_name: Base name for the bundle.
         pattern_type: Pattern type ("literal" or "numeric").
         members: Ordered bundle members.
+        pattern_tokens: Optional pattern token metadata for each member.
+        pattern_eligible: Optional eligibility flags for each member.
         annotations: Optional annotations.
     """
 
@@ -98,6 +205,8 @@ class BundleOp(IRDLOperation):
         base_name: StringAttr | str,
         pattern_type: StringAttr | str,
         members: ArrayAttr[Attribute] | Iterable[object],
+        pattern_tokens: ArrayAttr[Attribute] | Iterable[object] | None = None,
+        pattern_eligible: ArrayAttr[BoolAttr] | Iterable[bool] | None = None,
         annotations: DictionaryAttr | None = None,
     ) -> None:
         """Initialize a bundle op.
@@ -108,6 +217,8 @@ class BundleOp(IRDLOperation):
             base_name: Base name for the bundle.
             pattern_type: Pattern type ("literal" or "numeric").
             members: Ordered bundle members.
+            pattern_tokens: Optional pattern token metadata aligned to members.
+            pattern_eligible: Optional eligibility flags aligned to members.
             annotations: Optional annotations dictionary.
         """
         if isinstance(kind, str):
@@ -126,8 +237,11 @@ class BundleOp(IRDLOperation):
             "pattern_type": pattern_type,
             "members": members,
         }
-        if annotations is not None:
-            attributes["annotations"] = annotations
+        merged_annotations = _merge_bundle_annotations(
+            annotations, pattern_tokens, pattern_eligible
+        )
+        if merged_annotations is not None:
+            attributes["annotations"] = merged_annotations
         super().__init__(attributes=attributes)
 
     def verify_(self) -> None:
@@ -144,6 +258,44 @@ class BundleOp(IRDLOperation):
                     raise VerifyException(
                         f"{kind} bundle members must be graph_id attributes"
                     )
+        if self.annotations is None:
+            return
+        tokens_attr = self.annotations.data.get(BUNDLE_PATTERN_TOKENS_KEY)
+        eligible_attr = self.annotations.data.get(BUNDLE_PATTERN_ELIGIBLE_KEY)
+        if tokens_attr is None and eligible_attr is None:
+            return
+        if tokens_attr is None or eligible_attr is None:
+            raise VerifyException(
+                "bundle annotations must include pattern_tokens and pattern_eligible"
+            )
+        if not isinstance(tokens_attr, ArrayAttr) or not isinstance(
+            eligible_attr, ArrayAttr
+        ):
+            raise VerifyException(
+                "bundle pattern metadata must use ArrayAttr values in annotations"
+            )
+        member_count = len(self.members.data)
+        if len(tokens_attr.data) != member_count or len(eligible_attr.data) != member_count:
+            raise VerifyException(
+                "bundle pattern metadata length must match bundle members"
+            )
+        pattern_type = self.pattern_type.data
+        for token in tokens_attr.data:
+            if pattern_type == "numeric":
+                if not _is_numeric_token(token):
+                    raise VerifyException(
+                        "numeric bundle pattern_tokens must be integer or numeric strings"
+                    )
+            else:
+                if not isinstance(token, StringAttr):
+                    raise VerifyException(
+                        "literal bundle pattern_tokens must be string attributes"
+                    )
+        for value in eligible_attr.data:
+            if not isinstance(value, IntegerAttr) or value.type.width.data != 1:
+                raise VerifyException(
+                    "bundle pattern_eligible entries must be boolean attributes"
+                )
 
 
 @irdl_op_definition
@@ -226,4 +378,9 @@ class PatternExprOp(IRDLOperation):
                 raise VerifyException("pattern_expr owner must be a graph_id")
 
 
-__all__ = ["BundleOp", "PatternExprOp"]
+__all__ = [
+    "BUNDLE_PATTERN_ELIGIBLE_KEY",
+    "BUNDLE_PATTERN_TOKENS_KEY",
+    "BundleOp",
+    "PatternExprOp",
+]

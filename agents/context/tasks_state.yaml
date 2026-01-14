@@ -16,9 +16,9 @@ T-115:
   pr: 122
   merged: true
 T-111:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 124
+  merged: true
 T-110:
   status: ready
   pr: null
