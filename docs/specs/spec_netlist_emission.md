@@ -1,7 +1,8 @@
-# Spec - Netlist Emission v0 (MVP)
+# Spec - Netlist Emission v0
 
 ## Purpose
-Define MVP emission rules from ASDL_IFIR into backend-selected netlists.
+Define v0 emission rules from ASDL_IFIR into backend-selected netlists. IFIR is
+projected from GraphIR and already reflects canonical connectivity.
 
 ---
 
@@ -11,8 +12,8 @@ Define MVP emission rules from ASDL_IFIR into backend-selected netlists.
 - Subckt parameters are not supported.
 - Device parameters are merged and rendered as `k=v` tokens.
 - Output extension is determined by backend config (`extension`).
-- Input IFIR is already literalized; emission performs no pattern expansion
-  or name rewriting.
+- Input IFIR is projected from GraphIR after pattern expansion; emission
+  performs no pattern expansion or name rewriting.
 
 ---
 

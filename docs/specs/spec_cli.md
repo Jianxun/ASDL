@@ -1,19 +1,19 @@
-# Spec - MVP CLI (asdlc netlist) v0
+# Spec - CLI (asdlc netlist) v0
 
 ## Purpose
-Define the MVP CLI surface for generating backend netlists from ASDL using the
+Define the CLI surface for generating backend netlists from ASDL using the
 xDSL pipeline. This spec is focused on the `asdlc netlist` command only.
 
 ---
 
-## MVP scope
+## Scope (v0)
 - One command: `asdlc netlist`.
 - Input: an entry ASDL file; import resolution may load dependent files.
-- Pipeline: uses `src/asdl/ir/pipeline.py` entrypoint and xDSL PassManager.
+- Pipeline: uses `compile_to_graphir` in `src/asdl/ir/pipeline.py`.
 - Output: backend netlist text written to a file using the backend extension.
 - Diagnostics emitted via the shared diagnostic contract.
 
-Non-goals (MVP):
+Non-goals (v0):
 - Additional subcommands (`elaborate`, `validate`, `visualize`).
 - Multi-file batch processing.
 
@@ -43,13 +43,16 @@ asdlc netlist <file.asdl> [-o <out.ext>] [--verify|--no-verify] [--backend <name
 
 ## Execution flow
 1. Resolve the import graph for the entry file (parses files and builds ProgramDB/NameEnv).
-2. Run MVP pipeline via `src/asdl/ir/pipeline.py` on the entry document:
+2. Run the pipeline via `compile_to_graphir`:
    - AST -> NFIR conversion.
-   - NFIR -> IFIR pass manager (verify gates based on `--verify`).
-3. Emit backend netlist using `emit_netlist`.
-4. Write output file when no error diagnostics are present.
+   - NFIR -> GraphIR pass manager (verify gates based on `--verify`).
+3. Project GraphIR -> IFIR for emission.
+4. Emit backend netlist using `emit_netlist`.
+5. Write output file when no error diagnostics are present.
 
-## Import resolution (when enabled)
+---
+
+## Import resolution
 - Logical import paths are resolved by searching:
   1) CLI `--lib` roots (in CLI order)
   2) `ASDL_LIB_PATH` roots (PATH-style list, in order)

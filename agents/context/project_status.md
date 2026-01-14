@@ -4,7 +4,7 @@ Brief context record for the Architect; reconcile from task status and reviews.
 
 ## Current state
 - MVP specs live under `docs/specs_mvp/` for AST, NFIR, IFIR, and ngspice emission; full specs remain under `docs/specs/` pending reconciliation.
-- MVP pipeline is AST -> NFIR -> IFIR -> emit; NLIR and CIR are merged into IFIR.
+- MVP pipeline is AST -> NFIR -> GraphIR -> IFIR -> emit; GraphIR is the canonical semantic core and NLIR/CIR are merged into IFIR.
 - Clean slate for IR implementation; prior CIR/NLIR tasks archived.
 - OKR tracking is deprecated; planning is spec-driven.
 - Import system clarified: `file_id` propagation, PATH-style `ASDL_LIB_PATH`, diagnostics codes, and subckt auto-disambiguation via hash.
@@ -42,7 +42,7 @@ Brief context record for the Architect; reconcile from task status and reviews.
 
 ## Next steps (1-3)
 1. Wire import resolution into CLI/pipeline (resolve graph, pass NameEnv/ProgramDB, honor `ASDL_LIB_PATH` and CLI roots).
-2. Complete pattern-aware NFIR/IFIR metadata + verification (expansion lengths, equivalence checks) and align boolean param normalization.
+2. Complete pattern-aware NFIR/GraphIR/IFIR metadata + verification (expansion lengths, equivalence checks) and align boolean param normalization.
 3. Finish netlist placeholders and subckt name disambiguation (`{file_id}`, `{sym_name}`, `{top_sym_name}`) per specs.
 
 ## Risks / unknowns

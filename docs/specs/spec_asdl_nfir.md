@@ -1,8 +1,8 @@
-# Spec C — ASDL_NFIR (Net-First IR) v0 (Pattern-Preserving)
+# Spec — ASDL_NFIR (Net-First IR) v0 (Pattern-Preserving)
 
 ## Purpose
-ASDL_NFIR captures explicit net-first topology derived from the Tier-1 authoring
-AST. It preserves pattern tokens and is the staging IR for IFIR lowering.
+ASDL_NFIR captures explicit net-first topology derived from the authoring
+AST. It preserves pattern tokens and is the staging IR for GraphIR construction.
 
 ---
 
@@ -137,7 +137,7 @@ AST. It preserves pattern tokens and is the staging IR for IFIR lowering.
 ---
 
 ## Required verification pass (NFIR)
-Must run and succeed before lowering to IFIR.
+Must run and succeed before GraphIR construction.
 - Enforce literal name regex (`[A-Za-z_][A-Za-z0-9_]*`).
 - Patterns are allowed only in instance names, net names, and endpoint tokens
   (instance name and pin name); forbidden in model names.

@@ -1,7 +1,7 @@
 # Contract
 
 ## Project overview
-ASDL (Analog Structured Description Language) is a Python framework for analog circuit design: parse YAML ASDL, elaborate/validate, and emit SPICE/netlist artifacts. The MVP refactor uses a Pydantic AST with ruamel-based parsing and xDSL dialects for NFIR/IFIR; ngspice emission is the initial backend. The MVP pipeline (AST -> NFIR -> IFIR -> emit) supersedes older main spec staging and will be reconciled in `docs/specs/`.
+ASDL (Analog Structured Description Language) is a Python framework for analog circuit design: parse YAML ASDL, elaborate/validate, and emit SPICE/netlist artifacts. The MVP refactor uses a Pydantic AST with ruamel-based parsing and xDSL dialects for GraphIR/IFIR (NFIR is an optional authoring/roundtrip projection); ngspice emission is the initial backend. The MVP pipeline (AST -> GraphIR -> IFIR -> emit) supersedes older main spec staging and is reconciled in `docs/specs/`.
 
 ## System boundaries / components
 - Active refactor surface under `src/asdl/ast/` and `src/asdl/ir/`; other pipeline modules are archived under `legacy/src/asdl/`.
@@ -30,6 +30,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 
 ## Invariants
 - xDSL is the single source of semantic truth; pydantic is a shape/type gate only.
+- GraphIR is the canonical semantic core; IFIR is the emission projection; NFIR is optional and not in the critical path.
 - Preserve declared port/pin ordering end-to-end (AST -> NFIR -> IFIR -> emit); deterministic outputs.
 - Lowering must not crash on bad designs; verifiers/passes emit diagnostics instead.
 - No user-facing errors via raw exceptions; emit diagnostics through the shared diagnostic core.
@@ -56,7 +57,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 
 ## Verification protocol
 - Manual check: `agents/context` contains lessons.md, contract.md, tasks.yaml, tasks_state.yaml, tasks_icebox.yaml, tasks_archived.yaml, project_status.md, codebase_map.md.
-- Spot-check that contract reflects current architecture (AST -> NFIR -> IFIR -> emit, ordering-as-lists rule) and that codebase_map lists active subsystems.
+- Spot-check that contract reflects current architecture (AST -> NFIR -> GraphIR -> IFIR -> emit, ordering-as-lists rule) and that codebase_map lists active subsystems.
 
 ## Decision log
 - 2026-01-01: Net-first authoring schema infers ports only from `$`-prefixed net keys in `nets:`; inline pin bindings never create ports. Port order follows YAML source order of `$` nets. LHS `*` is invalid without an explicit domain (`<...>` or `[...]`). (Superseded 2026-01-11)
@@ -79,7 +80,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-01-04: ADR-0006 -- System devices for backend structural templates. System devices (prefixed `__`) define backend-specific structural elements in external `backends.yaml`. Required system devices: `__subckt_header__`, `__subckt_footer__`, `__subckt_call__`, `__netlist_header__`, `__netlist_footer__`. Top module emits no wrapper unless `top_as_subckt` uses `__subckt_header__`/`__subckt_footer__`. Backend config location via `ASDL_BACKEND_CONFIG` env var; defaults to `config/backends.yaml`. Missing required system devices = fatal error.
 - 2026-01-02: ADR-0005 -- Pattern expansion uses `|` for alternatives and `;` for splicing; no whitespace around delimiters; left-to-right concatenation. Endpoint lists become YAML lists only once the delimiter change lands.
 - 2026-01-05: Netlist emission is backend-selected via CLI `--backend` (default `sim.ngspice`); `config/backends.yaml` includes output `extension` per backend; `emit_ngspice` is removed in favor of a unified netlist emitter.
-- 2026-01-06: The canonical pipeline is AST -> NFIR -> IFIR -> emit; prior CIR/NLIR staging is superseded and will be reconciled in `docs/specs/`. NLIR and CIR are merged into IFIR.
+- 2026-01-06: The canonical pipeline is AST -> NFIR -> IFIR -> emit; prior CIR/NLIR staging is superseded and will be reconciled in `docs/specs/`. NLIR and CIR are merged into IFIR. (Superseded 2026-01-15)
+- 2026-01-15: The canonical pipeline is AST -> GraphIR -> IFIR -> emit; NFIR is an optional authoring/roundtrip projection and is removed from the critical path. Rationale: keep GraphIR as the single semantic source of truth and prevent duplicated verification logic. Migration: move AST lowering directly into GraphIR builders, rebase IFIR lowering on GraphIR, and treat NFIR (if retained) as a derived view. Versioning: MVP-breaking change; no backward compatibility required.
 - 2026-01-06: Pattern expressions are preserved through AST/NFIR/IFIR; a dedicated elaboration pass expands patterns before backend emission.
 - 2026-01-06: Pattern splicing (`;`) is pure list concatenation; binding compares total expansion length only (no segment alignment). Canonical expansion uses `_` between basename and suffixes. (Superseded 2026-01-12, ADR-0009)
 - 2026-01-06: Pattern bindings compare the fully expanded string tokens (e.g., `MN<A,B>` binds to `MN_A` and `MN_B`).
