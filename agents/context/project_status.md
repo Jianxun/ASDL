@@ -4,13 +4,13 @@ Brief context record for the Architect; reconcile from task status and reviews.
 
 ## Current state
 - MVP specs live under `docs/specs_mvp/` for AST, NFIR, IFIR, and ngspice emission; full specs remain under `docs/specs/` pending reconciliation.
-- MVP pipeline is AST -> NFIR -> GraphIR -> IFIR -> emit; GraphIR is the canonical semantic core and NLIR/CIR are merged into IFIR.
+- MVP pipeline is AST -> GraphIR -> IFIR -> emit; GraphIR is the canonical semantic core, and NFIR is optional for AST projection only.
 - Clean slate for IR implementation; prior CIR/NLIR tasks archived.
 - OKR tracking is deprecated; planning is spec-driven.
 - Import system clarified: `file_id` propagation, PATH-style `ASDL_LIB_PATH`, diagnostics codes, and subckt auto-disambiguation via hash.
 - AST models + parser updated to MVP net-first schema; parser/AST tests refreshed.
-- ASDL_NFIR dialect + AST->NFIR conversion implemented with unit tests.
-- ASDL_IFIR dialect + NFIR->IFIR conversion implemented with unit tests.
+- ASDL_NFIR dialect + AST->NFIR conversion implemented with unit tests (deprecated path).
+- ASDL_IFIR dialect + NFIR->IFIR conversion implemented with unit tests (deprecated path; GraphIR -> IFIR is canonical).
 - ngspice emitter from IFIR implemented with MVP netlist tests.
 - MVP pipeline orchestrator implemented with xDSL pass pipeline and an end-to-end pipeline test.
 - T-036 CLI netlist command merged under `src/asdl/cli/` with tests passing locally (PR #31).

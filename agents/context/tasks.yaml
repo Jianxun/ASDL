@@ -1,6 +1,28 @@
 schema_version: 2
 
 current_sprint:
+  - id: T-125
+    title: Deprecate NFIR forward converters
+    owner: Executor
+    dod: >
+      Hard-deprecate AST->NFIR and NFIR->IFIR converters by removing them from
+      public exports, relocating the modules under `legacy/` (or deleting them
+      if no longer needed), and updating any call sites to use AST->GraphIR and
+      GraphIR->IFIR instead. Update/trim tests to match the new export surface,
+      and document NFIR as projection-only.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir -v
+    files:
+      - src/asdl/ir/converters/ast_to_nfir.py
+      - src/asdl/ir/converters/nfir_to_ifir.py
+      - src/asdl/ir/converters/__init__.py
+      - src/asdl/ir/__init__.py
+      - legacy/src/asdl/ir/converters/ast_to_nfir.py
+      - legacy/src/asdl/ir/converters/nfir_to_ifir.py
+      - tests/unit_tests/ir
+      - docs/specs/spec_asdl_nfir.md
+    links:
+      scratchpad: agents/scratchpads/T-125_deprecate_nfir_converters.md
   - id: T-120
     title: Pattern subsystem package split
     owner: Executor
@@ -23,35 +45,70 @@ current_sprint:
   - id: T-121
     title: Centralize pattern binding verification helpers
     owner: Executor
+    depends_on:
+      - T-126
     dod: >
-      Introduce shared helpers for pattern binding/length/collision checks and
-      reuse them in NFIR verification and NFIR->IFIR conversion. Keep existing
-      diagnostics codes and VerifyException text stable; behavior remains
-      unchanged.
+      Add `src/asdl/patterns/verify.py` to host pure pattern-binding helpers,
+      including explicit utilities for (1) expansion length mismatches and
+      (2) literal collision detection after expansion/atomization. Wire these
+      helpers into the GraphIR/IFIR path (GraphIR->IFIR conversion and
+      pattern atomization), avoid IR type dependencies in the helpers, and
+      preserve diagnostics codes + VerifyException message text. Behavior
+      remains unchanged.
     verify:
-      - venv/bin/pytest tests/unit_tests/ir/test_ifir_converter.py tests/unit_tests/ir/test_pattern_atomization.py -v
+      - venv/bin/pytest tests/unit_tests/ir/test_graphir_patterns.py tests/unit_tests/ir/test_pattern_atomization.py -v
     files:
-      - src/asdl/ir/nfir/dialect.py
-      - src/asdl/ir/converters/nfir_to_ifir.py
+      - src/asdl/ir/converters/graphir_to_ifir.py
       - src/asdl/patterns/verify.py
+      - src/asdl/patterns/__init__.py
+      - src/asdl/ir/patterns/atomization.py
       - tests/unit_tests/ir/test_pattern_atomization.py
     links:
       scratchpad: agents/scratchpads/T-121_pattern_verification_helpers.md
   - id: T-122
-    title: Consolidate GraphIR rebundling utilities
+    title: Relocate GraphIR rebundling helpers to AST projection
     owner: Executor
+    depends_on:
+      - T-126
     dod: >
-      Keep GraphIR rebundling helpers in `src/asdl/ir/graphir/patterns.py` only
-      and remove wrapper exports from pattern passes. Update call sites and
-      ensure tests continue to exercise rebundling behavior.
+      Move `rebundle_bundle`/`rebundle_pattern_expr` out of
+      `src/asdl/ir/graphir/patterns.py` into the GraphIR->AST projection path
+      (converter or pass) so rebundling is treated as projection logic, not
+      GraphIR core. Remove wrapper exports from pattern passes, keep any
+      GraphIR-side metadata decode helpers as needed, and update call sites/tests
+      without changing behavior.
     verify:
       - venv/bin/pytest tests/unit_tests/ir/test_pattern_atomization.py -v
     files:
       - src/asdl/ir/graphir/patterns.py
-      - src/asdl/ir/pattern_atomization.py
-      - src/asdl/ir/pattern_elaboration.py
+      - src/asdl/ir/converters/graphir_to_ast.py
+      - src/asdl/ir/patterns/atomization.py
+      - src/asdl/ir/patterns/elaboration.py
     links:
       scratchpad: agents/scratchpads/T-122_graphir_rebundling_cleanup.md
+  - id: T-126
+    title: Relocate IR pattern passes under ir/patterns
+    owner: Executor
+    dod: >
+      Move `src/asdl/ir/pattern_atomization.py` and
+      `src/asdl/ir/pattern_elaboration.py` into a new
+      `src/asdl/ir/patterns/` package (e.g., `atomization.py`,
+      `elaboration.py`), update imports in the pipeline/tests, and add a
+      minimal package `__init__.py` export. Keep behavior and diagnostics
+      unchanged.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_pattern_atomization.py -v
+    files:
+      - src/asdl/ir/pattern_atomization.py
+      - src/asdl/ir/pattern_elaboration.py
+      - src/asdl/ir/patterns/__init__.py
+      - src/asdl/ir/patterns/atomization.py
+      - src/asdl/ir/patterns/elaboration.py
+      - src/asdl/ir/pipeline.py
+      - tests/unit_tests/ir/test_pattern_atomization.py
+      - agents/context/codebase_map.md
+    links:
+      scratchpad: agents/scratchpads/T-126_ir_pattern_passes.md
   - id: T-123
     title: Pattern tests and docs cleanup
     owner: Executor
@@ -74,12 +131,15 @@ current_sprint:
     owner: Executor
     dod: >
       Add a GraphIR -> AST normalized serializer that emits explicit nets and
-      instances without authoring sugar. Include roundtrip tests that parse,
-      lower to GraphIR, and re-emit AST with deterministic ordering.
+      instances without authoring sugar. Rebundle patterned names/expressions
+      into AST tokens during projection (using GraphIR bundle metadata) so the
+      emitted AST preserves authoring patterns. Include roundtrip tests that
+      parse, lower to GraphIR, and re-emit AST with deterministic ordering.
     verify:
       - venv/bin/pytest tests/unit_tests/ast -v
     files:
       - src/asdl/ir/converters/graphir_to_ast.py
+      - src/asdl/ir/graphir/patterns.py
       - src/asdl/ast/models.py
       - src/asdl/ast/parser.py
       - tests/unit_tests/ast/test_graphir_roundtrip.py

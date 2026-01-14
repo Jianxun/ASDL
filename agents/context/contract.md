@@ -26,11 +26,11 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Backend config schema (`config/backends.yaml` or `ASDL_BACKEND_CONFIG`) must include per-backend `templates`, `extension` (verbatim output suffix), and `comment_prefix`.
 - Net-first authoring uses YAML map order for `nets:` when order matters; port order derives from `$`-prefixed net keys in `nets` first, then `$`-prefixed nets first-seen in `instance_defaults` bindings (deterministic order). The parser must preserve source order. Internal IR uses explicit lists; uniqueness is enforced by verification passes, not by dict key uniqueness.
 - Diagnostic schema is centralized (code, severity, message, primary span, labels, notes, help, fix-its, source); locations use file + line/col spans; all pipeline stages emit diagnostics via this contract.
-- AST->NFIR converter returns `(DesignOp | None, diagnostics)`; invalid instance or endpoint tokens emit `IR-001`/`IR-002` with `Severity.ERROR` and return `None`.
+- Deprecated: AST->NFIR converter returns `(DesignOp | None, diagnostics)`; invalid instance or endpoint tokens emit `IR-001`/`IR-002` with `Severity.ERROR` and return `None`. Retained for legacy/roundtrip use only.
 
 ## Invariants
 - xDSL is the single source of semantic truth; pydantic is a shape/type gate only.
-- GraphIR is the canonical semantic core; IFIR is the emission projection; NFIR is optional and not in the critical path.
+- GraphIR is the canonical semantic core; IFIR is the emission projection; NFIR is optional and used only for AST projection; AST->NFIR and NFIR->IFIR converters are deprecated.
 - Preserve declared port/pin ordering end-to-end (AST -> NFIR -> IFIR -> emit); deterministic outputs.
 - Lowering must not crash on bad designs; verifiers/passes emit diagnostics instead.
 - No user-facing errors via raw exceptions; emit diagnostics through the shared diagnostic core.
@@ -57,7 +57,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 
 ## Verification protocol
 - Manual check: `agents/context` contains lessons.md, contract.md, tasks.yaml, tasks_state.yaml, tasks_icebox.yaml, tasks_archived.yaml, project_status.md, codebase_map.md.
-- Spot-check that contract reflects current architecture (AST -> NFIR -> GraphIR -> IFIR -> emit, ordering-as-lists rule) and that codebase_map lists active subsystems.
+- Spot-check that contract reflects current architecture (AST -> GraphIR -> IFIR -> emit; NFIR optional for AST projection; ordering-as-lists rule) and that codebase_map lists active subsystems.
 
 ## Decision log
 ### Active ADRs

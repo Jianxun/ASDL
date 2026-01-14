@@ -27,6 +27,7 @@
 - `src/asdl/ir/graphir/ops_module.py`: GraphIR module/device ops and port order helpers.
 - `src/asdl/ir/graphir/ops_graph.py`: GraphIR net/instance/endpoint ops.
 - `src/asdl/ir/graphir/dialect.py`: dialect registry and exports.
+- `src/asdl/ir/converters/graphir_to_ast.py`: GraphIR -> AST normalized projection (rebundling lives in projection).
 
 ## Quick Reference: Emission Subsystem
 - `src/asdl/emit/netlist/`: netlist emitter package (API, verification, rendering, templates, params, IR helpers, diagnostics)
