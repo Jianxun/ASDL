@@ -190,7 +190,9 @@ def _write_import_library(path: Path) -> None:
 def test_pipeline_end_to_end_deterministic_top_handling(
     backend_config: Path,
 ) -> None:
-    document, diagnostics = parse_string(_pipeline_yaml())
+    document, diagnostics = parse_string(
+        _pipeline_yaml(), file_path=Path("entry.asdl")
+    )
 
     assert diagnostics == []
     assert document is not None
@@ -198,6 +200,8 @@ def test_pipeline_end_to_end_deterministic_top_handling(
     design, pipeline_diags = run_mvp_pipeline(document)
     assert pipeline_diags == []
     assert design is not None
+    assert design.entry_file_id is not None
+    assert design.entry_file_id.data == "entry.asdl"
 
     netlist, emit_diags = emit_netlist(design)
     assert emit_diags == []
