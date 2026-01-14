@@ -35,6 +35,21 @@ class GraphSymbolRefAttr(ParametrizedAttribute):
     sym_id: GraphIdAttr = param_def()
 
 
+@irdl_attr_definition
+class GraphParamRefAttr(ParametrizedAttribute):
+    """Reference to an instance parameter for pattern ownership.
+
+    Attributes:
+        inst_id: Stable instance identifier.
+        param_name: Parameter name.
+    """
+
+    name = "graphir.param_ref"
+
+    inst_id: GraphIdAttr = param_def()
+    param_name: StringAttr = param_def()
+
+
 def _coerce_graph_id(value: GraphIdAttr | StringAttr | str | int) -> GraphIdAttr:
     """Coerce a Python value into a GraphIdAttr.
 
@@ -78,3 +93,28 @@ def _coerce_graph_symbol_ref(
         sym_id = _coerce_graph_id(sym_id)
         return GraphSymbolRefAttr(kind, sym_id)
     raise TypeError(f"Unsupported symbol ref: {value!r}")
+
+
+def _coerce_graph_param_ref(
+    value: GraphParamRefAttr
+    | tuple[GraphIdAttr | StringAttr | str | int, StringAttr | str],
+) -> GraphParamRefAttr:
+    """Coerce a Python value into a GraphParamRefAttr.
+
+    Args:
+        value: GraphParamRefAttr or (inst_id, param_name) tuple.
+
+    Returns:
+        A GraphParamRefAttr instance.
+    """
+    if isinstance(value, GraphParamRefAttr):
+        return value
+    if isinstance(value, tuple) and len(value) == 2:
+        inst_id, param_name = value
+        inst_id = _coerce_graph_id(inst_id)
+        if isinstance(param_name, str):
+            param_name = StringAttr(param_name)
+        if not isinstance(param_name, StringAttr):
+            raise TypeError(f"Unsupported param name: {param_name!r}")
+        return GraphParamRefAttr(inst_id, param_name)
+    raise TypeError(f"Unsupported param ref: {value!r}")
