@@ -172,6 +172,21 @@ current_sprint:
     links:
       scratchpad: agents/scratchpads/T-112_graphir_to_ast_normalized.md
       spec: docs/specs/spec_asdl_graphir.md
+  - id: T-119
+    title: Named pattern substitution in GraphIR path
+    owner: Architect
+    dod: >
+      Decide where named pattern substitution belongs in the GraphIR pipeline
+      (AST parse, AST->GraphIR conversion, or a dedicated pass), record the
+      decision in contract/ADR if needed, and note migration implications.
+    verify:
+      - rg -n "Named pattern substitution" agents/context/contract.md agents/adr
+    files:
+      - agents/context/contract.md
+      - agents/adr/ADR-0015-named-pattern-substitution.md
+      - agents/scratchpads/T-119_named_pattern_substitution.md
+    links:
+      scratchpad: agents/scratchpads/T-119_named_pattern_substitution.md
 backlog: []
 
 exploration_candidates:
