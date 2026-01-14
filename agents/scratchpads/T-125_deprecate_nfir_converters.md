@@ -16,23 +16,34 @@
 - Verify and record results.
 
 # Todo
-- [ ] Review current NFIR converter exports/usages and decide deletions vs legacy moves.
-- [ ] Update tests/imports to use AST->GraphIR + GraphIR->IFIR only.
-- [ ] Remove NFIR converters from public exports.
-- [ ] Relocate NFIR converter modules under legacy/ (or delete).
-- [ ] Document NFIR as projection-only in spec.
+- [x] Review current NFIR converter exports/usages and decide deletions vs legacy moves.
+- [x] Update tests/imports to use AST->GraphIR + GraphIR->IFIR only.
+- [x] Remove NFIR converters from public exports.
+- [x] Relocate NFIR converter modules under legacy/ (or delete).
+- [x] Document NFIR as projection-only in spec.
 
 # Progress log
 - 2026-01-14: Understanding: remove AST->NFIR and NFIR->IFIR from public exports, move converter modules to legacy (or delete), update tests/call sites to GraphIR path, and document NFIR as projection-only.
+- 2026-01-14: Trimmed NFIR converter tests and exports; moved converters under legacy.
+- 2026-01-14: Updated NFIR spec to call out projection-only status.
+- 2026-01-14: Ran IR unit tests and opened PR #130.
 
 # Patch summary
+- Removed NFIR converter tests and retained GraphIR->IFIR coverage.
+- Re-exported GraphIR converters from `src/asdl/ir` and `src/asdl/ir/converters`.
+- Relocated deprecated NFIR converters under `legacy/src/asdl/ir/converters`.
+- Updated NFIR spec to mark it as projection-only.
 
 # PR URL
+- https://github.com/Jianxun/ASDL/pull/130
 
 # Verification
+- `venv/bin/pytest tests/unit_tests/ir -v`
 
 # Status request (Done / Blocked / In Progress)
+- Ready for Review
 
 # Blockers / Questions
 
 # Next steps
+- Await review feedback.
