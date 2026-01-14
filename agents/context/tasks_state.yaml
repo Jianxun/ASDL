@@ -20,9 +20,9 @@ T-111:
   pr: 124
   merged: true
 T-110:
-  status: ready_for_review
+  status: done
   pr: 125
-  merged: false
+  merged: true
 T-117:
   status: ready
   pr: null
