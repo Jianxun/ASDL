@@ -27,13 +27,13 @@
 - Add rebundling tests for order, gaps, eligibility splits, and missing metadata.
 
 ## PR URL
-- 
+- https://github.com/Jianxun/ASDL/pull/124
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir/test_pattern_atomization.py -v`
 
 ## Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 ## Blockers / Questions
 - 
