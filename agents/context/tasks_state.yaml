@@ -8,8 +8,8 @@ T-125:
   pr: 130
   merged: true
 T-126:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 131
   merged: false
 T-121:
   status: ready

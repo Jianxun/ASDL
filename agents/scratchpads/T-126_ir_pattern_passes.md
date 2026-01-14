@@ -24,13 +24,13 @@
 - Documented the new pattern pass package location in the codebase map.
 
 # PR URL
-- (pending)
+- https://github.com/Jianxun/ASDL/pull/131
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/ir/test_pattern_atomization.py -v`
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None.
