@@ -27,17 +27,22 @@
 - 2026-01-14: Trimmed NFIR converter tests and exports; moved converters under legacy.
 - 2026-01-14: Updated NFIR spec to call out projection-only status.
 - 2026-01-14: Ran IR unit tests and opened PR #130.
+- 2026-01-14: Updated pipeline spec to reflect AST->GraphIR flow and added GraphIR converter error coverage.
+- 2026-01-14: Re-ran IR unit tests after review fixes.
 
 # Patch summary
 - Removed NFIR converter tests and retained GraphIR->IFIR coverage.
 - Re-exported GraphIR converters from `src/asdl/ir` and `src/asdl/ir/converters`.
 - Relocated deprecated NFIR converters under `legacy/src/asdl/ir/converters`.
 - Updated NFIR spec to mark it as projection-only.
+- Updated pipeline spec to remove NFIR stages and document GraphIR->IFIR projection.
+- Added GraphIR conversion tests for invalid instance/endpoint expressions.
 
 # PR URL
 - https://github.com/Jianxun/ASDL/pull/130
 
 # Verification
+- `venv/bin/pytest tests/unit_tests/ir -v`
 - `venv/bin/pytest tests/unit_tests/ir -v`
 
 # Status request (Done / Blocked / In Progress)
