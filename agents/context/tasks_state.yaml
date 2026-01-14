@@ -16,9 +16,9 @@ T-121:
   pr: 132
   merged: true
 T-122:
-  status: ready_for_review
+  status: done
   pr: 133
-  merged: false
+  merged: true
 T-112:
   status: ready
   pr: null
