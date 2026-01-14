@@ -60,6 +60,22 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Spot-check that contract reflects current architecture (AST -> NFIR -> GraphIR -> IFIR -> emit, ordering-as-lists rule) and that codebase_map lists active subsystems.
 
 ## Decision log
+### Active ADRs
+- ADR-0002 (Proposed): Pattern expansion/binding uses flat ordered lists, named-only binding, and scalar broadcast rules.
+- ADR-0003 (Proposed): SelectView pass validates all views and selects one per module.
+- ADR-0004: Single `asdl_nlir` dialect with explicit `elab_state` attribute.
+- ADR-0005: Pattern delimiters `|` and `;`; endpoint lists are YAML lists only.
+- ADR-0006: Backend structural templates are system devices in backend config.
+- ADR-0007: `instance_defaults` replace inline pin bindings; defaults can introduce `$` ports.
+- ADR-0008: Module-local named patterns via `<@name>` macro substitution.
+- ADR-0009: Pattern expansion uses literal concatenation; no implicit joiner.
+- ADR-0010: Patterned instance params expand after instance expansion with broadcast/zip rules.
+- ADR-0011: Pattern atomization before IFIR verification; literal collisions are errors.
+- ADR-0012: NFIR endpoint resolution uses atomized literal equivalence.
+- ADR-0013: NFIR->IFIR conversion atomizes endpoints per instance; atomization pass is idempotent.
+- ADR-0014: GraphIR is the canonical semantic core with stable IDs and structured graph ops.
+
+- 2026-01-16: ADR-0014 -- GraphIR is the canonical semantic core with stable IDs; GraphIR defines program/module/device/net/instance/endpoint ops and module port_order; IFIR is a projection and NFIR is optional.
 - 2026-01-01: Net-first authoring schema infers ports only from `$`-prefixed net keys in `nets:`; inline pin bindings never create ports. Port order follows YAML source order of `$` nets. LHS `*` is invalid without an explicit domain (`<...>` or `[...]`). (Superseded 2026-01-11)
 - 2026-01-11: Inline pin bindings may introduce `$`-prefixed nets, which create ports if not already declared in `nets:`. Port order is `$` nets from `nets` first, then `$` nets first-seen in inline bindings. Rationale: avoid declaring ports solely for hierarchy wiring. Migration: remove `$` prefix in inline bindings to keep nets internal; or keep ports explicit in `nets` to control order. (Superseded 2026-01-12, ADR-0007)
 - 2026-01-12: ADR-0007 -- Inline pin bindings are removed in favor of `instance_defaults`. Defaults apply per instance `ref`; explicit `nets` bindings override defaults and emit warnings unless suppressed by `!inst.pin`. `$` nets introduced by defaults create ports after explicit `$` nets.

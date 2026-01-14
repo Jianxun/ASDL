@@ -21,6 +21,13 @@
 ## Quick Reference: Imports Subsystem
 - `src/asdl/imports/`: import resolution package (resolver, program DB, name env, diagnostics).
 
+## Quick Reference: GraphIR
+- `src/asdl/ir/graphir/attrs.py`: GraphIR attrs and coercion helpers.
+- `src/asdl/ir/graphir/ops_program.py`: GraphIR program op.
+- `src/asdl/ir/graphir/ops_module.py`: GraphIR module/device ops and port order helpers.
+- `src/asdl/ir/graphir/ops_graph.py`: GraphIR net/instance/endpoint ops.
+- `src/asdl/ir/graphir/dialect.py`: dialect registry and exports.
+
 ## Quick Reference: Emission Subsystem
 - `src/asdl/emit/netlist/`: netlist emitter package (API, verification, rendering, templates, params, IR helpers, diagnostics)
 - `src/asdl/emit/backend_config.py`: backend config loader and system device validation (created in T-047)
