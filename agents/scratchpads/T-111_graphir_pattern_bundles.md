@@ -12,19 +12,25 @@
 - agents/context/project_status.md
 
 ## Plan
-- 
+- Review GraphIR pattern spec + existing bundle ops to align metadata needs.
+- Add bundle metadata wiring and rebundling helpers for ordered projections.
+- Add rebundling unit coverage for bundle ordering + eligibility splits.
 
 ## Progress log
-- 
+- Read GraphIR pattern spec and current GraphIR ops/converters.
+- Added bundle metadata support + rebundling helpers and wrappers.
+- Added rebundling tests and ran the target pytest command.
 
 ## Patch summary
-- 
+- Add bundle metadata keys/validation in `BundleOp` and rebundling utilities.
+- Introduce GraphIR rebundling helpers and wrapper APIs in atomization/elaboration.
+- Add rebundling tests for order, gaps, eligibility splits, and missing metadata.
 
 ## PR URL
 - 
 
 ## Verification
-- 
+- `venv/bin/pytest tests/unit_tests/ir/test_pattern_atomization.py -v`
 
 ## Status request (Done / Blocked / In Progress)
 - In Progress
