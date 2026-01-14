@@ -18,7 +18,7 @@ from asdl.ir.converters.ast_to_graphir import convert_document, convert_import_g
 from asdl.ir.converters.graphir_to_ifir import convert_program as convert_graphir_to_ifir
 from asdl.ir.graphir import ASDL_GRAPHIR, ProgramOp as GraphProgramOp
 from asdl.ir.ifir import ASDL_IFIR, DesignOp as IfirDesignOp
-from asdl.ir.pattern_atomization import PatternAtomizePass, PatternAtomizeState
+from asdl.ir.patterns.atomization import PatternAtomizePass, PatternAtomizeState
 
 NO_SPAN_NOTE = "No source span available."
 
