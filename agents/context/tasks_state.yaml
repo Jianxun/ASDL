@@ -8,7 +8,7 @@ T-125:
   pr: 130
   merged: true
 T-126:
-  status: ready_for_review
+  status: review_clean
   pr: 131
   merged: false
 T-121:
