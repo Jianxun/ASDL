@@ -12,9 +12,9 @@ T-116:
   pr: null
   merged: false
 T-115:
-  status: review_clean
+  status: done
   pr: 122
-  merged: false
+  merged: true
 T-111:
   status: ready
   pr: null
