@@ -8,7 +8,7 @@ T-114:
   pr: 120
   merged: true
 T-116:
-  status: ready_for_review
+  status: review_in_progress
   pr: 123
   merged: false
 T-115:
