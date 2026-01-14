@@ -1,6 +1,6 @@
 schema_version: 2
 T-120:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-121:

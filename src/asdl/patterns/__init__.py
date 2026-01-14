@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Tuple
 
-from .diagnostics import Diagnostic, Severity, format_code
+from ..diagnostics import Diagnostic, Severity, format_code
 
 MAX_EXPANSION_SIZE = 10_000
 NO_SPAN_NOTE = "No source span available."
