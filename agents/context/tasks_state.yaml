@@ -8,9 +8,9 @@ T-114:
   pr: 120
   merged: true
 T-116:
-  status: review_clean
+  status: done
   pr: 123
-  merged: false
+  merged: true
 T-115:
   status: done
   pr: 122
