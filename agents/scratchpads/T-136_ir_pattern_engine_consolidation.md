@@ -20,22 +20,27 @@
 
 ## Plan
 - [x] Inspect existing pattern utilities and specs; map gaps to T-136 scope.
-- [ ] Add tests first for expansion/atomization/endpoint splitting and $ splice rejection.
-- [ ] Implement pattern expansion/tokenization/atomization utilities in
+- [x] Add tests first for expansion/atomization/endpoint splitting and $ splice rejection.
+- [x] Implement pattern expansion/tokenization/atomization utilities in
   src/asdl/ir/patterns with spec-aligned diagnostics.
-- [ ] Run targeted IR tests and update scratchpad with results.
+- [x] Run targeted IR tests and update scratchpad with results.
 
 ## Progress log
 - 2026-02-08: Task set to in_progress, branch created.
+- 2026-02-08: Added IR pattern engine tests and implementations; updated exports.
+- 2026-02-08: Ran IR unit tests.
 
 ## Patch summary
-- None yet.
+- Added IR pattern engine expansion/atomization/tokenization utilities with
+  spec-aligned diagnostics and splice rejection hooks.
+- Added IR unit tests for pattern expansion, atomization, endpoint splitting,
+  and splice rejection.
 
 ## PR URL
 - None yet.
 
 ## Verification
-- Not run yet.
+- ./venv/bin/pytest tests/unit_tests/ir -v
 
 ## Status request (Done / Blocked / In Progress)
 - In Progress.
