@@ -61,6 +61,14 @@ def decode_pattern_parts(parts: ArrayAttr) -> list[PatternPart]:
 
 
 def _normalize_part(value: PatternPartInput) -> PatternPart:
+    """Normalize a single pattern part input.
+
+    Args:
+        value: Pattern part input value.
+
+    Returns:
+        Normalized string or integer pattern part.
+    """
     if isinstance(value, bool):
         raise TypeError("pattern parts must be strings or integers, not bool")
     if isinstance(value, StringAttr):

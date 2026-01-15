@@ -170,6 +170,14 @@ def decode_pattern_expression_table(table: DictionaryAttr) -> PatternExpressionT
 
 
 def _encode_source_span(span: SourceSpan) -> DictionaryAttr:
+    """Encode a SourceSpan into a DictionaryAttr payload.
+
+    Args:
+        span: SourceSpan to encode.
+
+    Returns:
+        DictionaryAttr containing serialized span data.
+    """
     payload = {
         SPAN_FILE_KEY: StringAttr(span.file),
         SPAN_START_KEY: DictionaryAttr(
@@ -193,6 +201,14 @@ def _encode_source_span(span: SourceSpan) -> DictionaryAttr:
 
 
 def _decode_source_span(span: object) -> SourceSpan:
+    """Decode a DictionaryAttr into a SourceSpan.
+
+    Args:
+        span: DictionaryAttr payload.
+
+    Returns:
+        Decoded SourceSpan.
+    """
     if not isinstance(span, DictionaryAttr):
         raise TypeError(f"span must be DictionaryAttr, got {type(span)!r}")
     file_attr = span.data.get(SPAN_FILE_KEY)
@@ -214,6 +230,15 @@ def _decode_source_span(span: object) -> SourceSpan:
 
 
 def _decode_span_pos(attr: object, label: str) -> SourcePos:
+    """Decode a span position DictionaryAttr into a SourcePos.
+
+    Args:
+        attr: DictionaryAttr payload.
+        label: Label for diagnostics.
+
+    Returns:
+        SourcePos with line/column data.
+    """
     if not isinstance(attr, DictionaryAttr):
         raise TypeError(f"span.{label} must be a dictionary")
     line_attr = attr.data.get(SPAN_LINE_KEY)
@@ -224,6 +249,15 @@ def _decode_span_pos(attr: object, label: str) -> SourcePos:
 
 
 def _decode_optional_int(attr: object, label: str) -> Optional[int]:
+    """Decode an optional IntAttr field.
+
+    Args:
+        attr: Optional attribute payload.
+        label: Label for diagnostics.
+
+    Returns:
+        Integer value or None.
+    """
     if attr is None:
         return None
     if not isinstance(attr, IntAttr):
@@ -232,6 +266,14 @@ def _decode_optional_int(attr: object, label: str) -> Optional[int]:
 
 
 def _next_expression_id(existing: Iterable[str]) -> str:
+    """Generate the next available expression ID.
+
+    Args:
+        existing: Existing expression IDs.
+
+    Returns:
+        Next available expression ID string.
+    """
     index = 1
     existing_set = set(existing)
     while True:
