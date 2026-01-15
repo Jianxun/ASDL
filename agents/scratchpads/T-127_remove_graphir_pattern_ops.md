@@ -32,13 +32,13 @@
 - Simplified GraphIR converters to drop pattern rebundling and binding checks.
 
 ## PR URL
-- None yet.
+- https://github.com/Jianxun/ASDL/pull/135
 
 ## Verification
 - Not run (no verify commands listed).
 
 ## Status request (Done / Blocked / In Progress)
-- In Progress.
+- Ready for review.
 
 ## Blockers / Questions
 - None yet.
