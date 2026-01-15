@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from xdsl.dialects.builtin import LocationAttr, StringAttr
+from xdsl.dialects.builtin import DictionaryAttr, LocationAttr, StringAttr
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.ir.graphir import DeviceOp as GraphDeviceOp, EndpointOp
@@ -12,6 +12,8 @@ from asdl.ir.graphir import InstanceOp as GraphInstanceOp
 from asdl.ir.graphir import ModuleOp as GraphModuleOp
 from asdl.ir.graphir import NetOp as GraphNetOp
 from asdl.ir.graphir import ProgramOp
+from asdl.ir.graphir import GraphPatternOriginAttr
+from asdl.ir.graphir.ops_module import PATTERN_EXPRESSION_TABLE_KEY
 from asdl.ir.ifir import (
     BackendOp,
     ConnAttr,
@@ -21,6 +23,12 @@ from asdl.ir.ifir import (
     ModuleOp,
     NetOp,
 )
+from asdl.ir.patterns import (
+    PatternExpressionKind,
+    PatternExpressionTable,
+    decode_pattern_expression_table,
+)
+from asdl.ir.patterns.origin import lookup_pattern_origin_entry
 
 NO_SPAN_NOTE = "No source span available."
 INVALID_GRAPHIR_PROGRAM = format_code("IR", 20)
@@ -28,6 +36,7 @@ INVALID_GRAPHIR_MODULE = format_code("IR", 21)
 INVALID_GRAPHIR_DEVICE = format_code("IR", 22)
 UNKNOWN_GRAPHIR_REFERENCE = format_code("IR", 23)
 UNKNOWN_ENDPOINT_INSTANCE = format_code("IR", 24)
+INVALID_GRAPHIR_PATTERN = format_code("IR", 25)
 
 
 def convert_program(
@@ -136,6 +145,63 @@ def _convert_module(
         )
         had_error = True
 
+    pattern_table, pattern_table_error = _load_pattern_expression_table(
+        module, diagnostics
+    )
+    had_error = had_error or pattern_table_error
+    missing_table_reported = False
+
+    def resolve_pattern_expression(
+        origin: GraphPatternOriginAttr | None,
+        expected_kind: PatternExpressionKind,
+        label: str,
+    ) -> str | None:
+        nonlocal had_error, missing_table_reported
+        if origin is None:
+            return None
+        if pattern_table is None:
+            if not pattern_table_error and not missing_table_reported:
+                diagnostics.append(
+                    _diagnostic(
+                        INVALID_GRAPHIR_PATTERN,
+                        (
+                            "graphir.module missing pattern_expression_table for "
+                            f"{label} in module '{module.name_attr.data}'"
+                        ),
+                    )
+                )
+                missing_table_reported = True
+            had_error = True
+            return None
+        try:
+            entry = lookup_pattern_origin_entry(origin, pattern_table)
+        except (KeyError, TypeError) as exc:
+            diagnostics.append(
+                _diagnostic(
+                    INVALID_GRAPHIR_PATTERN,
+                    (
+                        "graphir.module has invalid pattern_origin for "
+                        f"{label} in module '{module.name_attr.data}': {exc}"
+                    ),
+                )
+            )
+            had_error = True
+            return None
+        if entry.kind != expected_kind:
+            diagnostics.append(
+                _diagnostic(
+                    INVALID_GRAPHIR_PATTERN,
+                    (
+                        f"graphir.module has pattern_origin kind mismatch for {label} "
+                        f"in module '{module.name_attr.data}': expected '{expected_kind}', "
+                        f"got '{entry.kind}'"
+                    ),
+                )
+            )
+            had_error = True
+            return None
+        return entry.expression
+
     inst_by_id: Dict[str, GraphInstanceOp] = {
         inst.inst_id.value.data: inst for inst in instances
     }
@@ -144,7 +210,12 @@ def _convert_module(
 
     for net in nets:
         net_name = net.name_attr.data
-        net_ops.append(NetOp(name=net.name_attr))
+        pattern_origin = resolve_pattern_expression(
+            net.pattern_origin,
+            "net",
+            f"net '{net_name}'",
+        )
+        net_ops.append(NetOp(name=net.name_attr, pattern_origin=pattern_origin))
         for endpoint in net.body.block.ops:
             if not isinstance(endpoint, EndpointOp):
                 diagnostics.append(
@@ -185,6 +256,11 @@ def _convert_module(
         if ref_name is None:
             continue
         conns = conn_map.get(inst_id, [])
+        pattern_origin = resolve_pattern_expression(
+            inst.pattern_origin,
+            "inst",
+            f"instance '{inst.name_attr.data}'",
+        )
         inst_ops.append(
             InstanceOp(
                 name=inst.name_attr,
@@ -192,6 +268,7 @@ def _convert_module(
                 ref_file_id=ref_file_id,
                 params=inst.props,
                 conns=conns,
+                pattern_origin=pattern_origin,
                 src=_extract_src(inst),
             )
         )
@@ -247,6 +324,43 @@ def _convert_device(
         diagnostics,
         had_error,
     )
+
+
+def _load_pattern_expression_table(
+    module: GraphModuleOp,
+    diagnostics: List[Diagnostic],
+) -> Tuple[PatternExpressionTable | None, bool]:
+    pattern_table = None
+    if module.attrs is None:
+        return pattern_table, False
+    table_attr = module.attrs.data.get(PATTERN_EXPRESSION_TABLE_KEY)
+    if table_attr is None:
+        return pattern_table, False
+    if not isinstance(table_attr, DictionaryAttr):
+        diagnostics.append(
+            _diagnostic(
+                INVALID_GRAPHIR_PATTERN,
+                (
+                    "graphir.module attrs.pattern_expression_table must be a dictionary "
+                    f"in module '{module.name_attr.data}'"
+                ),
+            )
+        )
+        return None, True
+    try:
+        pattern_table = decode_pattern_expression_table(table_attr)
+    except (TypeError, ValueError) as exc:
+        diagnostics.append(
+            _diagnostic(
+                INVALID_GRAPHIR_PATTERN,
+                (
+                    "graphir.module has invalid pattern_expression_table "
+                    f"in module '{module.name_attr.data}': {exc}"
+                ),
+            )
+        )
+        return None, True
+    return pattern_table, False
 
 
 def _resolve_ref(
