@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from xdsl.dialects.builtin import LocationAttr, StringAttr
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
-from asdl.ir.graphir import BundleOp, DeviceOp as GraphDeviceOp, EndpointOp, GraphIdAttr
+from asdl.ir.graphir import DeviceOp as GraphDeviceOp, EndpointOp
 from asdl.ir.graphir import InstanceOp as GraphInstanceOp
 from asdl.ir.graphir import ModuleOp as GraphModuleOp
 from asdl.ir.graphir import NetOp as GraphNetOp
-from asdl.ir.graphir import PatternExprOp, ProgramOp
+from asdl.ir.graphir import ProgramOp
 from asdl.ir.ifir import (
     BackendOp,
     ConnAttr,
@@ -21,7 +21,6 @@ from asdl.ir.ifir import (
     ModuleOp,
     NetOp,
 )
-from asdl.patterns.verify import format_endpoint_length_mismatch
 
 NO_SPAN_NOTE = "No source span available."
 INVALID_GRAPHIR_PROGRAM = format_code("IR", 20)
@@ -29,7 +28,6 @@ INVALID_GRAPHIR_MODULE = format_code("IR", 21)
 INVALID_GRAPHIR_DEVICE = format_code("IR", 22)
 UNKNOWN_GRAPHIR_REFERENCE = format_code("IR", 23)
 UNKNOWN_ENDPOINT_INSTANCE = format_code("IR", 24)
-GRAPHIR_PATTERN_BINDING_MISMATCH = format_code("IR", 25)
 
 
 def convert_program(
@@ -122,8 +120,6 @@ def _convert_module(
     had_error = False
     nets: List[GraphNetOp] = []
     instances: List[GraphInstanceOp] = []
-    bundles: List[BundleOp] = []
-    pattern_exprs: List[PatternExprOp] = []
 
     for op in module.body.block.ops:
         if isinstance(op, GraphNetOp):
@@ -131,12 +127,6 @@ def _convert_module(
             continue
         if isinstance(op, GraphInstanceOp):
             instances.append(op)
-            continue
-        if isinstance(op, BundleOp):
-            bundles.append(op)
-            continue
-        if isinstance(op, PatternExprOp):
-            pattern_exprs.append(op)
             continue
         diagnostics.append(
             _diagnostic(
@@ -149,14 +139,6 @@ def _convert_module(
     inst_by_id: Dict[str, GraphInstanceOp] = {
         inst.inst_id.value.data: inst for inst in instances
     }
-    had_error = _check_pattern_binding_lengths(
-        nets,
-        inst_by_id,
-        bundles,
-        pattern_exprs,
-        diagnostics,
-        had_error=had_error,
-    )
     conn_map: Dict[str, List[ConnAttr]] = {inst_id: [] for inst_id in inst_by_id}
     net_ops: List[NetOp] = []
 
@@ -225,101 +207,6 @@ def _convert_module(
         diagnostics,
         had_error,
     )
-
-
-def _check_pattern_binding_lengths(
-    nets: List[GraphNetOp],
-    inst_by_id: Dict[str, GraphInstanceOp],
-    bundles: List[BundleOp],
-    pattern_exprs: List[PatternExprOp],
-    diagnostics: List[Diagnostic],
-    *,
-    had_error: bool,
-) -> bool:
-    """Validate GraphIR pattern binding lengths using bundle metadata.
-
-    Args:
-        nets: GraphIR net ops to validate.
-        inst_by_id: Mapping of instance IDs to instance ops.
-        bundles: Bundle metadata ops in the module.
-        pattern_exprs: Pattern expression ops in the module.
-        diagnostics: Diagnostic list to extend.
-        had_error: Existing error state.
-
-    Returns:
-        True if any binding mismatch was detected.
-    """
-    if not bundles or not pattern_exprs:
-        return had_error
-
-    pattern_lengths = _pattern_expr_lengths(bundles, pattern_exprs)
-    if not pattern_lengths:
-        return had_error
-
-    for net in nets:
-        net_len = pattern_lengths.get(("net", net.net_id.value.data))
-        if net_len is None or net_len <= 1:
-            continue
-        net_token = net.name_attr.data
-        for endpoint in net.body.block.ops:
-            if not isinstance(endpoint, EndpointOp):
-                continue
-            endpoint_len = pattern_lengths.get(
-                ("endpoint", endpoint.endpoint_id.value.data)
-            )
-            if endpoint_len is None or endpoint_len == net_len:
-                continue
-            inst = inst_by_id.get(endpoint.inst_id.value.data)
-            if inst is None:
-                continue
-            diagnostics.append(
-                _diagnostic(
-                    GRAPHIR_PATTERN_BINDING_MISMATCH,
-                    format_endpoint_length_mismatch(
-                        net_token,
-                        net_len,
-                        f"{inst.name_attr.data}.{endpoint.port_path.data}",
-                        endpoint_len,
-                        verb="atomizes",
-                    ),
-                )
-            )
-            had_error = True
-
-    return had_error
-
-
-def _pattern_expr_lengths(
-    bundles: List[BundleOp],
-    pattern_exprs: List[PatternExprOp],
-) -> Dict[Tuple[str, str], int]:
-    """Compute pattern expression expansion lengths from bundle membership.
-
-    Args:
-        bundles: Bundle ops providing member counts.
-        pattern_exprs: Pattern expression ops to analyze.
-
-    Returns:
-        Mapping from (kind, owner_id) to expansion length.
-    """
-    bundle_lengths = {
-        bundle.bundle_id.value.data: len(bundle.members.data) for bundle in bundles
-    }
-    lengths: Dict[Tuple[str, str], int] = {}
-    for pattern_expr in pattern_exprs:
-        owner = pattern_expr.owner
-        if not isinstance(owner, GraphIdAttr):
-            continue
-        total = 0
-        for bundle_id in pattern_expr.bundles.data:
-            bundle_len = bundle_lengths.get(bundle_id.value.data)
-            if bundle_len is None:
-                total = 0
-                break
-            total += bundle_len
-        if total:
-            lengths[(pattern_expr.kind.data, owner.value.data)] = total
-    return lengths
 
 
 def _convert_device(
