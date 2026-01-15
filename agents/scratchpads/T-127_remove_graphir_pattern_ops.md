@@ -25,17 +25,19 @@
 ## Progress log
 - 2026-01-14: Started task setup; status set to in_progress.
 - 2026-01-14: Removed GraphIR pattern ops/modules and converter references.
+- 2026-01-14: Removed tests that exercised deleted GraphIR pattern ops.
 
 ## Patch summary
 - Removed GraphIR bundle/pattern_expr ops and helper module.
 - Dropped bundle/pattern_expr verification from GraphIR modules.
 - Simplified GraphIR converters to drop pattern rebundling and binding checks.
+- Removed GraphIR pattern op tests and rebundling coverage from atomization tests.
 
 ## PR URL
 - https://github.com/Jianxun/ASDL/pull/135
 
 ## Verification
-- Not run (no verify commands listed).
+- `./venv/bin/pytest tests/unit_tests/ir`
 
 ## Status request (Done / Blocked / In Progress)
 - Ready for review.
@@ -44,4 +46,4 @@
 - None yet.
 
 ## Next steps
-- Remove pattern ops and helpers, update dialect/module verification, and clean exports.
+- Await review.
