@@ -26,8 +26,13 @@ current_sprint:
       Update AST->GraphIR conversion to register pattern expression table
       entries, attach pattern_origin metadata to atomized nets/instances/
       endpoints and instance params, and expand endpoint expressions as a whole
-      before splitting on '.'. Binding logic remains in ast_to_graphir.py.
-    verify: []
+      before splitting on '.'. Endpoint resolution must operate on expanded
+      atoms so subset bindings like MN_IN_<N>.D match atomized instances. Emit
+      diagnostics for expansion collisions and net/endpoint length mismatches.
+      Add unit tests covering subset bindings and failure cases. Binding logic
+      remains in ast_to_graphir.py.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir -v
     files:
       - src/asdl/ir/converters/ast_to_graphir.py
       - src/asdl/ir/patterns/expr_table.py
