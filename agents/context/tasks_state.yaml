@@ -8,6 +8,6 @@ T-132:
   pr: 145
   merged: true
 T-138:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
