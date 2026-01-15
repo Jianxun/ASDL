@@ -12,8 +12,8 @@ T-129:
   pr: 137
   merged: true
 T-130:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 138
   merged: false
 T-131:
   status: ready
