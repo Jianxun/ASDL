@@ -15,21 +15,24 @@
 - [x] Inspect current AST->GraphIR lowering helpers and callers.
 - [x] Extract module/device lowering into `ast_to_graphir_lowering.py` with docstrings.
 - [x] Update facade to orchestrate via the new module; keep behavior unchanged.
-- [ ] Run verify command.
+- [x] Run verify command.
 
 ## Progress log
 - 2026-01-20: Initialized task, set status to in_progress, created branch.
 - 2026-01-20: Extracted lowering helpers into `ast_to_graphir_lowering.py`.
 - 2026-01-20: Updated `ast_to_graphir.py` to call the lowering helpers.
+- 2026-01-20: Verified `tests/unit_tests/ir`.
 
 ## Patch summary
-- TBD
+- Added `ast_to_graphir_lowering.py` for module/device lowering helpers.
+- Slimmed `ast_to_graphir.py` to orchestration + entry diagnostics.
+- Updated scratchpad/task status for T-135.
 
 ## PR URL
 - TBD
 
 ## Verification
-- TBD
+- `venv/bin/pytest tests/unit_tests/ir -v`
 
 ## Status request
 - In Progress
@@ -38,4 +41,4 @@
 - None.
 
 ## Next steps
-- Inspect current conversion flow and implement lowering split.
+- Open PR and update task status to ready_for_review.
