@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from xdsl.ir import Dialect
 
-from .attrs import GraphIdAttr, GraphParamRefAttr, GraphSymbolRefAttr
+from .attrs import (
+    GraphIdAttr,
+    GraphParamRefAttr,
+    GraphPatternOriginAttr,
+    GraphSymbolRefAttr,
+)
 from .ops_graph import EndpointOp, InstanceOp, NetOp
 from .ops_module import DeviceOp, ModuleOp
 from .ops_program import ProgramOp
@@ -20,7 +25,7 @@ ASDL_GRAPHIR = Dialect(
         InstanceOp,
         EndpointOp,
     ],
-    [GraphIdAttr, GraphParamRefAttr, GraphSymbolRefAttr],
+    [GraphIdAttr, GraphParamRefAttr, GraphPatternOriginAttr, GraphSymbolRefAttr],
 )
 
 
@@ -30,6 +35,7 @@ __all__ = [
     "EndpointOp",
     "GraphIdAttr",
     "GraphParamRefAttr",
+    "GraphPatternOriginAttr",
     "GraphSymbolRefAttr",
     "InstanceOp",
     "ModuleOp",

@@ -2,9 +2,16 @@ import pytest
 
 pytest.importorskip("xdsl")
 
+from xdsl.dialects.builtin import DictionaryAttr, StringAttr
 from xdsl.utils.exceptions import VerifyException
 
-from asdl.ir.graphir import EndpointOp, InstanceOp, ModuleOp, NetOp
+from asdl.ir.graphir import (
+    EndpointOp,
+    GraphPatternOriginAttr,
+    InstanceOp,
+    ModuleOp,
+    NetOp,
+)
 
 
 def _make_instance(
@@ -97,3 +104,55 @@ def test_module_accepts_valid_graph() -> None:
     )
 
     module.verify()
+
+
+def test_module_accepts_pattern_expression_table() -> None:
+    table = DictionaryAttr(
+        {
+            "expr1": DictionaryAttr(
+                {
+                    "expression": StringAttr("N<1|2>"),
+                    "kind": StringAttr("net"),
+                }
+            )
+        }
+    )
+    module = ModuleOp(
+        module_id="m1",
+        name="top",
+        file_id="a.asdl",
+        region=[],
+        pattern_expression_table=table,
+    )
+
+    module.verify()
+    assert module.attrs is not None
+    assert module.attrs.data["pattern_expression_table"] == table
+
+
+def test_module_rejects_invalid_pattern_expression_table_type() -> None:
+    module = ModuleOp(
+        module_id="m1",
+        name="top",
+        file_id="a.asdl",
+        region=[],
+        attrs=DictionaryAttr({"pattern_expression_table": StringAttr("oops")}),
+    )
+
+    with pytest.raises(VerifyException):
+        module.verify()
+
+
+def test_net_accepts_pattern_origin_tuple() -> None:
+    net = NetOp(
+        net_id="n1",
+        name="N1",
+        region=[],
+        pattern_origin=("expr1", 0, "N", ["1", 2]),
+    )
+
+    assert isinstance(net.pattern_origin, GraphPatternOriginAttr)
+    assert net.pattern_origin.expression_id.data == "expr1"
+    assert net.pattern_origin.segment_index.data == 0
+    assert net.pattern_origin.base_name.data == "N"
+    assert [part.data for part in net.pattern_origin.pattern_parts.data] == ["1", 2]

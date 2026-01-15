@@ -21,6 +21,7 @@ from .attrs import GraphIdAttr, _coerce_graph_id
 from .ops_graph import EndpointOp, InstanceOp, NetOp
 
 PORT_ORDER_KEY = "port_order"
+PATTERN_EXPRESSION_TABLE_KEY = "pattern_expression_table"
 
 
 def _normalize_port_order(
@@ -44,21 +45,25 @@ def _normalize_port_order(
 def _merge_module_attrs(
     attrs: DictionaryAttr | None,
     port_order: ArrayAttr[StringAttr] | None,
+    pattern_expression_table: DictionaryAttr | None,
 ) -> DictionaryAttr | None:
-    """Merge module attrs with the reserved port_order entry.
+    """Merge module attrs with reserved GraphIR metadata entries.
 
     Args:
         attrs: Existing attrs dictionary.
         port_order: Normalized port order to inject.
+        pattern_expression_table: Optional pattern expression table.
 
     Returns:
         A DictionaryAttr containing merged data, or None if empty.
     """
-    if attrs is None and port_order is None:
+    if attrs is None and port_order is None and pattern_expression_table is None:
         return None
     merged = dict(attrs.data) if attrs is not None else {}
     if port_order is not None:
         merged[PORT_ORDER_KEY] = port_order
+    if pattern_expression_table is not None:
+        merged[PATTERN_EXPRESSION_TABLE_KEY] = pattern_expression_table
     return DictionaryAttr(merged)
 
 
@@ -70,7 +75,7 @@ class ModuleOp(IRDLOperation):
         module_id: Stable module identifier.
         name: Module symbol name.
         file_id: Source file identifier.
-        attrs: Optional module attributes (includes port_order).
+        attrs: Optional module attributes (includes port_order/table).
         annotations: Optional annotations.
     """
 
@@ -94,6 +99,7 @@ class ModuleOp(IRDLOperation):
         file_id: StringAttr | str,
         region: Region | Sequence[Operation],
         port_order: ArrayAttr[StringAttr] | Iterable[str] | None = None,
+        pattern_expression_table: DictionaryAttr | None = None,
         attrs: DictionaryAttr | None = None,
         annotations: DictionaryAttr | None = None,
     ) -> None:
@@ -105,6 +111,7 @@ class ModuleOp(IRDLOperation):
             file_id: Source file identifier.
             region: Region containing module contents.
             port_order: Optional port order list stored in attrs.
+            pattern_expression_table: Optional pattern expression table attrs.
             attrs: Optional attribute dictionary.
             annotations: Optional annotations dictionary.
         """
@@ -114,7 +121,9 @@ class ModuleOp(IRDLOperation):
             file_id = StringAttr(file_id)
         module_id = _coerce_graph_id(module_id)
         port_order_attr = _normalize_port_order(port_order)
-        merged_attrs = _merge_module_attrs(attrs, port_order_attr)
+        merged_attrs = _merge_module_attrs(
+            attrs, port_order_attr, pattern_expression_table
+        )
         attributes = {
             "module_id": module_id,
             "name": name,
@@ -165,6 +174,13 @@ class ModuleOp(IRDLOperation):
                     port_names.append(attr.data)
                 if len(port_names) != len(set(port_names)):
                     raise VerifyException("port_order must contain unique names")
+            pattern_table = self.attrs.data.get(PATTERN_EXPRESSION_TABLE_KEY)
+            if pattern_table is not None and not isinstance(
+                pattern_table, DictionaryAttr
+            ):
+                raise VerifyException(
+                    "module attrs.pattern_expression_table must be a dictionary"
+                )
 
         net_names: set[str] = set()
         net_ids: set[str] = set()
