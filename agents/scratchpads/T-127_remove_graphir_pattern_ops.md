@@ -1,15 +1,44 @@
 # T-127 Remove GraphIR pattern ops
 
-## Objective
-- Remove GraphIR pattern ops (`graphir.bundle`, `graphir.pattern_expr`) and related helpers.
+## Task summary (DoD + verify)
+- Delete graphir bundle/pattern_expr ops and helpers, and clean the GraphIR
+  dialect/module verification to drop bundle/pattern_expr support. Remove
+  GraphIR exports for pattern ops and delete the graphir pattern helper
+  module.
+- Verify: none listed.
 
-## Notes
-- Drop pattern op exports and verification paths.
-- Keep GraphIR atomized-only.
+## Read (paths)
+- agents/context/lessons.md
+- agents/context/contract.md
+- agents/context/tasks.yaml
+- agents/context/tasks_state.yaml
+- agents/context/project_status.md
 
-## Files
-- src/asdl/ir/graphir/ops_pattern.py
-- src/asdl/ir/graphir/patterns.py
-- src/asdl/ir/graphir/dialect.py
-- src/asdl/ir/graphir/ops_module.py
-- src/asdl/ir/graphir/__init__.py
+## Plan
+- Remove GraphIR pattern ops and related helpers/modules.
+- Update GraphIR dialect/module verification to drop bundle/pattern_expr checks.
+- Clean GraphIR exports and imports tied to pattern ops.
+- Todo:
+  - [ ] Remove GraphIR pattern ops/modules and verification.
+  - [ ] Remove pattern op usage in converters.
+
+## Progress log
+- 2026-01-14: Started task setup; status set to in_progress.
+
+## Patch summary
+- None yet.
+
+## PR URL
+- None yet.
+
+## Verification
+- Not run (no verify commands listed).
+
+## Status request (Done / Blocked / In Progress)
+- In Progress.
+
+## Blockers / Questions
+- None yet.
+
+## Next steps
+- Remove pattern ops and helpers, update dialect/module verification, and clean exports.
