@@ -70,3 +70,8 @@ archive:
   - T-126: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-126_ir_pattern_passes.md, pr: 131}
   - T-112: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-112_graphir_to_ast_normalized.md, pr: null}
   - T-119: {completed_on: null, owner: Architect, scratchpad: agents/scratchpads/T-119_named_pattern_substitution.md, pr: null}
+  - T-127: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-127_remove_graphir_pattern_ops.md, pr: 135}
+  - T-128: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-128_remove_ifir_pattern_passes.md, pr: 136}
+  - T-129: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-129_graphir_pattern_origin.md, pr: 137}
+  - T-130: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-130_pattern_helper_apis.md, pr: 138}
+  - T-131: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-131_graphir_converter_cleanup.md, pr: 139}

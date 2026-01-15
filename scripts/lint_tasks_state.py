@@ -23,7 +23,7 @@ ALLOWED_STATUSES = {
     "escalation_needed",
     "done",
 }
-EARLY_STATUSES = {"backlog", "ready", "in_progress", "blocked"}
+EARLY_STATUSES = {"backlog", "ready", "blocked"}
 REVIEW_STATUSES = {
     "ready_for_review",
     "review_in_progress",
@@ -208,6 +208,15 @@ def main() -> int:
             if pr_value is not None:
                 errors.append(
                     f"tasks_state.yaml pr for '{task_id}' must be null in '{status}'."
+                )
+            if merged_value is not False:
+                errors.append(
+                    f"tasks_state.yaml merged for '{task_id}' must be false in '{status}'."
+                )
+        if isinstance(status, str) and status == "in_progress":
+            if pr_value is not None and not pr_is_set:
+                errors.append(
+                    f"tasks_state.yaml pr for '{task_id}' must be a positive integer in '{status}'."
                 )
             if merged_value is not False:
                 errors.append(

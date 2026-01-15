@@ -48,7 +48,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Architect, Reviewer, and Executor may edit `agents/context/tasks_state.yaml` for status/PR/merge changes only.
 - Executors update only `agents/scratchpads/T-00X.md` and `agents/context/tasks_state.yaml` (status/PR/merge fields) for their task; they do not edit task cards or project status.
 - Explorers update only `agents/scratchpads/T-00X.md` and do not edit task cards, project status, or `agents/context/tasks_state.yaml`.
-- Task state gating: review/done statuses require `pr` set to a positive integer; `done` requires `merged` true; early statuses require `pr: null` and `merged: false`.
+- Task state gating: review/done statuses require `pr` set to a positive integer; `done` requires `merged` true; `backlog`/`ready`/`blocked` require `pr: null` and `merged: false`; `in_progress` allows `pr` null or a positive integer with `merged: false`.
 - `agents/context/project_status.md` is updated only by the Architect.
 - Legacy `context/todo_*.md` remain unchanged until explicitly migrated.
 - Architect direct-to-main is allowed only for commits that touch files under `agents/` and/or `docs/` exclusively; all other changes require a PR.
