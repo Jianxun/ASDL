@@ -5,17 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from xdsl.dialects.builtin import (
-    DictionaryAttr,
-    FileLineColLoc,
-    IntAttr,
-    LocationAttr,
-    StringAttr,
-)
-
 from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
 from asdl.ast.location import Locatable
-from asdl.diagnostics import Diagnostic, Severity, format_code
+from asdl.diagnostics import Diagnostic, format_code
 from asdl.imports import ImportGraph, NameEnv, ProgramDB
 from asdl.ir.converters.ast_to_graphir_context import (
     GraphIrDocumentContext,
@@ -27,6 +19,12 @@ from asdl.ir.converters.ast_to_graphir_parsing import (
     split_net_token,
 )
 from asdl.ir.converters.ast_to_graphir_symbols import ResolvedSymbol
+from asdl.ir.converters.ast_to_graphir_utils import (
+    diagnostic,
+    loc_attr,
+    maybe_src_annotations,
+    to_string_dict_attr,
+)
 from asdl.ir.graphir import DeviceOp, EndpointOp, InstanceOp, ModuleOp, NetOp, ProgramOp
 from asdl.ir.ifir import BackendOp
 
@@ -34,7 +32,6 @@ INVALID_INSTANCE_EXPR = format_code("IR", 1)
 INVALID_ENDPOINT_EXPR = format_code("IR", 2)
 UNRESOLVED_QUALIFIED = format_code("IR", 10)
 UNRESOLVED_UNQUALIFIED = format_code("IR", 11)
-NO_SPAN_NOTE = "No source span available."
 
 
 def convert_document(
@@ -68,7 +65,7 @@ def convert_document(
         entry_id = doc_context.module_ids.get(document.top)
         if entry_id is None:
             diagnostics.append(
-                _diagnostic(
+                diagnostic(
                     UNRESOLVED_UNQUALIFIED,
                     f"Unresolved top module '{document.top}'.",
                     getattr(document, "_loc", None),
@@ -103,7 +100,7 @@ def convert_import_graph(
         document = graph.documents.get(file_id)
         if document is None:
             diagnostics.append(
-                _diagnostic(
+                diagnostic(
                     UNRESOLVED_UNQUALIFIED,
                     f"Import graph missing document '{file_id}'.",
                     None,
@@ -126,7 +123,7 @@ def convert_import_graph(
     entry_document = graph.documents.get(graph.entry_file)
     if entry_document is None:
         diagnostics.append(
-            _diagnostic(
+            diagnostic(
                 UNRESOLVED_UNQUALIFIED,
                 f"Import graph missing entry document '{graph.entry_file}'.",
                 None,
@@ -139,7 +136,7 @@ def convert_import_graph(
         )
         if entry_id is None:
             diagnostics.append(
-                _diagnostic(
+                diagnostic(
                     UNRESOLVED_UNQUALIFIED,
                     f"Unresolved top module '{entry_document.top}'.",
                     getattr(entry_document, "_loc", None),
@@ -226,7 +223,7 @@ def _convert_module(
             ref, params, parse_error = parse_instance_expr(expr)
             if parse_error is not None:
                 diagnostics.append(
-                    _diagnostic(
+                    diagnostic(
                         INVALID_INSTANCE_EXPR,
                         f"{parse_error} in module '{name}'",
                         inst_loc or module._loc,
@@ -236,7 +233,7 @@ def _convert_module(
                 continue
             if ref is None:
                 diagnostics.append(
-                    _diagnostic(
+                    diagnostic(
                         INVALID_INSTANCE_EXPR,
                         f"Instance expression missing reference in module '{name}'",
                         inst_loc or module._loc,
@@ -264,8 +261,8 @@ def _convert_module(
                     name=inst_name,
                     module_ref=(resolved.kind, resolved.sym_id),
                     module_ref_raw=ref,
-                    props=_to_string_dict_attr(params),
-                    annotations=_maybe_src_annotations(inst_loc),
+                    props=to_string_dict_attr(params),
+                    annotations=maybe_src_annotations(inst_loc),
                 )
             )
 
@@ -281,7 +278,7 @@ def _convert_module(
             endpoints, _suppressed, endpoint_error = parse_endpoints(endpoint_expr)
             if endpoint_error is not None:
                 diagnostics.append(
-                    _diagnostic(
+                    diagnostic(
                         INVALID_ENDPOINT_EXPR,
                         f"{endpoint_error} in module '{name}'",
                         net_loc or module._loc,
@@ -295,7 +292,7 @@ def _convert_module(
                 inst_id = inst_name_to_id.get(inst_name)
                 if inst_id is None:
                     diagnostics.append(
-                        _diagnostic(
+                        diagnostic(
                             INVALID_ENDPOINT_EXPR,
                             (
                                 f"Unknown instance '{inst_name}' referenced by endpoint "
@@ -366,7 +363,7 @@ def _convert_device(
         name=name,
         file_id=file_id,
         ports=ports,
-        params=_to_string_dict_attr(device.params),
+        params=to_string_dict_attr(device.params),
         region=backends,
     )
 
@@ -385,9 +382,9 @@ def _convert_backend(name: str, backend: DeviceBackendDecl) -> BackendOp:
     return BackendOp(
         name=name,
         template=backend.template,
-        params=_to_string_dict_attr(backend.params),
-        props=_to_string_dict_attr(props),
-        src=_loc_attr(backend._loc),
+        params=to_string_dict_attr(backend.params),
+        props=to_string_dict_attr(props),
+        src=loc_attr(backend._loc),
     )
 
 
@@ -418,7 +415,7 @@ def _resolve_symbol_reference(
     if "." in ref:
         if name_env is None or program_db is None or global_symbols is None:
             diagnostics.append(
-                _diagnostic(
+                diagnostic(
                     UNRESOLVED_QUALIFIED,
                     f"Unresolved symbol '{ref}'.",
                     loc,
@@ -428,7 +425,7 @@ def _resolve_symbol_reference(
         namespace, symbol = ref.split(".", 1)
         if not namespace or not symbol:
             diagnostics.append(
-                _diagnostic(
+                diagnostic(
                     UNRESOLVED_QUALIFIED,
                     f"Unresolved symbol '{ref}'.",
                     loc,
@@ -438,7 +435,7 @@ def _resolve_symbol_reference(
         resolved_file_id = name_env.resolve(namespace)
         if resolved_file_id is None:
             diagnostics.append(
-                _diagnostic(
+                diagnostic(
                     UNRESOLVED_QUALIFIED,
                     f"Unresolved symbol '{ref}'.",
                     loc,
@@ -447,7 +444,7 @@ def _resolve_symbol_reference(
             return None
         if program_db.lookup(resolved_file_id, symbol) is None:
             diagnostics.append(
-                _diagnostic(
+                diagnostic(
                     UNRESOLVED_QUALIFIED,
                     f"Unresolved symbol '{ref}'.",
                     loc,
@@ -457,7 +454,7 @@ def _resolve_symbol_reference(
         candidates = global_symbols.get(resolved_file_id, {}).get(symbol)
         if not candidates:
             diagnostics.append(
-                _diagnostic(
+                diagnostic(
                     UNRESOLVED_QUALIFIED,
                     f"Unresolved symbol '{ref}'.",
                     loc,
@@ -466,7 +463,7 @@ def _resolve_symbol_reference(
             return None
         if len(candidates) > 1:
             diagnostics.append(
-                _diagnostic(
+                diagnostic(
                     UNRESOLVED_QUALIFIED,
                     f"Ambiguous symbol '{ref}' refers to multiple definitions.",
                     loc,
@@ -477,7 +474,7 @@ def _resolve_symbol_reference(
     candidates = symbol_table.get(ref)
     if not candidates:
         diagnostics.append(
-            _diagnostic(
+            diagnostic(
                 UNRESOLVED_UNQUALIFIED,
                 f"Unresolved symbol '{ref}'.",
                 loc,
@@ -486,7 +483,7 @@ def _resolve_symbol_reference(
         return None
     if len(candidates) > 1:
         diagnostics.append(
-            _diagnostic(
+            diagnostic(
                 UNRESOLVED_UNQUALIFIED,
                 f"Ambiguous symbol '{ref}' refers to multiple definitions.",
                 loc,
@@ -494,102 +491,6 @@ def _resolve_symbol_reference(
         )
         return None
     return candidates[0]
-
-
-def _to_string_dict_attr(
-    values: Optional[Dict[str, object]],
-) -> Optional[DictionaryAttr]:
-    """Convert a dictionary to a DictionaryAttr of string values.
-
-    Args:
-        values: Optional parameter mapping.
-
-    Returns:
-        DictionaryAttr of StringAttr values or None.
-    """
-    if not values:
-        return None
-    items = {key: StringAttr(_format_param_value(value)) for key, value in values.items()}
-    return DictionaryAttr(items)
-
-
-def _loc_attr(loc: Optional[Locatable]) -> Optional[LocationAttr]:
-    """Convert a locatable payload into an xDSL location attribute.
-
-    Args:
-        loc: Optional location metadata from the AST.
-
-    Returns:
-        FileLineColLoc when location data is available; otherwise None.
-    """
-    if (
-        loc is None
-        or loc.start_line is None
-        or loc.start_col is None
-        or not loc.file
-    ):
-        return None
-    return FileLineColLoc(
-        StringAttr(loc.file), IntAttr(loc.start_line), IntAttr(loc.start_col)
-    )
-
-
-def _maybe_src_annotations(loc: Optional[Locatable]) -> Optional[DictionaryAttr]:
-    """Build an annotations dictionary containing source metadata.
-
-    Args:
-        loc: Optional location metadata from the AST.
-
-    Returns:
-        DictionaryAttr containing a "src" entry or None when unavailable.
-    """
-    src = _loc_attr(loc)
-    if src is None:
-        return None
-    return DictionaryAttr({"src": src})
-
-
-def _format_param_value(value: object) -> str:
-    """Format parameter values as strings.
-
-    Args:
-        value: Parameter value.
-
-    Returns:
-        Serialized string representation.
-    """
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    return str(value)
-
-
-def _diagnostic(
-    code: str,
-    message: str,
-    loc: Optional[Locatable],
-    severity: Severity = Severity.ERROR,
-) -> Diagnostic:
-    """Create a diagnostic from a source location.
-
-    Args:
-        code: Diagnostic code.
-        message: Diagnostic message.
-        loc: Optional source location.
-        severity: Diagnostic severity.
-
-    Returns:
-        Diagnostic instance.
-    """
-    span = loc.to_source_span() if loc is not None else None
-    notes = None if span is not None else [NO_SPAN_NOTE]
-    return Diagnostic(
-        code=code,
-        severity=severity,
-        message=message,
-        primary_span=span,
-        notes=notes,
-        source="ir",
-    )
 
 
 __all__ = ["convert_document", "convert_import_graph"]

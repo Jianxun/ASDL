@@ -20,12 +20,13 @@
 
 ## Todo
 - [x] Extract parsing helpers into `ast_to_graphir_parsing.py` and update usage.
-- [ ] Extract diagnostic/attr helpers into `ast_to_graphir_utils.py` and update usage.
+- [x] Extract diagnostic/attr helpers into `ast_to_graphir_utils.py` and update usage.
 - [ ] Run `venv/bin/pytest tests/unit_tests/ir -v`.
 
 ## Progress log
 - 2026-01-xx: Initialized task, set status to in_progress, created feature branch.
 - 2026-01-xx: Moved parsing helpers into `ast_to_graphir_parsing.py`.
+- 2026-01-xx: Moved diagnostic/attr helpers into `ast_to_graphir_utils.py`.
 
 ## Patch summary
 - TBD
