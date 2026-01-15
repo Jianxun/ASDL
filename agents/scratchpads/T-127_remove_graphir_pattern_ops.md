@@ -19,14 +19,17 @@
 - Update GraphIR dialect/module verification to drop bundle/pattern_expr checks.
 - Clean GraphIR exports and imports tied to pattern ops.
 - Todo:
-  - [ ] Remove GraphIR pattern ops/modules and verification.
-  - [ ] Remove pattern op usage in converters.
+  - [x] Remove GraphIR pattern ops/modules and verification.
+  - [x] Remove pattern op usage in converters.
 
 ## Progress log
 - 2026-01-14: Started task setup; status set to in_progress.
+- 2026-01-14: Removed GraphIR pattern ops/modules and converter references.
 
 ## Patch summary
-- None yet.
+- Removed GraphIR bundle/pattern_expr ops and helper module.
+- Dropped bundle/pattern_expr verification from GraphIR modules.
+- Simplified GraphIR converters to drop pattern rebundling and binding checks.
 
 ## PR URL
 - None yet.
