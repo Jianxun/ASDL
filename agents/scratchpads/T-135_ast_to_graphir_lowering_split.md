@@ -29,16 +29,16 @@
 - Updated scratchpad/task status for T-135.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/143
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir -v`
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Open PR and update task status to ready_for_review.
+- Await review feedback.
