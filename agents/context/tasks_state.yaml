@@ -4,8 +4,8 @@ T-127:
   pr: 135
   merged: true
 T-128:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 136
   merged: false
 T-129:
   status: ready
