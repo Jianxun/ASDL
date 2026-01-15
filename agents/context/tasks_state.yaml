@@ -8,9 +8,9 @@ T-133:
   pr: 141
   merged: true
 T-134:
-  status: review_clean
+  status: done
   pr: 142
-  merged: false
+  merged: true
 T-135:
   status: ready
   pr: null
