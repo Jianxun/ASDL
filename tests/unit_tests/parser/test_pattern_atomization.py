@@ -1,5 +1,5 @@
 from asdl.diagnostics import Severity
-from asdl.patterns import (
+from asdl.ir.patterns import (
     AtomizedEndpoint,
     AtomizedPattern,
     PATTERN_DUPLICATE_ATOM,

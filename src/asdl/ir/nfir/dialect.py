@@ -17,7 +17,7 @@ from xdsl.irdl import (
 from xdsl.traits import IsolatedFromAbove, NoTerminator
 from xdsl.utils.exceptions import VerifyException
 
-from asdl.patterns import (
+from asdl.ir.patterns import (
     AtomizedEndpoint,
     AtomizedPattern,
     atomize_endpoint,

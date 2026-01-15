@@ -1,5 +1,5 @@
 from asdl.diagnostics import Severity
-from asdl.patterns import (
+from asdl.ir.patterns import (
     PATTERN_DUPLICATE_ATOM,
     PATTERN_EMPTY_ENUM,
     PATTERN_EMPTY_SPLICE,
