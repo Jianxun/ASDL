@@ -8,8 +8,8 @@ T-133:
   pr: 141
   merged: true
 T-134:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 142
   merged: false
 T-135:
   status: ready

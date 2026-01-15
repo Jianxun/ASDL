@@ -35,13 +35,13 @@
 - Kept behavior/diagnostics unchanged while trimming `ast_to_graphir.py`.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/142
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir -v`
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - None yet.
