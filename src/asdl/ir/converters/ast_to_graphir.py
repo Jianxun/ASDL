@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
@@ -18,6 +17,11 @@ from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
 from asdl.ast.location import Locatable
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.imports import ImportGraph, NameEnv, ProgramDB
+from asdl.ir.converters.ast_to_graphir_context import (
+    GraphIrDocumentContext,
+    GraphIrSessionContext,
+)
+from asdl.ir.converters.ast_to_graphir_symbols import ResolvedSymbol
 from asdl.ir.graphir import DeviceOp, EndpointOp, InstanceOp, ModuleOp, NetOp, ProgramOp
 from asdl.ir.ifir import BackendOp
 
@@ -26,43 +30,6 @@ INVALID_ENDPOINT_EXPR = format_code("IR", 2)
 UNRESOLVED_QUALIFIED = format_code("IR", 10)
 UNRESOLVED_UNQUALIFIED = format_code("IR", 11)
 NO_SPAN_NOTE = "No source span available."
-
-
-@dataclass(frozen=True)
-class _ResolvedSymbol:
-    """Resolved symbol metadata for GraphIR instance references.
-
-    Args:
-        kind: Symbol kind ("module" or "device").
-        sym_id: Stable symbol identifier.
-    """
-
-    kind: str
-    sym_id: str
-
-
-class _GraphIdAllocator:
-    """Deterministic ID generator for GraphIR entities.
-
-    IDs are scoped by a prefix to preserve readability while keeping string
-    values stable across a single conversion.
-    """
-
-    def __init__(self) -> None:
-        self._counts: Dict[str, int] = {}
-
-    def next(self, prefix: str) -> str:
-        """Return the next ID for a given prefix.
-
-        Args:
-            prefix: Prefix indicating the entity type.
-
-        Returns:
-            The next stable ID string.
-        """
-        count = self._counts.get(prefix, 0) + 1
-        self._counts[prefix] = count
-        return f"{prefix}{count}"
 
 
 def convert_document(
@@ -84,32 +51,16 @@ def convert_document(
     diagnostics: List[Diagnostic] = []
     had_error = False
 
-    file_id = _resolve_file_id(document, name_env)
-    id_allocator = _GraphIdAllocator()
-    module_ids = {
-        name: id_allocator.next("m") for name in (document.modules or {}).keys()
-    }
-    device_ids = {
-        name: id_allocator.next("d") for name in (document.devices or {}).keys()
-    }
-    symbol_table = _build_symbol_table(module_ids, device_ids)
+    session = GraphIrSessionContext.for_document(program_db=program_db)
+    doc_context = session.document_context(document, name_env=name_env)
 
-    modules, devices, doc_diags, doc_error = _convert_document_ops(
-        document,
-        file_id=file_id,
-        module_ids=module_ids,
-        device_ids=device_ids,
-        symbol_table=symbol_table,
-        id_allocator=id_allocator,
-        name_env=name_env,
-        program_db=program_db,
-    )
+    modules, devices, doc_diags, doc_error = _convert_document_ops(doc_context)
     diagnostics.extend(doc_diags)
     had_error = had_error or doc_error
 
     entry_id: Optional[str] = None
     if document.top is not None:
-        entry_id = module_ids.get(document.top)
+        entry_id = doc_context.module_ids.get(document.top)
         if entry_id is None:
             diagnostics.append(
                 _diagnostic(
@@ -139,17 +90,8 @@ def convert_import_graph(
     """
     diagnostics: List[Diagnostic] = []
     had_error = False
-    file_order = _import_graph_file_order(graph)
-    id_allocator = _GraphIdAllocator()
-    module_ids_by_file, device_ids_by_file = _allocate_symbol_ids(
-        graph,
-        file_order,
-        id_allocator,
-    )
-    symbols_by_file = _build_symbol_tables_by_file(
-        module_ids_by_file,
-        device_ids_by_file,
-    )
+    session = GraphIrSessionContext.for_import_graph(graph)
+    file_order = session.file_order
 
     ops: List[object] = []
     for file_id in file_order:
@@ -164,17 +106,12 @@ def convert_import_graph(
             )
             had_error = True
             continue
-        modules, devices, doc_diags, doc_error = _convert_document_ops(
+        doc_context = session.document_context(
             document,
-            file_id=str(file_id),
-            module_ids=module_ids_by_file.get(file_id, {}),
-            device_ids=device_ids_by_file.get(file_id, {}),
-            symbol_table=symbols_by_file.get(file_id, {}),
-            id_allocator=id_allocator,
             name_env=graph.name_envs.get(file_id),
-            program_db=graph.program_db,
-            global_symbols=symbols_by_file,
+            file_path=file_id,
         )
+        modules, devices, doc_diags, doc_error = _convert_document_ops(doc_context)
         ops.extend(modules)
         ops.extend(devices)
         diagnostics.extend(doc_diags)
@@ -192,7 +129,9 @@ def convert_import_graph(
         )
         had_error = True
     elif entry_document.top is not None:
-        entry_id = module_ids_by_file.get(graph.entry_file, {}).get(entry_document.top)
+        entry_id = session.module_ids_by_file.get(graph.entry_file, {}).get(
+            entry_document.top
+        )
         if entry_id is None:
             diagnostics.append(
                 _diagnostic(
@@ -214,29 +153,12 @@ def convert_import_graph(
 
 
 def _convert_document_ops(
-    document: AsdlDocument,
-    *,
-    file_id: str,
-    module_ids: Dict[str, str],
-    device_ids: Dict[str, str],
-    symbol_table: Dict[str, List[_ResolvedSymbol]],
-    id_allocator: _GraphIdAllocator,
-    name_env: Optional[NameEnv] = None,
-    program_db: Optional[ProgramDB] = None,
-    global_symbols: Optional[Dict[Path, Dict[str, List[_ResolvedSymbol]]]] = None,
+    context: GraphIrDocumentContext,
 ) -> Tuple[List[ModuleOp], List[DeviceOp], List[Diagnostic], bool]:
     """Convert a document into GraphIR module/device ops.
 
     Args:
-        document: Parsed AST document.
-        file_id: Source file identifier.
-        module_ids: Mapping from module names to IDs.
-        device_ids: Mapping from device names to IDs.
-        symbol_table: Mapping from symbol names to resolved IDs.
-        id_allocator: Shared ID allocator.
-        name_env: Optional name environment for import resolution.
-        program_db: Optional program database for qualified symbol resolution.
-        global_symbols: Optional symbol tables keyed by file ID.
+        context: Per-document conversion context.
 
     Returns:
         Tuple of module ops, device ops, diagnostics, and error flag.
@@ -245,117 +167,29 @@ def _convert_document_ops(
     had_error = False
 
     modules: List[ModuleOp] = []
-    for name, module in (document.modules or {}).items():
+    for name, module in (context.document.modules or {}).items():
         module_op, module_diags, module_error = _convert_module(
             name,
             module,
-            module_id=module_ids[name],
-            file_id=file_id,
-            symbol_table=symbol_table,
-            id_allocator=id_allocator,
-            name_env=name_env,
-            program_db=program_db,
-            global_symbols=global_symbols,
+            module_id=context.module_ids[name],
+            context=context,
         )
         modules.append(module_op)
         diagnostics.extend(module_diags)
         had_error = had_error or module_error
 
     devices: List[DeviceOp] = []
-    for name, device in (document.devices or {}).items():
+    for name, device in (context.document.devices or {}).items():
         devices.append(
             _convert_device(
                 name,
                 device,
-                device_id=device_ids[name],
-                file_id=file_id,
+                device_id=context.device_ids[name],
+                file_id=context.file_id,
             )
         )
 
     return modules, devices, diagnostics, had_error
-
-
-def _import_graph_file_order(graph: ImportGraph) -> List[Path]:
-    """Return the deterministic file order for an import graph.
-
-    Args:
-        graph: Import graph with resolved imports.
-
-    Returns:
-        Ordered list of file IDs (entry first, then imports in resolution order).
-    """
-    order: List[Path] = []
-    seen: Set[Path] = set()
-
-    def visit(file_id: Path) -> None:
-        if file_id in seen:
-            return
-        seen.add(file_id)
-        order.append(file_id)
-        for resolved in graph.imports.get(file_id, {}).values():
-            visit(resolved)
-
-    visit(graph.entry_file)
-    for file_id in graph.documents.keys():
-        if file_id not in seen:
-            order.append(file_id)
-    return order
-
-
-def _allocate_symbol_ids(
-    graph: ImportGraph,
-    file_order: Sequence[Path],
-    id_allocator: _GraphIdAllocator,
-) -> Tuple[Dict[Path, Dict[str, str]], Dict[Path, Dict[str, str]]]:
-    """Allocate stable IDs for modules and devices across files.
-
-    Args:
-        graph: Import graph with resolved documents.
-        file_order: Deterministic file ordering for ID assignment.
-        id_allocator: Shared ID allocator.
-
-    Returns:
-        Tuple of module IDs and device IDs keyed by file ID.
-    """
-    module_ids_by_file: Dict[Path, Dict[str, str]] = {}
-    device_ids_by_file: Dict[Path, Dict[str, str]] = {}
-    for file_id in file_order:
-        document = graph.documents.get(file_id)
-        if document is None:
-            module_ids_by_file[file_id] = {}
-            device_ids_by_file[file_id] = {}
-            continue
-        module_ids_by_file[file_id] = {
-            name: id_allocator.next("m") for name in (document.modules or {}).keys()
-        }
-        device_ids_by_file[file_id] = {
-            name: id_allocator.next("d") for name in (document.devices or {}).keys()
-        }
-    return module_ids_by_file, device_ids_by_file
-
-
-def _build_symbol_tables_by_file(
-    module_ids_by_file: Dict[Path, Dict[str, str]],
-    device_ids_by_file: Dict[Path, Dict[str, str]],
-) -> Dict[Path, Dict[str, List[_ResolvedSymbol]]]:
-    """Build per-file symbol tables for module/device IDs.
-
-    Args:
-        module_ids_by_file: Module ID mappings keyed by file ID.
-        device_ids_by_file: Device ID mappings keyed by file ID.
-
-    Returns:
-        Mapping from file IDs to symbol tables.
-    """
-    tables: Dict[Path, Dict[str, List[_ResolvedSymbol]]] = {}
-    for file_id, module_ids in module_ids_by_file.items():
-        device_ids = device_ids_by_file.get(file_id, {})
-        tables[file_id] = _build_symbol_table(module_ids, device_ids)
-    for file_id, device_ids in device_ids_by_file.items():
-        if file_id in tables:
-            continue
-        tables[file_id] = _build_symbol_table({}, device_ids)
-    return tables
 
 
 def _convert_module(
@@ -363,12 +197,7 @@ def _convert_module(
     module: ModuleDecl,
     *,
     module_id: str,
-    file_id: str,
-    symbol_table: Dict[str, List[_ResolvedSymbol]],
-    id_allocator: _GraphIdAllocator,
-    name_env: Optional[NameEnv] = None,
-    program_db: Optional[ProgramDB] = None,
-    global_symbols: Optional[Dict[Path, Dict[str, List[_ResolvedSymbol]]]] = None,
+    context: GraphIrDocumentContext,
 ) -> Tuple[ModuleOp, List[Diagnostic], bool]:
     """Convert a module declaration into GraphIR.
 
@@ -376,12 +205,7 @@ def _convert_module(
         name: Module name.
         module: Module declaration.
         module_id: Stable module identifier.
-        file_id: Source file identifier.
-        symbol_table: Mapping from symbol names to resolved IDs.
-        id_allocator: Shared ID allocator.
-        name_env: Optional name environment for import resolution.
-        program_db: Optional program database for qualified symbol resolution.
-        global_symbols: Optional symbol tables keyed by file ID.
+        context: Per-document conversion context.
 
     Returns:
         The module op, diagnostics, and error flag.
@@ -417,17 +241,17 @@ def _convert_module(
                 continue
             resolved = _resolve_symbol_reference(
                 ref,
-                symbol_table,
+                context.symbol_table,
                 diagnostics,
                 inst_loc or module._loc,
-                name_env=name_env,
-                program_db=program_db,
-                global_symbols=global_symbols,
+                name_env=context.name_env,
+                program_db=context.program_db,
+                global_symbols=context.global_symbols,
             )
             if resolved is None:
                 had_error = True
                 continue
-            inst_id = id_allocator.next("i")
+            inst_id = context.id_allocator.next("i")
             inst_name_to_id[inst_name] = inst_id
             inst_ops.append(
                 InstanceOp(
@@ -479,7 +303,7 @@ def _convert_module(
                     continue
                 endpoint_ops.append(
                     EndpointOp(
-                        endpoint_id=id_allocator.next("e"),
+                        endpoint_id=context.id_allocator.next("e"),
                         inst_id=inst_id,
                         port_path=port_path,
                     )
@@ -487,7 +311,7 @@ def _convert_module(
 
             net_ops.append(
                 NetOp(
-                    net_id=id_allocator.next("n"),
+                    net_id=context.id_allocator.next("n"),
                     name=net_name,
                     region=endpoint_ops,
                 )
@@ -500,7 +324,7 @@ def _convert_module(
         ModuleOp(
             module_id=module_id,
             name=name,
-            file_id=file_id,
+            file_id=context.file_id,
             region=ops,
             port_order=port_order or None,
         ),
@@ -562,55 +386,16 @@ def _convert_backend(name: str, backend: DeviceBackendDecl) -> BackendOp:
     )
 
 
-def _resolve_file_id(document: AsdlDocument, name_env: Optional[NameEnv]) -> str:
-    """Resolve a file identifier for GraphIR metadata.
-
-    Args:
-        document: AST document to inspect for location metadata.
-        name_env: Optional name environment for file identity.
-
-    Returns:
-        A file identifier string.
-    """
-    if name_env is not None:
-        return str(name_env.file_id)
-    loc = getattr(document, "_loc", None)
-    if loc is not None and loc.file:
-        return loc.file
-    return "<string>"
-
-
-def _build_symbol_table(
-    module_ids: Dict[str, str],
-    device_ids: Dict[str, str],
-) -> Dict[str, List[_ResolvedSymbol]]:
-    """Build a symbol table for local module/device names.
-
-    Args:
-        module_ids: Mapping from module names to IDs.
-        device_ids: Mapping from device names to IDs.
-
-    Returns:
-        Mapping from symbol name to resolved symbol metadata.
-    """
-    table: Dict[str, List[_ResolvedSymbol]] = {}
-    for name, module_id in module_ids.items():
-        table.setdefault(name, []).append(_ResolvedSymbol("module", module_id))
-    for name, device_id in device_ids.items():
-        table.setdefault(name, []).append(_ResolvedSymbol("device", device_id))
-    return table
-
-
 def _resolve_symbol_reference(
     ref: str,
-    symbol_table: Dict[str, List[_ResolvedSymbol]],
+    symbol_table: Dict[str, List[ResolvedSymbol]],
     diagnostics: List[Diagnostic],
     loc: Optional[Locatable],
     *,
     name_env: Optional[NameEnv] = None,
     program_db: Optional[ProgramDB] = None,
-    global_symbols: Optional[Dict[Path, Dict[str, List[_ResolvedSymbol]]]] = None,
-) -> Optional[_ResolvedSymbol]:
+    global_symbols: Optional[Dict[Path, Dict[str, List[ResolvedSymbol]]]] = None,
+) -> Optional[ResolvedSymbol]:
     """Resolve an instance reference to a symbol.
 
     Args:
