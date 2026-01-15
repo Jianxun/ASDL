@@ -8,6 +8,7 @@ from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl, pa
 from asdl.diagnostics import Severity
 from asdl.ir.converters.ast_to_graphir import convert_document
 from asdl.ir.graphir import DeviceOp, EndpointOp, InstanceOp, ModuleOp, NetOp, ProgramOp
+from asdl.ir.patterns import PATTERN_DUPLICATE_ATOM, decode_pattern_expression_table
 
 
 def test_convert_document_single_file_fixture() -> None:
@@ -130,3 +131,158 @@ def test_convert_document_invalid_endpoint_expr_emits_error() -> None:
         diag.code == "IR-002" and diag.severity is Severity.ERROR
         for diag in diagnostics
     )
+
+
+def test_convert_document_expands_patterns_with_param_origins() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"U<P|N>": "res r=R<P|N>"},
+                nets={"OUT<P|N>": ["U<P|N>.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert diagnostics == []
+    assert isinstance(program, ProgramOp)
+
+    module = next(op for op in program.body.block.ops if isinstance(op, ModuleOp))
+    table_attr = module.attrs.data.get("pattern_expression_table")
+    table = decode_pattern_expression_table(table_attr)
+    expr_kinds = {(entry.expression, entry.kind) for entry in table.values()}
+    assert ("OUT<P|N>", "net") in expr_kinds
+    assert ("U<P|N>", "inst") in expr_kinds
+    assert ("U<P|N>.P", "endpoint") in expr_kinds
+    assert ("R<P|N>", "param") in expr_kinds
+
+    nets = {
+        net.name_attr.data: net
+        for net in module.body.block.ops
+        if isinstance(net, NetOp)
+    }
+    instances = {
+        inst.name_attr.data: inst
+        for inst in module.body.block.ops
+        if isinstance(inst, InstanceOp)
+    }
+    assert set(nets.keys()) == {"OUTP", "OUTN"}
+    assert set(instances.keys()) == {"UP", "UN"}
+
+    outp_endpoint = next(
+        op for op in nets["OUTP"].body.block.ops if isinstance(op, EndpointOp)
+    )
+    outn_endpoint = next(
+        op for op in nets["OUTN"].body.block.ops if isinstance(op, EndpointOp)
+    )
+    assert outp_endpoint.inst_id.value.data == instances["UP"].inst_id.value.data
+    assert outn_endpoint.inst_id.value.data == instances["UN"].inst_id.value.data
+    assert outp_endpoint.pattern_origin is not None
+    assert outn_endpoint.pattern_origin is not None
+
+    expr_ids = {entry.expression: expr_id for expr_id, entry in table.items()}
+    up = instances["UP"]
+    un = instances["UN"]
+    assert up.props is not None
+    assert un.props is not None
+    assert up.props.data["r"].data == "RP"
+    assert un.props.data["r"].data == "RN"
+    assert up.param_pattern_origin is not None
+    assert un.param_pattern_origin is not None
+    assert (
+        up.param_pattern_origin.data["r"].expression_id.data
+        == expr_ids["R<P|N>"]
+    )
+    assert (
+        un.param_pattern_origin.data["r"].expression_id.data
+        == expr_ids["R<P|N>"]
+    )
+
+
+def test_convert_document_allows_subset_endpoint_bindings() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"MN_IN_<1|2|3>": "nfet"},
+                nets={"OUT<1|2>": ["MN_IN_<1|2>.D"]},
+            )
+        },
+        devices={
+            "nfet": DeviceDecl(
+                ports=["D"],
+                backends={"ngspice": DeviceBackendDecl(template="M{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert diagnostics == []
+    assert isinstance(program, ProgramOp)
+    module = next(op for op in program.body.block.ops if isinstance(op, ModuleOp))
+    nets = {
+        net.name_attr.data: net
+        for net in module.body.block.ops
+        if isinstance(net, NetOp)
+    }
+    instances = {
+        inst.name_attr.data: inst
+        for inst in module.body.block.ops
+        if isinstance(inst, InstanceOp)
+    }
+
+    out1_endpoint = next(
+        op for op in nets["OUT1"].body.block.ops if isinstance(op, EndpointOp)
+    )
+    out2_endpoint = next(
+        op for op in nets["OUT2"].body.block.ops if isinstance(op, EndpointOp)
+    )
+    assert out1_endpoint.inst_id.value.data == instances["MN_IN_1"].inst_id.value.data
+    assert out2_endpoint.inst_id.value.data == instances["MN_IN_2"].inst_id.value.data
+
+
+def test_convert_document_reports_pattern_length_mismatch() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"M<1|2>": "nfet"},
+                nets={"OUT<1|2>": ["M<1|2|3>.D"]},
+            )
+        },
+        devices={
+            "nfet": DeviceDecl(
+                ports=["D"],
+                backends={"ngspice": DeviceBackendDecl(template="M{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert program is None
+    assert any(diag.code == "IR-003" for diag in diagnostics)
+
+
+def test_convert_document_reports_pattern_collisions() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(instances={"M<P|P>": "nfet"}, nets={})
+        },
+        devices={
+            "nfet": DeviceDecl(
+                ports=["D"],
+                backends={"ngspice": DeviceBackendDecl(template="M{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert program is None
+    assert any(diag.code == PATTERN_DUPLICATE_ATOM for diag in diagnostics)
