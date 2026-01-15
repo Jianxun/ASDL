@@ -2,7 +2,7 @@
 
 This document defines the **minimal, mandatory pattern expansion rules** for ASDL.
 Expansion is performed during parsing/elaboration to produce a fully explicit,
-deterministic set of symbols and endpoint tokens.
+deterministic set of symbols and endpoint expressions.
 
 This spec covers:
 - numeric range expansion (`[...]`)
@@ -16,7 +16,7 @@ Wildcard matching, aliasing, and exporting syntax are intentionally excluded.
 ## 1. Design Principles
 
 1. **Determinism**
-   - Same input text → same expansion order → same expanded tokens
+   - Same input text → same expansion order → same expanded atoms
 
 2. **YAML-friendly separators**
    - Avoid `,` in ASDL micro-syntax to eliminate quoting friction in YAML flow lists
@@ -33,8 +33,13 @@ Wildcard matching, aliasing, and exporting syntax are intentionally excluded.
 
 ## 2. Terms
 
-- **Atom**: a single endpoint/name token with no remaining pattern syntax
+- **Pattern expression**: full authored string (may include `;` and groups)
+- **Pattern segment**: `;`-delimited piece of a pattern expression
+- **Atom**: a single endpoint/name expression with no remaining pattern syntax;
+  endpoint atoms may include a single `.` separator
 - **Expansion**: mapping from a pattern expression to an ordered list of atoms
+- **Pattern parts**: ordered substitution values chosen by pattern operators
+  within a pattern segment, recorded per atom for provenance
 - **Splice**: concatenation of expansions from multiple segments separated by `;`
 
 ---
@@ -76,7 +81,7 @@ DATA_[3:0] → DATA_3 DATA_2 DATA_1 DATA_0
 
 **Semantics**
 - Expands into one atom per listed alternative
-- No implicit joiner is inserted between base and alternative token
+- No implicit joiner is inserted between base and alternative literal
 - Alternatives are substituted literally
 
 **Examples**
@@ -86,7 +91,7 @@ BIAS_<A|B|C> → BIAS_A BIAS_B BIAS_C
 ```
 
 **Rules**
-- Alternatives are opaque tokens (no implicit semantics at this stage)
+- Alternatives are opaque literals (no implicit semantics at this stage)
 - Whitespace around `|` is not allowed
 - No nesting or recursion inside `<...>` in Tier-1 core
 
@@ -125,6 +130,8 @@ OUT_<P|N>;CLK_[1:0]
 - Pattern operators resolve **strictly left-to-right** within a segment.
 - Each operator expands the current list and **concatenates** results in order.
 - Splicing (`;`) splits segments; segments expand left-to-right and concatenate.
+- Pattern operators may appear multiple times in a pattern expression; literal
+  text between operators is preserved, so patterns can appear mid-expression.
 - Expansion is single-pass; no recursive re-expansion.
 - After expansion, no pattern syntax may remain.
 
@@ -132,14 +139,18 @@ OUT_<P|N>;CLK_[1:0]
 
 ## 5. Expansion Scope
 
-- Patterns are allowed only in instance names, net names, and endpoint tokens
+- Patterns are allowed only in instance names, net names, and endpoint expressions
   (instance name and pin name).
 - Patterns are forbidden in model names.
-- `$` net names preserve pattern tokens verbatim; `;` is forbidden in `$` net
+- Endpoint expressions use a single `.` delimiter (`inst.pin`). Expansion is
+  applied to the full endpoint expression, then each expanded atom is split on
+  `.` to recover instance and port names. Each expanded endpoint atom must
+  contain exactly one `.`.
+- `$` net names preserve pattern syntax verbatim; `;` is forbidden in `$` net
   expressions.
 - Literal names must match `[A-Za-z_][A-Za-z0-9_]*` and must not contain
   pattern delimiters (`<`, `>`, `[`, `]`, `;`).
-- Expansion is local to the token being expanded
+- Expansion is local to the pattern expression being expanded
 - Expansion does not imply hierarchy or connectivity semantics by itself
 
 ---
@@ -161,7 +172,7 @@ If expansion produces duplicate atoms *within the same expanded list*:
 | Empty enumeration (`<>` or `<|>`) | Error |
 | Empty splice segment (`a;;b`) | Error |
 | Duplicate expanded atoms | Error |
-| Expansion exceeds 10k atoms per token | Error |
+| Expansion exceeds 10k atoms per pattern expression | Error |
 | Unexpanded pattern remains | Error |
 
 ---
@@ -170,22 +181,39 @@ If expansion produces duplicate atoms *within the same expanded list*:
 
 - Binding compares **total expansion length**; splicing (`;`) is flattened into
   a single list with no segment alignment.
-- If a net expands to length **N > 1**, every bound endpoint token must expand
+- If a net expands to length **N > 1**, every bound endpoint expression must expand
   to **N**; binding is by index.
 - If a net is scalar (length **1**), it may bind to endpoints of any length;
   each expanded endpoint binds to that single net (endpoints may differ in
   length).
-- Endpoint expansion length is computed from the full `inst.pin` token; if the
-  instance expands to **N** and the pin expands to **M**, the endpoint expands
-  to **N * M** (left-to-right order).
+- Endpoint expansion length is computed from the full `inst.pin` expression;
+  expand the full expression and split each atom on `.`. This is equivalent to
+  **N * M** when the instance expands to **N** and the pin expands to **M**
+  (left-to-right order).
+- Instance name patterns and instance parameter patterns expand at the same time;
+  parameter values zip by instance index (scalar broadcast allowed).
 - Every scalar endpoint atom binds to **exactly one** net.
-- Equivalence checks use the fully expanded string tokens (e.g., `MN<A,B>` is
+- Equivalence checks use the fully expanded string atoms (e.g., `MN<A,B>` is
   equivalent to `MN_A` and `MN_B`). Binding verification and elaboration must
   share the same equivalence helper.
 
 ---
 
-## 9. Semantics and Downstream Consumption (Allowed)
+## 9. Pattern Metadata for Atomized IR
+
+- Atomized IR may attach `pattern_origin` metadata to each atom derived from a
+  pattern expression.
+- `pattern_origin` refers to a pattern expression table entry (expression string
+  + source span) and records:
+  - `segment_index`: the 0-based segment position within the expression
+    (left-to-right).
+  - `pattern_parts`: ordered substitution values used for this atom within the
+    segment (operator occurrence order).
+  - The pattern expression table lives in module attributes.
+
+---
+
+## 10. Semantics and Downstream Consumption (Allowed)
 
 Downstream tools may interpret expanded structure, for example:
 - infer bus widths / ordering from numeric suffixes
@@ -197,7 +225,7 @@ correctness of the expanded structural IR.
 
 ---
 
-## 10. Explicit Non-Goals
+## 11. Explicit Non-Goals
 
 - Wildcard or glob matching (`*`)
 - Regex or predicate patterns
@@ -208,9 +236,10 @@ correctness of the expanded structural IR.
 
 ---
 
-## 11. Post-Expansion Invariant
+## 12. Post-Expansion Invariant
 
 After expansion:
 - Every endpoint/name is a plain atom (no `[]`, no `<>`, no `;`)
+- Every endpoint atom contains exactly one `.` delimiter
 - No implicit joiner has been applied (atoms are literal concatenations)
 - The result is suitable for deterministic validation and lowering
