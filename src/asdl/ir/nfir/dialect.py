@@ -17,7 +17,7 @@ from xdsl.irdl import (
 from xdsl.traits import IsolatedFromAbove, NoTerminator
 from xdsl.utils.exceptions import VerifyException
 
-from asdl.patterns import (
+from asdl.ir.patterns import (
     AtomizedEndpoint,
     AtomizedPattern,
     atomize_endpoint,
@@ -220,12 +220,12 @@ class ModuleOp(IRDLOperation):
                 if atoms is None:
                     continue
                 for atom in atoms:
-                    inst_literal = atom.inst.literal
-                    pin_literal = atom.pin.literal
-                    pair = (inst_literal, pin_literal)
+                    inst_literal = atom.inst
+                    port_literal = atom.port
+                    pair = (inst_literal, port_literal)
                     if pair in endpoint_pairs:
                         raise VerifyException(
-                            f"Endpoint {inst_literal}.{pin_literal} appears on more than one net"
+                            f"Endpoint {inst_literal}.{port_literal} appears on more than one net"
                         )
                     endpoint_pairs.add(pair)
                     if inst_literal not in instance_literals:

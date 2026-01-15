@@ -8,6 +8,6 @@ T-132:
   pr: 145
   merged: true
 T-138:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 146
+  merged: true
