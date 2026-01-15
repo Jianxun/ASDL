@@ -15,10 +15,10 @@
 - `agents/context/project_status.md`
 
 ## Plan
-- Inspect current AST->GraphIR conversion flow and supporting helpers.
-- Design session/document context objects and new symbol/ID helper modules.
-- Refactor conversion to use context while preserving behavior + diagnostics.
-- Add/adjust tests if needed and run verification.
+- [x] Inspect current AST->GraphIR conversion flow and supporting helpers.
+- [x] Design session/document context objects and new symbol/ID helper modules.
+- [x] Refactor conversion to use context while preserving behavior + diagnostics.
+- [x] Run verification for IR unit tests.
 
 ## Progress log
 - 2026-01-14: Added GraphIR session/document contexts and extracted symbol helpers.
