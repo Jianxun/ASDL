@@ -4,9 +4,9 @@ T-127:
   pr: 135
   merged: true
 T-128:
-  status: review_clean
+  status: done
   pr: 136
-  merged: false
+  merged: true
 T-129:
   status: ready
   pr: null
