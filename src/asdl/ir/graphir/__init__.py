@@ -2,7 +2,6 @@
 
 from .dialect import (
     ASDL_GRAPHIR,
-    BundleOp,
     DeviceOp,
     EndpointOp,
     GraphIdAttr,
@@ -11,13 +10,11 @@ from .dialect import (
     InstanceOp,
     ModuleOp,
     NetOp,
-    PatternExprOp,
     ProgramOp,
 )
 
 __all__ = [
     "ASDL_GRAPHIR",
-    "BundleOp",
     "DeviceOp",
     "EndpointOp",
     "GraphIdAttr",
@@ -26,6 +23,5 @@ __all__ = [
     "InstanceOp",
     "ModuleOp",
     "NetOp",
-    "PatternExprOp",
     "ProgramOp",
 ]
