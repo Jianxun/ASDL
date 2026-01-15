@@ -12,22 +12,33 @@ from asdl.ir.patterns import (
 )
 
 
-def _atom(token: str, literal: str, origin: str | None = None) -> AtomizedPattern:
-    return AtomizedPattern(token=token, literal=literal, origin=origin)
+def _atom(
+    literal: str,
+    segment_index: int,
+    base_name: str,
+    pattern_parts: list[str | int],
+) -> AtomizedPattern:
+    return AtomizedPattern(
+        literal=literal,
+        segment_index=segment_index,
+        base_name=base_name,
+        pattern_parts=pattern_parts,
+    )
 
 
 def _endpoint(
-    inst_token: str,
-    inst_literal: str,
-    pin_token: str,
-    pin_literal: str,
-    *,
-    inst_origin: str | None = None,
-    pin_origin: str | None = None,
+    inst: str,
+    port: str,
+    segment_index: int,
+    base_name: str,
+    pattern_parts: list[str | int],
 ) -> AtomizedEndpoint:
     return AtomizedEndpoint(
-        inst=_atom(inst_token, inst_literal, inst_origin),
-        pin=_atom(pin_token, pin_literal, pin_origin),
+        inst=inst,
+        port=port,
+        segment_index=segment_index,
+        base_name=base_name,
+        pattern_parts=pattern_parts,
     )
 
 
@@ -37,10 +48,10 @@ def test_atomize_pattern_splice_order_and_origin() -> None:
 
     assert diagnostics == []
     assert atoms == [
-        _atom("OUT<P>", "OUTP", token),
-        _atom("OUT<N>", "OUTN", token),
-        _atom("CLK[1:1]", "CLK1", token),
-        _atom("CLK[0:0]", "CLK0", token),
+        _atom("OUTP", 0, "OUT", ["P"]),
+        _atom("OUTN", 0, "OUT", ["N"]),
+        _atom("CLK1", 1, "CLK", [1]),
+        _atom("CLK0", 1, "CLK", [0]),
     ]
 
 
@@ -50,11 +61,11 @@ def test_atomize_pattern_base_less() -> None:
 
     assert diagnostics == []
     assert atoms == [
-        _atom("<INP>", "INP", token),
-        _atom("<INN>", "INN", token),
-        _atom("[2:2]", "2", token),
-        _atom("[1:1]", "1", token),
-        _atom("[0:0]", "0", token),
+        _atom("INP", 0, "", ["INP"]),
+        _atom("INN", 0, "", ["INN"]),
+        _atom("2", 1, "", [2]),
+        _atom("1", 1, "", [1]),
+        _atom("0", 1, "", [0]),
     ]
 
 
@@ -63,7 +74,7 @@ def test_atomize_pattern_single_atom_origin_preserves_pattern_token() -> None:
     atoms, diagnostics = atomize_pattern(token)
 
     assert diagnostics == []
-    assert atoms == [_atom("OUT<P>", "OUTP", token)]
+    assert atoms == [_atom("OUTP", 0, "OUT", ["P"])]
 
 
 def test_atomize_pattern_rejects_invalid_range() -> None:
@@ -91,10 +102,10 @@ def test_atomize_endpoint_cross_product() -> None:
 
     assert diagnostics == []
     assert endpoints == [
-        _endpoint("MN<P>", "MNP", "D<0>", "D0", inst_origin=inst_token, pin_origin=pin_token),
-        _endpoint("MN<P>", "MNP", "D<1>", "D1", inst_origin=inst_token, pin_origin=pin_token),
-        _endpoint("MN<N>", "MNN", "D<0>", "D0", inst_origin=inst_token, pin_origin=pin_token),
-        _endpoint("MN<N>", "MNN", "D<1>", "D1", inst_origin=inst_token, pin_origin=pin_token),
+        _endpoint("MNP", "D0", 0, "MN.D", ["P", "0"]),
+        _endpoint("MNP", "D1", 0, "MN.D", ["P", "1"]),
+        _endpoint("MNN", "D0", 0, "MN.D", ["N", "0"]),
+        _endpoint("MNN", "D1", 0, "MN.D", ["N", "1"]),
     ]
 
 
