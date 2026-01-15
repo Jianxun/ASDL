@@ -22,6 +22,7 @@
 - 2026-01-xx: Task started; scratchpad initialized.
 - 2026-01-xx: Added unit test covering pattern_origin propagation.
 - 2026-01-xx: Updated GraphIR->IFIR converter to resolve pattern_origin from table.
+- 2026-01-xx: Opened PR #139.
 
 ## Patch summary
 - Added IFIR converter unit test for pattern_origin mapping.
@@ -29,16 +30,16 @@
 - Resolved GraphIR->IFIR pattern_origin using module expression table.
 
 ## PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/139
 
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/ir/test_ifir_converter.py`
 
 ## Status request
-- In progress.
+- Ready for review.
 
 ## Blockers / Questions
 - GraphIR->AST converter update deferred per user override.
 
 ## Next steps
-- Review converter code paths and implement atomized-only handling.
+- Await review feedback.
