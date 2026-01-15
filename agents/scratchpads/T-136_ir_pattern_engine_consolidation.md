@@ -37,13 +37,13 @@
   and splice rejection.
 
 ## PR URL
-- None yet.
+- https://github.com/Jianxun/ASDL/pull/144
 
 ## Verification
 - ./venv/bin/pytest tests/unit_tests/ir -v
 
 ## Status request (Done / Blocked / In Progress)
-- In Progress.
+- Ready for Review.
 
 ## Blockers / Questions
 - None yet.
