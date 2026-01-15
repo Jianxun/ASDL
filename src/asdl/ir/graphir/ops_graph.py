@@ -105,6 +105,7 @@ class InstanceOp(IRDLOperation):
         module_ref: Resolved module/device reference.
         module_ref_raw: Original textual reference.
         pattern_origin: Optional pattern provenance metadata.
+        param_pattern_origin: Optional parameter pattern metadata.
         props: Optional properties.
         annotations: Optional annotations.
     """
@@ -116,6 +117,7 @@ class InstanceOp(IRDLOperation):
     module_ref = attr_def(GraphSymbolRefAttr)
     module_ref_raw = attr_def(StringAttr)
     pattern_origin = opt_attr_def(GraphPatternOriginAttr)
+    param_pattern_origin = opt_attr_def(DictionaryAttr)
     props = opt_attr_def(DictionaryAttr)
     annotations = opt_attr_def(DictionaryAttr)
 
@@ -130,6 +132,7 @@ class InstanceOp(IRDLOperation):
         | tuple[str | StringAttr, GraphIdAttr | StringAttr | str | int],
         module_ref_raw: StringAttr | str,
         pattern_origin: PatternOriginInput | None = None,
+        param_pattern_origin: DictionaryAttr | None = None,
         props: DictionaryAttr | None = None,
         annotations: DictionaryAttr | None = None,
     ) -> None:
@@ -141,6 +144,7 @@ class InstanceOp(IRDLOperation):
             module_ref: Resolved module/device reference.
             module_ref_raw: Original textual reference.
             pattern_origin: Optional pattern provenance metadata.
+            param_pattern_origin: Optional parameter pattern metadata.
             props: Optional property dictionary.
             annotations: Optional annotations dictionary.
         """
@@ -158,6 +162,8 @@ class InstanceOp(IRDLOperation):
         }
         if pattern_origin is not None:
             attributes["pattern_origin"] = _coerce_graph_pattern_origin(pattern_origin)
+        if param_pattern_origin is not None:
+            attributes["param_pattern_origin"] = param_pattern_origin
         if props is not None:
             attributes["props"] = props
         if annotations is not None:

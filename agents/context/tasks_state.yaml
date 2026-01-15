@@ -4,9 +4,9 @@ T-136:
   pr: 144
   merged: true
 T-132:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 145
+  merged: true
 T-138:
   status: ready
   pr: null
