@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from xdsl.dialects.builtin import StringAttr
-from xdsl.ir import ParametrizedAttribute
+from xdsl.dialects.builtin import ArrayAttr, IntAttr, StringAttr
+from xdsl.ir import Attribute, ParametrizedAttribute
 from xdsl.irdl import irdl_attr_definition, param_def
 
 
@@ -48,6 +48,33 @@ class GraphParamRefAttr(ParametrizedAttribute):
 
     inst_id: GraphIdAttr = param_def()
     param_name: StringAttr = param_def()
+
+
+@irdl_attr_definition
+class GraphPatternOriginAttr(ParametrizedAttribute):
+    """Pattern provenance metadata for GraphIR atomized names.
+
+    Attributes:
+        expression_id: Pattern expression table key.
+        segment_index: 0-based segment index within the expression.
+        base_name: Base name for the pattern.
+        pattern_parts: Ordered list of string or integer substitutions.
+    """
+
+    name = "graphir.pattern_origin"
+
+    expression_id: StringAttr = param_def()
+    segment_index: IntAttr = param_def()
+    base_name: StringAttr = param_def()
+    pattern_parts: ArrayAttr = param_def()
+
+
+PatternOriginInput = GraphPatternOriginAttr | tuple[
+    StringAttr | str,
+    IntAttr | int,
+    StringAttr | str,
+    ArrayAttr | list[StringAttr | IntAttr | str | int],
+]
 
 
 def _coerce_graph_id(value: GraphIdAttr | StringAttr | str | int) -> GraphIdAttr:
@@ -118,3 +145,66 @@ def _coerce_graph_param_ref(
             raise TypeError(f"Unsupported param name: {param_name!r}")
         return GraphParamRefAttr(inst_id, param_name)
     raise TypeError(f"Unsupported param ref: {value!r}")
+
+
+def _coerce_pattern_parts(
+    value: ArrayAttr | list[StringAttr | IntAttr | str | int],
+) -> ArrayAttr:
+    """Coerce pattern parts into an ArrayAttr of StringAttr/IntAttr.
+
+    Args:
+        value: ArrayAttr or list of string/integer parts.
+
+    Returns:
+        ArrayAttr containing only StringAttr and IntAttr elements.
+    """
+    if isinstance(value, ArrayAttr):
+        for item in value.data:
+            if not isinstance(item, (StringAttr, IntAttr)):
+                raise TypeError(f"Unsupported pattern part: {item!r}")
+        return value
+    parts: list[Attribute] = []
+    for item in value:
+        if isinstance(item, (StringAttr, IntAttr)):
+            parts.append(item)
+            continue
+        if isinstance(item, str):
+            parts.append(StringAttr(item))
+            continue
+        if isinstance(item, int):
+            parts.append(IntAttr(item))
+            continue
+        raise TypeError(f"Unsupported pattern part: {item!r}")
+    return ArrayAttr(parts)
+
+
+def _coerce_graph_pattern_origin(value: PatternOriginInput) -> GraphPatternOriginAttr:
+    """Coerce a Python value into a GraphPatternOriginAttr.
+
+    Args:
+        value: GraphPatternOriginAttr or tuple payload.
+
+    Returns:
+        GraphPatternOriginAttr with normalized attributes.
+    """
+    if isinstance(value, GraphPatternOriginAttr):
+        return value
+    if isinstance(value, tuple) and len(value) == 4:
+        expression_id, segment_index, base_name, pattern_parts = value
+        if isinstance(expression_id, str):
+            expression_id = StringAttr(expression_id)
+        if not isinstance(expression_id, StringAttr):
+            raise TypeError(f"Unsupported expression id: {expression_id!r}")
+        if isinstance(segment_index, int):
+            segment_index = IntAttr(segment_index)
+        if not isinstance(segment_index, IntAttr):
+            raise TypeError(f"Unsupported segment index: {segment_index!r}")
+        if isinstance(base_name, str):
+            base_name = StringAttr(base_name)
+        if not isinstance(base_name, StringAttr):
+            raise TypeError(f"Unsupported base name: {base_name!r}")
+        pattern_parts = _coerce_pattern_parts(pattern_parts)
+        return GraphPatternOriginAttr(
+            expression_id, segment_index, base_name, pattern_parts
+        )
+    raise TypeError(f"Unsupported pattern origin: {value!r}")

@@ -22,7 +22,7 @@ core in this flow; NFIR is optional and not part of the critical path.
 - Semantic clarity: all structural correctness checks live in GraphIR.
 - Refactorability: edits are expressed as primitive graph operations.
 - Determinism: stable IDs and deterministic serialization.
-- Pattern preservation: rebundle atomized patterns without inference.
+- Pattern provenance: preserve atomized pattern origins without inference.
 
 ## 3. Program Model
 
@@ -62,9 +62,10 @@ GraphIR preserves region order as canonical for stable diffs:
   order (entry file first, then imports in resolution order).
 - `graphir.module` preserves net list order and instance list order as region
   order.
-- `graphir.bundle` order follows expander output order.
 - `graphir.module.attrs.port_order` preserves the `$`-net-derived port order
   (names stored without `$` and expanded to atoms).
+- `graphir.module.attrs.pattern_expression_table` preserves registration order
+  for stable diffs; semantics are keyed by expression ID.
 
 Edits append by default. If a pass needs a specific placement, it must use
 explicit move/insert operations; renames never reorder.
@@ -106,6 +107,7 @@ Instance {
   name: str
   module_ref: SymbolRef        # resolved module/device reference
   module_ref_raw: str          # provenance
+  pattern_origin: PatternOrigin?
   props: dict[str, Value]
   annotations: dict
 }
@@ -119,6 +121,7 @@ Represents a connectivity object (hyperedge).
 Net {
   id: NetID
   name: str
+  pattern_origin: PatternOrigin?
   attrs: dict
   annotations: dict
 }
@@ -133,6 +136,7 @@ Endpoint {
   id: EndpointID
   inst_id: InstID
   port_path: str
+  pattern_origin: PatternOrigin?
 }
 ```
 
@@ -151,7 +155,38 @@ ParamRef {
 }
 ```
 
-### 4.7 Device
+### 4.7 PatternOrigin
+
+Pattern provenance metadata for atomized names.
+
+```
+PatternOrigin {
+  expression_id: str
+  segment_index: int            # 0-based segment position
+  base_name: str
+  pattern_parts: list[str | int]
+}
+```
+
+Pattern origin is optional metadata attached to nets, instances, and endpoints.
+It does not affect identity.
+
+### 4.8 PatternExpressionTable
+
+Module-local table mapping `expression_id` to expression metadata.
+
+```
+PatternExpressionTableEntry {
+  expression: str
+  kind: net | inst | endpoint | param
+  span?: SourceSpan
+}
+```
+
+Entries are stored under `graphir.module.attrs["pattern_expression_table"]` and
+referenced by `PatternOrigin.expression_id`.
+
+### 4.9 Device
 
 Represents a leaf symbol with ports and backend metadata.
 
@@ -191,13 +226,15 @@ Invariants:
 ## 6. GraphIR Dialect Shape (xDSL)
 
 GraphIR is implemented as a dialect under `src/asdl/ir/` with:
-- `graphir.module` op containing nets, instances, endpoints, and bundles.
+- `graphir.module` op containing nets, instances, and endpoints, plus module
+  attrs entries for `port_order` and `pattern_expression_table`.
 - `graphir.device` op for leaf symbols (ports and backend metadata only).
-- `graphir.net` op with stable `net_id`, `name`, `attrs`.
-- `graphir.instance` op with stable `inst_id`, `name`, `module_ref`.
-- `graphir.endpoint` op with stable `endpoint_id`, `inst_id`, `port_path`.
-- `graphir.bundle` op for pattern bundles (see Section 7).
-- `graphir.pattern_expr` op for ordered bundle expressions with explicit owners.
+- `graphir.net` op with stable `net_id`, `name`, optional `pattern_origin`, and
+  `attrs`.
+- `graphir.instance` op with stable `inst_id`, `name`, optional `pattern_origin`,
+  and `module_ref`.
+- `graphir.endpoint` op with stable `endpoint_id`, `inst_id`, `port_path`, and
+  optional `pattern_origin`.
 
 Endpoints are stored as explicit ops nested under `graphir.net` regions, using
 region order to define endpoint order. Reverse indices are derived.
@@ -206,104 +243,50 @@ region order to define endpoint order. Reverse indices are derived.
 
 See `docs/specs/spec_asdl_graphir_schema.md` for the full dialect schema.
 
-## 7. Patterns and Bundles
+## 7. Pattern Provenance
 
-Pattern expansion produces atomized tokens with metadata. GraphIR preserves
-pattern information through explicit bundle metadata; no pattern inference is
-allowed.
+GraphIR is atomized-only; it does not store bundles or pattern expressions.
+Instead, it records provenance metadata on each atom to support diagnostics and
+GraphIR->AST projection without pattern inference.
 
-### 7.1 Bundle Metadata
+### 7.1 Pattern Origin Attributes
+
+Each atomized net/instance/endpoint may carry `graphir.pattern_origin`:
 
 ```
-Bundle {
-  id: BundleID
-  kind: net | endpoint | param | inst
+PatternOrigin {
+  expression_id: str
+  segment_index: int            # 0-based segment position
   base_name: str
-  pattern_type: literal | numeric
-  members: list[MemberID]      # ordered
-  annotations: dict
+  pattern_parts: list[str | int]
 }
 ```
 
 Rules:
-- Bundles are created only by the pattern expander.
-- `members` order is the expander output order; never sort.
-- Bundle IDs are stable within GraphIR.
-- A bundle represents a single contiguous segment of eligible atoms. Pattern
-  expressions are ordered lists of bundles concatenated with `;`.
+- `expression_id` refers to a module-local expression table entry.
+- `segment_index` counts `;`-separated segments within the expression.
+- `pattern_origin` is provenance only; identity uses the atomized name.
 
-### 7.2 Bundle ID Stability
+### 7.2 Pattern Expression Table
 
-- Deterministic on import: derive bundle IDs from a stable key
-  (module ID + pattern token + source span or NFIR op ID).
-- Fracture: retain the original bundle ID for the fragment containing the
-  first member in order; mint new bundle IDs for other fragments.
-- Merge: mint a new bundle ID; optionally record origin bundle IDs.
-
-### 7.3 Pattern Atom Metadata
-
-Each atomized member produced by the expander must carry:
-- `base_name`
-- `pattern_type` (`literal` or `numeric`)
-- `pattern_token` (string or int)
-- `pattern_eligible` (true only for expander output)
-
-### 7.4 Pattern Expressions
-
-Pattern expressions represent the original `;`-spliced structure.
+Modules store a table under `graphir.module.attrs["pattern_expression_table"]`
+that maps `expression_id` to:
 
 ```
-PatternExpr {
-  id: PatternExprID
-  kind: net | endpoint | param | inst
-  owner: NetID | EndpointID | InstID | ParamRef
-  bundles: list[BundleID]      # ordered
-  annotations: dict
+PatternExpressionTableEntry {
+  expression: str
+  kind: net | inst | endpoint | param
+  span?: SourceSpan
 }
 ```
 
-Rules:
-- Pattern expressions are created only by the pattern expander.
-- `bundles` preserves the written order; `;` boundaries are preserved.
-- Each bundle belongs to at most one pattern expression of the same kind.
-- `owner` kind must match `kind`.
-- Binding uses flattened atom lists; expression boundaries need not align.
-Bundle op order is non-semantic; only `pattern_expr.bundles` encodes order and
-`;` boundaries.
+Entries are added during GraphIR construction; IDs are unique per module.
 
-### 7.5 Rebundling Rules
+### 7.3 Endpoint Expression Expansion
 
-Rebundling is deterministic and never infers patterns.
-
-Input: an ordered member list.
-
-Process:
-- Walk the list in order; never sort.
-- Greedy-group consecutive eligible atoms with the same `base_name` and
-  `pattern_type`.
-- Fracture when `base_name` changes, `pattern_type` changes, or a non-eligible
-  atom appears.
-- Rebundling does not merge across pattern expression boundaries.
-
-Numeric bundles:
-- Require contiguous indices in the existing order (step +1 or -1).
-- Split into maximal contiguous runs.
-- Emit `[hi:lo]` for descending runs and `[lo:hi]` for ascending runs.
-
-Literal bundles:
-- Emit `base<suffix1|suffix2|...>` in list order.
-
-Mixed segments:
-- Concatenate rebundled segments with `;` in list order.
-
-Example:
-- `net[7:0]` with `net[4]` removed emits `net[7:5];net[3:0]`.
-
-### 7.6 Order Preservation
-
-Binding and rebundling use the expander order. If two patterns expand with
-different orders (e.g., `net[7:0]` and `endpoint[0:7]`), their orders are
-preserved independently. Rebundling never flips order.
+Endpoint expressions are expanded as a whole before splitting on `.`. Each
+expanded atom must contain exactly one `.`; the left side becomes the instance
+name and the right side becomes the port name.
 
 ## 8. Primitive Operations
 
@@ -344,7 +327,7 @@ Patch {
 ```
 
 Patches are replayable and diffable. Provenance may include intent labels and
-origin bundle IDs.
+pattern expression IDs.
 
 ## 11. Projections and Round-Trip
 
@@ -353,7 +336,8 @@ origin bundle IDs.
   emission.
 
 Round-trip goal:
-- Preserve semantics and pattern structure when bundle metadata remains valid.
+- Preserve semantics and pattern provenance via `pattern_origin` and the
+  expression table.
 - Formatting/whitespace is not preserved.
 
 No pattern inference is permitted during emission.

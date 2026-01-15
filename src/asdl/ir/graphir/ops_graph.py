@@ -17,7 +17,15 @@ from xdsl.irdl import (
 from xdsl.traits import IsolatedFromAbove, NoTerminator
 from xdsl.utils.exceptions import VerifyException
 
-from .attrs import GraphIdAttr, GraphSymbolRefAttr, _coerce_graph_id, _coerce_graph_symbol_ref
+from .attrs import (
+    GraphIdAttr,
+    GraphPatternOriginAttr,
+    GraphSymbolRefAttr,
+    PatternOriginInput,
+    _coerce_graph_id,
+    _coerce_graph_pattern_origin,
+    _coerce_graph_symbol_ref,
+)
 
 
 @irdl_op_definition
@@ -27,6 +35,7 @@ class NetOp(IRDLOperation):
     Attributes:
         net_id: Stable net identifier.
         name: Net name.
+        pattern_origin: Optional pattern provenance metadata.
         attrs: Optional net attributes.
         annotations: Optional annotations.
     """
@@ -35,6 +44,7 @@ class NetOp(IRDLOperation):
 
     net_id = attr_def(GraphIdAttr)
     name_attr = attr_def(StringAttr, attr_name="name")
+    pattern_origin = opt_attr_def(GraphPatternOriginAttr)
     attrs = opt_attr_def(DictionaryAttr)
     annotations = opt_attr_def(DictionaryAttr)
     body = region_def("single_block")
@@ -48,6 +58,7 @@ class NetOp(IRDLOperation):
         net_id: GraphIdAttr | StringAttr | str | int,
         name: StringAttr | str,
         region: Region | Sequence[Operation],
+        pattern_origin: PatternOriginInput | None = None,
         attrs: DictionaryAttr | None = None,
         annotations: DictionaryAttr | None = None,
     ) -> None:
@@ -57,6 +68,7 @@ class NetOp(IRDLOperation):
             net_id: Stable net identifier.
             name: Net name.
             region: Region containing endpoint ops.
+            pattern_origin: Optional pattern provenance metadata.
             attrs: Optional net attributes.
             annotations: Optional annotations dictionary.
         """
@@ -64,6 +76,8 @@ class NetOp(IRDLOperation):
             name = StringAttr(name)
         net_id = _coerce_graph_id(net_id)
         attributes = {"net_id": net_id, "name": name}
+        if pattern_origin is not None:
+            attributes["pattern_origin"] = _coerce_graph_pattern_origin(pattern_origin)
         if attrs is not None:
             attributes["attrs"] = attrs
         if annotations is not None:
@@ -90,6 +104,7 @@ class InstanceOp(IRDLOperation):
         name: Instance name.
         module_ref: Resolved module/device reference.
         module_ref_raw: Original textual reference.
+        pattern_origin: Optional pattern provenance metadata.
         props: Optional properties.
         annotations: Optional annotations.
     """
@@ -100,6 +115,7 @@ class InstanceOp(IRDLOperation):
     name_attr = attr_def(StringAttr, attr_name="name")
     module_ref = attr_def(GraphSymbolRefAttr)
     module_ref_raw = attr_def(StringAttr)
+    pattern_origin = opt_attr_def(GraphPatternOriginAttr)
     props = opt_attr_def(DictionaryAttr)
     annotations = opt_attr_def(DictionaryAttr)
 
@@ -113,6 +129,7 @@ class InstanceOp(IRDLOperation):
         module_ref: GraphSymbolRefAttr
         | tuple[str | StringAttr, GraphIdAttr | StringAttr | str | int],
         module_ref_raw: StringAttr | str,
+        pattern_origin: PatternOriginInput | None = None,
         props: DictionaryAttr | None = None,
         annotations: DictionaryAttr | None = None,
     ) -> None:
@@ -123,6 +140,7 @@ class InstanceOp(IRDLOperation):
             name: Instance name.
             module_ref: Resolved module/device reference.
             module_ref_raw: Original textual reference.
+            pattern_origin: Optional pattern provenance metadata.
             props: Optional property dictionary.
             annotations: Optional annotations dictionary.
         """
@@ -138,6 +156,8 @@ class InstanceOp(IRDLOperation):
             "module_ref": module_ref,
             "module_ref_raw": module_ref_raw,
         }
+        if pattern_origin is not None:
+            attributes["pattern_origin"] = _coerce_graph_pattern_origin(pattern_origin)
         if props is not None:
             attributes["props"] = props
         if annotations is not None:
@@ -153,6 +173,7 @@ class EndpointOp(IRDLOperation):
         endpoint_id: Stable endpoint identifier.
         inst_id: Stable instance identifier.
         port_path: Port path string.
+        pattern_origin: Optional pattern provenance metadata.
     """
 
     name = "graphir.endpoint"
@@ -160,6 +181,7 @@ class EndpointOp(IRDLOperation):
     endpoint_id = attr_def(GraphIdAttr)
     inst_id = attr_def(GraphIdAttr)
     port_path = attr_def(StringAttr)
+    pattern_origin = opt_attr_def(GraphPatternOriginAttr)
 
     assembly_format = "attr-dict"
 
@@ -169,6 +191,7 @@ class EndpointOp(IRDLOperation):
         endpoint_id: GraphIdAttr | StringAttr | str | int,
         inst_id: GraphIdAttr | StringAttr | str | int,
         port_path: StringAttr | str,
+        pattern_origin: PatternOriginInput | None = None,
     ) -> None:
         """Initialize an endpoint op.
 
@@ -176,6 +199,7 @@ class EndpointOp(IRDLOperation):
             endpoint_id: Stable endpoint identifier.
             inst_id: Stable instance identifier.
             port_path: Port path string.
+            pattern_origin: Optional pattern provenance metadata.
         """
         if isinstance(port_path, str):
             port_path = StringAttr(port_path)
@@ -186,6 +210,8 @@ class EndpointOp(IRDLOperation):
             "inst_id": inst_id,
             "port_path": port_path,
         }
+        if pattern_origin is not None:
+            attributes["pattern_origin"] = _coerce_graph_pattern_origin(pattern_origin)
         super().__init__(attributes=attributes)
 
 
