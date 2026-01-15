@@ -28,16 +28,16 @@
 - Refactored AST->GraphIR conversion flow to use new contexts without behavior changes.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/141
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir -v`
 
 ## Status request
-- In progress
+- Ready for review
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Review current conversion helpers and define context boundaries.
+- Await review feedback.
