@@ -8,6 +8,6 @@ T-132:
   pr: 145
   merged: true
 T-138:
-  status: ready_for_review
+  status: review_clean
   pr: 146
   merged: false
