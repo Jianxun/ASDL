@@ -12,6 +12,6 @@ T-134:
   pr: 142
   merged: true
 T-135:
-  status: ready_for_review
+  status: done
   pr: 143
-  merged: false
+  merged: true
