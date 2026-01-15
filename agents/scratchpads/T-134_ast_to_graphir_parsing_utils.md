@@ -21,21 +21,24 @@
 ## Todo
 - [x] Extract parsing helpers into `ast_to_graphir_parsing.py` and update usage.
 - [x] Extract diagnostic/attr helpers into `ast_to_graphir_utils.py` and update usage.
-- [ ] Run `venv/bin/pytest tests/unit_tests/ir -v`.
+- [x] Run `venv/bin/pytest tests/unit_tests/ir -v`.
 
 ## Progress log
 - 2026-01-xx: Initialized task, set status to in_progress, created feature branch.
 - 2026-01-xx: Moved parsing helpers into `ast_to_graphir_parsing.py`.
 - 2026-01-xx: Moved diagnostic/attr helpers into `ast_to_graphir_utils.py`.
+- 2026-01-xx: Verified `tests/unit_tests/ir` suite passes.
 
 ## Patch summary
-- TBD
+- Added parsing helper module and wired AST->GraphIR conversion to use it.
+- Added shared diagnostic/attr utility module and updated converter imports.
+- Kept behavior/diagnostics unchanged while trimming `ast_to_graphir.py`.
 
 ## PR URL
 - TBD
 
 ## Verification
-- TBD
+- `venv/bin/pytest tests/unit_tests/ir -v`
 
 ## Status request
 - In Progress
