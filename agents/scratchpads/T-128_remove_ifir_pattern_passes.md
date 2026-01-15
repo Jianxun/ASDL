@@ -33,7 +33,7 @@
 - https://github.com/Jianxun/ASDL/pull/136
 
 ## Verification
-- Not run (not requested).
+- `./venv/bin/python -m pytest tests/unit_tests/ir`
 
 ## Status request
 - ready_for_review
