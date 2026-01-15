@@ -21,16 +21,17 @@
 - Add/adjust tests if needed and run verification.
 
 ## Progress log
-- 2026-01-XX: Task started.
+- 2026-01-14: Added GraphIR session/document contexts and extracted symbol helpers.
 
 ## Patch summary
-- TBD
+- Added AST->GraphIR session/document context module and symbol/ID allocation helpers.
+- Refactored AST->GraphIR conversion flow to use new contexts without behavior changes.
 
 ## PR URL
 - TBD
 
 ## Verification
-- TBD
+- `venv/bin/pytest tests/unit_tests/ir -v`
 
 ## Status request
 - In progress
