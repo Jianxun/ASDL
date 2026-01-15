@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Mapping
 
 from xdsl.dialects.builtin import IntAttr, StringAttr
 
 from asdl.ir.graphir.attrs import GraphPatternOriginAttr
 
+from .expr_table import PatternExpressionEntry
 from .parts import PatternPart, decode_pattern_parts, encode_pattern_parts
 
 
@@ -69,5 +71,36 @@ def decode_pattern_origin(origin: GraphPatternOriginAttr) -> PatternOrigin:
         pattern_parts=decode_pattern_parts(origin.pattern_parts),
     )
 
+def lookup_pattern_origin_entry(
+    origin: GraphPatternOriginAttr,
+    table: Mapping[str, PatternExpressionEntry],
+) -> PatternExpressionEntry:
+    """Lookup the pattern expression entry for a GraphPatternOriginAttr.
 
-__all__ = ["PatternOrigin", "decode_pattern_origin", "encode_pattern_origin"]
+    Args:
+        origin: GraphPatternOriginAttr with the expression ID to resolve.
+        table: Mapping of expression IDs to expression table entries.
+
+    Returns:
+        The matching PatternExpressionEntry.
+
+    Raises:
+        KeyError: If the expression ID is not present in the table.
+        TypeError: If origin is not a GraphPatternOriginAttr.
+    """
+    if not isinstance(origin, GraphPatternOriginAttr):
+        raise TypeError(f"Expected GraphPatternOriginAttr, got {type(origin)!r}")
+    entry = table.get(origin.expression_id.data)
+    if entry is None:
+        raise KeyError(
+            f"pattern expression id '{origin.expression_id.data}' is not in the table"
+        )
+    return entry
+
+
+__all__ = [
+    "PatternOrigin",
+    "decode_pattern_origin",
+    "encode_pattern_origin",
+    "lookup_pattern_origin_entry",
+]
