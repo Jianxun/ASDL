@@ -35,17 +35,17 @@
   AtomizedEndpoint fields.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/146
 
 ## Verification
 - venv/bin/pytest tests/unit_tests/parser -v
 - venv/bin/pytest tests/unit_tests/ir -v
 
 ## Status request
-- In Progress
+- Done
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Run parser and IR unit tests.
+- Await review.
