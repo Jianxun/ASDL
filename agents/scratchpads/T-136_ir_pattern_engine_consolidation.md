@@ -1,29 +1,52 @@
 # T-136 IR pattern engine consolidation
 
-## Objective
-- Consolidate pattern expansion/atomization into src/asdl/ir/patterns with
-  updated semantics (full-expression endpoint expansion, literal part
-  preservation, and $ net splice rejection).
+## Task summary (DoD + verify)
+- Implement pattern expansion/atomization utilities in src/asdl/ir/patterns with
+  full-expression endpoint expansion (expand then split on '.') and literal-part
+  preservation. Provide API hooks to reject splice delimiters for $ nets. Ensure
+  collision detection, size limits, and diagnostics align with spec wording
+  (pattern expression terminology). Add unit tests covering expansion,
+  atomization, endpoint splitting, and $ net splice rejection.
+- Verify: venv/bin/pytest tests/unit_tests/ir -v
 
-## Notes
-- Do not treat src/asdl/patterns as golden; align with architect decisions.
-- Endpoint expansion: expand the full expression, then split on '.' per atom.
-- Preserve literal pattern parts exactly (no normalization).
-- Provide API hooks to disallow splice delimiters when required (for $ nets).
-- Diagnostics should use "pattern expression" terminology.
-
-## Files
-- src/asdl/ir/patterns/__init__.py
-- src/asdl/ir/patterns/atomize.py
-- src/asdl/ir/patterns/expand.py
-- src/asdl/ir/patterns/tokenize.py
-- src/asdl/ir/patterns/diagnostics.py
-- tests/unit_tests/ir (new pattern engine tests)
-
-## References
-- agents/scratchpads/architect_scratchpad.md
-- ADR-0009
-- ADR-0011
-- ADR-0012
-- ADR-0013
+## Read
+- agents/roles/executor.md
+- agents/context/lessons.md
+- agents/context/contract.md
+- agents/context/tasks.yaml
+- agents/context/tasks_state.yaml
+- agents/context/project_status.md
 - docs/specs/spec_asdl_pattern_expansion.md
+
+## Plan
+- [x] Inspect existing pattern utilities and specs; map gaps to T-136 scope.
+- [x] Add tests first for expansion/atomization/endpoint splitting and $ splice rejection.
+- [x] Implement pattern expansion/tokenization/atomization utilities in
+  src/asdl/ir/patterns with spec-aligned diagnostics.
+- [x] Run targeted IR tests and update scratchpad with results.
+
+## Progress log
+- 2026-02-08: Task set to in_progress, branch created.
+- 2026-02-08: Added IR pattern engine tests and implementations; updated exports.
+- 2026-02-08: Ran IR unit tests.
+
+## Patch summary
+- Added IR pattern engine expansion/atomization/tokenization utilities with
+  spec-aligned diagnostics and splice rejection hooks.
+- Added IR unit tests for pattern expansion, atomization, endpoint splitting,
+  and splice rejection.
+
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/144
+
+## Verification
+- ./venv/bin/pytest tests/unit_tests/ir -v
+
+## Status request (Done / Blocked / In Progress)
+- Ready for Review.
+
+## Blockers / Questions
+- None yet.
+
+## Next steps
+- Review existing pattern helper implementations and write TDD cases.
