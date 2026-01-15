@@ -8,7 +8,7 @@ T-133:
   pr: 141
   merged: true
 T-134:
-  status: review_in_progress
+  status: review_clean
   pr: 142
   merged: false
 T-135:
