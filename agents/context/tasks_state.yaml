@@ -4,9 +4,9 @@ T-132:
   pr: null
   merged: false
 T-133:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 141
+  merged: true
 T-134:
   status: ready
   pr: null
