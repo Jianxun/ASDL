@@ -18,7 +18,6 @@ from asdl.ir.converters.ast_to_graphir import convert_document, convert_import_g
 from asdl.ir.converters.graphir_to_ifir import convert_program as convert_graphir_to_ifir
 from asdl.ir.graphir import ASDL_GRAPHIR, ProgramOp as GraphProgramOp
 from asdl.ir.ifir import ASDL_IFIR, DesignOp as IfirDesignOp
-from asdl.ir.patterns.atomization import PatternAtomizePass, PatternAtomizeState
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -110,24 +109,6 @@ class GraphirToIfirPass(ModulePass):
         self.state.ifir_design = ifir_design
 
 
-@dataclass(frozen=True)
-class AtomizeIfirPass(ModulePass):
-    name = "atomize-patterns"
-
-    state: PipelineState
-
-    def apply(self, ctx: Context, op: builtin.ModuleOp) -> None:
-        atom_state = PatternAtomizeState(diagnostics=self.state.diagnostics)
-        PatternAtomizePass(state=atom_state).apply(ctx, op)
-        if atom_state.failed:
-            self.state.failed = True
-            raise PipelineAbort()
-        if atom_state.design is None:
-            self.state.ifir_design = None
-            return
-        self.state.ifir_design = atom_state.design
-
-
 def run_mvp_pipeline(
     document: Optional[AsdlDocument] = None,
     *,
@@ -178,7 +159,6 @@ def _run_pipeline(
     if verify:
         passes.append(VerifyGraphirPass(state=state))
     passes.append(GraphirToIfirPass(state=state))
-    passes.append(AtomizeIfirPass(state=state))
     if verify:
         passes.append(VerifyIfirPass(state=state))
 
