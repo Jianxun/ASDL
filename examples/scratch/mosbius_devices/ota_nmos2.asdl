@@ -5,10 +5,10 @@ modules:
   ota_nmos2:
     instance_defaults:
       gf.pfet_03v3:
-        parameters:
-          L: 0.5u
-          W: 5u
-          NF: 6
+        #parameters:
+        #  L: 0.5u
+        #  W: 5u
+        #  NF: 6
         bindings:
           B: $VDD
       gf.nfet_03v3:

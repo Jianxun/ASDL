@@ -75,3 +75,6 @@ archive:
   - T-129: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-129_graphir_pattern_origin.md, pr: 137}
   - T-130: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-130_pattern_helper_apis.md, pr: 138}
   - T-131: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-131_graphir_converter_cleanup.md, pr: 139}
+  - T-133: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-133_ast_to_graphir_context.md, pr: 141}
+  - T-134: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-134_ast_to_graphir_parsing_utils.md, pr: 142}
+  - T-135: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-135_ast_to_graphir_lowering_split.md, pr: 143}

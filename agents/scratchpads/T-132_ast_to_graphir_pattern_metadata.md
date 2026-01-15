@@ -10,7 +10,12 @@
 - Keep binding logic in ast_to_graphir.py.
 - Subset bindings should resolve via expansion (e.g., `MN_IN_<N>.D` →
   `MN_IN_N.D`) after instance atomization.
-- Add diagnostics for pattern collisions and net/endpoint length mismatches.
+- Binding length checks compare pattern expression expansion lengths (exact
+  match) for nets vs endpoints.
+- Patterned params expand after instance expansion with scalar broadcast or
+  exact-length zip.
+- $ nets allow pattern expansion but reject splice delimiters (`;`).
+- Add diagnostics for pattern collisions and length mismatches.
 - Tests: add subset-binding coverage plus negative cases in
   `tests/unit_tests/ir`.
 

@@ -1,36 +1,44 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-133
-    title: Ast to GraphIR conversion context refactor
+  - id: T-136
+    title: IR pattern engine consolidation
     owner: Executor
     dod: >
-      Introduce conversion context objects for AST->GraphIR (session + document),
-      extract symbol/ID allocation helpers into new modules, and update the
-      top-level conversion flow to use the new context without changing
-      behavior or diagnostics.
+      Implement pattern expansion/atomization utilities in
+      src/asdl/ir/patterns with full-expression endpoint expansion (expand then
+      split on '.') and literal-part preservation. Provide API hooks to reject
+      splice delimiters for $ nets. Ensure collision detection, size limits,
+      and diagnostics align with spec wording (pattern expression terminology).
+      Add unit tests covering expansion, atomization, endpoint splitting, and
+      $ net splice rejection.
     verify:
       - venv/bin/pytest tests/unit_tests/ir -v
     files:
-      - src/asdl/ir/converters/ast_to_graphir.py
-      - src/asdl/ir/converters/ast_to_graphir_context.py
-      - src/asdl/ir/converters/ast_to_graphir_symbols.py
+      - src/asdl/ir/patterns/__init__.py
+      - src/asdl/ir/patterns/atomize.py
+      - src/asdl/ir/patterns/expand.py
+      - src/asdl/ir/patterns/tokenize.py
+      - src/asdl/ir/patterns/diagnostics.py
     links:
-      scratchpad: agents/scratchpads/T-133_ast_to_graphir_context.md
+      scratchpad: agents/scratchpads/T-136_ir_pattern_engine_consolidation.md
   - id: T-132
     title: Ast to GraphIR pattern metadata integration
     owner: Executor
     depends_on:
-      - T-133
+      - T-136
     dod: >
       Update AST->GraphIR conversion to register pattern expression table
       entries, attach pattern_origin metadata to atomized nets/instances/
       endpoints and instance params, and expand endpoint expressions as a whole
       before splitting on '.'. Endpoint resolution must operate on expanded
-      atoms so subset bindings like MN_IN_<N>.D match atomized instances. Emit
-      diagnostics for expansion collisions and net/endpoint length mismatches.
-      Add unit tests covering subset bindings and failure cases. Binding logic
-      remains in ast_to_graphir.py.
+      atoms so subset bindings like MN_IN_<N>.D match atomized instances.
+      Binding length checks compare pattern expression expansion lengths for
+      nets vs endpoints (exact match). Patterned params expand after instance
+      expansion with scalar broadcast or exact-length zip. Emit diagnostics for
+      expansion collisions and length mismatches. Add unit tests covering
+      subset bindings and failure cases. Binding logic remains in
+      ast_to_graphir.py.
     verify:
       - venv/bin/pytest tests/unit_tests/ir -v
     files:
@@ -41,39 +49,26 @@ current_sprint:
       - src/asdl/ir/graphir/ops_graph.py
     links:
       scratchpad: agents/scratchpads/T-132_ast_to_graphir_pattern_metadata.md
-  - id: T-134
-    title: Ast to GraphIR parsing and utils split
+  - id: T-138
+    title: Migrate pattern imports and remove legacy module
     owner: Executor
     depends_on:
-      - T-132
+      - T-136
     dod: >
-      Extract instance/net/endpoint parsing helpers and diagnostic/attr
-      utilities into dedicated modules, updating AST->GraphIR conversion to
-      use the shared helpers without changing behavior or error messaging.
+      Update remaining imports to use asdl.ir.patterns, including NFIR dialect
+      and parser tests, and delete src/asdl/patterns. Ensure tests referencing
+      pattern helpers pass without the legacy module.
     verify:
+      - venv/bin/pytest tests/unit_tests/parser -v
       - venv/bin/pytest tests/unit_tests/ir -v
     files:
-      - src/asdl/ir/converters/ast_to_graphir.py
-      - src/asdl/ir/converters/ast_to_graphir_parsing.py
-      - src/asdl/ir/converters/ast_to_graphir_utils.py
+      - src/asdl/ir/nfir/dialect.py
+      - tests/unit_tests/parser/test_pattern_atomization.py
+      - tests/unit_tests/parser/test_pattern_expansion.py
+      - src/asdl/patterns/__init__.py
+      - src/asdl/patterns/atomize.py
     links:
-      scratchpad: agents/scratchpads/T-134_ast_to_graphir_parsing_utils.md
-  - id: T-135
-    title: Ast to GraphIR lowering split
-    owner: Executor
-    depends_on:
-      - T-132
-    dod: >
-      Move module/device lowering helpers into a dedicated lowering module and
-      slim the AST->GraphIR façade to orchestration only, preserving the public
-      API and behavior.
-    verify:
-      - venv/bin/pytest tests/unit_tests/ir -v
-    files:
-      - src/asdl/ir/converters/ast_to_graphir.py
-      - src/asdl/ir/converters/ast_to_graphir_lowering.py
-    links:
-      scratchpad: agents/scratchpads/T-135_ast_to_graphir_lowering_split.md
+      scratchpad: agents/scratchpads/T-138_pattern_import_migration.md
 backlog: []
 
 exploration_candidates:
