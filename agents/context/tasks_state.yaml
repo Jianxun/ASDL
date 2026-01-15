@@ -16,7 +16,7 @@ T-130:
   pr: 138
   merged: true
 T-131:
-  status: ready_for_review
+  status: request_changes
   pr: 139
   merged: false
 T-132:
