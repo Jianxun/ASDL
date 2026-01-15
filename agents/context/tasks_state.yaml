@@ -4,8 +4,8 @@ T-136:
   pr: 144
   merged: true
 T-132:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 145
   merged: false
 T-138:
   status: ready
