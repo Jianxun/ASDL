@@ -15,6 +15,7 @@ from asdl.ir.ifir import DeviceOp as IfirDeviceOp
 from asdl.ir.ifir import InstanceOp as IfirInstanceOp
 from asdl.ir.ifir import ModuleOp as IfirModuleOp
 from asdl.ir.ifir import NetOp as IfirNetOp
+from asdl.ir.patterns import encode_pattern_expression_table, register_pattern_expression
 
 
 def test_convert_graphir_program_to_ifir() -> None:
@@ -126,3 +127,92 @@ def test_convert_graphir_propagates_file_ids() -> None:
     )
     assert inst.ref_file_id is not None
     assert inst.ref_file_id.data == "dep.asdl"
+
+
+def test_convert_graphir_pattern_origin_uses_expression_table() -> None:
+    table = {}
+    net_expr_id = register_pattern_expression(
+        table,
+        expression="OUT<P|N>",
+        kind="net",
+    )
+    inst_expr_id = register_pattern_expression(
+        table,
+        expression="U<P|N>",
+        kind="inst",
+    )
+    pattern_table_attr = encode_pattern_expression_table(table)
+
+    instance_p = GraphInstanceOp(
+        inst_id="i1",
+        name="UP",
+        module_ref=("device", "d1"),
+        module_ref_raw="res",
+        pattern_origin=(inst_expr_id, 0, "U", ["P"]),
+    )
+    instance_n = GraphInstanceOp(
+        inst_id="i2",
+        name="UN",
+        module_ref=("device", "d1"),
+        module_ref_raw="res",
+        pattern_origin=(inst_expr_id, 0, "U", ["N"]),
+    )
+    net_out_p = GraphNetOp(
+        net_id="n1",
+        name="OUTP",
+        pattern_origin=(net_expr_id, 0, "OUT", ["P"]),
+        region=[
+            GraphEndpointOp(endpoint_id="e1", inst_id="i1", port_path="P"),
+        ],
+    )
+    net_out_n = GraphNetOp(
+        net_id="n2",
+        name="OUTN",
+        pattern_origin=(net_expr_id, 0, "OUT", ["N"]),
+        region=[
+            GraphEndpointOp(endpoint_id="e2", inst_id="i2", port_path="P"),
+        ],
+    )
+    module = GraphModuleOp(
+        module_id="m1",
+        name="top",
+        file_id="entry.asdl",
+        port_order=["OUTP", "OUTN"],
+        pattern_expression_table=pattern_table_attr,
+        region=[net_out_p, net_out_n, instance_p, instance_n],
+    )
+    device = GraphDeviceOp(
+        device_id="d1",
+        name="res",
+        file_id="entry.asdl",
+        ports=["P"],
+        region=[],
+    )
+    program = GraphProgramOp(region=[module, device], entry="m1")
+
+    ifir_design, diagnostics = convert_graphir_to_ifir(program)
+
+    assert diagnostics == []
+    assert ifir_design is not None
+
+    ifir_module = next(
+        op for op in ifir_design.body.block.ops if isinstance(op, IfirModuleOp)
+    )
+    nets = [op for op in ifir_module.body.block.ops if isinstance(op, IfirNetOp)]
+    instances = [
+        op for op in ifir_module.body.block.ops if isinstance(op, IfirInstanceOp)
+    ]
+
+    net_origins = {
+        net.name_attr.data: net.pattern_origin.data
+        for net in nets
+        if net.pattern_origin is not None
+    }
+    inst_origins = {
+        inst.name_attr.data: inst.pattern_origin.data
+        for inst in instances
+        if inst.pattern_origin is not None
+    }
+
+    assert net_origins == {"OUTP": "OUT<P|N>", "OUTN": "OUT<P|N>"}
+    assert inst_origins == {"UP": "U<P|N>", "UN": "U<P|N>"}
