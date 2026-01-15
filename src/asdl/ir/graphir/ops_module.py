@@ -17,9 +17,8 @@ from xdsl.irdl import (
 from xdsl.traits import IsolatedFromAbove, NoTerminator
 from xdsl.utils.exceptions import VerifyException
 
-from .attrs import GraphIdAttr, GraphParamRefAttr, _coerce_graph_id
+from .attrs import GraphIdAttr, _coerce_graph_id
 from .ops_graph import EndpointOp, InstanceOp, NetOp
-from .ops_pattern import BundleOp, PatternExprOp
 
 PORT_ORDER_KEY = "port_order"
 
@@ -171,8 +170,6 @@ class ModuleOp(IRDLOperation):
         net_ids: set[str] = set()
         inst_names: set[str] = set()
         inst_ids: set[str] = set()
-        bundle_kinds: dict[str, str] = {}
-        pattern_exprs: list[PatternExprOp] = []
         for op in self.body.block.ops:
             if isinstance(op, NetOp):
                 net_name = op.name_attr.data
@@ -187,19 +184,6 @@ class ModuleOp(IRDLOperation):
                     raise VerifyException(f"Duplicate instance name '{inst_name}'")
                 inst_names.add(inst_name)
                 inst_ids.add(op.inst_id.value.data)
-                continue
-            if isinstance(op, BundleOp):
-                bundle_id = op.bundle_id.value.data
-                existing_kind = bundle_kinds.get(bundle_id)
-                if existing_kind is not None and existing_kind != op.kind.data:
-                    raise VerifyException(
-                        f"Bundle '{bundle_id}' has conflicting kinds "
-                        f"'{existing_kind}' and '{op.kind.data}'"
-                    )
-                bundle_kinds[bundle_id] = op.kind.data
-                continue
-            if isinstance(op, PatternExprOp):
-                pattern_exprs.append(op)
                 continue
             if isinstance(op, EndpointOp):
                 raise VerifyException("graphir.endpoint must be nested under graphir.net")
@@ -227,65 +211,6 @@ class ModuleOp(IRDLOperation):
                         f"'{inst_id}' and port_path '{endpoint.port_path.data}'"
                     )
                 endpoint_keys.add(key)
-
-        bundle_owners: set[tuple[str, str]] = set()
-        for pattern_expr in pattern_exprs:
-            kind = pattern_expr.kind.data
-            owner = pattern_expr.owner
-            if kind == "net":
-                if not isinstance(owner, GraphIdAttr):
-                    raise VerifyException("net pattern_expr owner must be a graph_id")
-                owner_id = owner.value.data
-                if owner_id not in net_ids:
-                    raise VerifyException(
-                        f"net pattern_expr owner '{owner_id}' is not a net_id"
-                    )
-            elif kind == "endpoint":
-                if not isinstance(owner, GraphIdAttr):
-                    raise VerifyException(
-                        "endpoint pattern_expr owner must be a graph_id"
-                    )
-                owner_id = owner.value.data
-                if owner_id not in endpoint_ids:
-                    raise VerifyException(
-                        f"endpoint pattern_expr owner '{owner_id}' is not an endpoint_id"
-                    )
-            elif kind == "inst":
-                if not isinstance(owner, GraphIdAttr):
-                    raise VerifyException("inst pattern_expr owner must be a graph_id")
-                owner_id = owner.value.data
-                if owner_id not in inst_ids:
-                    raise VerifyException(
-                        f"inst pattern_expr owner '{owner_id}' is not an inst_id"
-                    )
-            elif kind == "param":
-                if not isinstance(owner, GraphParamRefAttr):
-                    raise VerifyException("param pattern_expr owner must be param_ref")
-                owner_id = owner.inst_id.value.data
-                if owner_id not in inst_ids:
-                    raise VerifyException(
-                        f"param pattern_expr owner '{owner_id}' is not an inst_id"
-                    )
-            else:
-                raise VerifyException(f"Unsupported pattern_expr kind '{kind}'")
-
-            for bundle_id in pattern_expr.bundles.data:
-                bundle_key = bundle_id.value.data
-                bundle_kind = bundle_kinds.get(bundle_key)
-                if bundle_kind is None:
-                    raise VerifyException(
-                        f"pattern_expr references unknown bundle '{bundle_key}'"
-                    )
-                if bundle_kind != kind:
-                    raise VerifyException(
-                        f"pattern_expr kind '{kind}' does not match bundle '{bundle_key}'"
-                    )
-                owner_key = (kind, bundle_key)
-                if owner_key in bundle_owners:
-                    raise VerifyException(
-                        f"bundle '{bundle_key}' already owned by a {kind} pattern_expr"
-                    )
-                bundle_owners.add(owner_key)
 
 
 @irdl_op_definition
