@@ -1,5 +1,16 @@
 """Pattern helpers for ASDL IR."""
 
+from .atomize import AtomizedEndpoint, AtomizedPattern, atomize_endpoint, atomize_pattern
+from .diagnostics import (
+    MAX_EXPANSION_SIZE,
+    PATTERN_DUPLICATE_ATOM,
+    PATTERN_EMPTY_ENUM,
+    PATTERN_EMPTY_SPLICE,
+    PATTERN_INVALID_RANGE,
+    PATTERN_TOO_LARGE,
+    PATTERN_UNEXPANDED,
+)
+from .expand import expand_endpoint, expand_pattern
 from .endpoint_split import split_endpoint_atom
 from .expr_table import (
     PatternExpressionEntry,
@@ -23,6 +34,15 @@ from .parts import (
 )
 
 __all__ = [
+    "AtomizedEndpoint",
+    "AtomizedPattern",
+    "MAX_EXPANSION_SIZE",
+    "PATTERN_DUPLICATE_ATOM",
+    "PATTERN_EMPTY_ENUM",
+    "PATTERN_EMPTY_SPLICE",
+    "PATTERN_INVALID_RANGE",
+    "PATTERN_TOO_LARGE",
+    "PATTERN_UNEXPANDED",
     "PatternExpressionEntry",
     "PatternExpressionKind",
     "PatternExpressionTable",
@@ -38,8 +58,12 @@ __all__ = [
     "encode_pattern_expression_table",
     "encode_pattern_origin",
     "encode_pattern_parts",
+    "expand_endpoint",
+    "expand_pattern",
     "lookup_pattern_expression",
     "normalize_pattern_parts",
     "register_pattern_expression",
     "split_endpoint_atom",
+    "atomize_endpoint",
+    "atomize_pattern",
 ]
