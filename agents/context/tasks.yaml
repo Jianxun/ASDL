@@ -1,182 +1,102 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-125
-    title: Deprecate NFIR forward converters
+  - id: T-127
+    title: Remove GraphIR pattern ops
     owner: Executor
     dod: >
-      Hard-deprecate AST->NFIR and NFIR->IFIR converters by removing them from
-      public exports, relocating the modules under `legacy/` (or deleting them
-      if no longer needed), and updating any call sites to use AST->GraphIR and
-      GraphIR->IFIR instead. Update/trim tests to match the new export surface,
-      and document NFIR as projection-only.
-    verify:
-      - venv/bin/pytest tests/unit_tests/ir -v
+      Delete graphir bundle/pattern_expr ops and helpers, and clean the GraphIR
+      dialect/module verification to drop bundle/pattern_expr support. Remove
+      GraphIR exports for pattern ops and delete the graphir pattern helper
+      module.
+    verify: []
     files:
-      - src/asdl/ir/converters/ast_to_nfir.py
-      - src/asdl/ir/converters/nfir_to_ifir.py
-      - src/asdl/ir/converters/__init__.py
-      - src/asdl/ir/__init__.py
-      - legacy/src/asdl/ir/converters/ast_to_nfir.py
-      - legacy/src/asdl/ir/converters/nfir_to_ifir.py
-      - tests/unit_tests/ir
-      - docs/specs/spec_asdl_nfir.md
+      - src/asdl/ir/graphir/ops_pattern.py
+      - src/asdl/ir/graphir/patterns.py
+      - src/asdl/ir/graphir/dialect.py
+      - src/asdl/ir/graphir/ops_module.py
+      - src/asdl/ir/graphir/__init__.py
     links:
-      scratchpad: agents/scratchpads/T-125_deprecate_nfir_converters.md
-  - id: T-120
-    title: Pattern subsystem package split
+      scratchpad: agents/scratchpads/T-127_remove_graphir_pattern_ops.md
+  - id: T-128
+    title: Remove IFIR pattern passes
     owner: Executor
     dod: >
-      Replace the monolithic patterns module with a `src/asdl/patterns/` package
-      that separates tokenization, expansion, atomization, and diagnostics while
-      preserving the public API (`expand_pattern`, `expand_endpoint`,
-      `atomize_pattern`, `atomize_endpoint`) and existing behavior. Update
-      imports and keep diagnostics codes unchanged.
-    verify:
-      - venv/bin/pytest tests/unit_tests/parser/test_pattern_expansion.py tests/unit_tests/parser/test_pattern_atomization.py -v
+      Delete the IFIR pattern atomization/elaboration passes and update the IR
+      patterns package and pipeline to remove the atomize-patterns pass. The
+      pipeline should compile without importing the removed passes.
+    verify: []
     files:
-      - src/asdl/patterns.py
-      - src/asdl/patterns/__init__.py
-      - src/asdl/patterns/atomize.py
-      - src/asdl/patterns/expand.py
-      - src/asdl/patterns/tokenize.py
+      - src/asdl/ir/patterns/atomization.py
+      - src/asdl/ir/patterns/elaboration.py
+      - src/asdl/ir/patterns/__init__.py
+      - src/asdl/ir/pipeline.py
     links:
-      scratchpad: agents/scratchpads/T-120_pattern_package_split.md
-  - id: T-121
-    title: Centralize pattern binding verification helpers
+      scratchpad: agents/scratchpads/T-128_remove_ifir_pattern_passes.md
+  - id: T-129
+    title: GraphIR pattern origin attributes and table
     owner: Executor
-    depends_on:
-      - T-126
     dod: >
-      Add `src/asdl/patterns/verify.py` to host pure pattern-binding helpers,
-      including explicit utilities for (1) expansion length mismatches and
-      (2) literal collision detection after expansion/atomization. Wire these
-      helpers into the GraphIR/IFIR path (GraphIR->IFIR conversion and
-      pattern atomization), avoid IR type dependencies in the helpers, and
-      preserve diagnostics codes + VerifyException message text. Behavior
-      remains unchanged.
-    verify:
-      - venv/bin/pytest tests/unit_tests/ir/test_graphir_patterns.py tests/unit_tests/ir/test_pattern_atomization.py -v
+      Add a typed GraphIR pattern_origin attribute, attach optional
+      pattern_origin to net/instance/endpoint ops, and define the module attrs
+      pattern_expression_table entry. Update the GraphIR spec to describe the
+      atomized-only provenance model.
+    verify: []
+    files:
+      - src/asdl/ir/graphir/attrs.py
+      - src/asdl/ir/graphir/ops_graph.py
+      - src/asdl/ir/graphir/ops_module.py
+      - docs/specs/spec_asdl_graphir.md
+    links:
+      scratchpad: agents/scratchpads/T-129_graphir_pattern_origin.md
+  - id: T-130
+    title: Pattern metadata helper APIs
+    owner: Executor
+    dod: >
+      Create new pattern metadata helpers under src/asdl/ir/patterns
+      (origin, expr_table, parts, endpoint_split) and export them from
+      the patterns package. Implement the typed-attr encode/decode APIs
+      described in ADR-0015; do not add binding logic here.
+    verify: []
+    files:
+      - src/asdl/ir/patterns/origin.py
+      - src/asdl/ir/patterns/expr_table.py
+      - src/asdl/ir/patterns/parts.py
+      - src/asdl/ir/patterns/endpoint_split.py
+      - src/asdl/ir/patterns/__init__.py
+    links:
+      scratchpad: agents/scratchpads/T-130_pattern_helper_apis.md
+  - id: T-131
+    title: Remove bundle usage from GraphIR converters
+    owner: Executor
+    dod: >
+      Remove bundle/pattern_expr handling from GraphIR->IFIR and GraphIR->AST
+      converters, replacing rebundling with the new pattern_origin/table
+      approach. Keep converters compiling with atomized-only GraphIR.
+    verify: []
     files:
       - src/asdl/ir/converters/graphir_to_ifir.py
-      - src/asdl/patterns/verify.py
-      - src/asdl/patterns/__init__.py
-      - src/asdl/ir/patterns/atomization.py
-      - tests/unit_tests/ir/test_pattern_atomization.py
-    links:
-      scratchpad: agents/scratchpads/T-121_pattern_verification_helpers.md
-  - id: T-122
-    title: Relocate GraphIR rebundling helpers to AST projection
-    owner: Executor
-    depends_on:
-      - T-126
-    dod: >
-      Move `rebundle_bundle`/`rebundle_pattern_expr` out of
-      `src/asdl/ir/graphir/patterns.py` into the GraphIR->AST projection path
-      (converter or pass) so rebundling is treated as projection logic, not
-      GraphIR core. Remove wrapper exports from pattern passes, keep any
-      GraphIR-side metadata decode helpers as needed, and update call sites/tests
-      without changing behavior.
-    verify:
-      - venv/bin/pytest tests/unit_tests/ir/test_pattern_atomization.py -v
-    files:
-      - src/asdl/ir/graphir/patterns.py
       - src/asdl/ir/converters/graphir_to_ast.py
-      - src/asdl/ir/patterns/atomization.py
-      - src/asdl/ir/patterns/elaboration.py
+      - src/asdl/ir/patterns/origin.py
     links:
-      scratchpad: agents/scratchpads/T-122_graphir_rebundling_cleanup.md
-  - id: T-126
-    title: Relocate IR pattern passes under ir/patterns
+      scratchpad: agents/scratchpads/T-131_graphir_converter_cleanup.md
+  - id: T-132
+    title: Ast to GraphIR pattern metadata integration
     owner: Executor
     dod: >
-      Move `src/asdl/ir/pattern_atomization.py` and
-      `src/asdl/ir/pattern_elaboration.py` into a new
-      `src/asdl/ir/patterns/` package (e.g., `atomization.py`,
-      `elaboration.py`), update imports in the pipeline/tests, and add a
-      minimal package `__init__.py` export. Keep behavior and diagnostics
-      unchanged.
-    verify:
-      - venv/bin/pytest tests/unit_tests/ir/test_pattern_atomization.py -v
-    files:
-      - src/asdl/ir/pattern_atomization.py
-      - src/asdl/ir/pattern_elaboration.py
-      - src/asdl/ir/patterns/__init__.py
-      - src/asdl/ir/patterns/atomization.py
-      - src/asdl/ir/patterns/elaboration.py
-      - src/asdl/ir/pipeline.py
-      - tests/unit_tests/ir/test_pattern_atomization.py
-      - agents/context/codebase_map.md
-    links:
-      scratchpad: agents/scratchpads/T-126_ir_pattern_passes.md
-  - id: T-123
-    title: Pattern tests and docs cleanup
-    owner: Executor
-    dod: >
-      Reorganize pattern tests into a focused suite (parser + IR integration),
-      add a short doc note describing atomized-only IFIR expectations for
-      emission, and remove stale references to the deprecated elaboration pass.
-    verify:
-      - venv/bin/pytest tests/unit_tests/parser/test_pattern_expansion.py tests/unit_tests/parser/test_pattern_atomization.py tests/unit_tests/ir/test_pattern_atomization.py -v
-    files:
-      - tests/unit_tests/parser/test_pattern_expansion.py
-      - tests/unit_tests/parser/test_pattern_atomization.py
-      - tests/unit_tests/ir/test_pattern_atomization.py
-      - docs/outstanding_topics.md
-      - agents/context/contract.md
-    links:
-      scratchpad: agents/scratchpads/T-123_pattern_tests_docs_cleanup.md
-  - id: T-112
-    title: GraphIR to AST normalized output
-    owner: Executor
-    dod: >
-      Add a GraphIR -> AST normalized serializer that emits explicit nets and
-      instances without authoring sugar. Rebundle patterned names/expressions
-      into AST tokens during projection (using GraphIR bundle metadata) so the
-      emitted AST preserves authoring patterns. Include roundtrip tests that
-      parse, lower to GraphIR, and re-emit AST with deterministic ordering.
-    verify:
-      - venv/bin/pytest tests/unit_tests/ast -v
-    files:
-      - src/asdl/ir/converters/graphir_to_ast.py
-      - src/asdl/ir/graphir/patterns.py
-      - src/asdl/ast/models.py
-      - src/asdl/ast/parser.py
-      - tests/unit_tests/ast/test_graphir_roundtrip.py
-    links:
-      scratchpad: agents/scratchpads/T-112_graphir_to_ast_normalized.md
-      spec: docs/specs/spec_asdl_graphir.md
-  - id: T-119
-    title: Named pattern substitution in GraphIR path
-    owner: Architect
-    dod: >
-      Decide where named pattern substitution belongs in the GraphIR pipeline
-      (AST parse, AST->GraphIR conversion, or a dedicated pass), record the
-      decision in contract/ADR if needed, and note migration implications.
-    verify:
-      - rg -n "Named pattern substitution" agents/context/contract.md agents/adr
-    files:
-      - agents/context/contract.md
-      - agents/adr/ADR-0015-named-pattern-substitution.md
-      - agents/scratchpads/T-119_named_pattern_substitution.md
-    links:
-      scratchpad: agents/scratchpads/T-119_named_pattern_substitution.md
-  - id: T-124
-    title: AST to GraphIR converter refactor plan
-    owner: Architect
-    dod: >
-      Review `ast_to_graphir.py` structure, propose a refactor plan to split it
-      into focused helpers/modules before adding new features, and record the
-      decision in contract/ADR if needed with migration notes.
-    verify:
-      - rg -n "ast_to_graphir refactor" agents/context/contract.md agents/adr
+      Update AST->GraphIR conversion to register pattern expression table
+      entries, attach pattern_origin metadata to atomized nets/instances/
+      endpoints and instance params, and expand endpoint expressions as a whole
+      before splitting on '.'. Binding logic remains in ast_to_graphir.py.
+    verify: []
     files:
       - src/asdl/ir/converters/ast_to_graphir.py
-      - agents/context/contract.md
-      - agents/adr/ADR-0016-ast-to-graphir-refactor.md
-      - agents/scratchpads/T-124_ast_to_graphir_refactor.md
+      - src/asdl/ir/patterns/expr_table.py
+      - src/asdl/ir/patterns/origin.py
+      - src/asdl/ir/patterns/endpoint_split.py
+      - src/asdl/ir/graphir/ops_graph.py
     links:
-      scratchpad: agents/scratchpads/T-124_ast_to_graphir_refactor.md
+      scratchpad: agents/scratchpads/T-132_ast_to_graphir_pattern_metadata.md
 backlog: []
 
 exploration_candidates:

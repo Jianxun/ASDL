@@ -61,3 +61,12 @@ archive:
   - T-116: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-116_ast_to_graphir_converter.md, pr: 123}
   - T-117: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-117_graphir_import_graph.md, pr: 126}
   - T-118: {completed_on: 2026-01-13, owner: Executor, scratchpad: agents/scratchpads/T-118_pipeline_graphir_switch.md, pr: 127}
+  - T-120: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-120_pattern_package_split.md, pr: 129}
+  - T-121: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-121_pattern_verification_helpers.md, pr: 132}
+  - T-122: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-122_graphir_rebundling_cleanup.md, pr: 133}
+  - T-123: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-123_pattern_tests_docs_cleanup.md, pr: null}
+  - T-124: {completed_on: null, owner: Architect, scratchpad: agents/scratchpads/T-124_ast_to_graphir_refactor.md, pr: null}
+  - T-125: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-125_deprecate_nfir_converters.md, pr: 130}
+  - T-126: {completed_on: 2026-01-14, owner: Executor, scratchpad: agents/scratchpads/T-126_ir_pattern_passes.md, pr: 131}
+  - T-112: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-112_graphir_to_ast_normalized.md, pr: null}
+  - T-119: {completed_on: null, owner: Architect, scratchpad: agents/scratchpads/T-119_named_pattern_substitution.md, pr: null}
