@@ -125,10 +125,10 @@ def test_atomize_endpoint_uses_full_expression() -> None:
 
     assert diagnostics == []
     assert endpoints == [
-        _endpoint("MNP", "D0", 0, "MN.D", ["P", 0]),
-        _endpoint("MNP", "D1", 0, "MN.D", ["P", 1]),
-        _endpoint("MNN", "D0", 0, "MN.D", ["N", 0]),
-        _endpoint("MNN", "D1", 0, "MN.D", ["N", 1]),
+        _endpoint("MNP", "D0", 0, "MN.D", ["P", "0"]),
+        _endpoint("MNP", "D1", 0, "MN.D", ["P", "1"]),
+        _endpoint("MNN", "D0", 0, "MN.D", ["N", "0"]),
+        _endpoint("MNN", "D1", 0, "MN.D", ["N", "1"]),
     ]
 
 
