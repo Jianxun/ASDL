@@ -387,7 +387,7 @@ def lower_module_instances(
     pattern_table: PatternExpressionTable,
     pattern_cache: Dict[Tuple[str, str], str],
     diagnostics: List[Diagnostic],
-) -> Tuple[List[InstanceOp], Dict[str, str], bool]:
+) -> Tuple[List[InstanceOp], Dict[str, str], Dict[str, List[str]], bool]:
     """Lower module instances into GraphIR ops.
 
     Args:
@@ -399,12 +399,13 @@ def lower_module_instances(
         diagnostics: Diagnostic collection to append errors to.
 
     Returns:
-        Instance ops, instance name-to-id mapping, and error flag.
+        Instance ops, instance name-to-id mapping, instance ref mapping, and error flag.
     """
     inst_ops: List[InstanceOp] = []
     inst_name_to_id: Dict[str, str] = {}
+    inst_names_by_ref: Dict[str, List[str]] = {}
     if not module.instances:
-        return inst_ops, inst_name_to_id, False
+        return inst_ops, inst_name_to_id, inst_names_by_ref, False
 
     had_error = False
     variable_resolver = _ModuleVariableResolver(
@@ -465,6 +466,7 @@ def lower_module_instances(
                 kind="inst",
                 loc=inst_loc or module._loc,
             )
+
 
         inst_count = len(inst_atoms)
         param_values_by_inst = [dict() for _ in range(inst_count)]
@@ -530,6 +532,8 @@ def lower_module_instances(
             had_error = True
             continue
 
+        inst_names_by_ref.setdefault(ref, []).append(inst_name)
+
         for index, inst_atom in enumerate(inst_atoms):
             inst_literal = inst_atom.literal
             if inst_literal in inst_name_to_id:
@@ -567,7 +571,7 @@ def lower_module_instances(
                 )
             )
 
-    return inst_ops, inst_name_to_id, had_error
+    return inst_ops, inst_name_to_id, inst_names_by_ref, had_error
 
 
 __all__ = [

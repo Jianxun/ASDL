@@ -81,7 +81,7 @@ def lower_module(
     pattern_table: PatternExpressionTable = {}
     pattern_cache: Dict[Tuple[str, str], str] = {}
 
-    inst_ops, inst_name_to_id, inst_error = lower_module_instances(
+    inst_ops, inst_name_to_id, inst_names_by_ref, inst_error = lower_module_instances(
         name,
         module,
         context=context,
@@ -99,6 +99,7 @@ def lower_module(
         pattern_cache=pattern_cache,
         diagnostics=diagnostics,
         inst_name_to_id=inst_name_to_id,
+        inst_names_by_ref=inst_names_by_ref,
     )
     had_error = had_error or net_error
 
