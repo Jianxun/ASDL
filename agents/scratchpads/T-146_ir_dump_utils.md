@@ -19,21 +19,23 @@
 - Run verification.
 
 ## Todo
-- [ ] Add canonical dump helper + export
-- [ ] Add GraphIR/IFIR dump tests
-- [ ] Run verification
+- [x] Add canonical dump helper + export
+- [x] Add GraphIR/IFIR dump tests
+- [x] Run verification
 
 ## Progress log
 - 2026-01-XX: Initialized scratchpad.
+- 2026-01-XX: Added dump helpers and canonical dump tests.
 
 ## Patch summary
-- Pending.
+- Added canonical GraphIR/IFIR dump helpers with trailing newline handling.
+- Added IR dump tests asserting canonical printer output.
 
 ## PR URL
 - Pending.
 
 ## Verification
-- Pending.
+- `venv/bin/pytest tests/unit_tests/ir/test_ir_dump.py -v`
 
 ## Status request
 - In Progress.
