@@ -332,6 +332,7 @@ class DeviceOp(IRDLOperation):
     ports = attr_def(ArrayAttr[StringAttr])
     file_id = opt_attr_def(StringAttr)
     params = opt_attr_def(DictionaryAttr)
+    variables = opt_attr_def(DictionaryAttr)
     doc = opt_attr_def(StringAttr)
     src = opt_attr_def(LocationAttr)
     body = region_def("single_block")
@@ -347,6 +348,7 @@ class DeviceOp(IRDLOperation):
         region: Region | Sequence[Operation],
         file_id: StringAttr | str | None = None,
         params: DictionaryAttr | None = None,
+        variables: DictionaryAttr | None = None,
         doc: StringAttr | str | None = None,
         src: LocationAttr | None = None,
     ):
@@ -363,6 +365,8 @@ class DeviceOp(IRDLOperation):
             attributes["file_id"] = file_id
         if params is not None:
             attributes["params"] = params
+        if variables is not None:
+            attributes["variables"] = variables
         if doc is not None:
             attributes["doc"] = doc
         if src is not None:
@@ -391,6 +395,7 @@ class BackendOp(IRDLOperation):
     name_attr = attr_def(StringAttr, attr_name="name")
     template = attr_def(StringAttr)
     params = opt_attr_def(DictionaryAttr)
+    variables = opt_attr_def(DictionaryAttr)
     props = opt_attr_def(DictionaryAttr)
     src = opt_attr_def(LocationAttr)
 
@@ -402,6 +407,7 @@ class BackendOp(IRDLOperation):
         name: StringAttr | str,
         template: StringAttr | str,
         params: DictionaryAttr | None = None,
+        variables: DictionaryAttr | None = None,
         props: DictionaryAttr | None = None,
         src: LocationAttr | None = None,
     ):
@@ -412,6 +418,8 @@ class BackendOp(IRDLOperation):
         attributes = {"name": name, "template": template}
         if params is not None:
             attributes["params"] = params
+        if variables is not None:
+            attributes["variables"] = variables
         if props is not None:
             attributes["props"] = props
         if src is not None:
