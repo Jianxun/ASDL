@@ -24,8 +24,8 @@ T-145:
   pr: 154
   merged: true
 T-146:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 155
   merged: false
 T-147:
   status: ready

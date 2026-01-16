@@ -32,16 +32,16 @@
 - Added IR dump tests asserting canonical printer output.
 
 ## PR URL
-- Pending.
+- https://github.com/Jianxun/ASDL/pull/155
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir/test_ir_dump.py -v`
 
 ## Status request
-- In Progress.
+- Ready for review.
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Inspect IR printing conventions and implement dump helper.
+- Await review feedback.
