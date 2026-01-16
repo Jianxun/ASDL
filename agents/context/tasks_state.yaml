@@ -12,6 +12,6 @@ T-142:
   pr: 150
   merged: true
 T-143:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
