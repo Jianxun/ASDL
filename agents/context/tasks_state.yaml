@@ -16,9 +16,9 @@ T-143:
   pr: 151
   merged: true
 T-144:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 153
+  merged: true
 T-145:
   status: backlog
   pr: null
