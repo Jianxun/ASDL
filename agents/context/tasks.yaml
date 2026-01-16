@@ -80,7 +80,102 @@ current_sprint:
       - src/asdl/emit/netlist/diagnostics.py
     links:
       scratchpad: agents/scratchpads/T-143_netlist_variable_placeholders.md
-backlog: []
+  - id: T-144
+    title: AST->GraphIR lowering refactor
+    owner: Executor
+    dod: >
+      Split `lower_module` responsibilities into focused helpers (instances,
+      nets/endpoints, and module assembly) without changing behavior or
+      diagnostics. Keep `ast_to_graphir_lowering.py` as orchestration only and
+      add docstrings for the new helpers. Ensure existing converter tests pass
+      unchanged.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+    files:
+      - src/asdl/ir/converters/ast_to_graphir_lowering.py
+      - src/asdl/ir/converters/ast_to_graphir_lowering_instances.py
+      - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
+      - tests/unit_tests/ir/test_graphir_converter.py
+    links:
+      scratchpad: agents/scratchpads/T-144_graphir_lowering_refactor.md
+backlog:
+  - id: T-145
+    title: Apply instance_defaults in AST->GraphIR lowering
+    owner: Executor
+    depends_on: [T-144]
+    dod: >
+      Consume module `instance_defaults` during AST->GraphIR lowering by
+      injecting default endpoints and nets, emitting override warnings (with
+      `!` suppression), and extending `port_order` with `$` nets introduced by
+      defaults after explicit net ports. Preserve pattern atomization semantics
+      and add unit tests for defaults, overrides, and port ordering.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+    files:
+      - src/asdl/ir/converters/ast_to_graphir_lowering.py
+      - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
+      - src/asdl/ir/converters/ast_to_graphir_parsing.py
+      - tests/unit_tests/ir/test_graphir_converter.py
+    links:
+      scratchpad: agents/scratchpads/T-145_graphir_instance_defaults.md
+  - id: T-146
+    title: Canonical GraphIR/IFIR dump utilities
+    owner: Executor
+    dod: >
+      Add a small IR dump helper that returns deterministic textual output for
+      GraphIR `graphir.program` and IFIR `asdl_ifir.design` using xDSL Printer
+      defaults (no debuginfo). Output preserves region order and dictionary
+      insertion order, and includes a trailing newline. Add unit tests that
+      build a small GraphIR/IFIR via converters and assert the canonical dump
+      matches expected text.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_ir_dump.py -v
+    files:
+      - src/asdl/ir/dump.py
+      - tests/unit_tests/ir/test_ir_dump.py
+      - src/asdl/ir/__init__.py
+    links:
+      scratchpad: agents/scratchpads/T-146_ir_dump_utils.md
+  - id: T-147
+    title: CLI ir-dump command for GraphIR/IFIR
+    owner: Executor
+    depends_on: [T-146]
+    dod: >
+      Add `asdlc ir-dump` command to emit canonical GraphIR or IFIR to stdout
+      or `-o/--output`. Support `--ir {graphir,ifir}` (default ifir),
+      `--verify/--no-verify`, and `--lib` for import roots. For GraphIR, run
+      import-resolution and optional verification before dumping. For IFIR,
+      reuse the MVP pipeline. Emit diagnostics on stderr and exit non-zero on
+      errors. Add CLI tests for graphir/ifir output.
+    verify:
+      - venv/bin/pytest tests/unit_tests/cli/test_ir_dump.py -v
+    files:
+      - src/asdl/cli/__init__.py
+      - src/asdl/ir/pipeline.py
+      - tests/unit_tests/cli/test_ir_dump.py
+    links:
+      scratchpad: agents/scratchpads/T-147_cli_ir_dump.md
+  - id: T-148
+    title: Relocate AST schema generator and refresh summary output
+    owner: Executor
+    dod: >
+      Move schema generation helpers from `src/asdl/schema.py` into
+      `src/asdl/ast/schema.py` and update CLI/script call sites to import the
+      new module (clean refactor, no compatibility shim). Update the text
+      schema summary to call out required vs optional top-level fields.
+      Ensure schema CLI and generator script still write `schema.json` and
+      `schema.txt` without changing their paths or filenames.
+    verify:
+      - venv/bin/pytest tests/unit_tests/cli/test_schema.py -v
+    files:
+      - src/asdl/ast/schema.py
+      - src/asdl/schema.py
+      - src/asdl/cli/__init__.py
+      - scripts/generate_schema.py
+      - tests/unit_tests/cli/test_schema.py
+      - agents/context/codebase_map.md
+    links:
+      scratchpad: agents/scratchpads/T-148_ast_schema_refactor.md
 
 exploration_candidates:
   - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.
