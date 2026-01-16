@@ -169,6 +169,7 @@ def _graphir_from_ifir(design: DesignOp) -> GraphProgramOp:
                     file_id=file_id,
                     ports=[attr.data for attr in op.ports.data],
                     params=op.params,
+                    variables=op.variables,
                     region=backends,
                 )
             )
