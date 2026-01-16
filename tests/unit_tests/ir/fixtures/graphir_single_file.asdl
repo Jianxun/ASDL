@@ -17,7 +17,7 @@ modules:
 devices:
   nfet:
     ports: [D, G, S]
-    params:
+    parameters:
       w: 1u
     backends:
       ngspice:

@@ -1,8 +1,8 @@
 schema_version: 2
 T-140:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 148
+  merged: true
 T-141:
   status: ready
   pr: null

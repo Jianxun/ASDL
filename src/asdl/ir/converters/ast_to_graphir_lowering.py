@@ -528,7 +528,7 @@ def lower_device(
         name=name,
         file_id=file_id,
         ports=ports,
-        params=to_string_dict_attr(device.params),
+        params=to_string_dict_attr(device.parameters),
         region=backends,
     )
 
@@ -547,7 +547,7 @@ def lower_backend(name: str, backend: DeviceBackendDecl) -> BackendOp:
     return BackendOp(
         name=name,
         template=backend.template,
-        params=to_string_dict_attr(backend.params),
+        params=to_string_dict_attr(backend.parameters),
         props=to_string_dict_attr(props),
         src=loc_attr(backend._loc),
     )
