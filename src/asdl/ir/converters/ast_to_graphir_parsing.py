@@ -53,10 +53,10 @@ def parse_endpoints(
             suppress_override = True
             token = token[1:]
         if token.count(".") != 1:
-            return [], suppressed, f"Invalid endpoint token '{raw_token}'; expected inst.pin"
+            return [], f"Invalid endpoint token '{raw_token}'; expected inst.pin"
         inst, pin = token.split(".", 1)
         if not inst or not pin:
-            return [], suppressed, f"Invalid endpoint token '{raw_token}'; expected inst.pin"
+            return [], f"Invalid endpoint token '{raw_token}'; expected inst.pin"
         endpoints.append((inst, pin, suppress_override))
     return endpoints, None
 
