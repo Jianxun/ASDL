@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 
 def parse_instance_expr(expr: str) -> Tuple[Optional[str], Dict[str, str], Optional[str]]:
@@ -31,21 +31,19 @@ def parse_instance_expr(expr: str) -> Tuple[Optional[str], Dict[str, str], Optio
 
 def parse_endpoints(
     expr: Sequence[str],
-) -> Tuple[List[Tuple[str, str]], Set[Tuple[str, str]], Optional[str]]:
-    """Parse endpoint expressions into (instance, port) pairs.
+) -> Tuple[List[Tuple[str, str, bool]], Optional[str]]:
+    """Parse endpoint expressions into (instance, port, suppressed) tuples.
 
     Args:
         expr: Sequence of endpoint tokens.
 
     Returns:
-        Tuple of endpoints, suppressed endpoint keys, and error message.
+        Tuple of endpoints and error message.
     """
-    endpoints: List[Tuple[str, str]] = []
-    suppressed: Set[Tuple[str, str]] = set()
+    endpoints: List[Tuple[str, str, bool]] = []
     if isinstance(expr, str):
         return (
             [],
-            suppressed,
             "Endpoint lists must be YAML lists of '<instance>.<pin>' strings",
         )
     for token in expr:
@@ -55,14 +53,12 @@ def parse_endpoints(
             suppress_override = True
             token = token[1:]
         if token.count(".") != 1:
-            return [], suppressed, f"Invalid endpoint token '{raw_token}'; expected inst.pin"
+            return [], f"Invalid endpoint token '{raw_token}'; expected inst.pin"
         inst, pin = token.split(".", 1)
         if not inst or not pin:
-            return [], suppressed, f"Invalid endpoint token '{raw_token}'; expected inst.pin"
-        endpoints.append((inst, pin))
-        if suppress_override:
-            suppressed.add((inst, pin))
-    return endpoints, suppressed, None
+            return [], f"Invalid endpoint token '{raw_token}'; expected inst.pin"
+        endpoints.append((inst, pin, suppress_override))
+    return endpoints, None
 
 
 def split_net_token(net_token: str) -> Tuple[str, bool]:
