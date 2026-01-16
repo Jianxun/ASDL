@@ -205,6 +205,47 @@ def test_convert_document_expands_patterns_with_param_origins() -> None:
     )
 
 
+def test_convert_document_expands_named_pattern_macros() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                patterns={"IDX": "<0|1>"},
+                instances={"U<@IDX>": "res r=R<@IDX>"},
+                nets={"OUT<@IDX>": ["U<@IDX>.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert diagnostics == []
+    assert isinstance(program, ProgramOp)
+
+    module = next(op for op in program.body.block.ops if isinstance(op, ModuleOp))
+    table_attr = module.attrs.data.get("pattern_expression_table")
+    table = decode_pattern_expression_table(table_attr)
+    expressions = {entry.expression for entry in table.values()}
+
+    assert "U<0|1>" in expressions
+    assert "OUT<0|1>" in expressions
+    assert "U<0|1>.P" in expressions
+    assert "R<0|1>" in expressions
+    assert all("<@IDX>" not in entry.expression for entry in table.values())
+
+    instances = {
+        inst.name_attr.data
+        for inst in module.body.block.ops
+        if isinstance(inst, InstanceOp)
+    }
+    assert instances == {"U0", "U1"}
+
+
 def test_convert_document_allows_subset_endpoint_bindings() -> None:
     document = AsdlDocument(
         modules={

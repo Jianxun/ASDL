@@ -13,7 +13,7 @@ from ruamel.yaml.nodes import MappingNode, ScalarNode
 
 from ..diagnostics import Diagnostic, Severity, SourcePos, SourceSpan
 from .location import Locatable, LocationIndex, PathSegment, to_plain
-from .models import AsdlDocument, AstBaseModel, ModuleDecl
+from .models import AsdlDocument, AstBaseModel, InstanceDefaultsDecl, ModuleDecl
 
 PARSE_YAML_ERROR = "PARSE-001"
 PARSE_ROOT_ERROR = "PARSE-002"
@@ -307,6 +307,8 @@ def _attach_locations(value: Any, location_index: LocationIndex, path: Iterable[
             value.set_loc(loc)
         if isinstance(value, ModuleDecl):
             _attach_module_entry_locations(value, location_index, path)
+        if isinstance(value, InstanceDefaultsDecl):
+            _attach_instance_defaults_locations(value, location_index, path)
         for field_name in value.__class__.model_fields:
             field_value = getattr(value, field_name)
             _attach_locations(field_value, location_index, (*path, field_name))
@@ -327,16 +329,50 @@ def _attach_module_entry_locations(
 ) -> None:
     """Attach key locations for module instance/net entries."""
     base_path = tuple(path)
+    if module.patterns:
+        for pattern_name in module.patterns.keys():
+            key_loc = location_index.lookup(
+                (*base_path, "patterns", pattern_name), prefer_key=True
+            )
+            if key_loc is not None:
+                module._patterns_loc[pattern_name] = key_loc
+            value_loc = location_index.lookup((*base_path, "patterns", pattern_name))
+            if value_loc is not None:
+                module._pattern_value_loc[pattern_name] = value_loc
     if module.nets:
-        for net_name in module.nets.keys():
+        for net_name, endpoints in module.nets.items():
             loc = location_index.lookup((*base_path, "nets", net_name), prefer_key=True)
             if loc is not None:
                 module._nets_loc[net_name] = loc
+            if isinstance(endpoints, list):
+                endpoint_locs: List[Optional[Locatable]] = []
+                for index, _endpoint in enumerate(endpoints):
+                    endpoint_locs.append(
+                        location_index.lookup((*base_path, "nets", net_name, index))
+                    )
+                module._net_endpoint_locs[net_name] = endpoint_locs
     if module.instances:
         for inst_name in module.instances.keys():
             loc = location_index.lookup((*base_path, "instances", inst_name), prefer_key=True)
             if loc is not None:
                 module._instances_loc[inst_name] = loc
+            value_loc = location_index.lookup((*base_path, "instances", inst_name))
+            if value_loc is not None:
+                module._instance_expr_loc[inst_name] = value_loc
+
+
+def _attach_instance_defaults_locations(
+    defaults: InstanceDefaultsDecl,
+    location_index: LocationIndex,
+    path: Iterable[PathSegment],
+) -> None:
+    """Attach value locations for instance default bindings."""
+    base_path = tuple(path)
+    if defaults.bindings:
+        for binding_name in defaults.bindings.keys():
+            loc = location_index.lookup((*base_path, "bindings", binding_name))
+            if loc is not None:
+                defaults._bindings_loc[binding_name] = loc
 
 
 def _format_path(path: Iterable[PathSegment]) -> str:

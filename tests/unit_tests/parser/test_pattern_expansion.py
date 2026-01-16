@@ -1,3 +1,9 @@
+from asdl.ast import parse_string
+from asdl.ast.named_patterns import (
+    AST_NAMED_PATTERN_INVALID,
+    AST_NAMED_PATTERN_UNDEFINED,
+    elaborate_named_patterns,
+)
 from asdl.diagnostics import Severity
 from asdl.ir.patterns import (
     PATTERN_DUPLICATE_ATOM,
@@ -87,3 +93,108 @@ def test_expand_rejects_overflow() -> None:
     assert expanded is None
     assert len(diagnostics) == 1
     assert diagnostics[0].code == PATTERN_TOO_LARGE
+
+
+def test_named_pattern_macro_substitution() -> None:
+    yaml_content = """
+modules:
+  top:
+    patterns:
+      POL: "<P|N>"
+      IDX: "[1:0]"
+    instances:
+      U<@POL>: "res w=W<@IDX>"
+    nets:
+      OUT<@POL>:
+        - "U<@POL>.P"
+      $BUS<@IDX>:
+        - "U<@POL>.P"
+    instance_defaults:
+      res:
+        bindings:
+          p: "NET<@POL>"
+devices:
+  res:
+    backends:
+      ngspice:
+        template: "R{inst} {ports}"
+"""
+    document, parse_diags = parse_string(yaml_content)
+
+    assert parse_diags == []
+    assert document is not None
+
+    diagnostics, had_error = elaborate_named_patterns(document)
+
+    assert diagnostics == []
+    assert had_error is False
+
+    module = document.modules["top"]
+    assert "U<P|N>" in module.instances
+    assert module.instances["U<P|N>"] == "res w=W[1:0]"
+    assert "OUT<P|N>" in module.nets
+    assert module.nets["OUT<P|N>"] == ["U<P|N>.P"]
+    assert "$BUS[1:0]" in module.nets
+    assert module.nets["$BUS[1:0]"] == ["U<P|N>.P"]
+    defaults = module.instance_defaults["res"]
+    assert defaults.bindings["p"] == "NET<P|N>"
+
+
+def test_named_pattern_invalid_definition_emits_diagnostic() -> None:
+    yaml_content = """
+modules:
+  top:
+    patterns:
+      bad-name: "<0|1>"
+    instances:
+      U1: "res"
+    nets:
+      OUT:
+        - "U1.P"
+devices:
+  res:
+    backends:
+      ngspice:
+        template: "R{inst} {ports}"
+"""
+    document, parse_diags = parse_string(yaml_content)
+
+    assert parse_diags == []
+    assert document is not None
+
+    diagnostics, had_error = elaborate_named_patterns(document)
+
+    assert had_error is True
+    assert any(diag.code == AST_NAMED_PATTERN_INVALID for diag in diagnostics)
+    diag = next(diag for diag in diagnostics if diag.code == AST_NAMED_PATTERN_INVALID)
+    assert diag.severity is Severity.ERROR
+    assert diag.primary_span is not None
+
+
+def test_named_pattern_undefined_reference_emits_diagnostic() -> None:
+    yaml_content = """
+modules:
+  top:
+    instances:
+      U1: "res"
+    nets:
+      OUT:
+        - "U1.<@MISSING>"
+devices:
+  res:
+    backends:
+      ngspice:
+        template: "R{inst} {ports}"
+"""
+    document, parse_diags = parse_string(yaml_content)
+
+    assert parse_diags == []
+    assert document is not None
+
+    diagnostics, had_error = elaborate_named_patterns(document)
+
+    assert had_error is True
+    assert any(diag.code == AST_NAMED_PATTERN_UNDEFINED for diag in diagnostics)
+    diag = next(diag for diag in diagnostics if diag.code == AST_NAMED_PATTERN_UNDEFINED)
+    assert diag.severity is Severity.ERROR
+    assert diag.primary_span is not None
