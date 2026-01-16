@@ -464,7 +464,7 @@ def lower_module(
                                 _pattern_origin_from_atom(param_expr_id, param_atom)
                             )
                         else:
-                            param_values_by_inst[index][param_name] = param_expr
+                            param_values_by_inst[index][param_name] = resolved_expr
 
             if param_error:
                 had_error = True
