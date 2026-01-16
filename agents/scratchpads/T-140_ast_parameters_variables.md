@@ -17,6 +17,9 @@
 - `agents/context/project_status.md`
 - `src/asdl/ast/models.py`
 - `src/asdl/ast/parser.py`
+- `src/asdl/ir/converters/ast_to_graphir_lowering.py`
+- `tests/unit_tests/ast/test_models.py`
+- `docs/specs/spec_ast.md`
 - `tests/unit_tests/ir/fixtures/graphir_single_file.asdl`
 - `tests/unit_tests/cli/test_netlist.py`
 - `tests/unit_tests/e2e/test_pipeline_mvp.py`
@@ -27,27 +30,31 @@
 - Run AST unit tests per verify command.
 
 ## Todo
-- [ ] Update AST models/parser for `parameters` + `variables`.
-- [ ] Refresh AST-facing fixtures/tests and add `variables` coverage.
-- [ ] Run verification.
+- [x] Update AST models/parser for `parameters` + `variables`.
+- [x] Refresh AST-facing fixtures/tests and add `variables` coverage.
+- [x] Run verification.
 
 ## Progress log
-- 2026-01-18: Created scratchpad and prepared task.
+- 2026-01-18: Created scratchpad, set task status, and branched.
+- 2026-01-18: Updated AST models/lowering, fixtures, and tests for parameters/variables.
+- 2026-01-18: Ran AST unit tests.
 
 ## Patch summary
-- TBD.
+- Added AST `parameters`/`variables` fields with backend `params` rejection.
+- Updated AST fixtures and CLI/e2e YAML to use `parameters`.
+- Added AST test coverage for `variables` parsing and `params` rejection.
 
 ## PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/148
 
 ## Verification
-- TBD.
+- `venv/bin/pytest tests/unit_tests/ast -v`
 
 ## Status request
-- In Progress.
+- Done.
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Implement AST model/parser changes and update tests.
+- Await review.

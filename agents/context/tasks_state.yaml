@@ -1,7 +1,7 @@
 schema_version: 2
 T-140:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 148
   merged: false
 T-141:
   status: ready
