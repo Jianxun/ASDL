@@ -49,14 +49,14 @@
 - Added parser + IR unit tests for named pattern macro substitution.
 
 ## PR URL
-- Pending.
+- https://github.com/Jianxun/ASDL/pull/147
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/parser -v`
 - `venv/bin/pytest tests/unit_tests/ir -v`
 
 ## Status request
-- In Progress.
+- Done.
 
 ## Blockers / Questions
 - None.
