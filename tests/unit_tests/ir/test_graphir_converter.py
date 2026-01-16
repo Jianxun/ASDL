@@ -289,6 +289,144 @@ def test_convert_document_allows_subset_endpoint_bindings() -> None:
     assert out2_endpoint.inst_id.value.data == instances["MN_IN_2"].inst_id.value.data
 
 
+def test_convert_document_applies_instance_defaults() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"R1": "res", "R2": "res"},
+                instance_defaults={"res": {"bindings": {"P": "OUT", "N": "VSS"}}},
+                nets={},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P", "N"],
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert diagnostics == []
+    assert isinstance(program, ProgramOp)
+    module = next(op for op in program.body.block.ops if isinstance(op, ModuleOp))
+    nets = {
+        net.name_attr.data: net
+        for net in module.body.block.ops
+        if isinstance(net, NetOp)
+    }
+    instances = {
+        inst.name_attr.data: inst
+        for inst in module.body.block.ops
+        if isinstance(inst, InstanceOp)
+    }
+
+    assert set(nets.keys()) == {"OUT", "VSS"}
+    out_endpoints = {
+        (ep.inst_id.value.data, ep.port_path.data)
+        for ep in nets["OUT"].body.block.ops
+        if isinstance(ep, EndpointOp)
+    }
+    vss_endpoints = {
+        (ep.inst_id.value.data, ep.port_path.data)
+        for ep in nets["VSS"].body.block.ops
+        if isinstance(ep, EndpointOp)
+    }
+    for inst_name in ("R1", "R2"):
+        inst_id = instances[inst_name].inst_id.value.data
+        assert (inst_id, "P") in out_endpoints
+        assert (inst_id, "N") in vss_endpoints
+
+
+def test_convert_document_instance_defaults_override_warns() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"R1": "res"},
+                instance_defaults={"res": {"bindings": {"P": "OUT"}}},
+                nets={"OVR": ["R1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert isinstance(program, ProgramOp)
+    assert any(
+        diag.code == "LINT-002" and diag.severity is Severity.WARNING
+        for diag in diagnostics
+    )
+    module = next(op for op in program.body.block.ops if isinstance(op, ModuleOp))
+    nets = {
+        net.name_attr.data: net
+        for net in module.body.block.ops
+        if isinstance(net, NetOp)
+    }
+    assert set(nets.keys()) == {"OVR"}
+
+
+def test_convert_document_instance_defaults_override_suppressed() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"R1": "res"},
+                instance_defaults={"res": {"bindings": {"P": "OUT"}}},
+                nets={"OVR": ["!R1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert isinstance(program, ProgramOp)
+    assert all(diag.code != "LINT-002" for diag in diagnostics)
+    module = next(op for op in program.body.block.ops if isinstance(op, ModuleOp))
+    nets = {
+        net.name_attr.data: net
+        for net in module.body.block.ops
+        if isinstance(net, NetOp)
+    }
+    assert set(nets.keys()) == {"OVR"}
+
+
+def test_convert_document_instance_defaults_extend_port_order() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"R1": "res"},
+                instance_defaults={"res": {"bindings": {"N": "$OUT"}}},
+                nets={"$IN": ["R1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P", "N"],
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert diagnostics == []
+    assert isinstance(program, ProgramOp)
+    module = next(op for op in program.body.block.ops if isinstance(op, ModuleOp))
+    assert module.port_order == ["IN", "OUT"]
+
+
 def test_convert_document_reports_pattern_length_mismatch() -> None:
     document = AsdlDocument(
         modules={
