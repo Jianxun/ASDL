@@ -23,15 +23,17 @@
 ## Progress log
 - Created scratchpad and set T-144 status to in_progress.
 - Extracted instance and net lowering helpers and updated module orchestration.
+- Ran GraphIR converter tests.
 
 ## Patch summary
-- 
+- Added helper modules for instance and net/endpoints lowering with shared pattern utilities.
+- Simplified `lower_module` to orchestrate helper calls and assemble ModuleOp.
 
 ## PR URL
 - 
 
 ## Verification
-- 
+- `venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v`
 
 ## Status request (Done / Blocked / In Progress)
 - In Progress
