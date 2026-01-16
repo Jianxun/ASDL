@@ -239,6 +239,7 @@ class DeviceOp(IRDLOperation):
         file_id: Source file identifier.
         ports: Ordered list of port names.
         params: Optional device parameter metadata.
+        variables: Optional device variable metadata.
         annotations: Optional annotations.
     """
 
@@ -249,6 +250,7 @@ class DeviceOp(IRDLOperation):
     file_id = attr_def(StringAttr)
     ports = attr_def(ArrayAttr[StringAttr])
     params = opt_attr_def(DictionaryAttr)
+    variables = opt_attr_def(DictionaryAttr)
     annotations = opt_attr_def(DictionaryAttr)
     body = region_def("single_block")
 
@@ -264,6 +266,7 @@ class DeviceOp(IRDLOperation):
         ports: ArrayAttr[StringAttr] | Iterable[str],
         region: Region | Sequence[Operation],
         params: DictionaryAttr | None = None,
+        variables: DictionaryAttr | None = None,
         annotations: DictionaryAttr | None = None,
     ) -> None:
         """Initialize a device op.
@@ -275,6 +278,7 @@ class DeviceOp(IRDLOperation):
             ports: Ordered port list.
             region: Region containing device metadata.
             params: Optional parameter metadata.
+            variables: Optional variable metadata.
             annotations: Optional annotations.
         """
         if isinstance(name, str):
@@ -292,6 +296,8 @@ class DeviceOp(IRDLOperation):
         }
         if params is not None:
             attributes["params"] = params
+        if variables is not None:
+            attributes["variables"] = variables
         if annotations is not None:
             attributes["annotations"] = annotations
         if isinstance(region, Region):
