@@ -86,7 +86,7 @@ roundtrip/debugging rather than as a required pipeline stage.
   - Resolved file id for the referenced module/device definition.
 - `params: DictAttr?`
   - Key/value parameters parsed from the AST instance expression.
-  - Values are stored as raw strings.
+  - Values are stored as raw strings after module variable substitution.
 - `doc: StringAttr?`
 - `src: LocAttr?`
 
@@ -98,6 +98,8 @@ roundtrip/debugging rather than as a required pipeline stage.
   - Ordered port list.
 - `params: DictAttr?`
   - Default parameter values.
+- `variables: DictAttr?`
+  - Device-local constants (immutable at instantiation).
 - `doc: StringAttr?`
 - `src: LocAttr?`
 
@@ -109,6 +111,7 @@ roundtrip/debugging rather than as a required pipeline stage.
 - `name: StringAttr` (backend key)
 - `template: StringAttr` (required)
 - `params: DictAttr?` (backend-specific overrides)
+- `variables: DictAttr?` (backend-local constants)
 - `props: DictAttr?`
   - Additional raw values (from AST backend entries).
 - `src: LocAttr?`

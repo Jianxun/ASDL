@@ -1,28 +1,85 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-139
-    title: Module-local named pattern macro expansion
+  - id: T-140
+    title: AST parameters rename and variables blocks
     owner: Executor
     dod: >
-      Implement module-local named pattern substitution for `<@name>` as an AST
-      elaboration step before AST->GraphIR lowering. Replace `<@name>` tokens in
-      instance names, net names, endpoint expressions, instance params, and
-      instance_defaults bindings with the referenced single-group pattern token.
-      Enforce pattern name regex, forbid recursion, and emit diagnostics for
-      undefined or invalid named patterns. Preserve source spans for diagnostics
-      and add unit tests covering successful substitution and error cases.
+      Rename device/backend AST fields from `params` to `parameters` and add
+      `variables` blocks for modules, devices, and device backends. Update AST
+      models and parsing to accept only `parameters` (reject `params`). Refresh
+      existing AST-facing fixtures/tests to use `parameters`, and add coverage
+      for parsing `variables` blocks.
     verify:
-      - venv/bin/pytest tests/unit_tests/parser -v
-      - venv/bin/pytest tests/unit_tests/ir -v
+      - venv/bin/pytest tests/unit_tests/ast -v
     files:
       - src/asdl/ast/models.py
       - src/asdl/ast/parser.py
-      - src/asdl/ir/converters/ast_to_graphir.py
-      - src/asdl/ir/converters/ast_to_graphir_lowering.py
-      - tests/unit_tests/parser/test_pattern_expansion.py
+      - tests/unit_tests/ir/fixtures/graphir_single_file.asdl
+      - tests/unit_tests/cli/test_netlist.py
+      - tests/unit_tests/e2e/test_pipeline_mvp.py
     links:
-      scratchpad: agents/scratchpads/T-139_named_pattern_macro_expansion.md
+      scratchpad: agents/scratchpads/T-140_ast_parameters_variables.md
+  - id: T-141
+    title: Module variable substitution in instance params
+    owner: Executor
+    depends_on: [T-140]
+    dod: >
+      Implement `{var}` substitution for module variables in instance parameter
+      values during AST->GraphIR lowering. Allow variables to reference other
+      variables, detect cycles/undefined variables with diagnostics, and apply
+      substitution before parameter pattern expansion. Restrict substitution to
+      instance parameter values only. Add unit tests for success, undefined
+      variables, and recursion errors.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+    files:
+      - src/asdl/ir/converters/ast_to_graphir_lowering.py
+      - src/asdl/ir/converters/ast_to_graphir_parsing.py
+      - src/asdl/ir/converters/ast_to_graphir_utils.py
+      - tests/unit_tests/ir/test_graphir_converter.py
+      - src/asdl/ir/converters/ast_to_graphir_context.py
+    links:
+      scratchpad: agents/scratchpads/T-141_module_variable_substitution.md
+  - id: T-142
+    title: Device/backend variables in GraphIR and IFIR
+    owner: Executor
+    depends_on: [T-140]
+    dod: >
+      Add `variables` attributes to GraphIR/IFIR device and backend ops and
+      propagate AST device/backend variables through GraphIR and IFIR
+      projections. Ensure GraphIR->IFIR projection preserves variables and add
+      IR unit tests that assert variables are present and stringified.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir -v
+    files:
+      - src/asdl/ir/graphir/ops_module.py
+      - src/asdl/ir/ifir/dialect.py
+      - src/asdl/ir/converters/ast_to_graphir_lowering.py
+      - src/asdl/ir/converters/graphir_to_ifir.py
+      - tests/unit_tests/ir/test_graphir_converter.py
+    links:
+      scratchpad: agents/scratchpads/T-142_ir_device_variables.md
+  - id: T-143
+    title: Netlist emission variable placeholders
+    owner: Executor
+    depends_on: [T-142]
+    dod: >
+      Merge device/backend variables for emission, expose them as template
+      placeholders, and emit diagnostics when instance params attempt to
+      override variable keys or when variables collide with parameter keys or
+      backend props. Update template validation to allow variables and add
+      netlist tests covering variable placeholders and collision errors.
+    verify:
+      - venv/bin/pytest tests/unit_tests/netlist -v
+    files:
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/templates.py
+      - src/asdl/emit/netlist/params.py
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+      - src/asdl/emit/netlist/diagnostics.py
+    links:
+      scratchpad: agents/scratchpads/T-143_netlist_variable_placeholders.md
 backlog: []
 
 exploration_candidates:

@@ -81,3 +81,4 @@ archive:
   - T-132: {completed_on: 2026-01-15, owner: Executor, scratchpad: agents/scratchpads/T-132_ast_to_graphir_pattern_metadata.md, pr: 145}
   - T-136: {completed_on: 2026-01-15, owner: Executor, scratchpad: agents/scratchpads/T-136_ir_pattern_engine_consolidation.md, pr: 144}
   - T-138: {completed_on: 2026-01-15, owner: Executor, scratchpad: agents/scratchpads/T-138_pattern_import_migration.md, pr: 146}
+  - T-139: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-139_named_pattern_macro_expansion.md, pr: 147}

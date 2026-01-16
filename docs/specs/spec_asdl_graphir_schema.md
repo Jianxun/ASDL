@@ -40,6 +40,7 @@ graphir.device {
   file_id: str
   ports: list[str]
   params: dict?
+  variables: dict?
   annotations: dict?
 } {
   graphir.backend*
@@ -94,6 +95,7 @@ graphir.backend {
   name: str
   template: str
   params: dict?
+  variables: dict?
   props: dict?
 }
 

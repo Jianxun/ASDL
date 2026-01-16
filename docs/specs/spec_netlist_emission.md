@@ -11,9 +11,11 @@ projected from GraphIR and already reflects canonical connectivity.
 - Only named connections (no positional conns).
 - Subckt parameters are not supported.
 - Device parameters are merged and rendered as `k=v` tokens.
+- Device variables are merged and exposed as `{var}` placeholders.
 - Output extension is determined by backend config (`extension`).
 - Input IFIR is projected from GraphIR after pattern expansion; emission
-  performs no pattern expansion or name rewriting.
+  performs no pattern expansion or name rewriting. Module variable substitution
+  occurs earlier; IFIR carries substituted instance parameter values.
 
 ---
 
@@ -78,6 +80,22 @@ result params:       w=1u l=120n m=4
 
 ---
 
+## Device variable rules
+
+### Merge order (low -> high precedence)
+1. `device.variables`
+2. `device.backend.variables`
+
+### Key restrictions
+- Instance parameters must not introduce keys that match device/backend variables.
+- Variable names must not collide with parameter keys or backend props.
+
+### Emission
+- Variables are exposed as `{var}` placeholders in backend templates.
+- Variables are not rendered into the `{params}` formatted string.
+
+---
+
 ## Template contract (devices)
 - Each device backend supplies a `template` string.
 - Supported placeholders:
@@ -85,6 +103,7 @@ result params:       w=1u l=120n m=4
   - `{ports}` space-joined nets in port order (may be empty)
 - `{params}` is deprecated; templates should not rely on it.
 - Additional placeholders may be populated from backend `props`.
+- Variable keys are available as template placeholders alongside merged parameters.
 - Emission is template-driven; the emitter does not inject backend syntax beyond
   device and system-device templates.
 

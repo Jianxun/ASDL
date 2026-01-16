@@ -197,8 +197,17 @@ Device {
   file_id: str
   ports: list[str]
   params: dict[str, Value]
+  variables: dict[str, Value]
   backends: list[BackendSpec]
   annotations: dict
+}
+
+BackendSpec {
+  name: str
+  template: str
+  params: dict[str, Value]
+  variables: dict[str, Value]
+  props: dict[str, Value]
 }
 ```
 

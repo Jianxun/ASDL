@@ -15,3 +15,4 @@ modules:
     nets:
       $iref: [mn_ref.D, mn_ref.G, mn_out<@k>.G]
       $iout_<@k>x: [mn_out<@k>.D]
+      $vss: [mn_ref.S, mn_out<@k>.S, mn_ref.B, mn_out<@k>.B]

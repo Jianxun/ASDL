@@ -14,10 +14,12 @@ modules:
       gf.nfet_03v3:
         bindings:
           B: $VSS
+    variables:
+      m_ota: 1
     instances:
-      MP_LOAD_<P|N>: gf.pfet_03v3 m=3
-      MN_IN_<P|N>: gf.nfet_03v3 m=1
-      MN_TAIL: gf.nfet_03v3 m=2
+      MP_LOAD_<P|N>: gf.pfet_03v3 m=3*{m_ota}
+      MN_IN_<P|N>: gf.nfet_03v3 m=1*{m_ota}
+      MN_TAIL: gf.nfet_03v3 m=2*{m_ota}
     nets:
       $IN_<P|N>: [MN_IN_<P|N>.G]
       $OUT: [MN_IN_<N>.D, MP_LOAD_<N>.D]

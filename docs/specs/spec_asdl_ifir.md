@@ -63,6 +63,7 @@ and is the final pre-emission representation for backend output.
 - `ref_file_id: StringAttr`
   - Resolved file id for the referenced module/device definition.
 - `params: DictAttr?`
+  - Instance parameters parsed from AST after module variable substitution.
 - `conns: ArrayAttr<asdl_ifir.conn>`  (**named-only**)
 - `pattern_origin: StringAttr?`
 - `doc: StringAttr?`
@@ -82,6 +83,8 @@ and is the final pre-emission representation for backend output.
   - Ordered port list.
 - `params: DictAttr?`
   - Default parameter values.
+- `variables: DictAttr?`
+  - Device-local constants (immutable at instantiation).
 - `doc: StringAttr?`
 - `src: LocAttr?`
 
@@ -93,6 +96,7 @@ and is the final pre-emission representation for backend output.
 - `name: StringAttr` (backend key)
 - `template: StringAttr` (required)
 - `params: DictAttr?` (backend-specific overrides)
+- `variables: DictAttr?` (backend-local constants)
 - `props: DictAttr?`
   - Additional raw values (from AST backend entries).
 - `src: LocAttr?`

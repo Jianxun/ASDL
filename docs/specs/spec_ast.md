@@ -8,7 +8,7 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 - Represents the net-first authoring surface: **modules + devices + optional `top`**.
 
 ## Conventions
-- **Plural nouns** for collections: `modules`, `devices`, `instances`, `nets`, `exports`, `backends`, `params`.
+- **Plural nouns** for collections: `modules`, `devices`, `instances`, `nets`, `exports`, `backends`, `parameters`, `variables`.
 - Ordered mappings preserve source order when it matters (notably `nets` and `exports`).
 - Literal names must match `[A-Za-z_][A-Za-z0-9_]*`; pattern delimiters (`<`, `>`, `[`, `]`, `;`)
   are reserved and forbidden in literals.
@@ -47,12 +47,15 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 - `patterns: Optional[PatternsBlock]`
 - `instance_defaults: Optional[InstanceDefaultsBlock]`
 - `exports: Optional[ExportsBlock]`
+- `variables: Optional[Dict[str, ParamValue]]`
 
 ### Notes
 - Connectivity is net-first: `nets` own endpoint lists.
 - `instance_defaults` provide default bindings per instance `ref` and are
   overridden by explicit `nets` bindings (override warnings are deferred).
 - Module ports are derived from `$`-prefixed net names (plus forwarded ports from `exports`).
+- `variables` are module-local constants usable only in instance parameter values
+  via `{var}` placeholders; recursive references are invalid.
 
 ---
 
@@ -79,6 +82,8 @@ instances:
 - `ParamTokens` may include pattern syntax; expansion uses broadcast/zip semantics
   after instance-name expansion (deferred).
 - `<TypeName>` may be either `symbol` or `ns.symbol`; pattern syntax is forbidden.
+- Param values may reference module variables via `{var}` placeholders. Substitution
+  is raw string replacement and occurs before parameter pattern expansion.
 
 ---
 
@@ -161,8 +166,10 @@ instances:
 ### Fields
 - `ports: Optional[List[str]]`
   - Ordered port list; may be omitted for portless devices.
-- `params: Optional[Dict[str, ParamValue]]`
+- `parameters: Optional[Dict[str, ParamValue]]`
   - Default parameter values.
+- `variables: Optional[Dict[str, ParamValue]]`
+  - Device-local constants (immutable at instantiation).
 - `backends: Dict[str, DeviceBackendDecl]`
   - Backend-specific template entries; must be non-empty.
 
@@ -175,7 +182,8 @@ instances:
 
 ### Fields
 - `template: str` (required)
-- `params: Optional[Dict[str, ParamValue]]` (optional override of shared defaults)
+- `parameters: Optional[Dict[str, ParamValue]]` (optional override of shared defaults)
+- `variables: Optional[Dict[str, ParamValue]]` (optional backend-local constants)
 - Additional keys are permitted and treated as raw values available as `{placeholders}`
   in `template` (e.g., `model`).
 
@@ -197,6 +205,8 @@ instances:
 - Name resolution (module/device lookup, instance refs).
 - Named pattern expansion (`<@name>`) and pattern expansion/binding verification (`<...>`, `[...]`, `;`); enforce expansion size limits.
 - Patterned parameter expansion (broadcast/zip; no cross-product).
+- Module variable substitution (`{var}`) in instance parameter values, including
+  undefined variable diagnostics and recursion detection.
 - Apply `instance_defaults` and emit override warnings (suppressed by `!`).
 - Export forwarding resolution and collision checks.
 - Endpoint uniqueness checks (an endpoint bound to multiple nets).
