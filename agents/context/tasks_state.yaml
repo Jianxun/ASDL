@@ -12,6 +12,6 @@ T-142:
   pr: 150
   merged: true
 T-143:
-  status: ready_for_review
+  status: done
   pr: 151
-  merged: false
+  merged: true
