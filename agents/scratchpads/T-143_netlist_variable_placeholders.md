@@ -10,29 +10,33 @@
 - `agents/context/project_status.md`
 
 # Plan
-- [ ] Inspect current netlist emission placeholders/validation + diagnostics flow for params/props.
-- [ ] Implement variable merge + collision checks and placeholder exposure.
-- [ ] Update template validation rules for variables.
-- [ ] Add netlist tests for variable placeholders + collision diagnostics.
-- [ ] Run `venv/bin/pytest tests/unit_tests/netlist -v`.
+- [x] Inspect current netlist emission placeholders/validation + diagnostics flow for params/props.
+- [x] Implement variable merge + collision checks and placeholder exposure.
+- [x] Update template validation rules for variables.
+- [x] Add netlist tests for variable placeholders + collision diagnostics.
+- [x] Run `venv/bin/pytest tests/unit_tests/netlist -v`.
 
 # Progress log
 - 2026-01-16: Task initialized and context collected.
+- 2026-01-16: Added netlist tests and GraphIR helper coverage for device/backend variables.
+- 2026-01-16: Implemented variable merge/collision diagnostics and template placeholder support; netlist tests passing.
 
 # Patch summary
-- TBD
+- Added netlist tests for variable placeholders plus collision diagnostics.
+- Added variable merge/validation in emission + verification and allowed variable placeholders in templates.
 
 # PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/151
 
 # Verification
-- TBD
+- `venv/bin/pytest tests/unit_tests/netlist -v`
+  - PASS
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None yet.
 
 # Next steps
-- Implement netlist variable placeholders + diagnostics; add tests; run verify.
+- Await review feedback.
