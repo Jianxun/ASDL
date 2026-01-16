@@ -27,6 +27,7 @@ from .ir_utils import (
     _select_symbol,
 )
 from .render import _ordered_conns
+from .params import _dict_attr_to_strings, _merge_variables
 from .templates import (
     _allowed_backend_placeholders,
     _validate_system_device_templates,
@@ -129,6 +130,27 @@ class VerifyNetlistPass(ModulePass):
 
                 port_order = [attr.data for attr in device.ports.data]
                 _ordered_conns(op, port_order, self.state.diagnostics)
+
+                device_params = _dict_attr_to_strings(device.params)
+                backend_params = _dict_attr_to_strings(backend.params)
+                instance_params = _dict_attr_to_strings(op.params)
+                device_vars = _dict_attr_to_strings(device.variables)
+                backend_vars = _dict_attr_to_strings(backend.variables)
+                props = _dict_attr_to_strings(backend.props)
+                _, variable_diags = _merge_variables(
+                    device_vars,
+                    backend_vars,
+                    device_param_keys=device_params.keys(),
+                    backend_param_keys=backend_params.keys(),
+                    backend_prop_keys=props.keys(),
+                    instance_params=instance_params,
+                    instance_name=op.name_attr.data,
+                    device_name=ref_name,
+                    device_loc=device.src,
+                    backend_loc=backend.src,
+                    instance_loc=op.src,
+                )
+                self.state.diagnostics.extend(variable_diags)
 
                 placeholders = _validate_template(
                     backend.template.data,

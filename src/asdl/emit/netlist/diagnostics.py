@@ -21,6 +21,8 @@ MALFORMED_TEMPLATE = format_code("EMIT", 8)
 NETLIST_DESIGN_MISSING = format_code("EMIT", 9)
 NETLIST_VERIFY_CRASH = format_code("EMIT", 10)
 UNRESOLVED_ENV_VAR = format_code("EMIT", 11)
+INSTANCE_VARIABLE_OVERRIDE = format_code("EMIT", 12)
+VARIABLE_KEY_COLLISION = format_code("EMIT", 13)
 
 
 def _emit_diagnostic(

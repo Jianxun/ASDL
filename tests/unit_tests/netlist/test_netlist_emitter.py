@@ -169,6 +169,7 @@ def _graphir_from_ifir(design: DesignOp) -> GraphProgramOp:
                     file_id=file_id,
                     ports=[attr.data for attr in op.ports.data],
                     params=op.params,
+                    variables=op.variables,
                     region=backends,
                 )
             )
@@ -299,6 +300,134 @@ def test_emit_netlist_device_params_and_top_default() -> None:
     assert diagnostics[0].primary_span is not None
     assert diagnostics[0].primary_span.start.line == 12
     assert diagnostics[0].primary_span.start.col == 3
+
+
+def test_emit_netlist_exposes_variable_placeholders() -> None:
+    backend = BackendOp(
+        name=BACKEND_NAME,
+        template="{name} {ports} {model} {temp}",
+        variables=_dict_attr({"temp": "85"}),
+    )
+    device = DeviceOp(
+        name="nfet",
+        ports=["D"],
+        variables=_dict_attr({"model": "nfet", "temp": "25"}),
+        region=[backend],
+    )
+    instance = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[NetOp(name="OUT"), instance],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = _emit_from_graphir(design)
+
+    assert diagnostics == []
+    assert netlist == "\n".join(["M1 OUT nfet 85", ".end"])
+
+
+def test_emit_netlist_reports_instance_variable_override() -> None:
+    backend = BackendOp(
+        name=BACKEND_NAME,
+        template="{name} {ports} {model}",
+    )
+    device = DeviceOp(
+        name="nfet",
+        ports=["D"],
+        variables=_dict_attr({"model": "nfet"}),
+        region=[backend],
+    )
+    instance = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+        params=_dict_attr({"model": "override"}),
+        src=_loc(8, 4),
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[NetOp(name="OUT"), instance],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = _emit_from_graphir(design)
+
+    assert netlist is None
+    assert any(
+        diag.code == format_code("EMIT", 12) and diag.severity is Severity.ERROR
+        for diag in diagnostics
+    )
+
+
+def test_emit_netlist_reports_variable_param_collision() -> None:
+    backend = BackendOp(
+        name=BACKEND_NAME,
+        template="{name} {ports} {params}",
+    )
+    device = DeviceOp(
+        name="nfet",
+        ports=["D"],
+        params=_dict_attr({"w": "1u"}),
+        variables=_dict_attr({"w": "2u"}),
+        region=[backend],
+    )
+    instance = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[NetOp(name="OUT"), instance],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = _emit_from_graphir(design)
+
+    assert netlist is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == format_code("EMIT", 13)
+    assert diagnostics[0].severity is Severity.ERROR
+
+
+def test_emit_netlist_reports_variable_prop_collision() -> None:
+    backend = BackendOp(
+        name=BACKEND_NAME,
+        template="{name} {ports} {model}",
+        props=_dict_attr({"model": "nfet"}),
+    )
+    device = DeviceOp(
+        name="nfet",
+        ports=["D"],
+        variables=_dict_attr({"model": "override"}),
+        region=[backend],
+    )
+    instance = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("OUT"))],
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["OUT"],
+        region=[NetOp(name="OUT"), instance],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    netlist, diagnostics = _emit_from_graphir(design)
+
+    assert netlist is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == format_code("EMIT", 13)
+    assert diagnostics[0].severity is Severity.ERROR
 
 
 def test_emit_netlist_top_as_subckt_option() -> None:
