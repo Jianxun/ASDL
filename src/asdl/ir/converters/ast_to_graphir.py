@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Tuple
 
-from asdl.ast import AsdlDocument
+from asdl.ast import AsdlDocument, elaborate_named_patterns
 from asdl.diagnostics import Diagnostic
 from asdl.imports import ImportGraph, NameEnv, ProgramDB
 from asdl.ir.converters.ast_to_graphir_context import GraphIrSessionContext
@@ -34,6 +34,10 @@ def convert_document(
     """
     diagnostics: List[Diagnostic] = []
     had_error = False
+
+    named_diags, named_error = elaborate_named_patterns(document)
+    diagnostics.extend(named_diags)
+    had_error = had_error or named_error
 
     session = GraphIrSessionContext.for_document(program_db=program_db)
     doc_context = session.document_context(document, name_env=name_env)
@@ -95,6 +99,9 @@ def convert_import_graph(
             name_env=graph.name_envs.get(file_id),
             file_path=file_id,
         )
+        named_diags, named_error = elaborate_named_patterns(document)
+        diagnostics.extend(named_diags)
+        had_error = had_error or named_error
         modules, devices, doc_diags, doc_error = lower_document_ops(doc_context)
         ops.extend(modules)
         ops.extend(devices)

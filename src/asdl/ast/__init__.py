@@ -16,6 +16,12 @@ from .models import (
     ParamValue,
 )
 from .location import Locatable, LocationIndex
+from .named_patterns import (
+    AST_NAMED_PATTERN_INVALID,
+    AST_NAMED_PATTERN_RECURSIVE,
+    AST_NAMED_PATTERN_UNDEFINED,
+    elaborate_named_patterns,
+)
 from .parser import parse_file, parse_string
 
 
@@ -36,6 +42,10 @@ __all__ = [
     "InstancesBlock",
     "NetsBlock",
     "PatternsBlock",
+    "AST_NAMED_PATTERN_INVALID",
+    "AST_NAMED_PATTERN_UNDEFINED",
+    "AST_NAMED_PATTERN_RECURSIVE",
+    "elaborate_named_patterns",
     "AsdlDocument",
     "ModuleDecl",
     "DeviceDecl",

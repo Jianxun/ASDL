@@ -117,6 +117,7 @@ class InstanceDefaultsDecl(AstBaseModel):
     """Default instance bindings keyed by instance reference."""
 
     bindings: Dict[str, StrictStr]
+    _bindings_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
 
 
 InstanceDefaultsBlock = Dict[str, InstanceDefaultsDecl]
@@ -130,7 +131,13 @@ class ModuleDecl(AstBaseModel):
     patterns: Optional[PatternsBlock] = None
     instance_defaults: Optional[InstanceDefaultsBlock] = None
     _instances_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+    _instance_expr_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
     _nets_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+    _net_endpoint_locs: Dict[str, List[Optional["Locatable"]]] = PrivateAttr(
+        default_factory=dict
+    )
+    _patterns_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+    _pattern_value_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
 
 
 if TYPE_CHECKING:
