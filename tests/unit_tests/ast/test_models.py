@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl
+from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl, parse_string
 
 
 def test_document_requires_modules_or_devices() -> None:
@@ -52,6 +52,22 @@ def test_device_backend_allows_extra_fields() -> None:
     assert backend.model == "nfet"
 
 
+def test_device_decl_rejects_params_field() -> None:
+    with pytest.raises(ValidationError):
+        DeviceDecl.model_validate(
+            {
+                "ports": ["D"],
+                "params": {"m": 2},
+                "backends": {"ngspice": {"template": "R{inst} {ports}"}},
+            }
+        )
+
+
+def test_device_backend_rejects_params_field() -> None:
+    with pytest.raises(ValidationError):
+        DeviceBackendDecl.model_validate({"template": "M{inst}", "params": {"m": 2}})
+
+
 def test_module_instances_require_string_values() -> None:
     with pytest.raises(ValidationError):
         ModuleDecl.model_validate({"instances": {"M1": 123}})
@@ -81,3 +97,52 @@ def test_module_rejects_invalid_pattern_group() -> None:
 def test_module_rejects_instance_defaults_missing_bindings() -> None:
     with pytest.raises(ValidationError):
         ModuleDecl.model_validate({"instance_defaults": {"mos": {}}})
+
+
+def test_parse_variables_blocks() -> None:
+    yaml_content = "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    variables:",
+            "      ratio: 2",
+            "    instances:",
+            "      R1: res r=3k",
+            "    nets:",
+            "      $IN:",
+            "        - R1.P",
+            "      $OUT:",
+            "        - R1.N",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    parameters:",
+            "      r: 1k",
+            "    variables:",
+            "      family: base",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports} {params}\"",
+            "        parameters:",
+            "          m: 2",
+            "        variables:",
+            "          corner: fast",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert diagnostics == []
+    assert document is not None
+    assert document.modules is not None
+    assert document.devices is not None
+
+    module = document.modules["top"]
+    device = document.devices["res"]
+    backend = device.backends["sim.ngspice"]
+    assert module.variables == {"ratio": 2}
+    assert device.parameters == {"r": "1k"}
+    assert device.variables == {"family": "base"}
+    assert backend.parameters == {"m": 2}
+    assert backend.variables == {"corner": "fast"}
