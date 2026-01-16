@@ -8,13 +8,13 @@ T-141:
   pr: 149
   merged: true
 T-142:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 150
+  merged: true
 T-143:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 151
+  merged: true
 T-144:
   status: ready
   pr: null

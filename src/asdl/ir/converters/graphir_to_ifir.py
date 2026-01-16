@@ -308,6 +308,7 @@ def _convert_device(
                 name=backend.name_attr,
                 template=backend.template,
                 params=backend.params,
+                variables=backend.variables,
                 props=backend.props,
                 src=backend.src,
             )
@@ -319,6 +320,7 @@ def _convert_device(
             ports=device.ports,
             file_id=device.file_id,
             params=device.params,
+            variables=device.variables,
             region=backends,
         ),
         diagnostics,

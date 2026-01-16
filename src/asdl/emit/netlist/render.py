@@ -23,7 +23,7 @@ from .diagnostics import (
     _emit_diagnostic,
 )
 from .ir_utils import _collect_design_ops, _select_backend, _select_symbol
-from .params import _dict_attr_to_strings, _merge_params
+from .params import _dict_attr_to_strings, _merge_params, _merge_variables
 from .templates import (
     _escape_braced_env_vars,
     _restore_braced_env_vars,
@@ -305,6 +305,7 @@ def _emit_instance(
     device_params = _dict_attr_to_strings(device.params)
     backend_params = _dict_attr_to_strings(backend.params)
     inst_params = _dict_attr_to_strings(instance.params)
+    props = _dict_attr_to_strings(backend.props)
     merged_params, params_str, param_diags = _merge_params(
         device_params,
         backend_params,
@@ -315,19 +316,40 @@ def _emit_instance(
     )
     diagnostics.extend(param_diags)
 
+    device_vars = _dict_attr_to_strings(device.variables)
+    backend_vars = _dict_attr_to_strings(backend.variables)
+    merged_vars, variable_diags = _merge_variables(
+        device_vars,
+        backend_vars,
+        device_param_keys=device_params.keys(),
+        backend_param_keys=backend_params.keys(),
+        backend_prop_keys=props.keys(),
+        instance_params=inst_params,
+        instance_name=instance.name_attr.data,
+        device_name=ref_name,
+        device_loc=device.src,
+        backend_loc=backend.src,
+        instance_loc=instance.src,
+    )
+    diagnostics.extend(variable_diags)
+    if any(
+        diag.severity in (Severity.ERROR, Severity.FATAL) for diag in variable_diags
+    ):
+        return None, True
+
     template = backend.template.data
     escaped_template, env_vars = _escape_braced_env_vars(template)
     placeholders = _validate_template(template, ref_name, diagnostics, loc=backend.src)
     if placeholders is None:
         return None, True
 
-    props = _dict_attr_to_strings(backend.props)
     props.setdefault("params", params_str)
     template_values = {
         "name": instance.name_attr.data,
         "ports": ports_str,
     }
     template_values.update(merged_params)
+    template_values.update(merged_vars)
     template_values.update(props)
     try:
         rendered = escaped_template.format_map(template_values)

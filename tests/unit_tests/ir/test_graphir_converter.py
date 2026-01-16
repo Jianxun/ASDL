@@ -8,6 +8,7 @@ from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl, pa
 from asdl.diagnostics import Severity
 from asdl.ir.converters.ast_to_graphir import convert_document
 from asdl.ir.graphir import DeviceOp, EndpointOp, InstanceOp, ModuleOp, NetOp, ProgramOp
+from asdl.ir.ifir import BackendOp
 from asdl.ir.patterns import PATTERN_DUPLICATE_ATOM, decode_pattern_expression_table
 
 
@@ -406,3 +407,36 @@ def test_convert_document_reports_recursive_module_variable() -> None:
 
     assert program is None
     assert any(diag.code == "IR-013" for diag in diagnostics)
+
+
+def test_convert_document_device_backend_variables_are_stringified() -> None:
+    document = AsdlDocument(
+        modules={"top": ModuleDecl(instances={"R1": "res"}, nets={})},
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                variables={"LIM": 2, "FLAG": True},
+                backends={
+                    "ngspice": DeviceBackendDecl(
+                        template="R{inst} {ports}",
+                        variables={"MODEL": "rm", "ACTIVE": False},
+                    )
+                },
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert diagnostics == []
+    assert isinstance(program, ProgramOp)
+
+    device = next(op for op in program.body.block.ops if isinstance(op, DeviceOp))
+    assert device.variables is not None
+    assert device.variables.data["LIM"].data == "2"
+    assert device.variables.data["FLAG"].data == "true"
+
+    backend = next(op for op in device.body.block.ops if isinstance(op, BackendOp))
+    assert backend.variables is not None
+    assert backend.variables.data["MODEL"].data == "rm"
+    assert backend.variables.data["ACTIVE"].data == "false"
