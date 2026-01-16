@@ -33,6 +33,7 @@
 - Added GraphIR converter tests for instance_defaults defaults/overrides/port order.
 - Updated GraphIR lowering and parsing to wire instance_defaults and override warnings.
 - Ran targeted GraphIR converter tests.
+- Fixed parse_endpoints error return regression and reran tests after review feedback.
 
 # Patch summary
 - Added GraphIR converter coverage for instance_defaults defaults, override warnings/suppression, and port order.
@@ -43,6 +44,7 @@
 - https://github.com/Jianxun/ASDL/pull/154
 
 # Verification
+- ./venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
 - ./venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
 
 # Status request (Done / Blocked / In Progress)
