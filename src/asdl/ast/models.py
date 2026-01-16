@@ -77,19 +77,29 @@ class AstBaseModel(BaseModel):
 
 
 class DeviceBackendDecl(AstBaseModel):
-    """Backend-specific device template and parameters."""
+    """Backend-specific device template, parameters, and variables."""
 
     model_config = ConfigDict(extra="allow")
 
     template: StrictStr
-    params: Optional[Dict[str, ParamValue]] = None
+    parameters: Optional[Dict[str, ParamValue]] = None
+    variables: Optional[Dict[str, ParamValue]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_params_alias(cls, data: object) -> object:
+        """Reject legacy params field for backend declarations."""
+        if isinstance(data, dict) and "params" in data:
+            raise ValueError("Use 'parameters' instead of 'params' for backends.")
+        return data
 
 
 class DeviceDecl(AstBaseModel):
-    """Device declaration with ports, params, and backend templates."""
+    """Device declaration with ports, parameters, variables, and backends."""
 
     ports: Optional[List[StrictStr]] = None
-    params: Optional[Dict[str, ParamValue]] = None
+    parameters: Optional[Dict[str, ParamValue]] = None
+    variables: Optional[Dict[str, ParamValue]] = None
     backends: Dict[str, DeviceBackendDecl]
 
     @field_validator("backends")
@@ -129,6 +139,7 @@ class ModuleDecl(AstBaseModel):
     instances: Optional[InstancesBlock] = None
     nets: Optional[NetsBlock] = None
     patterns: Optional[PatternsBlock] = None
+    variables: Optional[Dict[str, ParamValue]] = None
     instance_defaults: Optional[InstanceDefaultsBlock] = None
     _instances_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
     _instance_expr_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
