@@ -10,21 +10,23 @@
 - `agents/context/project_status.md`
 
 # Plan
-- [ ] Add IR unit tests for device/backend variables (GraphIR + IFIR projection).
-- [ ] Add variables attributes to GraphIR/IFIR device/backend ops and wire AST->GraphIR + GraphIR->IFIR propagation.
-- [ ] Run `venv/bin/pytest tests/unit_tests/ir -v`.
+- [x] Add IR unit tests for device/backend variables (GraphIR + IFIR projection).
+- [x] Add variables attributes to GraphIR/IFIR device/backend ops and wire AST->GraphIR + GraphIR->IFIR propagation.
+- [x] Run `venv/bin/pytest tests/unit_tests/ir -v`.
 
 # Progress log
-- 2026-01-16: Collected task context and added initial IR variable coverage tests.
+- 2026-01-16: Collected task context and added IR variable coverage tests.
+- 2026-01-16: Wired device/backend variables through GraphIR/IFIR ops + converters; tests pass.
 
 # Patch summary
-- TODO
+- Added GraphIR/IFIR device + backend variable attrs and propagated through lowering/projection.
+- Added IR tests for stringified variables in GraphIR and preserved variables in IFIR.
 
 # PR URL
 - TODO
 
 # Verification
-- TODO
+- `venv/bin/pytest tests/unit_tests/ir -v`
 
 # Status request (Done / Blocked / In Progress)
 - In Progress
@@ -33,4 +35,4 @@
 - None yet.
 
 # Next steps
-- TODO
+- Open PR and request review.
