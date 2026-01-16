@@ -8,8 +8,8 @@ T-141:
   pr: 149
   merged: true
 T-142:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 150
   merged: false
 T-143:
   status: ready

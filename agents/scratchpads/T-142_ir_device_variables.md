@@ -23,16 +23,17 @@
 - Added IR tests for stringified variables in GraphIR and preserved variables in IFIR.
 
 # PR URL
-- TODO
+- https://github.com/Jianxun/ASDL/pull/150
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/ir -v`
+  - PASS
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None yet.
 
 # Next steps
-- Open PR and request review.
+- Await review feedback.
