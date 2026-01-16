@@ -4,9 +4,9 @@ T-140:
   pr: 148
   merged: true
 T-141:
-  status: ready_for_review
+  status: done
   pr: 149
-  merged: false
+  merged: true
 T-142:
   status: ready
   pr: null
