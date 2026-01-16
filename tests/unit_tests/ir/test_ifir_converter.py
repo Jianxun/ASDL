@@ -1,5 +1,7 @@
 import pytest
 
+from xdsl.dialects.builtin import DictionaryAttr, StringAttr
+
 pytest.importorskip("xdsl")
 
 from asdl.ir import convert_graphir_to_ifir
@@ -216,3 +218,41 @@ def test_convert_graphir_pattern_origin_uses_expression_table() -> None:
 
     assert net_origins == {"OUTP": "OUT<P|N>", "OUTN": "OUT<P|N>"}
     assert inst_origins == {"UP": "U<P|N>", "UN": "U<P|N>"}
+
+
+def test_convert_graphir_device_variables_to_ifir() -> None:
+    device_variables = DictionaryAttr({"FLAG": StringAttr("true")})
+    backend_variables = DictionaryAttr({"MODE": StringAttr("fast")})
+
+    device = GraphDeviceOp(
+        device_id="d1",
+        name="nfet",
+        file_id="entry.asdl",
+        ports=["D", "G", "S"],
+        variables=device_variables,
+        region=[
+            IfirBackendOp(
+                name="ngspice",
+                template="M{inst} {D} {G} {S} {model}",
+                variables=backend_variables,
+            )
+        ],
+    )
+    program = GraphProgramOp(region=[device], entry=None)
+
+    ifir_design, diagnostics = convert_graphir_to_ifir(program)
+
+    assert diagnostics == []
+    assert isinstance(ifir_design, IfirDesignOp)
+
+    ifir_device = next(
+        op for op in ifir_design.body.block.ops if isinstance(op, IfirDeviceOp)
+    )
+    assert ifir_device.variables is not None
+    assert ifir_device.variables.data["FLAG"].data == "true"
+
+    backend = next(
+        op for op in ifir_device.body.block.ops if isinstance(op, IfirBackendOp)
+    )
+    assert backend.variables is not None
+    assert backend.variables.data["MODE"].data == "fast"
