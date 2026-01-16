@@ -327,3 +327,82 @@ def test_convert_document_reports_pattern_collisions() -> None:
 
     assert program is None
     assert any(diag.code == PATTERN_DUPLICATE_ATOM for diag in diagnostics)
+
+
+def test_convert_document_substitutes_module_variables_in_params() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                variables={"BASE": "1u", "SCALE": "{BASE}", "SUF": "<P|N>"},
+                instances={"M<P|N>": "res r=R{SUF} l={SCALE}"},
+                nets={},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert diagnostics == []
+    assert isinstance(program, ProgramOp)
+    module = next(op for op in program.body.block.ops if isinstance(op, ModuleOp))
+    instances = {
+        inst.name_attr.data: inst
+        for inst in module.body.block.ops
+        if isinstance(inst, InstanceOp)
+    }
+    assert set(instances.keys()) == {"MP", "MN"}
+    assert instances["MP"].props is not None
+    assert instances["MN"].props is not None
+    assert instances["MP"].props.data["r"].data == "RP"
+    assert instances["MN"].props.data["r"].data == "RN"
+    assert instances["MP"].props.data["l"].data == "1u"
+    assert instances["MN"].props.data["l"].data == "1u"
+
+
+def test_convert_document_reports_undefined_module_variable() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                variables={"BASE": "1u"},
+                instances={"M1": "res w={WIDTH}"},
+                nets={},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert program is None
+    assert any(diag.code == "IR-012" for diag in diagnostics)
+
+
+def test_convert_document_reports_recursive_module_variable() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                variables={"A": "{B}", "B": "{A}"},
+                instances={"M1": "res w={A}"},
+                nets={},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")}
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert program is None
+    assert any(diag.code == "IR-013" for diag in diagnostics)

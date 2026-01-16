@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -43,9 +44,12 @@ PATTERN_LENGTH_MISMATCH = format_code("IR", 3)
 PATTERN_COLLISION = format_code("IR", 4)
 UNRESOLVED_QUALIFIED = format_code("IR", 10)
 UNRESOLVED_UNQUALIFIED = format_code("IR", 11)
+UNDEFINED_MODULE_VARIABLE = format_code("IR", 12)
+RECURSIVE_MODULE_VARIABLE = format_code("IR", 13)
 
 
 _PATTERN_DELIMITERS = set("<>[];")
+_VARIABLE_PLACEHOLDER_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
 def _is_pattern_expression(expression: str) -> bool:
@@ -118,6 +122,166 @@ def _pattern_origin_from_atom(
     )
 
 
+def _format_param_value(value: object) -> str:
+    """Format parameter values as strings.
+
+    Args:
+        value: Parameter value to format.
+
+    Returns:
+        Serialized string representation.
+    """
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
+class _ModuleVariableResolver:
+    """Resolve module variable placeholders for instance parameter values.
+
+    Args:
+        module_name: Name of the module providing variables.
+        variables: Module variable mapping.
+        diagnostics: Diagnostic collection to append errors to.
+        module_loc: Optional source location for module-level diagnostics.
+    """
+
+    def __init__(
+        self,
+        *,
+        module_name: str,
+        variables: Optional[Dict[str, object]],
+        diagnostics: List[Diagnostic],
+        module_loc: Optional[Locatable],
+    ) -> None:
+        self._module_name = module_name
+        self._variables = variables or {}
+        self._diagnostics = diagnostics
+        self._module_loc = module_loc
+        self._resolved: Dict[str, str] = {}
+        self._resolving: set[str] = set()
+        self._failed: set[str] = set()
+        self.had_error = False
+
+    def substitute(self, value: str, loc: Optional[Locatable]) -> Optional[str]:
+        """Substitute `{var}` placeholders in a string.
+
+        Args:
+            value: Raw parameter value string.
+            loc: Optional source location to use for diagnostics.
+
+        Returns:
+            Substituted string or None when resolution fails.
+        """
+        if "{" not in value:
+            return value
+        return self._substitute(value, loc)
+
+    def _substitute(self, value: str, loc: Optional[Locatable]) -> Optional[str]:
+        """Substitute placeholders using module variable resolution.
+
+        Args:
+            value: Raw string that may include `{var}` placeholders.
+            loc: Optional source location for diagnostic attribution.
+
+        Returns:
+            Substituted string or None when substitution fails.
+        """
+        matches = list(_VARIABLE_PLACEHOLDER_RE.finditer(value))
+        if not matches:
+            return value
+        parts: List[str] = []
+        last_end = 0
+        had_error = False
+        for match in matches:
+            parts.append(value[last_end:match.start()])
+            var_name = match.group(1)
+            resolved = self._resolve_variable(var_name, loc)
+            if resolved is None:
+                parts.append(match.group(0))
+                had_error = True
+            else:
+                parts.append(resolved)
+            last_end = match.end()
+        parts.append(value[last_end:])
+        if had_error:
+            return None
+        return "".join(parts)
+
+    def _resolve_variable(self, name: str, loc: Optional[Locatable]) -> Optional[str]:
+        """Resolve a module variable by name.
+
+        Args:
+            name: Variable name to resolve.
+            loc: Optional source location to use for undefined variable diagnostics.
+
+        Returns:
+            Resolved string value or None when resolution fails.
+        """
+        if name in self._resolved:
+            return self._resolved[name]
+        if name in self._failed:
+            return None
+        if name in self._resolving:
+            self._emit_recursive_variable(name)
+            self._failed.add(name)
+            self.had_error = True
+            return None
+        if name not in self._variables:
+            self._emit_undefined_variable(name, loc)
+            self._failed.add(name)
+            self.had_error = True
+            return None
+
+        self._resolving.add(name)
+        raw_value = self._variables[name]
+        if isinstance(raw_value, str):
+            resolved = self._substitute(raw_value, self._module_loc or loc)
+            if resolved is None:
+                self._failed.add(name)
+                self._resolving.remove(name)
+                self.had_error = True
+                return None
+        else:
+            resolved = _format_param_value(raw_value)
+        self._resolving.remove(name)
+        self._resolved[name] = resolved
+        return resolved
+
+    def _emit_undefined_variable(self, name: str, loc: Optional[Locatable]) -> None:
+        """Emit a diagnostic for an undefined module variable reference.
+
+        Args:
+            name: Variable name that was not defined.
+            loc: Optional source location for the diagnostic.
+        """
+        diag_loc = loc or self._module_loc
+        self._diagnostics.append(
+            diagnostic(
+                UNDEFINED_MODULE_VARIABLE,
+                f"Undefined module variable '{name}' in module '{self._module_name}'.",
+                diag_loc,
+            )
+        )
+
+    def _emit_recursive_variable(self, name: str) -> None:
+        """Emit a diagnostic for recursive module variable references.
+
+        Args:
+            name: Variable name participating in a recursion.
+        """
+        self._diagnostics.append(
+            diagnostic(
+                RECURSIVE_MODULE_VARIABLE,
+                (
+                    f"Recursive module variable '{name}' detected in module "
+                    f"'{self._module_name}'."
+                ),
+                self._module_loc,
+            )
+        )
+
+
 def lower_document_ops(
     context: GraphIrDocumentContext,
 ) -> Tuple[List[ModuleOp], List[DeviceOp], List[Diagnostic], bool]:
@@ -180,12 +344,19 @@ def lower_module(
     had_error = False
     pattern_table: PatternExpressionTable = {}
     pattern_cache: Dict[Tuple[str, str], str] = {}
+    variable_resolver = _ModuleVariableResolver(
+        module_name=name,
+        variables=module.variables,
+        diagnostics=diagnostics,
+        module_loc=module._loc,
+    )
 
     inst_ops: List[InstanceOp] = []
     inst_name_to_id: Dict[str, str] = {}
     if module.instances:
         for inst_name, expr in module.instances.items():
             inst_loc = module._instances_loc.get(inst_name)
+            inst_expr_loc = module._instance_expr_loc.get(inst_name)
             ref, params, parse_error = parse_instance_expr(expr)
             if parse_error is not None:
                 diagnostics.append(
@@ -243,9 +414,14 @@ def lower_module(
             param_error = False
             if params:
                 for param_name, param_expr in params.items():
-                    param_is_pattern = _is_pattern_expression(param_expr)
+                    param_loc = inst_expr_loc or inst_loc or module._loc
+                    resolved_expr = variable_resolver.substitute(param_expr, param_loc)
+                    if resolved_expr is None:
+                        param_error = True
+                        break
+                    param_is_pattern = _is_pattern_expression(resolved_expr)
                     if param_is_pattern:
-                        param_atoms, param_diags = atomize_pattern(param_expr)
+                        param_atoms, param_diags = atomize_pattern(resolved_expr)
                         if param_atoms is None:
                             diagnostics.extend(param_diags)
                             param_error = True
@@ -254,12 +430,12 @@ def lower_module(
                         param_expr_id = _register_pattern_entry(
                             pattern_table,
                             pattern_cache,
-                            expression=param_expr,
+                            expression=resolved_expr,
                             kind="param",
-                            loc=inst_loc or module._loc,
+                            loc=param_loc,
                         )
                     else:
-                        param_atoms = [param_expr]
+                        param_atoms = [resolved_expr]
                         param_count = 1
                         param_expr_id = None
 
@@ -288,7 +464,7 @@ def lower_module(
                                 _pattern_origin_from_atom(param_expr_id, param_atom)
                             )
                         else:
-                            param_values_by_inst[index][param_name] = param_expr
+                            param_values_by_inst[index][param_name] = resolved_expr
 
             if param_error:
                 had_error = True
