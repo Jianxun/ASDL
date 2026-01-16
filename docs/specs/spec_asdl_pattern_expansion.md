@@ -8,6 +8,7 @@ This spec covers:
 - numeric range expansion (`[...]`)
 - literal enumeration expansion (`<...>`) using **`|`** as delimiter
 - splicing / parallel concatenation using **`;`**
+- named pattern references (`<@name>`)
 
 Wildcard matching, aliasing, and exporting syntax are intentionally excluded.
 
@@ -45,6 +46,33 @@ Wildcard matching, aliasing, and exporting syntax are intentionally excluded.
 ---
 
 ## 3. Supported Pattern Forms
+
+### 3.0 Named Pattern References: `<@name>`
+
+Named patterns provide module-local aliases for single-group pattern tokens.
+
+**Syntax (definition)**
+```yaml
+patterns:
+  <name>: <pattern-group>
+```
+
+**Syntax (reference)**
+```
+<@name>
+```
+
+**Semantics**
+- `<@name>` is replaced by the referenced **group token** before expansion.
+- Substitution is purely textual and happens prior to any expansion or binding.
+
+**Rules**
+- `patterns` are **module-local** only.
+- Pattern names must match `[A-Za-z_][A-Za-z0-9_]*`.
+- Pattern values must be a **single group token**: either `<...>` (enum) or
+  `[...]` (range).
+- Named patterns must not reference other named patterns (no recursion).
+- Undefined names are errors.
 
 ### 3.1 Numeric Range Expansion: `[start:end]`
 

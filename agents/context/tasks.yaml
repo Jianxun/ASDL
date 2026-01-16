@@ -1,74 +1,28 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-136
-    title: IR pattern engine consolidation
+  - id: T-139
+    title: Module-local named pattern macro expansion
     owner: Executor
     dod: >
-      Implement pattern expansion/atomization utilities in
-      src/asdl/ir/patterns with full-expression endpoint expansion (expand then
-      split on '.') and literal-part preservation. Provide API hooks to reject
-      splice delimiters for $ nets. Ensure collision detection, size limits,
-      and diagnostics align with spec wording (pattern expression terminology).
-      Add unit tests covering expansion, atomization, endpoint splitting, and
-      $ net splice rejection.
-    verify:
-      - venv/bin/pytest tests/unit_tests/ir -v
-    files:
-      - src/asdl/ir/patterns/__init__.py
-      - src/asdl/ir/patterns/atomize.py
-      - src/asdl/ir/patterns/expand.py
-      - src/asdl/ir/patterns/tokenize.py
-      - src/asdl/ir/patterns/diagnostics.py
-    links:
-      scratchpad: agents/scratchpads/T-136_ir_pattern_engine_consolidation.md
-  - id: T-132
-    title: Ast to GraphIR pattern metadata integration
-    owner: Executor
-    depends_on:
-      - T-136
-    dod: >
-      Update AST->GraphIR conversion to register pattern expression table
-      entries, attach pattern_origin metadata to atomized nets/instances/
-      endpoints and instance params, and expand endpoint expressions as a whole
-      before splitting on '.'. Endpoint resolution must operate on expanded
-      atoms so subset bindings like MN_IN_<N>.D match atomized instances.
-      Binding length checks compare pattern expression expansion lengths for
-      nets vs endpoints (exact match). Patterned params expand after instance
-      expansion with scalar broadcast or exact-length zip. Emit diagnostics for
-      expansion collisions and length mismatches. Add unit tests covering
-      subset bindings and failure cases. Binding logic remains in
-      ast_to_graphir.py.
-    verify:
-      - venv/bin/pytest tests/unit_tests/ir -v
-    files:
-      - src/asdl/ir/converters/ast_to_graphir.py
-      - src/asdl/ir/patterns/expr_table.py
-      - src/asdl/ir/patterns/origin.py
-      - src/asdl/ir/patterns/endpoint_split.py
-      - src/asdl/ir/graphir/ops_graph.py
-    links:
-      scratchpad: agents/scratchpads/T-132_ast_to_graphir_pattern_metadata.md
-  - id: T-138
-    title: Migrate pattern imports and remove legacy module
-    owner: Executor
-    depends_on:
-      - T-136
-    dod: >
-      Update remaining imports to use asdl.ir.patterns, including NFIR dialect
-      and parser tests, and delete src/asdl/patterns. Ensure tests referencing
-      pattern helpers pass without the legacy module.
+      Implement module-local named pattern substitution for `<@name>` as an AST
+      elaboration step before AST->GraphIR lowering. Replace `<@name>` tokens in
+      instance names, net names, endpoint expressions, instance params, and
+      instance_defaults bindings with the referenced single-group pattern token.
+      Enforce pattern name regex, forbid recursion, and emit diagnostics for
+      undefined or invalid named patterns. Preserve source spans for diagnostics
+      and add unit tests covering successful substitution and error cases.
     verify:
       - venv/bin/pytest tests/unit_tests/parser -v
       - venv/bin/pytest tests/unit_tests/ir -v
     files:
-      - src/asdl/ir/nfir/dialect.py
-      - tests/unit_tests/parser/test_pattern_atomization.py
+      - src/asdl/ast/models.py
+      - src/asdl/ast/parser.py
+      - src/asdl/ir/converters/ast_to_graphir.py
+      - src/asdl/ir/converters/ast_to_graphir_lowering.py
       - tests/unit_tests/parser/test_pattern_expansion.py
-      - src/asdl/patterns/__init__.py
-      - src/asdl/patterns/atomize.py
     links:
-      scratchpad: agents/scratchpads/T-138_pattern_import_migration.md
+      scratchpad: agents/scratchpads/T-139_named_pattern_macro_expansion.md
 backlog: []
 
 exploration_candidates:

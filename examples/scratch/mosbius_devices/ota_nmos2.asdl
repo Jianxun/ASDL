@@ -24,5 +24,5 @@ modules:
       TAIL: [MN_TAIL.D, MN_IN_<P|N>.S]
       D: [MN_IN_<P>.D, MP_LOAD_<P>.D, MP_LOAD_<P|N>.G]
       $VBN: [MN_TAIL.G]
-      $VSS: [MN_TAIL.S]
-      $VDD: [MP_LOAD_<P|N>.S]
+      $VSS: [MN_TAIL.<S|B>]
+      $VDD: [MP_LOAD_<P|N>.<S|B>, MN_IN_<P|N>.B]

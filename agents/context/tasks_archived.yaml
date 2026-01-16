@@ -78,3 +78,6 @@ archive:
   - T-133: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-133_ast_to_graphir_context.md, pr: 141}
   - T-134: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-134_ast_to_graphir_parsing_utils.md, pr: 142}
   - T-135: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-135_ast_to_graphir_lowering_split.md, pr: 143}
+  - T-132: {completed_on: 2026-01-15, owner: Executor, scratchpad: agents/scratchpads/T-132_ast_to_graphir_pattern_metadata.md, pr: 145}
+  - T-136: {completed_on: 2026-01-15, owner: Executor, scratchpad: agents/scratchpads/T-136_ir_pattern_engine_consolidation.md, pr: 144}
+  - T-138: {completed_on: 2026-01-15, owner: Executor, scratchpad: agents/scratchpads/T-138_pattern_import_migration.md, pr: 146}
