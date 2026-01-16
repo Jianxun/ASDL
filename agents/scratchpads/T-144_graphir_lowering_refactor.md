@@ -30,16 +30,16 @@
 - Simplified `lower_module` to orchestrate helper calls and assemble ModuleOp.
 
 ## PR URL
-- 
+- https://github.com/Jianxun/ASDL/pull/153
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v`
 
 ## Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 ## Blockers / Questions
-- 
+- None.
 
 ## Next steps
-- 
+- Review PR #153.
