@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Iterable, List, Optional
 
 from .core import Diagnostic, FixIt, Label, Note, SourcePos, SourceSpan, sort_diagnostics
@@ -8,6 +9,15 @@ from .core import Diagnostic, FixIt, Label, Note, SourcePos, SourceSpan, sort_di
 
 def _span_coords(span: SourceSpan) -> str:
     return f"{span.start.line}:{span.start.col}-{span.end.line}:{span.end.col}"
+
+
+def _normalize_path(path: str) -> str:
+    if not path or not os.path.isabs(path):
+        return path
+    try:
+        return os.path.relpath(path)
+    except ValueError:
+        return path
 
 
 def _format_label(label: Label) -> str:
@@ -35,7 +45,11 @@ def _render_text_diagnostic(diagnostic: Diagnostic) -> List[str]:
     span = diagnostic.primary_span
     severity = diagnostic.severity.value
     if span and span.file:
-        header = f"{span.file}:{span.start.line}:{span.start.col}: {severity} {diagnostic.code}: {diagnostic.message}"
+        file_label = _normalize_path(span.file)
+        header = (
+            f"{file_label}:{span.start.line}:{span.start.col}: "
+            f"{severity} {diagnostic.code}: {diagnostic.message}"
+        )
     else:
         header = f"{severity} {diagnostic.code}: {diagnostic.message}"
 

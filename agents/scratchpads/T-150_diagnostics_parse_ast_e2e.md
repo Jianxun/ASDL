@@ -27,10 +27,12 @@ Todo:
 ## Progress log
 - 2026-01-xx: Initialized scratchpad and added PARSE-001..004 fixtures with expected stderr.
 - 2026-01-xx: Added AST-010..022 fixtures, import helpers, and manifest updates.
+- 2026-01-xx: Normalized diagnostic path rendering and refreshed expected stderr outputs.
 
 ## Patch summary
 - Added PARSE-001..004 and AST-010..022 diagnostics fixtures with README/expected stderr.
 - Updated diagnostics manifest entries with ready/needs-harness statuses and notes.
+- Normalized diagnostic path rendering and refreshed expected stderr files to be machine-independent.
 
 ## PR URL
 - https://github.com/Jianxun/ASDL/pull/161

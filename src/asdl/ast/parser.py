@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 from typing import Any, Iterable, List, Optional, Tuple
@@ -37,6 +38,7 @@ def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]
         The parsed document (or None) and any diagnostics emitted.
     """
     file_path = Path(filepath)
+    display_path = _display_path(filepath)
     if not file_path.exists():
         return (
             None,
@@ -44,7 +46,7 @@ def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]
                 Diagnostic(
                     code=PARSE_FILE_ERROR,
                     severity=Severity.ERROR,
-                    message=f"ASDL file not found: {filepath}",
+                    message=f"ASDL file not found: {display_path}",
                     primary_span=None,
                     notes=[NO_SPAN_NOTE],
                     source="parser",
@@ -60,7 +62,7 @@ def parse_file(filepath: str) -> Tuple[Optional[AsdlDocument], List[Diagnostic]]
                 Diagnostic(
                     code=PARSE_FILE_ERROR,
                     severity=Severity.ERROR,
-                    message=f"Failed to read ASDL file '{filepath}': {exc}",
+                    message=f"Failed to read ASDL file '{display_path}': {exc}",
                     primary_span=None,
                     notes=[NO_SPAN_NOTE],
                     source="parser",
@@ -416,6 +418,15 @@ def _span_from_mark(file_label: str, mark: Any, length: int) -> Optional[SourceS
         start=SourcePos(start_line, start_col),
         end=SourcePos(start_line, end_col),
     )
+
+
+def _display_path(path: str) -> str:
+    if not path or not os.path.isabs(path):
+        return path
+    try:
+        return os.path.relpath(path)
+    except ValueError:
+        return path
 
 
 __all__ = ["parse_file", "parse_string"]

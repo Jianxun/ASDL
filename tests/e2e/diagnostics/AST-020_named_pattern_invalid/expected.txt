@@ -1,1 +1,1 @@
-/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-020_named_pattern_invalid/case.asdl:5:7: error AST-020: Invalid named pattern reference '<@bad-name>' in instance name of module 'top'.
+case.asdl:5:7: error AST-020: Invalid named pattern reference '<@bad-name>' in instance name of module 'top'.

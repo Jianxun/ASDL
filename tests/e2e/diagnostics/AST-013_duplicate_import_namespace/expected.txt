@@ -1,1 +1,1 @@
-/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-013_duplicate_import_namespace/case.asdl:3:3: error AST-013: Duplicate import namespace 'lib'.
+case.asdl:3:3: error AST-013: Duplicate import namespace 'lib'.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -31,7 +32,7 @@ def import_path_malformed(
 def import_path_ambiguous(
     path: str, matches: Iterable[Path], loc: Optional[Locatable] = None
 ) -> Diagnostic:
-    ordered = [str(match) for match in matches]
+    ordered = [_format_path(match) for match in matches]
     notes = ["Matches (root order):", *ordered]
     return _diagnostic(
         IMPORT_PATH_AMBIGUOUS,
@@ -42,10 +43,20 @@ def import_path_ambiguous(
 
 
 def import_cycle(chain: Iterable[Path], loc: Optional[Locatable] = None) -> Diagnostic:
-    ordered = [str(path) for path in chain]
+    ordered = [_format_path(path) for path in chain]
     message = "Import cycle detected: " + " -> ".join(ordered)
     notes = ["Import chain:", *ordered]
     return _diagnostic(IMPORT_CYCLE, message, loc, notes=notes)
+
+
+def _format_path(path: Path) -> str:
+    value = str(path)
+    if not os.path.isabs(value):
+        return value
+    try:
+        return os.path.relpath(value)
+    except ValueError:
+        return value
 
 
 def import_duplicate_symbol(name: str, loc: Optional[Locatable] = None) -> Diagnostic:
