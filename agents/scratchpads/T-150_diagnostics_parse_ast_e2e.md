@@ -22,26 +22,27 @@ Todo:
 - [x] Build PARSE-001..004 case directories with inputs and expected stderr.
 - [x] Build AST-010..022 case directories + fixtures and expected stderr.
 - [x] Update diagnostics manifest entries with args/status/notes.
-- [ ] Run verify command and record results.
+- [x] Run verify command and record results.
 
 ## Progress log
 - 2026-01-xx: Initialized scratchpad and added PARSE-001..004 fixtures with expected stderr.
 - 2026-01-xx: Added AST-010..022 fixtures, import helpers, and manifest updates.
 
 ## Patch summary
-- TBD
+- Added PARSE-001..004 and AST-010..022 diagnostics fixtures with README/expected stderr.
+- Updated diagnostics manifest entries with ready/needs-harness statuses and notes.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/161
 
 ## Verification
-- TBD
+- `./venv/bin/asdlc netlist tests/e2e/diagnostics/PARSE-001_yaml_parse_error/case.asdl`
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- TBD
+- None.
