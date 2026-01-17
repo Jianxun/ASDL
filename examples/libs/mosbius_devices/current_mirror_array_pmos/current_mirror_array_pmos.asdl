@@ -1,0 +1,13 @@
+imports:
+  gf: gf180mcu.asdl
+modules:
+  current_mirror_array_pmos:
+    patterns:
+      cm_size: <1|2|4|8|16>
+    instances:
+      mn_ref: gf.pfet_03v3 L=0.5u W=5u NF=6 m=3
+      mn_out<@cm_size>: gf.pfet_03v3 L=0.5u W=5u NF=6 m=3*<@cm_size>
+    nets:
+      $iref: [mn_ref.<d|g>, mn_out<@cm_size>.g]
+      $iout_<@cm_size>x: [mn_out<@cm_size>.d]
+      $vdd: [mn_ref.<s|b>, mn_out<@cm_size>.<s|b>]

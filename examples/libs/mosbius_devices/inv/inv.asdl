@@ -1,0 +1,15 @@
+
+imports:
+  gf: gf180mcu.asdl
+
+modules:
+  inv:
+    instances:
+      mn: gf.nfet_03v3 L=0.5u W=5u NF=6 m=16
+      mp: gf.pfet_03v3 L=0.5u W=5u NF=6 m=3*16
+    nets:
+      $inp: [mp.g]
+      $inn: [mn.g]
+      $out: [mn.d, mp.d]
+      $vss: [mn.<s|b>]
+      $vdd: [mp.<s|b>]

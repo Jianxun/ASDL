@@ -9,17 +9,11 @@ export ASDL_BACKEND_CONFIG=$PROJECT_ROOT/config/backends.yaml
 # PDK
 export PDK=gf180mcu
 export PDK_PATH=$PROJECT_ROOT/pdks/$PDK
-
-# ASDL common libs
-export ASDL_COMMON_LIBS_PATH=$PROJECT_ROOT/libs_common
-
-# ASDL common libs
-export ASDL_ANALOGLIB_PATH=$PROJECT_ROOT/libs_common/analoglib
-
+export PDK_ASDL_PATH=$PDK_PATH/asdl
 # ASDL design libs
 export ASDL_DESIGN_LIBS_PATH=$PROJECT_ROOT/libs
 
 # ASDL path
-export ASDL_PATH=$ASDL_ANALOGLIB_PATH:$PDK_ASDL_PATH:$ASDL_COMMON_LIBS_PATH:$ASDL_DESIGN_LIBS_PATH
+export ASDL_LIB_PATH=$PDK_ASDL_PATH:$ASDL_DESIGN_LIBS_PATH
 
 

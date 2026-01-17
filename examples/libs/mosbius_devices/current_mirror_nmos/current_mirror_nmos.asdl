@@ -1,0 +1,11 @@
+imports:
+  gf: gf180mcu.asdl
+modules:
+  current_mirror_nmos:
+    instances:
+      mn_ref: gf.nfet_03v3 L=0.5u W=5u NF=6 m=1
+      mn_out: gf.nfet_03v3 L=0.5u W=5u NF=6 m=1
+    nets:
+      $iref: [mn_ref.<d|g>, mn_out.g]
+      $iout: [mn_out.d]
+      $vss: [mn_ref.<s|b>, mn_out.<s|b>]
