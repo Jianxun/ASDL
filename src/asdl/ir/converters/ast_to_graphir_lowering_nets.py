@@ -16,7 +16,7 @@ from asdl.ir.converters.ast_to_graphir_lowering_instances import (
     register_pattern_entry,
 )
 from asdl.ir.converters.ast_to_graphir_parsing import parse_endpoints, split_net_token
-from asdl.ir.converters.ast_to_graphir_utils import diagnostic
+from asdl.ir.converters.ast_to_graphir_utils import diagnostic, maybe_src_annotations
 from asdl.ir.graphir import EndpointOp, NetOp
 from asdl.ir.patterns import (
     AtomizedEndpoint,
@@ -208,6 +208,7 @@ def lower_module_nets(
                             inst_id=inst_id,
                             port_path=endpoint_atom.port,
                             pattern_origin=endpoint_pattern_origin,
+                            annotations=maybe_src_annotations(endpoint_loc),
                         )
                     )
                     key = (endpoint_atom.inst, endpoint_atom.port)
@@ -360,6 +361,7 @@ def lower_module_nets(
                                 inst_id=inst_id,
                                 port_path=endpoint_atom.port,
                                 pattern_origin=endpoint_pattern_origin,
+                                annotations=maybe_src_annotations(binding_loc),
                             )
                         )
 
