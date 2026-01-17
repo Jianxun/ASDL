@@ -1,181 +1,140 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-140
-    title: AST parameters rename and variables blocks
+  - id: T-149
+    title: Diagnostics e2e conventions and manifest
     owner: Executor
     dod: >
-      Rename device/backend AST fields from `params` to `parameters` and add
-      `variables` blocks for modules, devices, and device backends. Update AST
-      models and parsing to accept only `parameters` (reject `params`). Refresh
-      existing AST-facing fixtures/tests to use `parameters`, and add coverage
-      for parsing `variables` blocks.
+      Create `tests/e2e/diagnostics/README.md` documenting the directory
+      layout, naming (`<CODE>_<slug>`), required files per case (`case.asdl`,
+      `README.md`, `expected.txt`), and command conventions (default to
+      `asdlc netlist`, use `ir-dump`/`schema` when required). Document the
+      pytest harness expectations (manifest-driven, `expected.txt` compares
+      stderr) and required manifest fields (case directory, CLI args, expected
+      exit, optional env, and `status` enum like `pending`/`ready`/`needs-harness`
+      used by pytest selection). Add `tests/e2e/diagnostics/manifest.yaml`
+      enumerating every diagnostic code from
+      `docs/specs/spec_diagnostic_codes.md`.
     verify:
-      - venv/bin/pytest tests/unit_tests/ast -v
+      - rg -n "PARSE-001" tests/e2e/diagnostics/manifest.yaml
     files:
-      - src/asdl/ast/models.py
-      - src/asdl/ast/parser.py
-      - tests/unit_tests/ir/fixtures/graphir_single_file.asdl
-      - tests/unit_tests/cli/test_netlist.py
-      - tests/unit_tests/e2e/test_pipeline_mvp.py
+      - tests/e2e/diagnostics/README.md
+      - tests/e2e/diagnostics/manifest.yaml
     links:
-      scratchpad: agents/scratchpads/T-140_ast_parameters_variables.md
-  - id: T-141
-    title: Module variable substitution in instance params
+      scratchpad: agents/scratchpads/T-149_diagnostics_e2e_conventions.md
+  - id: T-150
+    title: PARSE and AST diagnostics e2e cases
     owner: Executor
-    depends_on: [T-140]
+    depends_on: [T-149]
     dod: >
-      Implement `{var}` substitution for module variables in instance parameter
-      values during AST->GraphIR lowering. Allow variables to reference other
-      variables, detect cycles/undefined variables with diagnostics, and apply
-      substitution before parameter pattern expansion. Restrict substitution to
-      instance parameter values only. Add unit tests for success, undefined
-      variables, and recursion errors.
+      Add case directories for PARSE-001..004 and AST-010..022 under
+      `tests/e2e/diagnostics/` following the conventions. Each case includes a
+      standalone `case.asdl`, a short `README.md` with the exact `asdlc`
+      command, and `expected.txt` capturing stderr diagnostics. Update
+      `manifest.yaml` entries with the command, exit code, status (`ready` or
+      `needs-harness`), and any notes about spans or multi-file import
+      fixtures.
     verify:
-      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+      - ./venv/bin/asdlc netlist tests/e2e/diagnostics/PARSE-001_yaml_parse_error/case.asdl
     files:
-      - src/asdl/ir/converters/ast_to_graphir_lowering.py
-      - src/asdl/ir/converters/ast_to_graphir_parsing.py
-      - src/asdl/ir/converters/ast_to_graphir_utils.py
-      - tests/unit_tests/ir/test_graphir_converter.py
-      - src/asdl/ir/converters/ast_to_graphir_context.py
+      - tests/e2e/diagnostics/manifest.yaml
+      - tests/e2e/diagnostics/
     links:
-      scratchpad: agents/scratchpads/T-141_module_variable_substitution.md
-  - id: T-142
-    title: Device/backend variables in GraphIR and IFIR
+      scratchpad: agents/scratchpads/T-150_diagnostics_parse_ast_e2e.md
+  - id: T-151
+    title: IR and LINT input-driven diagnostics e2e cases
     owner: Executor
-    depends_on: [T-140]
+    depends_on: [T-149]
     dod: >
-      Add `variables` attributes to GraphIR/IFIR device and backend ops and
-      propagate AST device/backend variables through GraphIR and IFIR
-      projections. Ensure GraphIR->IFIR projection preserves variables and add
-      IR unit tests that assert variables are present and stringified.
+      Add case directories for IR-001..013 and LINT-002 under
+      `tests/e2e/diagnostics/` following the conventions. Each case includes
+      `case.asdl`, `README.md` with the `asdlc` command, and `expected.txt`
+      stderr output. Update `manifest.yaml` entries with command/exit details.
+      If any code cannot be triggered via CLI without fault injection, mark the
+      manifest entry `needs-harness` and explain the gap in the case README.
     verify:
-      - venv/bin/pytest tests/unit_tests/ir -v
+      - ./venv/bin/asdlc netlist tests/e2e/diagnostics/IR-001_invalid_instance_expr/case.asdl
     files:
-      - src/asdl/ir/graphir/ops_module.py
-      - src/asdl/ir/ifir/dialect.py
-      - src/asdl/ir/converters/ast_to_graphir_lowering.py
-      - src/asdl/ir/converters/graphir_to_ifir.py
-      - tests/unit_tests/ir/test_graphir_converter.py
+      - tests/e2e/diagnostics/manifest.yaml
+      - tests/e2e/diagnostics/
     links:
-      scratchpad: agents/scratchpads/T-142_ir_device_variables.md
-  - id: T-143
-    title: Netlist emission variable placeholders
+      scratchpad: agents/scratchpads/T-151_diagnostics_ir_lint_e2e.md
+  - id: T-152
+    title: PASS diagnostics e2e cases
     owner: Executor
-    depends_on: [T-142]
+    depends_on: [T-149]
     dod: >
-      Merge device/backend variables for emission, expose them as template
-      placeholders, and emit diagnostics when instance params attempt to
-      override variable keys or when variables collide with parameter keys or
-      backend props. Update template validation to allow variables and add
-      netlist tests covering variable placeholders and collision errors.
+      Add case directories for PASS-001..004, PASS-101..106, and PASS-999 under
+      `tests/e2e/diagnostics/` following the conventions. For pattern-related
+      codes, supply `case.asdl`, `README.md` with the `asdlc` command, and
+      `expected.txt` stderr output. For verification/crash codes that are not
+      triggerable by input alone, document the limitation in the case README
+      and mark the manifest entry `needs-harness`.
     verify:
-      - venv/bin/pytest tests/unit_tests/netlist -v
+      - ./venv/bin/asdlc netlist tests/e2e/diagnostics/PASS-101_invalid_numeric_range/case.asdl
     files:
-      - src/asdl/emit/netlist/render.py
-      - src/asdl/emit/netlist/templates.py
-      - src/asdl/emit/netlist/params.py
-      - tests/unit_tests/netlist/test_netlist_emitter.py
-      - src/asdl/emit/netlist/diagnostics.py
+      - tests/e2e/diagnostics/manifest.yaml
+      - tests/e2e/diagnostics/
     links:
-      scratchpad: agents/scratchpads/T-143_netlist_variable_placeholders.md
-  - id: T-144
-    title: AST->GraphIR lowering refactor
+      scratchpad: agents/scratchpads/T-152_diagnostics_pass_e2e.md
+  - id: T-153
+    title: EMIT diagnostics e2e cases
     owner: Executor
+    depends_on: [T-149]
     dod: >
-      Split `lower_module` responsibilities into focused helpers (instances,
-      nets/endpoints, and module assembly) without changing behavior or
-      diagnostics. Keep `ast_to_graphir_lowering.py` as orchestration only and
-      add docstrings for the new helpers. Ensure existing converter tests pass
-      unchanged.
+      Add case directories for EMIT-001..013 under `tests/e2e/diagnostics/`
+      following the conventions. Use `asdlc netlist` (and per-case backend
+      config overrides when required) to trigger each code. Each case includes
+      `case.asdl`, `README.md` with the exact command (including any
+      `ASDL_BACKEND_CONFIG`), and `expected.txt` stderr output. Update
+      `manifest.yaml` entries with command/exit details and status.
     verify:
-      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+      - ./venv/bin/asdlc netlist tests/e2e/diagnostics/EMIT-001_top_missing/case.asdl
     files:
-      - src/asdl/ir/converters/ast_to_graphir_lowering.py
-      - src/asdl/ir/converters/ast_to_graphir_lowering_instances.py
-      - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
-      - tests/unit_tests/ir/test_graphir_converter.py
+      - tests/e2e/diagnostics/manifest.yaml
+      - tests/e2e/diagnostics/
     links:
-      scratchpad: agents/scratchpads/T-144_graphir_lowering_refactor.md
-backlog:
-  - id: T-145
-    title: Apply instance_defaults in AST->GraphIR lowering
+      scratchpad: agents/scratchpads/T-153_diagnostics_emit_e2e.md
+  - id: T-154
+    title: TOOL diagnostics e2e cases
     owner: Executor
-    depends_on: [T-144]
+    depends_on: [T-149]
     dod: >
-      Consume module `instance_defaults` during AST->GraphIR lowering by
-      injecting default endpoints and nets, emitting override warnings (with
-      `!` suppression), and extending `port_order` with `$` nets introduced by
-      defaults after explicit net ports. Preserve pattern atomization semantics
-      and add unit tests for defaults, overrides, and port ordering.
+      Add case directories for TOOL-001..003 under `tests/e2e/diagnostics/`
+      following the conventions. Use direct `asdlc` commands that can be run
+      manually (for example, schema output to a read-only path for TOOL-002).
+      Where a code cannot be triggered without environment fault injection,
+      document the manual steps in the case README and mark the manifest entry
+      `needs-harness`.
     verify:
-      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+      - ./venv/bin/asdlc schema --out /root
     files:
-      - src/asdl/ir/converters/ast_to_graphir_lowering.py
-      - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
-      - src/asdl/ir/converters/ast_to_graphir_parsing.py
-      - tests/unit_tests/ir/test_graphir_converter.py
+      - tests/e2e/diagnostics/manifest.yaml
+      - tests/e2e/diagnostics/
     links:
-      scratchpad: agents/scratchpads/T-145_graphir_instance_defaults.md
-  - id: T-146
-    title: Canonical GraphIR/IFIR dump utilities
+      scratchpad: agents/scratchpads/T-154_diagnostics_tool_e2e.md
+  - id: T-155
+    title: Pytest harness for diagnostics e2e cases
     owner: Executor
+    depends_on: [T-149]
     dod: >
-      Add a small IR dump helper that returns deterministic textual output for
-      GraphIR `graphir.program` and IFIR `asdl_ifir.design` using xDSL Printer
-      defaults (no debuginfo). Output preserves region order and dictionary
-      insertion order, and includes a trailing newline. Add unit tests that
-      build a small GraphIR/IFIR via converters and assert the canonical dump
-      matches expected text.
+      Add `tests/e2e/diagnostics/test_diagnostics_e2e.py` that reads
+      `tests/e2e/diagnostics/manifest.yaml` and runs `asdlc` commands for each
+      `ready` case (skip `pending`/`needs-harness`). The test must assert exit
+      codes and compare stderr to `expected.txt` (normalize trailing newlines
+      only). Support per-case env overrides defined in the manifest. Update the
+      diagnostics README with the pytest invocation and how to update
+      `expected.txt`.
     verify:
-      - venv/bin/pytest tests/unit_tests/ir/test_ir_dump.py -v
+      - venv/bin/pytest tests/e2e/diagnostics/test_diagnostics_e2e.py -v
     files:
-      - src/asdl/ir/dump.py
-      - tests/unit_tests/ir/test_ir_dump.py
-      - src/asdl/ir/__init__.py
+      - tests/e2e/diagnostics/test_diagnostics_e2e.py
+      - tests/e2e/diagnostics/README.md
+      - tests/e2e/diagnostics/manifest.yaml
     links:
-      scratchpad: agents/scratchpads/T-146_ir_dump_utils.md
-  - id: T-147
-    title: CLI ir-dump command for GraphIR/IFIR
-    owner: Executor
-    depends_on: [T-146]
-    dod: >
-      Add `asdlc ir-dump` command to emit canonical GraphIR or IFIR to stdout
-      or `-o/--output`. Support `--ir {graphir,ifir}` (default ifir),
-      `--verify/--no-verify`, and `--lib` for import roots. For GraphIR, run
-      import-resolution and optional verification before dumping. For IFIR,
-      reuse the MVP pipeline. Emit diagnostics on stderr and exit non-zero on
-      errors. Add CLI tests for graphir/ifir output.
-    verify:
-      - venv/bin/pytest tests/unit_tests/cli/test_ir_dump.py -v
-    files:
-      - src/asdl/cli/__init__.py
-      - src/asdl/ir/pipeline.py
-      - tests/unit_tests/cli/test_ir_dump.py
-    links:
-      scratchpad: agents/scratchpads/T-147_cli_ir_dump.md
-  - id: T-148
-    title: Relocate AST schema generator and refresh summary output
-    owner: Executor
-    dod: >
-      Move schema generation helpers from `src/asdl/schema.py` into
-      `src/asdl/ast/schema.py` and update CLI/script call sites to import the
-      new module (clean refactor, no compatibility shim). Update the text
-      schema summary to call out required vs optional top-level fields.
-      Ensure schema CLI and generator script still write `schema.json` and
-      `schema.txt` without changing their paths or filenames.
-    verify:
-      - venv/bin/pytest tests/unit_tests/cli/test_schema.py -v
-    files:
-      - src/asdl/ast/schema.py
-      - src/asdl/schema.py
-      - src/asdl/cli/__init__.py
-      - scripts/generate_schema.py
-      - tests/unit_tests/cli/test_schema.py
-      - agents/context/codebase_map.md
-    links:
-      scratchpad: agents/scratchpads/T-148_ast_schema_refactor.md
+      scratchpad: agents/scratchpads/T-155_diagnostics_e2e_pytest.md
+
+backlog: []
 
 exploration_candidates:
   - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.

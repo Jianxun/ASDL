@@ -1,37 +1,29 @@
 schema_version: 2
-T-140:
-  status: done
-  pr: 148
-  merged: true
-T-141:
-  status: done
-  pr: 149
-  merged: true
-T-142:
-  status: done
-  pr: 150
-  merged: true
-T-143:
-  status: done
-  pr: 151
-  merged: true
-T-144:
-  status: done
-  pr: 153
-  merged: true
-T-145:
-  status: done
-  pr: 154
-  merged: true
-T-146:
-  status: done
-  pr: 155
-  merged: true
-T-147:
-  status: done
-  pr: 156
-  merged: true
-T-148:
-  status: done
-  pr: 157
-  merged: true
+T-149:
+  status: ready
+  pr: null
+  merged: false
+T-150:
+  status: ready
+  pr: null
+  merged: false
+T-151:
+  status: ready
+  pr: null
+  merged: false
+T-152:
+  status: ready
+  pr: null
+  merged: false
+T-153:
+  status: ready
+  pr: null
+  merged: false
+T-154:
+  status: ready
+  pr: null
+  merged: false
+T-155:
+  status: ready
+  pr: null
+  merged: false

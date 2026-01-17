@@ -82,3 +82,12 @@ archive:
   - T-136: {completed_on: 2026-01-15, owner: Executor, scratchpad: agents/scratchpads/T-136_ir_pattern_engine_consolidation.md, pr: 144}
   - T-138: {completed_on: 2026-01-15, owner: Executor, scratchpad: agents/scratchpads/T-138_pattern_import_migration.md, pr: 146}
   - T-139: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-139_named_pattern_macro_expansion.md, pr: 147}
+  - T-140: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-140_ast_parameters_variables.md, pr: 148}
+  - T-141: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-141_module_variable_substitution.md, pr: 149}
+  - T-142: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-142_ir_device_variables.md, pr: 150}
+  - T-143: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-143_netlist_variable_placeholders.md, pr: 151}
+  - T-144: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-144_graphir_lowering_refactor.md, pr: 153}
+  - T-145: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-145_graphir_instance_defaults.md, pr: 154}
+  - T-146: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-146_ir_dump_utils.md, pr: 155}
+  - T-147: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-147_cli_ir_dump.md, pr: 156}
+  - T-148: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-148_ast_schema_refactor.md, pr: 157}
