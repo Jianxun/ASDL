@@ -2,7 +2,7 @@ import pytest
 
 pytest.importorskip("xdsl")
 
-from xdsl.dialects.builtin import DictionaryAttr, StringAttr
+from xdsl.dialects.builtin import DictionaryAttr, FileLineColLoc, IntAttr, StringAttr
 from xdsl.utils.exceptions import VerifyException
 
 from asdl.ir.graphir import (
@@ -11,7 +11,9 @@ from asdl.ir.graphir import (
     InstanceOp,
     ModuleOp,
     NetOp,
+    ProgramOp,
 )
+from asdl.ir.pipeline import verify_graphir_program
 
 
 def _make_instance(
@@ -29,8 +31,25 @@ def _make_instance(
     )
 
 
-def _make_endpoint(*, endpoint_id: str, inst_id: str, port_path: str) -> EndpointOp:
-    return EndpointOp(endpoint_id=endpoint_id, inst_id=inst_id, port_path=port_path)
+def _make_src_annotations(file: str, line: int, col: int) -> DictionaryAttr:
+    return DictionaryAttr(
+        {"src": FileLineColLoc(StringAttr(file), IntAttr(line), IntAttr(col))}
+    )
+
+
+def _make_endpoint(
+    *,
+    endpoint_id: str,
+    inst_id: str,
+    port_path: str,
+    annotations: DictionaryAttr | None = None,
+) -> EndpointOp:
+    return EndpointOp(
+        endpoint_id=endpoint_id,
+        inst_id=inst_id,
+        port_path=port_path,
+        annotations=annotations,
+    )
 
 
 def _make_net(*, net_id: str, name: str, endpoints: list[EndpointOp]) -> NetOp:
@@ -87,6 +106,37 @@ def test_module_rejects_duplicate_endpoint_inst_port() -> None:
 
     with pytest.raises(VerifyException):
         module.verify()
+
+
+def test_graphir_duplicate_endpoint_diagnostic_uses_instance_name_and_span() -> None:
+    inst = _make_instance(inst_id="i1", name="U1")
+    endpoint_a = _make_endpoint(endpoint_id="e1", inst_id="i1", port_path="A")
+    endpoint_b = _make_endpoint(
+        endpoint_id="e2",
+        inst_id="i1",
+        port_path="A",
+        annotations=_make_src_annotations("a.asdl", 3, 5),
+    )
+    net_a = _make_net(net_id="n1", name="net_a", endpoints=[endpoint_a])
+    net_b = _make_net(net_id="n2", name="net_b", endpoints=[endpoint_b])
+    module = ModuleOp(
+        module_id="m1",
+        name="top",
+        file_id="a.asdl",
+        region=[inst, net_a, net_b],
+    )
+    program = ProgramOp(region=[module])
+
+    diagnostics = verify_graphir_program(program)
+
+    assert len(diagnostics) == 1
+    diagnostic = diagnostics[0]
+    assert "U1" in diagnostic.message
+    assert "i1" not in diagnostic.message
+    assert diagnostic.primary_span is not None
+    assert diagnostic.primary_span.file == "a.asdl"
+    assert diagnostic.primary_span.start.line == 3
+    assert diagnostic.primary_span.start.col == 5
 
 
 def test_module_accepts_valid_graph() -> None:
