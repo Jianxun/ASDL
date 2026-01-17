@@ -28,6 +28,6 @@ T-155:
   pr: null
   merged: false
 T-156:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 160
+  merged: true

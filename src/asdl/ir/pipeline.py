@@ -6,6 +6,7 @@ from typing import Iterable, Optional, Type, TypeVar
 
 from xdsl.context import Context
 from xdsl.dialects import builtin
+from xdsl.dialects.builtin import LocationAttr
 from xdsl.ir import Operation
 from xdsl.passes import ModulePass, PassPipeline
 from xdsl.utils.exceptions import VerifyException
@@ -18,6 +19,7 @@ from asdl.ir.converters.ast_to_graphir import convert_document, convert_import_g
 from asdl.ir.converters.graphir_to_ifir import convert_program as convert_graphir_to_ifir
 from asdl.ir.graphir import ASDL_GRAPHIR, ProgramOp as GraphProgramOp
 from asdl.ir.ifir import ASDL_IFIR, DesignOp as IfirDesignOp
+from asdl.ir.location import location_attr_to_span
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -55,7 +57,11 @@ class VerifyGraphirPass(ModulePass):
             op.verify()
         except VerifyException as exc:
             self.state.diagnostics.emit(
-                _diagnostic(code, f"{label} verification failed: {exc}")
+                _diagnostic(
+                    code,
+                    f"{label} verification failed: {exc}",
+                    loc=_exception_loc(exc),
+                )
             )
             self.state.failed = True
             raise PipelineAbort() from exc
@@ -229,7 +235,11 @@ def verify_graphir_program(program: GraphProgramOp) -> list[Diagnostic]:
         program.verify()
     except VerifyException as exc:
         diagnostics.emit(
-            _diagnostic(VERIFY_GRAPHIR_FAILED, f"GraphIR verification failed: {exc}")
+            _diagnostic(
+                VERIFY_GRAPHIR_FAILED,
+                f"GraphIR verification failed: {exc}",
+                loc=_exception_loc(exc),
+            )
         )
     except Exception as exc:  # pragma: no cover - defensive: unexpected verification error
         diagnostics.emit(
@@ -292,15 +302,29 @@ def _has_error_diagnostics(diagnostics: Iterable[Diagnostic]) -> bool:
     )
 
 
-def _diagnostic(code: str, message: str) -> Diagnostic:
+def _diagnostic(
+    code: str,
+    message: str,
+    *,
+    loc: LocationAttr | None = None,
+) -> Diagnostic:
+    span = location_attr_to_span(loc)
+    notes = None if span is not None else [NO_SPAN_NOTE]
     return Diagnostic(
         code=code,
         severity=Severity.ERROR,
         message=message,
-        primary_span=None,
-        notes=[NO_SPAN_NOTE],
+        primary_span=span,
+        notes=notes,
         source="pass",
     )
+
+
+def _exception_loc(exc: Exception) -> LocationAttr | None:
+    loc = getattr(exc, "loc", None)
+    if isinstance(loc, LocationAttr):
+        return loc
+    return None
 
 
 __all__ = [

@@ -180,6 +180,7 @@ class EndpointOp(IRDLOperation):
         inst_id: Stable instance identifier.
         port_path: Port path string.
         pattern_origin: Optional pattern provenance metadata.
+        annotations: Optional annotations.
     """
 
     name = "graphir.endpoint"
@@ -188,6 +189,7 @@ class EndpointOp(IRDLOperation):
     inst_id = attr_def(GraphIdAttr)
     port_path = attr_def(StringAttr)
     pattern_origin = opt_attr_def(GraphPatternOriginAttr)
+    annotations = opt_attr_def(DictionaryAttr)
 
     assembly_format = "attr-dict"
 
@@ -198,6 +200,7 @@ class EndpointOp(IRDLOperation):
         inst_id: GraphIdAttr | StringAttr | str | int,
         port_path: StringAttr | str,
         pattern_origin: PatternOriginInput | None = None,
+        annotations: DictionaryAttr | None = None,
     ) -> None:
         """Initialize an endpoint op.
 
@@ -206,6 +209,7 @@ class EndpointOp(IRDLOperation):
             inst_id: Stable instance identifier.
             port_path: Port path string.
             pattern_origin: Optional pattern provenance metadata.
+            annotations: Optional annotations dictionary.
         """
         if isinstance(port_path, str):
             port_path = StringAttr(port_path)
@@ -218,6 +222,8 @@ class EndpointOp(IRDLOperation):
         }
         if pattern_origin is not None:
             attributes["pattern_origin"] = _coerce_graph_pattern_origin(pattern_origin)
+        if annotations is not None:
+            attributes["annotations"] = annotations
         super().__init__(attributes=attributes)
 
 

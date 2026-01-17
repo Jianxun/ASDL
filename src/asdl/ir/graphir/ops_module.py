@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable, Sequence
 
-from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, StringAttr
+from xdsl.dialects.builtin import ArrayAttr, DictionaryAttr, LocationAttr, StringAttr
 from xdsl.ir import Block, Operation, Region
 from xdsl.irdl import (
     IRDLOperation,
@@ -22,6 +22,24 @@ from .ops_graph import EndpointOp, InstanceOp, NetOp
 
 PORT_ORDER_KEY = "port_order"
 PATTERN_EXPRESSION_TABLE_KEY = "pattern_expression_table"
+
+
+class GraphIrVerifyException(VerifyException):
+    """GraphIR verification error that includes optional source location."""
+
+    def __init__(self, message: str, loc: LocationAttr | None = None) -> None:
+        super().__init__(message)
+        self.loc = loc
+
+
+def _endpoint_src_loc(endpoint: EndpointOp) -> LocationAttr | None:
+    """Fetch endpoint source location from annotations when present."""
+    if endpoint.annotations is None:
+        return None
+    value = endpoint.annotations.data.get("src")
+    if isinstance(value, LocationAttr):
+        return value
+    return None
 
 
 def _normalize_port_order(
@@ -186,6 +204,7 @@ class ModuleOp(IRDLOperation):
         net_ids: set[str] = set()
         inst_names: set[str] = set()
         inst_ids: set[str] = set()
+        inst_id_to_name: dict[str, str] = {}
         for op in self.body.block.ops:
             if isinstance(op, NetOp):
                 net_name = op.name_attr.data
@@ -199,7 +218,9 @@ class ModuleOp(IRDLOperation):
                 if inst_name in inst_names:
                     raise VerifyException(f"Duplicate instance name '{inst_name}'")
                 inst_names.add(inst_name)
-                inst_ids.add(op.inst_id.value.data)
+                inst_id_value = op.inst_id.value.data
+                inst_ids.add(inst_id_value)
+                inst_id_to_name[inst_id_value] = inst_name
                 continue
             if isinstance(op, EndpointOp):
                 raise VerifyException("graphir.endpoint must be nested under graphir.net")
@@ -222,9 +243,11 @@ class ModuleOp(IRDLOperation):
                 endpoint_ids.add(endpoint.endpoint_id.value.data)
                 key = (inst_id, endpoint.port_path.data)
                 if key in endpoint_keys:
-                    raise VerifyException(
+                    inst_name = inst_id_to_name.get(inst_id, inst_id)
+                    raise GraphIrVerifyException(
                         "Duplicate endpoint for instance "
-                        f"'{inst_id}' and port_path '{endpoint.port_path.data}'"
+                        f"'{inst_name}' and port_path '{endpoint.port_path.data}'",
+                        loc=_endpoint_src_loc(endpoint),
                     )
                 endpoint_keys.add(key)
 
