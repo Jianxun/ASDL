@@ -33,7 +33,7 @@ def schema(output_dir: Optional[Path]) -> None:
         output_dir = Path.cwd()
 
     try:
-        from asdl.schema import write_schema_artifacts
+        from asdl.ast.schema import write_schema_artifacts
     except Exception as exc:  # pragma: no cover - defensive: missing optional deps
         diagnostics.append(
             _diagnostic(

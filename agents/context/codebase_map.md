@@ -21,6 +21,9 @@
 ## Quick Reference: Imports Subsystem
 - `src/asdl/imports/`: import resolution package (resolver, program DB, name env, diagnostics).
 
+## Quick Reference: AST
+- `src/asdl/ast/schema.py`: JSON/text schema generator helpers for CLI/scripts.
+
 ## Quick Reference: GraphIR
 - `src/asdl/ir/graphir/attrs.py`: GraphIR attrs and coercion helpers.
 - `src/asdl/ir/graphir/ops_program.py`: GraphIR program op.

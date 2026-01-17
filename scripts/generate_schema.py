@@ -16,7 +16,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from asdl.schema import write_schema_artifacts
+from asdl.ast.schema import write_schema_artifacts
 
 
 def main() -> None:
