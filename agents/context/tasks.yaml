@@ -133,6 +133,26 @@ current_sprint:
       - tests/e2e/diagnostics/manifest.yaml
     links:
       scratchpad: agents/scratchpads/T-155_diagnostics_e2e_pytest.md
+  - id: T-156
+    title: GraphIR verification diagnostics use instance names and spans
+    owner: Executor
+    dod: >
+      Ensure GraphIR verification errors for duplicate endpoints report the
+      instance name (not the internal inst_id) and propagate a source span
+      when available. Store endpoint source locations in GraphIR ops, and have
+      GraphIR verification/pipeline diagnostics surface spans for duplicate
+      endpoint errors. Add unit tests that assert the diagnostic message uses
+      the instance name and includes a primary span.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_graphir_structure.py -v
+    files:
+      - src/asdl/ir/graphir/ops_module.py
+      - src/asdl/ir/graphir/ops_graph.py
+      - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
+      - src/asdl/ir/pipeline.py
+      - tests/unit_tests/ir/test_graphir_structure.py
+    links:
+      scratchpad: agents/scratchpads/T-156_graphir_verify_spans.md
 
 backlog: []
 
