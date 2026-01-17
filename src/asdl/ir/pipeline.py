@@ -215,6 +215,29 @@ def lower_import_graph_to_graphir(
     return program, diagnostics.to_list()
 
 
+def verify_graphir_program(program: GraphProgramOp) -> list[Diagnostic]:
+    """Verify a GraphIR program op and return diagnostics.
+
+    Args:
+        program: GraphIR program op to verify.
+
+    Returns:
+        Diagnostics emitted during verification.
+    """
+    diagnostics = DiagnosticCollector()
+    try:
+        program.verify()
+    except VerifyException as exc:
+        diagnostics.emit(
+            _diagnostic(VERIFY_GRAPHIR_FAILED, f"GraphIR verification failed: {exc}")
+        )
+    except Exception as exc:  # pragma: no cover - defensive: unexpected verification error
+        diagnostics.emit(
+            _diagnostic(PIPELINE_CRASH, f"GraphIR verification failed: {exc}")
+        )
+    return diagnostics.to_list()
+
+
 def _build_context() -> Context:
     ctx = Context()
     ctx.load_dialect(builtin.Builtin)
@@ -280,4 +303,8 @@ def _diagnostic(code: str, message: str) -> Diagnostic:
     )
 
 
-__all__ = ["lower_import_graph_to_graphir", "run_mvp_pipeline"]
+__all__ = [
+    "lower_import_graph_to_graphir",
+    "run_mvp_pipeline",
+    "verify_graphir_program",
+]
