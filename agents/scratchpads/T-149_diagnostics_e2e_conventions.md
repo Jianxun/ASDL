@@ -16,25 +16,27 @@
 Todo:
 - [x] Draft diagnostics e2e README with layout, naming, manifest, and command conventions.
 - [x] Create diagnostics manifest enumerating all spec diagnostic codes with required fields.
-- [ ] Run verify command and update status.
+- [x] Run verify command and update status.
 
 ## Progress log
 - 2026-01-xx: Initialized scratchpad and drafted README/manifest scaffolding.
+- 2026-01-xx: Ran manifest verification and opened PR #158.
 
 ## Patch summary
-- TBD
+- Added diagnostics e2e README conventions.
+- Added manifest enumerating all diagnostic codes with default metadata.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/158
 
 ## Verification
-- TBD
+- `rg -n "PARSE-001" tests/e2e/diagnostics/manifest.yaml`
 
 ## Status request
-- TBD
+- Ready for Review
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- TBD
+- None.
