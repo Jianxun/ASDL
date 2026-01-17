@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
 from asdl.ast import model_json_schema
 
 
 def build_json_schema() -> dict:
+    """Build the JSON schema for the AST document."""
     return model_json_schema()
 
 
 def render_text_schema() -> str:
+    """Render a human-readable summary of the AST JSON schema."""
     schema = build_json_schema()
     lines = ["ASDL schema overview"]
 
@@ -18,11 +21,13 @@ def render_text_schema() -> str:
         lines.append(f"Root: {title}")
 
     lines.append("")
-    lines.append("Top-level fields:")
+    lines.append("Top-level fields (required vs optional):")
     properties = schema.get("properties", {})
+    required = set(schema.get("required", []))
     if properties:
         for name, entry in properties.items():
-            lines.append(f"- {name}: {_schema_summary(entry)}")
+            requirement = "required" if name in required else "optional"
+            lines.append(f"- {name} ({requirement}): {_schema_summary(entry)}")
     else:
         lines.append("- (none)")
 
@@ -37,6 +42,7 @@ def render_text_schema() -> str:
 
 
 def write_schema_artifacts(out_dir: Path) -> tuple[Path, Path]:
+    """Write JSON and text schema artifacts to the provided directory."""
     out_dir.mkdir(parents=True, exist_ok=True)
 
     json_schema = build_json_schema()
@@ -54,6 +60,7 @@ def write_schema_artifacts(out_dir: Path) -> tuple[Path, Path]:
 
 
 def _schema_summary(schema: dict) -> str:
+    """Summarize a JSON schema node into a short human-readable form."""
     if "$ref" in schema:
         return schema["$ref"].split("/")[-1]
 
