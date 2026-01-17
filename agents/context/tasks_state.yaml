@@ -4,7 +4,7 @@ T-149:
   pr: 158
   merged: true
 T-150:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-151:

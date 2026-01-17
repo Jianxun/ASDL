@@ -1,0 +1,2 @@
+/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/PARSE-003_ast_validation_error/case.asdl:5:11: error PARSE-003: Endpoint lists must be YAML lists of '<instance>.<pin>' strings at modules.top.nets.N1
+  note: Endpoint lists must be YAML lists of '<instance>.<pin>' strings

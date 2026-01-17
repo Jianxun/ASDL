@@ -1,0 +1,2 @@
+error PARSE-004: ASDL file not found: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/PARSE-004_file_not_found/missing.asdl
+  note: No source span available.

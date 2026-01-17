@@ -7,28 +7,30 @@ cases:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
   - code: PARSE-002
     case_dir: PARSE-002_root_not_mapping
     args:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
   - code: PARSE-003
     case_dir: PARSE-003_ast_validation_error
     args:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
   - code: PARSE-004
     case_dir: PARSE-004_file_not_found
     args:
       - netlist
-      - case.asdl
+      - missing.asdl
     expected_exit: 1
-    status: pending
+    status: ready
+    notes:
+      - No source span; missing file path resolves from the case directory.
 
   # AST (parser/imports/ast)
   - code: AST-010

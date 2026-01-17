@@ -1,0 +1,14 @@
+top: top
+modules:
+  top:
+    instances:
+      U1: leaf
+    nets:
+      $IN:
+        - U1.IN
+devices:
+  leaf:
+    ports: [IN
+    backends:
+      sim.ngspice:
+        template: "{name} {ports}"

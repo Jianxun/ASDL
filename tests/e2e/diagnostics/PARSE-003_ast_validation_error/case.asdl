@@ -1,0 +1,5 @@
+top: top
+modules:
+  top:
+    nets:
+      N1: U1.IN

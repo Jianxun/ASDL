@@ -1,0 +1,1 @@
+/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/PARSE-002_root_not_mapping/case.asdl:1:1: error PARSE-002: ASDL document root must be a mapping.
