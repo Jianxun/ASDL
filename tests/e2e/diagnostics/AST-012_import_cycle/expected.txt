@@ -1,0 +1,6 @@
+error AST-012: Import cycle detected: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-012_import_cycle/case.asdl -> /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-012_import_cycle/cycle_b.asdl -> /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-012_import_cycle/case.asdl
+  note: No source span available.
+  note: Import chain:
+  note: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-012_import_cycle/case.asdl
+  note: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-012_import_cycle/cycle_b.asdl
+  note: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-012_import_cycle/case.asdl

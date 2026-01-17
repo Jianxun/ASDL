@@ -1,0 +1,15 @@
+imports:
+  lib: missing.asdl
+modules:
+  top:
+    instances:
+      R1: res
+    nets:
+      $OUT:
+        - R1.P
+devices:
+  res:
+    ports: [P]
+    backends:
+      sim.ngspice:
+        template: "{name} {ports}"

@@ -1,0 +1,5 @@
+imports:
+  lib: ./one.asdl
+  lib: ./two.asdl
+modules:
+  top: {}

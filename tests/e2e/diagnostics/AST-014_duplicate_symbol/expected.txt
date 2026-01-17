@@ -1,0 +1,1 @@
+/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-014_duplicate_symbol/case.asdl:5:5: error AST-014: Duplicate symbol name 'dup'.

@@ -20,12 +20,13 @@
 ## Plan
 Todo:
 - [x] Build PARSE-001..004 case directories with inputs and expected stderr.
-- [ ] Build AST-010..022 case directories + fixtures and expected stderr.
-- [ ] Update diagnostics manifest entries with args/status/notes.
+- [x] Build AST-010..022 case directories + fixtures and expected stderr.
+- [x] Update diagnostics manifest entries with args/status/notes.
 - [ ] Run verify command and record results.
 
 ## Progress log
 - 2026-01-xx: Initialized scratchpad and added PARSE-001..004 fixtures with expected stderr.
+- 2026-01-xx: Added AST-010..022 fixtures, import helpers, and manifest updates.
 
 ## Patch summary
 - TBD

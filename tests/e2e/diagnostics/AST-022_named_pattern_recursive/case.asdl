@@ -1,0 +1,13 @@
+top: top
+modules:
+  top:
+    patterns:
+      child: "<@parent>"
+    instances:
+      R1: res
+devices:
+  res:
+    ports: [P]
+    backends:
+      sim.ngspice:
+        template: "{name} {ports}"

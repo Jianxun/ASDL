@@ -1,0 +1,5 @@
+error AST-015: Ambiguous import path 'shared.asdl'.
+  note: No source span available.
+  note: Matches (root order):
+  note: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-015_ambiguous_import_path/lib_a/shared.asdl
+  note: /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-015_ambiguous_import_path/lib_b/shared.asdl

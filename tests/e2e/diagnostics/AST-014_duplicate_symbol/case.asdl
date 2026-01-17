@@ -1,0 +1,8 @@
+modules:
+  dup: {}
+devices:
+  dup:
+    ports: [P]
+    backends:
+      sim.ngspice:
+        template: "{name} {ports}"

@@ -1,0 +1,11 @@
+top: top
+modules:
+  top:
+    instances:
+      "U<@bad-name>": res
+devices:
+  res:
+    ports: [P]
+    backends:
+      sim.ngspice:
+        template: "{name} {ports}"

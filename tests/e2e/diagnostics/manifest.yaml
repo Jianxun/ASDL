@@ -39,63 +39,75 @@ cases:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
+    notes:
+      - No source span; import resolver does not bind locations yet.
   - code: AST-011
     case_dir: AST-011_invalid_import_path
     args:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
   - code: AST-012
     case_dir: AST-012_import_cycle
     args:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
+    notes:
+      - Cycle uses ./cycle_b.asdl and ./case.asdl; resolver diagnostics include absolute paths.
   - code: AST-013
     case_dir: AST-013_duplicate_import_namespace
     args:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
   - code: AST-014
     case_dir: AST-014_duplicate_symbol
     args:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
   - code: AST-015
     case_dir: AST-015_ambiguous_import_path
     args:
       - netlist
+      - --lib
+      - lib_a
+      - --lib
+      - lib_b
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
+    notes:
+      - lib_a/shared.asdl and lib_b/shared.asdl both match; resolver emits absolute paths.
   - code: AST-020
     case_dir: AST-020_named_pattern_invalid
     args:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
   - code: AST-021
     case_dir: AST-021_named_pattern_undefined
     args:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
   - code: AST-022
     case_dir: AST-022_named_pattern_recursive
     args:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: needs-harness
+    notes:
+      - Parser rejects <@...> pattern values (PARSE-003) before named pattern expansion.
 
   # IR (ir)
   - code: IR-001

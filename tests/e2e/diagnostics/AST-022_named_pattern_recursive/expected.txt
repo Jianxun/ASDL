@@ -1,0 +1,1 @@
+/Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL_dev/ASDL_1/ASDL/tests/e2e/diagnostics/AST-022_named_pattern_recursive/case.asdl:5:14: error PARSE-003: Value error, Pattern values must not reference other named patterns. at modules.top.patterns.child
