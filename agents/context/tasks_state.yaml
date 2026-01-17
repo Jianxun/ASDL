@@ -32,6 +32,6 @@ T-147:
   pr: 156
   merged: true
 T-148:
-  status: ready_for_review
+  status: done
   pr: 157
-  merged: false
+  merged: true
