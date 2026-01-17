@@ -28,6 +28,6 @@ T-155:
   pr: null
   merged: false
 T-156:
-  status: ready_for_review
+  status: review_in_progress
   pr: 160
   merged: false
