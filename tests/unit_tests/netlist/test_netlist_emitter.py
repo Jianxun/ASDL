@@ -8,7 +8,11 @@ pytest.importorskip("xdsl")
 from xdsl.dialects.builtin import DictionaryAttr, FileLineColLoc, IntAttr, StringAttr
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
-from asdl.emit.backend_config import BackendConfig, SystemDeviceTemplate
+from asdl.emit.backend_config import (
+    DEFAULT_PATTERN_RENDERING,
+    BackendConfig,
+    SystemDeviceTemplate,
+)
 from asdl.emit.netlist import emit_netlist
 from asdl.ir.graphir import DeviceOp as GraphDeviceOp
 from asdl.ir.graphir import EndpointOp as GraphEndpointOp
@@ -238,7 +242,15 @@ def _loc(line: int, col: int) -> FileLineColLoc:
     return FileLineColLoc(StringAttr("design.asdl"), IntAttr(line), IntAttr(col))
 
 
-def _backend_config(templates: dict[str, str]) -> BackendConfig:
+def _backend_config(
+    templates: dict[str, str],
+    pattern_rendering: str | None = None,
+) -> BackendConfig:
+    rendering = (
+        pattern_rendering
+        if pattern_rendering is not None
+        else DEFAULT_PATTERN_RENDERING
+    )
     return BackendConfig(
         name="test.backend",
         extension="",
@@ -247,6 +259,7 @@ def _backend_config(templates: dict[str, str]) -> BackendConfig:
             name: SystemDeviceTemplate(template=template)
             for name, template in templates.items()
         },
+        pattern_rendering=rendering,
     )
 
 
@@ -807,6 +820,80 @@ def test_emit_netlist_uses_literal_names_from_atomized_patterns() -> None:
     assert "OUT<P|N>" not in netlist
     assert "M1 OUTP VSS VSS nfet" in netlist
     assert "M2 OUTN VSS VSS nfet" in netlist
+
+
+def test_emit_netlist_renders_numeric_pattern_parts() -> None:
+    table = {}
+    inst_expr_id = register_pattern_expression(
+        table,
+        expression="M<1:2>",
+        kind="inst",
+    )
+    net_expr_id = register_pattern_expression(
+        table,
+        expression="BUS<1:2>",
+        kind="net",
+    )
+    pattern_table_attr = encode_pattern_expression_table(table)
+    backend = BackendOp(
+        name="test.backend",
+        template="{name} {ports} {model}",
+        props=_dict_attr({"model": "nfet"}),
+    )
+    device = DeviceOp(name="nfet", ports=["D"], region=[backend])
+    inst_a = InstanceOp(
+        name="M1",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("BUS1"))],
+        pattern_origin=(inst_expr_id, 0, "M", [1]),
+    )
+    inst_b = InstanceOp(
+        name="M2",
+        ref="nfet",
+        conns=[ConnAttr(StringAttr("D"), StringAttr("BUS2"))],
+        pattern_origin=(inst_expr_id, 0, "M", [2]),
+    )
+    module = ModuleOp(
+        name="top",
+        port_order=["BUS1", "BUS2"],
+        pattern_expression_table=pattern_table_attr,
+        region=[
+            NetOp(name="BUS1", pattern_origin=(net_expr_id, 0, "BUS", [1])),
+            NetOp(name="BUS2", pattern_origin=(net_expr_id, 0, "BUS", [2])),
+            inst_a,
+            inst_b,
+        ],
+    )
+    design = DesignOp(region=[module, device], top="top")
+
+    backend_config = _backend_config(
+        {
+            "__subckt_header__": ".subckt {name} {ports}",
+            "__subckt_footer__": ".ends {name}",
+            "__subckt_call__": "X{name} {ports} {ref}",
+            "__netlist_header__": "",
+            "__netlist_footer__": ".end",
+        },
+        pattern_rendering="[{N}]",
+    )
+
+    netlist, diagnostics = emit_netlist(
+        design,
+        backend_name="test.backend",
+        backend_config=backend_config,
+        top_as_subckt=True,
+    )
+
+    assert diagnostics == []
+    assert netlist == "\n".join(
+        [
+            ".subckt top BUS[1] BUS[2]",
+            "M[1] BUS[1] nfet",
+            "M[2] BUS[2] nfet",
+            ".ends top",
+            ".end",
+        ]
+    )
 
 
 def test_emit_netlist_exposes_file_id_placeholders() -> None:
