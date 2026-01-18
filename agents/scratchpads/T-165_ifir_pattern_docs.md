@@ -24,6 +24,7 @@
 - 2026-xx-xx: Understanding: document IFIR pattern provenance schema/table and netlist emission formatting use.
 - 2026-xx-xx: Documented IFIR pattern provenance metadata/table in spec.
 - 2026-xx-xx: Documented netlist emission formatting rules for pattern provenance.
+- 2026-xx-xx: Opened PR #167.
 
 # Patch summary
 - Documented structured `pattern_origin` metadata and the module-level pattern
@@ -31,12 +32,15 @@
 - Added netlist emission guidance for formatting names with pattern provenance.
 
 # PR URL
+- https://github.com/Jianxun/ASDL/pull/167
 
 # Verification
 - `rg -n "pattern_origin" docs/specs/spec_asdl_ifir.md docs/specs/spec_netlist_emission.md`
 
 # Status request (Done / Blocked / In Progress)
+- Done
 
 # Blockers / Questions
 
 # Next steps
+- Await review.
