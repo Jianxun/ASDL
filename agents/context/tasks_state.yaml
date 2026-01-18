@@ -20,7 +20,7 @@ T-159:
   pr: 165
   merged: true
 T-164:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-165:
