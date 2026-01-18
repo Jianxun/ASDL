@@ -17,21 +17,24 @@
 
 # Progress log
 - Understanding: add support for pattern entries that are either group-token strings or {expr, tag} objects, ensure tag is a literal name, derive axis_id from tag or pattern name, and carry axis_id spans for diagnostics while keeping named pattern macro substitution using expr only.
+- Tests: venv/bin/pytest tests/unit_tests/ast -v
 - Todo:
-  - [ ] Add tests for tagged pattern entries + axis_id derivation
-  - [ ] Update AST models/validators for pattern objects + axis_id helpers
-  - [ ] Update parser location capture for pattern expr/tag spans
-  - [ ] Update named pattern macro expansion to use expr strings
-  - [ ] Run ast unit tests
+  - [x] Add tests for tagged pattern entries + axis_id derivation
+  - [x] Update AST models/validators for pattern objects + axis_id helpers
+  - [x] Update parser location capture for pattern expr/tag spans
+  - [x] Update named pattern macro expansion to use expr strings
+  - [x] Run ast unit tests
 
 # Patch summary
-- (pending)
+- Added PatternDecl/tag support in AST models with axis_id helpers and exposed locations.
+- Updated parser to capture expr/tag spans for patterns and named pattern expansion to use expr only.
+- Added unit tests for tagged pattern objects, invalid keys/types, and axis_id derivation.
 
 # PR URL
 - (pending)
 
 # Verification
-- (pending)
+- venv/bin/pytest tests/unit_tests/ast -v
 
 # Status request (Done / Blocked / In Progress)
 - In Progress
