@@ -40,7 +40,7 @@ UNDEFINED_MODULE_VARIABLE = format_code("IR", 12)
 RECURSIVE_MODULE_VARIABLE = format_code("IR", 13)
 
 
-_PATTERN_DELIMITERS = set("<>[];")
+_PATTERN_DELIMITERS = set("<>;|")
 _VARIABLE_PLACEHOLDER_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 

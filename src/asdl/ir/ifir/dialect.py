@@ -26,7 +26,7 @@ from xdsl.utils.exceptions import VerifyException
 
 
 def _has_pattern_delimiters(name: str) -> bool:
-    return any(char in "<>[];|" for char in name)
+    return any(char in "<>;|" for char in name)
 
 
 @irdl_attr_definition
