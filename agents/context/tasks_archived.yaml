@@ -91,3 +91,12 @@ archive:
   - T-146: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-146_ir_dump_utils.md, pr: 155}
   - T-147: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-147_cli_ir_dump.md, pr: 156}
   - T-148: {completed_on: 2026-01-17, owner: Executor, scratchpad: agents/scratchpads/T-148_ast_schema_refactor.md, pr: 157}
+  - T-149: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-149_diagnostics_e2e_conventions.md, pr: 158}
+  - T-156: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-156_graphir_verify_spans.md, pr: 160}
+  - T-157: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-157_pattern_delimiter_specs.md, pr: 163}
+  - T-158: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-158_pattern_group_validation.md, pr: 164}
+  - T-159: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-159_pattern_ir_tests.md, pr: 165}
+  - T-164: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-164_ifir_pattern_provenance.md, pr: 166}
+  - T-165: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-165_ifir_pattern_docs.md, pr: 167}
+  - T-166: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-166_backend_pattern_render_config.md, pr: 168}
+  - T-167: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-167_netlist_pattern_rendering.md, pr: 169}

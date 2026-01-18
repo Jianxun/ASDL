@@ -61,6 +61,7 @@ sim.spectre:
 lvs.klayout:
   extension: ".lvs.spice"
   comment_prefix: "*"
+  pattern_rendering: "[{N}]"
   templates:
     __subckt_header__: |-
       * ===============================================
