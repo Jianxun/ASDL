@@ -32,6 +32,6 @@ T-166:
   pr: 168
   merged: true
 T-167:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
