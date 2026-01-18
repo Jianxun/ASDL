@@ -8,9 +8,9 @@ T-156:
   pr: 160
   merged: true
 T-157:
-  status: review_clean
+  status: done
   pr: 163
-  merged: false
+  merged: true
 T-158:
   status: ready
   pr: null
