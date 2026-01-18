@@ -31,16 +31,16 @@
 - Added unit tests for tagged pattern objects, invalid keys/types, and axis_id derivation.
 
 # PR URL
-- (pending)
+- https://github.com/Jianxun/ASDL/pull/172
 
 # Verification
 - venv/bin/pytest tests/unit_tests/ast -v
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None
 
 # Next steps
-- (pending)
+- Await review.
