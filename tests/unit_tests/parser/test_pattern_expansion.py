@@ -17,14 +17,14 @@ from asdl.ir.patterns import (
 
 
 def test_expand_range_ordering() -> None:
-    expanded, diagnostics = expand_pattern("DATA[3:0]")
+    expanded, diagnostics = expand_pattern("DATA<3:0>")
 
     assert diagnostics == []
     assert expanded == ["DATA3", "DATA2", "DATA1", "DATA0"]
 
 
 def test_expand_enum_and_splice() -> None:
-    expanded, diagnostics = expand_pattern("OUT<P|N>;CLK[1:0]")
+    expanded, diagnostics = expand_pattern("OUT<P|N>;CLK<1:0>")
 
     assert diagnostics == []
     assert expanded == ["OUTP", "OUTN", "CLK1", "CLK0"]
@@ -64,7 +64,7 @@ def test_expand_rejects_empty_splice_segment() -> None:
 
 
 def test_expand_rejects_invalid_range() -> None:
-    expanded, diagnostics = expand_pattern("BUS[3:]")
+    expanded, diagnostics = expand_pattern("BUS<3:>")
 
     assert expanded is None
     assert len(diagnostics) == 1
@@ -88,7 +88,7 @@ def test_expand_rejects_comma_enum_delimiter() -> None:
 
 
 def test_expand_rejects_overflow() -> None:
-    expanded, diagnostics = expand_pattern("BUS[0:10000]")
+    expanded, diagnostics = expand_pattern("BUS<0:10000>")
 
     assert expanded is None
     assert len(diagnostics) == 1
@@ -101,7 +101,7 @@ modules:
   top:
     patterns:
       POL: "<P|N>"
-      IDX: "[1:0]"
+      IDX: "<1:0>"
     instances:
       U<@POL>: "res w=W<@IDX>"
     nets:
@@ -131,11 +131,11 @@ devices:
 
     module = document.modules["top"]
     assert "U<P|N>" in module.instances
-    assert module.instances["U<P|N>"] == "res w=W[1:0]"
+    assert module.instances["U<P|N>"] == "res w=W<1:0>"
     assert "OUT<P|N>" in module.nets
     assert module.nets["OUT<P|N>"] == ["U<P|N>.P"]
-    assert "$BUS[1:0]" in module.nets
-    assert module.nets["$BUS[1:0]"] == ["U<P|N>.P"]
+    assert "$BUS<1:0>" in module.nets
+    assert module.nets["$BUS<1:0>"] == ["U<P|N>.P"]
     defaults = module.instance_defaults["res"]
     assert defaults.bindings["p"] == "NET<P|N>"
 

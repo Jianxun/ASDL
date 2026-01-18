@@ -50,7 +50,7 @@ def test_parse_string_preserves_pattern_tokens() -> None:
             "    nets:",
             "      \"$OUT<P|N>\":",
             "        - \"MN<1|2>.D<0|1>\"",
-            "      \"BUS[3:0];BUS<4|5>\":",
+            "      \"BUS<3:0>;BUS<4|5>\":",
             "        - \"MN<1|2>.S\"",
         ]
     )
@@ -64,8 +64,8 @@ def test_parse_string_preserves_pattern_tokens() -> None:
     assert module.instances["MN<1|2>"] == "nfet"
     assert "$OUT<P|N>" in module.nets
     assert module.nets["$OUT<P|N>"] == ["MN<1|2>.D<0|1>"]
-    assert "BUS[3:0];BUS<4|5>" in module.nets
-    assert module.nets["BUS[3:0];BUS<4|5>"] == ["MN<1|2>.S"]
+    assert "BUS<3:0>;BUS<4|5>" in module.nets
+    assert module.nets["BUS<3:0>;BUS<4|5>"] == ["MN<1|2>.S"]
 
 
 def test_parse_string_accepts_patterns_and_instance_defaults() -> None:
