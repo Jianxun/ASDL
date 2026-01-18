@@ -24,9 +24,9 @@ T-164:
   pr: 166
   merged: true
 T-165:
-  status: review_clean
+  status: done
   pr: 167
-  merged: false
+  merged: true
 T-166:
   status: ready
   pr: null
