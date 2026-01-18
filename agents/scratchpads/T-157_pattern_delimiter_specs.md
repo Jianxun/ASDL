@@ -24,16 +24,16 @@
 - Added an enum example for `<digits>` and aligned enum delimiter examples.
 
 # PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/163
 
 # Verification
 - `rg -n "\\[[0-9]+:[0-9]+\\]" docs/specs/spec_ast.md docs/specs/spec_asdl_pattern_expansion.md` (no matches)
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None.
 
 # Next steps
-- Open PR and request review once commits are ready.
+- Await review feedback.
