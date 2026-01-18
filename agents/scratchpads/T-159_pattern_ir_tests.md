@@ -21,22 +21,23 @@
 - 2026-01-19: Updated IR tests to use `<start:end>` ranges and refreshed pattern origin strings.
 - 2026-01-19: Updated GraphIR lowering + IFIR delimiter checks to drop `[]` and include `|`.
 - 2026-01-19: Ran IR unit tests for pattern engine and IFIR dialect.
+- 2026-01-19: Opened PR #165.
 
 # Patch summary
 - Updated IR unit tests to use `<start:end>` ranges and adjusted pattern_origin expectations.
 - Updated GraphIR lowering and IFIR delimiter detection to drop `[`/`]` and include `|`.
 
 # PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/165
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/ir/test_pattern_engine.py tests/unit_tests/ir/test_ifir_dialect.py -v`
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None.
 
 # Next steps
-- Open PR and finalize task status.
+- Await review feedback.
