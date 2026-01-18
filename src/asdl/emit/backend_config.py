@@ -25,6 +25,8 @@ REQUIRED_SYSTEM_DEVICES = {
 # Optional system devices (backends MAY define these)
 OPTIONAL_SYSTEM_DEVICES: set[str] = set()
 
+DEFAULT_PATTERN_RENDERING = "{N}"
+
 
 @dataclass(frozen=True)
 class SystemDeviceTemplate:
@@ -41,6 +43,7 @@ class BackendConfig:
     extension: str
     comment_prefix: str
     templates: Dict[str, SystemDeviceTemplate]
+    pattern_rendering: str = DEFAULT_PATTERN_RENDERING
 
 
 def load_backend_config(
@@ -92,10 +95,19 @@ def load_backend_config(
     extension = backend_data["extension"]
     comment_prefix = backend_data["comment_prefix"]
     templates_raw = backend_data["templates"]
+    pattern_rendering = backend_data.get(
+        "pattern_rendering", DEFAULT_PATTERN_RENDERING
+    )
+    if pattern_rendering is None:
+        pattern_rendering = DEFAULT_PATTERN_RENDERING
 
     if not isinstance(templates_raw, dict):
         raise TypeError(
             f"Backend '{backend_name}' templates must be a mapping of name to template"
+        )
+    if not isinstance(pattern_rendering, str):
+        raise TypeError(
+            f"Backend '{backend_name}' pattern_rendering must be a string"
         )
 
     templates = {
@@ -108,6 +120,7 @@ def load_backend_config(
         extension=extension,
         comment_prefix=comment_prefix,
         templates=templates,
+        pattern_rendering=pattern_rendering,
     )
 
 
@@ -142,6 +155,7 @@ def validate_system_devices(config: BackendConfig) -> List[Diagnostic]:
 
 __all__ = [
     "BackendConfig",
+    "DEFAULT_PATTERN_RENDERING",
     "SystemDeviceTemplate",
     "REQUIRED_SYSTEM_DEVICES",
     "OPTIONAL_SYSTEM_DEVICES",
