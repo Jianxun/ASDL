@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Dict, List, Optional, TYPE_CHECKING, Union
 
+import re
+
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -16,6 +18,9 @@ from pydantic import (
 
 ParamValue = Union[int, float, bool, str]
 InstanceExpr = StrictStr
+
+_TAG_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
 
 def _validate_pattern_group(value: object) -> object:
     if not isinstance(value, str):
@@ -41,6 +46,25 @@ def _is_valid_group_content(content: str) -> bool:
     return not any(char in "<>[];" for char in content)
 
 
+def _validate_pattern_tag(value: object) -> object:
+    """Validate literal tag names for named pattern axes.
+
+    Args:
+        value: Raw tag value.
+
+    Returns:
+        The validated tag value.
+
+    Raises:
+        ValueError: If the tag is not a literal identifier string.
+    """
+    if not isinstance(value, str):
+        raise ValueError("Pattern tags must be strings.")
+    if not _TAG_NAME_RE.fullmatch(value):
+        raise ValueError("Pattern tags must be literal identifiers.")
+    return value
+
+
 def _reject_string_endpoint_list(value: object) -> object:
     if isinstance(value, str):
         raise ValueError("Endpoint lists must be YAML lists of '<instance>.<pin>' strings")
@@ -52,7 +76,7 @@ ImportsBlock = Dict[StrictStr, StrictStr]
 InstancesBlock = Dict[str, InstanceExpr]
 NetsBlock = Dict[str, EndpointListExpr]
 PatternGroup = Annotated[StrictStr, BeforeValidator(_validate_pattern_group)]
-PatternsBlock = Dict[str, PatternGroup]
+PatternTag = Annotated[StrictStr, BeforeValidator(_validate_pattern_tag)]
 
 
 class AstBaseModel(BaseModel):
@@ -72,6 +96,16 @@ class AstBaseModel(BaseModel):
         """
         self._loc = loc
         return self
+
+
+class PatternDecl(AstBaseModel):
+    """Named pattern declaration with optional axis tag."""
+
+    expr: PatternGroup
+    tag: Optional[PatternTag] = None
+
+
+PatternsBlock = Dict[str, Union[PatternGroup, PatternDecl]]
 
 
 class DeviceBackendDecl(AstBaseModel):
@@ -147,6 +181,54 @@ class ModuleDecl(AstBaseModel):
     )
     _patterns_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
     _pattern_value_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+    _pattern_tag_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+
+    def pattern_axis_id(self, name: str) -> Optional[str]:
+        """Resolve the axis identifier for a named pattern.
+
+        Args:
+            name: Named pattern identifier.
+
+        Returns:
+            The axis identifier (tag or pattern name), or None if unknown.
+        """
+        if not self.patterns:
+            return None
+        pattern = self.patterns.get(name)
+        if pattern is None:
+            return None
+        if isinstance(pattern, PatternDecl) and pattern.tag:
+            return pattern.tag
+        return name
+
+    def pattern_axis_id_loc(self, name: str) -> Optional["Locatable"]:
+        """Return the location span for a named pattern axis identifier.
+
+        Args:
+            name: Named pattern identifier.
+
+        Returns:
+            The location for the axis tag if present, otherwise the pattern name location.
+        """
+        if not self.patterns or name not in self.patterns:
+            return None
+        pattern = self.patterns.get(name)
+        if isinstance(pattern, PatternDecl) and pattern.tag:
+            return self._pattern_tag_loc.get(name) or self._patterns_loc.get(name)
+        return self._patterns_loc.get(name)
+
+    def pattern_expr_loc(self, name: str) -> Optional["Locatable"]:
+        """Return the location span for a named pattern expression.
+
+        Args:
+            name: Named pattern identifier.
+
+        Returns:
+            The expression location, if available.
+        """
+        if not self.patterns or name not in self.patterns:
+            return None
+        return self._pattern_value_loc.get(name)
 
 
 if TYPE_CHECKING:
@@ -188,6 +270,7 @@ __all__ = [
     "InstancesBlock",
     "NetsBlock",
     "PatternsBlock",
+    "PatternDecl",
     "InstanceDefaultsBlock",
     "InstanceDefaultsDecl",
     "AsdlDocument",
