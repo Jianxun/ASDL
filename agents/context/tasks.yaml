@@ -22,117 +22,6 @@ current_sprint:
       - tests/e2e/diagnostics/manifest.yaml
     links:
       scratchpad: agents/scratchpads/T-149_diagnostics_e2e_conventions.md
-  - id: T-150
-    title: PARSE and AST diagnostics e2e cases
-    owner: Executor
-    depends_on: [T-149]
-    dod: >
-      Add case directories for PARSE-001..004 and AST-010..022 under
-      `tests/e2e/diagnostics/` following the conventions. Each case includes a
-      standalone `case.asdl`, a short `README.md` with the exact `asdlc`
-      command, and `expected.txt` capturing stderr diagnostics. Update
-      `manifest.yaml` entries with the command, exit code, status (`ready` or
-      `needs-harness`), and any notes about spans or multi-file import
-      fixtures.
-    verify:
-      - ./venv/bin/asdlc netlist tests/e2e/diagnostics/PARSE-001_yaml_parse_error/case.asdl
-    files:
-      - tests/e2e/diagnostics/manifest.yaml
-      - tests/e2e/diagnostics/
-    links:
-      scratchpad: agents/scratchpads/T-150_diagnostics_parse_ast_e2e.md
-  - id: T-151
-    title: IR and LINT input-driven diagnostics e2e cases
-    owner: Executor
-    depends_on: [T-149]
-    dod: >
-      Add case directories for IR-001..013 and LINT-002 under
-      `tests/e2e/diagnostics/` following the conventions. Each case includes
-      `case.asdl`, `README.md` with the `asdlc` command, and `expected.txt`
-      stderr output. Update `manifest.yaml` entries with command/exit details.
-      If any code cannot be triggered via CLI without fault injection, mark the
-      manifest entry `needs-harness` and explain the gap in the case README.
-    verify:
-      - ./venv/bin/asdlc netlist tests/e2e/diagnostics/IR-001_invalid_instance_expr/case.asdl
-    files:
-      - tests/e2e/diagnostics/manifest.yaml
-      - tests/e2e/diagnostics/
-    links:
-      scratchpad: agents/scratchpads/T-151_diagnostics_ir_lint_e2e.md
-  - id: T-152
-    title: PASS diagnostics e2e cases
-    owner: Executor
-    depends_on: [T-149]
-    dod: >
-      Add case directories for PASS-001..004, PASS-101..106, and PASS-999 under
-      `tests/e2e/diagnostics/` following the conventions. For pattern-related
-      codes, supply `case.asdl`, `README.md` with the `asdlc` command, and
-      `expected.txt` stderr output. For verification/crash codes that are not
-      triggerable by input alone, document the limitation in the case README
-      and mark the manifest entry `needs-harness`.
-    verify:
-      - ./venv/bin/asdlc netlist tests/e2e/diagnostics/PASS-101_invalid_numeric_range/case.asdl
-    files:
-      - tests/e2e/diagnostics/manifest.yaml
-      - tests/e2e/diagnostics/
-    links:
-      scratchpad: agents/scratchpads/T-152_diagnostics_pass_e2e.md
-  - id: T-153
-    title: EMIT diagnostics e2e cases
-    owner: Executor
-    depends_on: [T-149]
-    dod: >
-      Add case directories for EMIT-001..013 under `tests/e2e/diagnostics/`
-      following the conventions. Use `asdlc netlist` (and per-case backend
-      config overrides when required) to trigger each code. Each case includes
-      `case.asdl`, `README.md` with the exact command (including any
-      `ASDL_BACKEND_CONFIG`), and `expected.txt` stderr output. Update
-      `manifest.yaml` entries with command/exit details and status.
-    verify:
-      - ./venv/bin/asdlc netlist tests/e2e/diagnostics/EMIT-001_top_missing/case.asdl
-    files:
-      - tests/e2e/diagnostics/manifest.yaml
-      - tests/e2e/diagnostics/
-    links:
-      scratchpad: agents/scratchpads/T-153_diagnostics_emit_e2e.md
-  - id: T-154
-    title: TOOL diagnostics e2e cases
-    owner: Executor
-    depends_on: [T-149]
-    dod: >
-      Add case directories for TOOL-001..003 under `tests/e2e/diagnostics/`
-      following the conventions. Use direct `asdlc` commands that can be run
-      manually (for example, schema output to a read-only path for TOOL-002).
-      Where a code cannot be triggered without environment fault injection,
-      document the manual steps in the case README and mark the manifest entry
-      `needs-harness`.
-    verify:
-      - ./venv/bin/asdlc schema --out /root
-    files:
-      - tests/e2e/diagnostics/manifest.yaml
-      - tests/e2e/diagnostics/
-    links:
-      scratchpad: agents/scratchpads/T-154_diagnostics_tool_e2e.md
-  - id: T-155
-    title: Pytest harness for diagnostics e2e cases
-    owner: Executor
-    depends_on: [T-149]
-    dod: >
-      Add `tests/e2e/diagnostics/test_diagnostics_e2e.py` that reads
-      `tests/e2e/diagnostics/manifest.yaml` and runs `asdlc` commands for each
-      `ready` case (skip `pending`/`needs-harness`). The test must assert exit
-      codes and compare stderr to `expected.txt` (normalize trailing newlines
-      only). Support per-case env overrides defined in the manifest. Update the
-      diagnostics README with the pytest invocation and how to update
-      `expected.txt`.
-    verify:
-      - venv/bin/pytest tests/e2e/diagnostics/test_diagnostics_e2e.py -v
-    files:
-      - tests/e2e/diagnostics/test_diagnostics_e2e.py
-      - tests/e2e/diagnostics/README.md
-      - tests/e2e/diagnostics/manifest.yaml
-    links:
-      scratchpad: agents/scratchpads/T-155_diagnostics_e2e_pytest.md
   - id: T-156
     title: GraphIR verification diagnostics use instance names and spans
     owner: Executor
@@ -153,12 +42,54 @@ current_sprint:
       - tests/unit_tests/ir/test_graphir_structure.py
     links:
       scratchpad: agents/scratchpads/T-156_graphir_verify_spans.md
-
+  - id: T-157
+    title: Update pattern specs for unified delimiters
+    owner: Executor
+    dod: >
+      Replace numeric range syntax `[...]` with `<start:end>` in
+      `docs/specs/spec_ast.md` and `docs/specs/spec_asdl_pattern_expansion.md`,
+      update delimiter descriptions to remove `[]`, and add/adjust examples to
+      show `<...>` for enums and ranges (including the `<digits>` enum case).
+    verify:
+      - rg -n "\\[[0-9]+:[0-9]+\\]" docs/specs/spec_ast.md docs/specs/spec_asdl_pattern_expansion.md
+    files:
+      - docs/specs/spec_ast.md
+      - docs/specs/spec_asdl_pattern_expansion.md
+    links:
+      scratchpad: agents/scratchpads/T-157_pattern_delimiter_specs.md
+  - id: T-158
+    title: Update AST validation and tokenizer for `<start:end>` ranges
+    owner: Executor
+    dod: >
+      Update AST pattern group validation to accept only `<...>` group tokens,
+      update pattern tokenization to parse numeric ranges inside `<...>`, reject
+      legacy `[]` ranges or mixed `|`/`:` groups, and refresh parser unit tests
+      to use `<start:end>` syntax with updated expected strings.
+    verify:
+      - venv/bin/pytest tests/unit_tests/parser/test_pattern_atomization.py tests/unit_tests/parser/test_pattern_expansion.py tests/unit_tests/parser/test_parser.py -v
+    files:
+      - src/asdl/ast/models.py
+      - src/asdl/ir/patterns/tokenize.py
+      - tests/unit_tests/parser/test_pattern_atomization.py
+      - tests/unit_tests/parser/test_pattern_expansion.py
+      - tests/unit_tests/parser/test_parser.py
+    links:
+      scratchpad: agents/scratchpads/T-158_pattern_group_validation.md
+  - id: T-159
+    title: Update IR delimiter detection and tests for `<start:end>` ranges
+    owner: Executor
+    dod: >
+      Remove `[`/`]` from pattern delimiter detection in GraphIR lowering and
+      IFIR verification so pattern presence is keyed to `<`, `>`, `|`, and `;`,
+      and update IR unit tests to use `<start:end>` with updated pattern_origin
+      strings.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_pattern_engine.py tests/unit_tests/ir/test_ifir_dialect.py -v
+    files:
+      - src/asdl/ir/converters/ast_to_graphir_lowering_instances.py
+      - src/asdl/ir/ifir/dialect.py
+      - tests/unit_tests/ir/test_pattern_engine.py
+      - tests/unit_tests/ir/test_ifir_dialect.py
+    links:
+      scratchpad: agents/scratchpads/T-159_pattern_ir_tests.md
 backlog: []
-
-exploration_candidates:
-  - IFIR diagnostics spans: mapping strategy, edge cases, and test fixtures.
-  - CLI pipeline UX: command flow, error messaging, and file layout.
-  - Netlist emission validation: strictness vs warnings; validation stages.
-  - xDSL pipeline boundaries: pass split/merge opportunities and IR boundaries.
-  - Codebase map gaps: navigation audit for future Executors.
