@@ -14,8 +14,10 @@ projected from GraphIR and already reflects canonical connectivity.
 - Device variables are merged and exposed as `{var}` placeholders.
 - Output extension is determined by backend config (`extension`).
 - Input IFIR is projected from GraphIR after pattern expansion; emission
-  performs no pattern expansion or name rewriting. Module variable substitution
-  occurs earlier; IFIR carries substituted instance parameter values.
+  performs no pattern expansion or connectivity rewriting. The emitter may use
+  structured pattern provenance (`pattern_origin` + `pattern_expression_table`)
+  for presentation formatting. Module variable substitution occurs earlier; IFIR
+  carries substituted instance parameter values.
 
 ---
 
@@ -38,6 +40,20 @@ projected from GraphIR and already reflects canonical connectivity.
   `port_order`.
 - If instance references a **device**: order nets by the device's `ports`.
 - Conns are named-only; no positional conns exist in IFIR.
+
+---
+
+## Pattern provenance rendering
+- IFIR net/instance names are atomized literals that define identity and
+  connectivity.
+- If a net or instance carries `pattern_origin` and the module provides a
+  `pattern_expression_table`, the emitter may format the displayed name using
+  the base name and pattern parts (for example, applying a backend numeric
+  rendering policy).
+- Formatting is presentation-only; the emitter must not merge multiple atoms
+  back into a single pattern expression or introduce new expansion semantics.
+- If provenance metadata is missing or invalid, fall back to the literal IFIR
+  name (verification should already report invalid provenance).
 
 ---
 
