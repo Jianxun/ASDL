@@ -10,24 +10,30 @@
 - `agents/context/project_status.md`
 
 # Plan
-- [ ] Inspect IFIR dialect + GraphIR->IFIR converter pattern metadata handling.
-- [ ] Update IFIR ops/attrs to carry pattern provenance metadata + expression table.
-- [ ] Update GraphIR->IFIR conversion to propagate pattern origin attrs + table.
-- [ ] Refresh IFIR dialect/converter tests for structured metadata.
-- [ ] Run targeted IFIR tests.
+- [x] Inspect IFIR dialect + GraphIR->IFIR converter pattern metadata handling.
+- [x] Update IFIR ops/attrs to carry pattern provenance metadata + expression table.
+- [x] Update GraphIR->IFIR conversion to propagate pattern origin attrs + table.
+- [x] Refresh IFIR dialect/converter tests for structured metadata.
+- [x] Run targeted IFIR tests.
 - [ ] Open PR and finalize task status.
 
 # Progress log
 - 2026-01-19: Initialized scratchpad and set task to in progress.
+- 2026-01-19: Added structured pattern provenance attributes to IFIR ops and module metadata.
+- 2026-01-19: Updated GraphIR->IFIR conversion to pass through pattern provenance metadata.
+- 2026-01-19: Refreshed IFIR/netlist tests for structured pattern metadata.
+- 2026-01-19: Ran IFIR unit tests.
 
 # Patch summary
-- TBD.
+- Added IFIR pattern provenance attributes and module expression table metadata.
+- Updated GraphIR->IFIR conversion to preserve structured pattern origins.
+- Refreshed IFIR dialect/converter and netlist tests for new metadata.
 
 # PR URL
 - TBD.
 
 # Verification
-- TBD.
+- `venv/bin/pytest tests/unit_tests/ir/test_ifir_dialect.py tests/unit_tests/ir/test_ifir_converter.py -v`
 
 # Status request (Done / Blocked / In Progress)
 - In Progress.
@@ -36,4 +42,4 @@
 - None.
 
 # Next steps
-- Inspect IFIR dialect + converter metadata flows.
+- Open PR and finalize task status.
