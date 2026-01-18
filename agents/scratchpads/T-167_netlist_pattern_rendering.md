@@ -27,6 +27,7 @@
 - 2026-xx-xx: Added netlist test for bracketed numeric indices.
 - 2026-xx-xx: Implemented pattern-origin rendering in netlist emission and pattern helpers.
 - 2026-xx-xx: Verified netlist emitter tests.
+- 2026-xx-xx: Opened PR #169.
 
 # Patch summary
 - Added pattern-origin rendering helper to format numeric parts using backend policy.
@@ -34,12 +35,13 @@
 - Added netlist emitter coverage for bracketed numeric indices.
 
 # PR URL
+- https://github.com/Jianxun/ASDL/pull/169
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/netlist/test_netlist_emitter.py -v`
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 
