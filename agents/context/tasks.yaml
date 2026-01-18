@@ -92,4 +92,65 @@ current_sprint:
       - tests/unit_tests/ir/test_ifir_dialect.py
     links:
       scratchpad: agents/scratchpads/T-159_pattern_ir_tests.md
+  - id: T-164
+    title: Propagate pattern provenance metadata into IFIR
+    owner: Executor
+    dod: >
+      Extend IFIR module and net/instance ops to carry structured pattern
+      provenance (pattern origin + expression table), and update GraphIR->IFIR
+      conversion to pass through pattern origin attributes and the pattern
+      expression table. Update IFIR dialect and converter tests to assert the
+      structured metadata is preserved.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_ifir_dialect.py tests/unit_tests/ir/test_ifir_converter.py -v
+    files:
+      - src/asdl/ir/ifir/dialect.py
+      - src/asdl/ir/converters/graphir_to_ifir.py
+      - tests/unit_tests/ir/test_ifir_dialect.py
+      - tests/unit_tests/ir/test_ifir_converter.py
+    links:
+      scratchpad: agents/scratchpads/T-164_ifir_pattern_provenance.md
+  - id: T-165
+    title: Document IFIR pattern provenance for emission
+    owner: Executor
+    dod: >
+      Update IFIR and netlist emission specs to describe structured
+      pattern_origin metadata, the pattern expression table, and the emitter's
+      use of pattern provenance for presentation formatting.
+    verify:
+      - rg -n "pattern_origin" docs/specs/spec_asdl_ifir.md docs/specs/spec_netlist_emission.md
+    files:
+      - docs/specs/spec_asdl_ifir.md
+      - docs/specs/spec_netlist_emission.md
+    links:
+      scratchpad: agents/scratchpads/T-165_ifir_pattern_docs.md
+  - id: T-166
+    title: Add backend pattern rendering config
+    owner: Executor
+    dod: >
+      Extend backend config schema to accept an optional pattern rendering policy
+      (numeric format string such as "[{N}]" or "{N}"), update loader defaults,
+      and add unit tests for parsing and defaults.
+    verify:
+      - venv/bin/pytest tests/unit_tests/emit/test_backend_config.py -v
+    files:
+      - src/asdl/emit/backend_config.py
+      - tests/unit_tests/emit/test_backend_config.py
+    links:
+      scratchpad: agents/scratchpads/T-166_backend_pattern_render_config.md
+  - id: T-167
+    title: Apply backend pattern rendering during netlist emission
+    owner: Executor
+    dod: >
+      Render net/instance names using pattern provenance metadata and the backend
+      pattern rendering policy, and add netlist emission tests covering bracketed
+      numeric indices.
+    verify:
+      - venv/bin/pytest tests/unit_tests/netlist/test_netlist_emitter.py -v
+    files:
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/ir/patterns/origin.py
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+    links:
+      scratchpad: agents/scratchpads/T-167_netlist_pattern_rendering.md
 backlog: []

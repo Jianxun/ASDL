@@ -1,16 +1,17 @@
+top: ShiftReg_row_25
 imports:
   dff: ../DFF_2phase_1/DFF_2phase_1.asdl
 
 modules:
   ShiftReg_row_25:
     instances:
-      dff[25:1]: dff.DFF_2phase_1
+      dff<25:1>: dff.DFF_2phase_1
     nets:
-      $D_in: ['dff[1].D']
-      $Q[24:1]: [dff[24..1].Q, 'dff[25:2].D']
-      $Q[25]: ['dff[25].Q']
+      $D_in: [dff<1>.D]
+      $Q<24:1>: [dff<24:1>.Q, dff<25:2>.D]
+      $Q<25>: [dff<25>.Q]
       
-      $PHI_1: ['dff[25:1].PHI_1']
-      $PHI_2: ['dff[25:1].PHI_2']
-      $VDDd: ['dff[25:1].VDDd']
-      $VSSd: ['dff[25:1].VSSd']
+      $PHI_1: [dff<25:1>.PHI_1]
+      $PHI_2: [dff<25:1>.PHI_2]
+      $VDDd: [dff<25:1>.VDDd]
+      $VSSd: [dff<25:1>.VSSd]
