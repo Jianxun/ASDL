@@ -8,7 +8,7 @@ from typing import Dict, List, Mapping, Optional, Tuple
 from asdl.diagnostics import Diagnostic, Severity, format_code
 
 from .location import Locatable
-from .models import AsdlDocument, InstanceDefaultsDecl, ModuleDecl
+from .models import AsdlDocument, InstanceDefaultsDecl, ModuleDecl, PatternDecl
 
 AST_NAMED_PATTERN_INVALID = format_code("AST", 20)
 AST_NAMED_PATTERN_UNDEFINED = format_code("AST", 21)
@@ -37,6 +37,7 @@ def elaborate_named_patterns(
         pattern_map: Dict[str, str] = {}
         if module.patterns:
             for pattern_name, pattern_value in module.patterns.items():
+                pattern_expr = _pattern_expr_value(pattern_value)
                 name_loc = module._patterns_loc.get(pattern_name)
                 value_loc = module._pattern_value_loc.get(pattern_name)
                 if not _NAME_RE.fullmatch(pattern_name):
@@ -52,7 +53,7 @@ def elaborate_named_patterns(
                     )
                     had_error = True
                     continue
-                if "<@" in pattern_value:
+                if "<@" in pattern_expr:
                     diagnostics.append(
                         _diagnostic(
                             AST_NAMED_PATTERN_RECURSIVE,
@@ -65,7 +66,7 @@ def elaborate_named_patterns(
                     )
                     had_error = True
                     continue
-                pattern_map[pattern_name] = pattern_value
+                pattern_map[pattern_name] = pattern_expr
 
         had_error |= _expand_module_instances(
             module,
@@ -257,6 +258,22 @@ def _expand_module_instance_defaults(
             diagnostics,
         )
     return had_error
+
+
+def _pattern_expr_value(pattern_value: object) -> str:
+    """Extract the expression string from a named pattern entry.
+
+    Args:
+        pattern_value: Pattern entry value (string or PatternDecl).
+
+    Returns:
+        The pattern expression string.
+    """
+    if isinstance(pattern_value, PatternDecl):
+        return pattern_value.expr
+    if isinstance(pattern_value, str):
+        return pattern_value
+    raise TypeError(f"Unexpected named pattern value type: {type(pattern_value)!r}")
 
 
 def _expand_instance_default_bindings(
