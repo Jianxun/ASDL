@@ -4,32 +4,32 @@
 * ShiftReg_row_25
 * /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/libs/sw_matrix/ShiftReg_row_25/ShiftReg_row_25.asdl
 * ===============================================
-.subckt ShiftReg_row_25 D_in Q24 Q23 Q22 Q21 Q20 Q19 Q18 Q17 Q16 Q15 Q14 Q13 Q12 Q11 Q10 Q9 Q8 Q7 Q6 Q5 Q4 Q3 Q2 Q1 Q25 PHI_1 PHI_2 VDDd VSSd
-Xdff25 Q24 Q25 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff24 Q23 Q24 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff23 Q22 Q23 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff22 Q21 Q22 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff21 Q20 Q21 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff20 Q19 Q20 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff19 Q18 Q19 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff18 Q17 Q18 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff17 Q16 Q17 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff16 Q15 Q16 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff15 Q14 Q15 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff14 Q13 Q14 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff13 Q12 Q13 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff12 Q11 Q12 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff11 Q10 Q11 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff10 Q9 Q10 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff9 Q8 Q9 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff8 Q7 Q8 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff7 Q6 Q7 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff6 Q5 Q6 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff5 Q4 Q5 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff4 Q3 Q4 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff3 Q2 Q3 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff2 Q1 Q2 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
-Xdff1 D_in Q1 PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+.subckt ShiftReg_row_25 D_in Q[25] Q[24] Q[23] Q[22] Q[21] Q[20] Q[19] Q[18] Q[17] Q[16] Q[15] Q[14] Q[13] Q[12] Q[11] Q[10] Q[9] Q[8] Q[7] Q[6] Q[5] Q[4] Q[3] Q[2] Q[1] PHI_1 PHI_2 VDDd VSSd
+Xdff[25] Q[24] Q[25] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[24] Q[23] Q[24] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[23] Q[22] Q[23] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[22] Q[21] Q[22] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[21] Q[20] Q[21] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[20] Q[19] Q[20] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[19] Q[18] Q[19] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[18] Q[17] Q[18] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[17] Q[16] Q[17] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[16] Q[15] Q[16] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[15] Q[14] Q[15] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[14] Q[13] Q[14] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[13] Q[12] Q[13] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[12] Q[11] Q[12] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[11] Q[10] Q[11] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[10] Q[9] Q[10] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[9] Q[8] Q[9] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[8] Q[7] Q[8] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[7] Q[6] Q[7] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[6] Q[5] Q[6] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[5] Q[4] Q[5] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[4] Q[3] Q[4] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[3] Q[2] Q[3] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[2] Q[1] Q[2] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
+Xdff[1] D_in Q[1] PHI_1 PHI_2 VDDd VSSd DFF_2phase_1
 .ends
 * ===============================================
 * DFF_2phase_1
