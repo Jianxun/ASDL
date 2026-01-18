@@ -23,14 +23,12 @@ def _validate_pattern_group(value: object) -> object:
     if value.startswith("<@") and value.endswith(">"):
         raise ValueError("Pattern values must not reference other named patterns.")
     if not _is_group_token(value):
-        raise ValueError("Pattern values must be a single group token like <...> or [...].")
+        raise ValueError("Pattern values must be a single group token like <...>.")
     return value
 
 
 def _is_group_token(value: str) -> bool:
     if value.startswith("<") and value.endswith(">"):
-        return _is_valid_group_content(value[1:-1])
-    if value.startswith("[") and value.endswith("]"):
         return _is_valid_group_content(value[1:-1])
     return False
 
