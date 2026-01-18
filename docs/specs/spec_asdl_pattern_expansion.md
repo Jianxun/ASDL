@@ -5,8 +5,8 @@ Expansion is performed during parsing/elaboration to produce a fully explicit,
 deterministic set of symbols and endpoint expressions.
 
 This spec covers:
-- numeric range expansion (`[...]`)
-- literal enumeration expansion (`<...>`) using **`|`** as delimiter
+- numeric range expansion (`<start:end>`) using **`:`** inside `<...>`
+- literal enumeration expansion (`<alt1|alt2|...>`) using **`|`** as delimiter
 - splicing / parallel concatenation using **`;`**
 - named pattern references (`<@name>`)
 
@@ -69,16 +69,16 @@ patterns:
 **Rules**
 - `patterns` are **module-local** only.
 - Pattern names must match `[A-Za-z_][A-Za-z0-9_]*`.
-- Pattern values must be a **single group token**: either `<...>` (enum) or
-  `[...]` (range).
+- Pattern values must be a **single group token**: `<...>` using `|` for enums
+  or `:` for ranges.
 - Named patterns must not reference other named patterns (no recursion).
 - Undefined names are errors.
 
-### 3.1 Numeric Range Expansion: `[start:end]`
+### 3.1 Numeric Range Expansion: `<start:end>`
 
 **Syntax**
 ```
-<base>[start:end]
+<base><start:end>
 ```
 
 **Semantics**
@@ -89,8 +89,8 @@ patterns:
 
 **Examples**
 ```
-DATA[3:0] → DATA3 DATA2 DATA1 DATA0
-DATA_[3:0] → DATA_3 DATA_2 DATA_1 DATA_0
+DATA<3:0> → DATA3 DATA2 DATA1 DATA0
+DATA_<3:0> → DATA_3 DATA_2 DATA_1 DATA_0
 ```
 
 **Rules**
@@ -116,11 +116,13 @@ DATA_[3:0] → DATA_3 DATA_2 DATA_1 DATA_0
 ```
 OUT<P|N> → OUTP OUTN
 BIAS_<A|B|C> → BIAS_A BIAS_B BIAS_C
+SEL<digits> → SELdigits
 ```
 
 **Rules**
 - Alternatives are opaque literals (no implicit semantics at this stage)
 - Whitespace around `|` is not allowed
+- A single literal with no `|` is treated as a length-1 enum (e.g., `<digits>`)
 - No nesting or recursion inside `<...>` in Tier-1 core
 
 ---
@@ -139,10 +141,10 @@ BIAS_<A|B|C> → BIAS_A BIAS_B BIAS_C
 
 **Examples**
 ```
-net1;net2_[2:0]
+net1;net2_<2:0>
 → net1 net2_2 net2_1 net2_0
 
-OUT_<P|N>;CLK_[1:0]
+OUT_<P|N>;CLK_<1:0>
 → OUT_P OUT_N CLK_1 CLK_0
 ```
 
@@ -177,7 +179,7 @@ OUT_<P|N>;CLK_[1:0]
 - `$` net names preserve pattern syntax verbatim; `;` is forbidden in `$` net
   expressions.
 - Literal names must match `[A-Za-z_][A-Za-z0-9_]*` and must not contain
-  pattern delimiters (`<`, `>`, `[`, `]`, `;`).
+  pattern delimiters (`<`, `>`, `|`, `:`, `;`).
 - Expansion is local to the pattern expression being expanded
 - Expansion does not imply hierarchy or connectivity semantics by itself
 
@@ -221,7 +223,7 @@ If expansion produces duplicate atoms *within the same expanded list*:
 - Instance name patterns and instance parameter patterns expand at the same time;
   parameter values zip by instance index (scalar broadcast allowed).
 - Every scalar endpoint atom binds to **exactly one** net.
-- Equivalence checks use the fully expanded string atoms (e.g., `MN<A,B>` is
+- Equivalence checks use the fully expanded string atoms (e.g., `MN<A|B>` is
   equivalent to `MN_A` and `MN_B`). Binding verification and elaboration must
   share the same equivalence helper.
 
@@ -267,7 +269,7 @@ correctness of the expanded structural IR.
 ## 12. Post-Expansion Invariant
 
 After expansion:
-- Every endpoint/name is a plain atom (no `[]`, no `<>`, no `;`)
+- Every endpoint/name is a plain atom (no `<...>`, no `;`)
 - Every endpoint atom contains exactly one `.` delimiter
 - No implicit joiner has been applied (atoms are literal concatenations)
 - The result is suitable for deterministic validation and lowering

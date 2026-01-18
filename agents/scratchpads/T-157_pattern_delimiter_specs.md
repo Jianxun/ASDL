@@ -10,21 +10,24 @@
 - `agents/context/project_status.md`
 
 # Plan
-- Update spec language and examples to use `<start:end>` ranges and `<...>` enums.
-- Confirm no remaining legacy `[]` ranges with ripgrep verify command.
-- Record changes, verification, and status in this scratchpad.
+- [x] Update `spec_ast.md` delimiter notes and examples to use `<...>`.
+- [x] Update `spec_asdl_pattern_expansion.md` for `<start:end>` ranges and enum examples.
+- [x] Confirm no legacy `[]` ranges remain in the specs.
+- [ ] Open PR and finalize task status.
 
 # Progress log
-- 2026-01-19: Initialized scratchpad and starting updates.
+- 2026-01-19: Initialized scratchpad and set task to in progress.
+- 2026-01-19: Updated spec delimiter text/examples and ran verification.
 
 # Patch summary
-- TBD
+- Updated pattern delimiter references and examples to use `<start:end>` ranges and `<...>` enums.
+- Added an enum example for `<digits>` and aligned enum delimiter examples.
 
 # PR URL
 - TBD
 
 # Verification
-- TBD
+- `rg -n "\\[[0-9]+:[0-9]+\\]" docs/specs/spec_ast.md docs/specs/spec_asdl_pattern_expansion.md` (no matches)
 
 # Status request (Done / Blocked / In Progress)
 - In Progress
@@ -33,4 +36,4 @@
 - None.
 
 # Next steps
-- Update specs and run verify command.
+- Open PR and request review once commits are ready.

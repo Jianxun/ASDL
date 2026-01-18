@@ -10,7 +10,7 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 ## Conventions
 - **Plural nouns** for collections: `modules`, `devices`, `instances`, `nets`, `exports`, `backends`, `parameters`, `variables`.
 - Ordered mappings preserve source order when it matters (notably `nets` and `exports`).
-- Literal names must match `[A-Za-z_][A-Za-z0-9_]*`; pattern delimiters (`<`, `>`, `[`, `]`, `;`)
+- Literal names must match `[A-Za-z_][A-Za-z0-9_]*`; pattern delimiters (`<`, `>`, `|`, `:`, `;`)
   are reserved and forbidden in literals.
 - Qualified references may use `ns.symbol` in inline instance expressions only;
   both `ns` and `symbol` must match the literal name regex.
@@ -65,8 +65,8 @@ Single authoring style for MVP: flat map.
 ### Style A — flat map
 ```yaml
 instances:
-  MN_IN<P,N>: nfet_3p3 m=8
-  MP_LOAD<P,N>: pfet_3p3 m=2
+  MN_IN<P|N>: nfet_3p3 m=8
+  MP_LOAD<P|N>: pfet_3p3 m=2
 ```
 
 ### AST shape
@@ -93,7 +93,7 @@ instances:
 
 ### AST shape
 - `PatternsBlock` is an ordered mapping: `Dict[str, str]`.
-- Values must be a **single group token**: either `<...>` (enum) or `[...]` (range).
+- Values must be a **single group token**: `<...>` using `|` for enums or `:` for ranges.
 
 ### Notes
 - Named pattern references use `<@name>`.
@@ -140,7 +140,7 @@ instances:
 ### Notes
 - `$` on the net name marks an **exported port**.
 - Port order is the appearance order of `$` nets in `nets`, followed by forwarded ports from `exports`.
-- `*`, `<...>`, `[...]`, `<@name>`, and `;` pattern/domain markers are preserved as raw tokens for later expansion.
+- `*`, `<...>`, `<@name>`, and `;` pattern/domain markers are preserved as raw tokens for later expansion.
 - `$` net names may include pattern syntax, but `;` is forbidden in `$` net expressions.
 - Endpoint tokens may be prefixed with `!` to suppress default-override warnings; `!`
   is not part of the endpoint name.
@@ -203,7 +203,7 @@ instances:
 
 ## Deferred to IR verification / passes
 - Name resolution (module/device lookup, instance refs).
-- Named pattern expansion (`<@name>`) and pattern expansion/binding verification (`<...>`, `[...]`, `;`); enforce expansion size limits.
+- Named pattern expansion (`<@name>`) and pattern expansion/binding verification (`<...>` with `|`/`:` and `;`); enforce expansion size limits.
 - Patterned parameter expansion (broadcast/zip; no cross-product).
 - Module variable substitution (`{var}`) in instance parameter values, including
   undefined variable diagnostics and recursion detection.
