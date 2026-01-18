@@ -28,9 +28,9 @@ T-165:
   pr: 167
   merged: true
 T-166:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 168
+  merged: true
 T-167:
   status: ready
   pr: null
