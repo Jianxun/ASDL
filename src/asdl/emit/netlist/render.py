@@ -4,12 +4,17 @@ import hashlib
 import os
 import re
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 
 from asdl.diagnostics import Diagnostic, Severity
 from asdl.diagnostics.collector import DiagnosticCollector
 from asdl.emit.backend_config import BackendConfig
-from asdl.ir.ifir import DeviceOp, InstanceOp, ModuleOp
+from asdl.ir.ifir import DeviceOp, InstanceOp, ModuleOp, NetOp
+from asdl.ir.patterns.expr_table import (
+    PatternExpressionTable,
+    decode_pattern_expression_table,
+)
+from asdl.ir.patterns.origin import render_pattern_origin
 
 from .diagnostics import (
     MALFORMED_TEMPLATE,
@@ -164,6 +169,87 @@ def _emit_design(
     return "\n".join(lines), diagnostics
 
 
+def _decode_pattern_table(module: ModuleOp) -> Optional[PatternExpressionTable]:
+    """Decode the pattern expression table for a module, if available.
+
+    Args:
+        module: IFIR module to inspect.
+
+    Returns:
+        Decoded pattern expression table, or None if unavailable/invalid.
+    """
+    table_attr = module.pattern_expression_table
+    if table_attr is None:
+        return None
+    try:
+        return decode_pattern_expression_table(table_attr)
+    except (TypeError, ValueError):
+        return None
+
+
+def _render_pattern_name(
+    literal_name: str,
+    origin: object,
+    pattern_table: Optional[PatternExpressionTable],
+    expected_kind: str,
+    pattern_rendering: str,
+) -> str:
+    """Render a pattern-origin name when metadata is valid.
+
+    Args:
+        literal_name: Fallback literal name.
+        origin: Pattern origin attribute or None.
+        pattern_table: Decoded expression table for the module.
+        expected_kind: Expected expression kind ("net" or "inst").
+        pattern_rendering: Backend numeric formatting policy.
+
+    Returns:
+        Rendered name if metadata is valid, otherwise the literal name.
+    """
+    if origin is None or pattern_table is None:
+        return literal_name
+    expression_id = getattr(origin, "expression_id", None)
+    if expression_id is None:
+        return literal_name
+    entry = pattern_table.get(expression_id.data)
+    if entry is None or entry.kind != expected_kind:
+        return literal_name
+    try:
+        return render_pattern_origin(origin, pattern_rendering=pattern_rendering)
+    except (TypeError, ValueError):
+        return literal_name
+
+
+def _build_net_name_map(
+    module: ModuleOp,
+    pattern_table: Optional[PatternExpressionTable],
+    pattern_rendering: str,
+) -> Dict[str, str]:
+    """Build a mapping of literal net names to rendered display names.
+
+    Args:
+        module: IFIR module containing net ops.
+        pattern_table: Decoded pattern expression table.
+        pattern_rendering: Backend numeric formatting policy.
+
+    Returns:
+        Mapping of literal net names to rendered display names.
+    """
+    name_map: Dict[str, str] = {}
+    for op in module.body.block.ops:
+        if not isinstance(op, NetOp):
+            continue
+        literal = op.name_attr.data
+        name_map[literal] = _render_pattern_name(
+            literal,
+            op.pattern_origin,
+            pattern_table,
+            "net",
+            pattern_rendering,
+        )
+    return name_map
+
+
 def _emit_module(
     module: ModuleOp,
     symbols: _SymbolMaps,
@@ -175,7 +261,12 @@ def _emit_module(
     lines: List[str] = []
     had_error = False
 
-    ports = [attr.data for attr in module.port_order.data]
+    pattern_table = _decode_pattern_table(module)
+    pattern_rendering = options.backend_config.pattern_rendering
+    net_name_map = _build_net_name_map(module, pattern_table, pattern_rendering)
+    ports = [
+        net_name_map.get(attr.data, attr.data) for attr in module.port_order.data
+    ]
 
     module_name = _module_emitted_name(module, symbols.module_emitted_names)
     module_file_id = _module_file_id(module) or ""
@@ -204,6 +295,8 @@ def _emit_module(
             symbols,
             options=options,
             diagnostics=diagnostics,
+            net_name_map=net_name_map,
+            pattern_table=pattern_table,
         )
         if line is not None:
             lines.append(line)
@@ -234,7 +327,16 @@ def _emit_instance(
     *,
     options: "EmitOptions",
     diagnostics: List[Diagnostic],
+    net_name_map: Optional[Mapping[str, str]] = None,
+    pattern_table: Optional[PatternExpressionTable] = None,
 ) -> Tuple[Optional[str], bool]:
+    instance_name = _render_pattern_name(
+        instance.name_attr.data,
+        instance.pattern_origin,
+        pattern_table,
+        "inst",
+        options.backend_config.pattern_rendering,
+    )
     ref_name = instance.ref.root_reference.data
     ref_file_id = _instance_ref_file_id(instance)
     module = _select_symbol(
@@ -245,13 +347,18 @@ def _emit_instance(
     )
     if module is not None:
         port_order = [attr.data for attr in module.port_order.data]
-        conns, had_error = _ordered_conns(instance, port_order, diagnostics)
+        conns, had_error = _ordered_conns(
+            instance,
+            port_order,
+            diagnostics,
+            net_name_map=net_name_map,
+        )
         if had_error:
             return None, True
 
         ref_name = _module_emitted_name(module, symbols.module_emitted_names)
         call_context = {
-            "name": instance.name_attr.data,
+            "name": instance_name,
             "ports": " ".join(conns),
             "ref": ref_name,
             "sym_name": module.sym_name.data,
@@ -297,7 +404,12 @@ def _emit_instance(
         return None, True
 
     port_order = [attr.data for attr in device.ports.data]
-    conns, had_error = _ordered_conns(instance, port_order, diagnostics)
+    conns, had_error = _ordered_conns(
+        instance,
+        port_order,
+        diagnostics,
+        net_name_map=net_name_map,
+    )
     if had_error:
         return None, True
     ports_str = " ".join(conns)
@@ -345,7 +457,7 @@ def _emit_instance(
 
     props.setdefault("params", params_str)
     template_values = {
-        "name": instance.name_attr.data,
+        "name": instance_name,
         "ports": ports_str,
     }
     template_values.update(merged_params)
@@ -495,6 +607,8 @@ def _ordered_conns(
     instance: InstanceOp,
     port_order: Iterable[str],
     diagnostics: DiagnosticCollector | List[Diagnostic],
+    *,
+    net_name_map: Optional[Mapping[str, str]] = None,
 ) -> Tuple[List[str], bool]:
     port_list = list(port_order)
     conn_map = {conn.port.data: conn.net.data for conn in instance.conns.data}
@@ -538,7 +652,13 @@ def _ordered_conns(
     if had_error:
         return [], True
 
-    return [conn_map[port] for port in port_list], False
+    rendered = []
+    for port in port_list:
+        net_name = conn_map[port]
+        if net_name_map is not None:
+            net_name = net_name_map.get(net_name, net_name)
+        rendered.append(net_name)
+    return rendered, False
 
 
 def _render_system_device(

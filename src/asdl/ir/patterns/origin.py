@@ -71,6 +71,53 @@ def decode_pattern_origin(origin: GraphPatternOriginAttr) -> PatternOrigin:
         pattern_parts=decode_pattern_parts(origin.pattern_parts),
     )
 
+
+def render_pattern_origin(
+    origin: PatternOrigin | GraphPatternOriginAttr,
+    *,
+    pattern_rendering: str = "{N}",
+) -> str:
+    """Render a pattern-derived name using numeric formatting policy.
+
+    Args:
+        origin: Pattern origin metadata to render.
+        pattern_rendering: Format string for numeric parts using "{N}".
+
+    Returns:
+        Rendered name string.
+    """
+    normalized = (
+        origin if isinstance(origin, PatternOrigin) else decode_pattern_origin(origin)
+    )
+    rendered_parts: list[str] = []
+    for part in normalized.pattern_parts:
+        if isinstance(part, int):
+            rendered_parts.append(_render_numeric_part(part, pattern_rendering))
+        else:
+            rendered_parts.append(str(part))
+    return f"{normalized.base_name}{''.join(rendered_parts)}"
+
+
+def _render_numeric_part(value: int, pattern_rendering: str) -> str:
+    """Render a numeric pattern part using the backend formatting policy.
+
+    Args:
+        value: Numeric pattern part to render.
+        pattern_rendering: Format string containing "{N}" for numeric values.
+
+    Returns:
+        Rendered numeric string.
+    """
+    if not isinstance(pattern_rendering, str):
+        return str(value)
+    if "{N" not in pattern_rendering:
+        return str(value)
+    try:
+        return pattern_rendering.format_map({"N": value})
+    except (KeyError, ValueError):
+        return str(value)
+
+
 def lookup_pattern_origin_entry(
     origin: GraphPatternOriginAttr,
     table: Mapping[str, PatternExpressionEntry],
@@ -103,4 +150,5 @@ __all__ = [
     "decode_pattern_origin",
     "encode_pattern_origin",
     "lookup_pattern_origin_entry",
+    "render_pattern_origin",
 ]
