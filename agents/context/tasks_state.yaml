@@ -4,7 +4,7 @@ T-170:
   pr: 171
   merged: true
 T-171:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-172:
