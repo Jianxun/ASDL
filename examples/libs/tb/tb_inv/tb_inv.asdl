@@ -1,0 +1,26 @@
+top: tb_inv
+imports:
+  inv: mosbius_devices/inv/inv.asdl
+  al: common/analoglib.asdl
+  sim: common/simulation.xyce.asdl
+modules:
+  tb_inv:
+    variables:
+      vdd_dc: 3.3
+    instances:
+      dut: inv.inv
+      vsrc_vdd: al.vdc dc={vdd_dc}
+      vsrc_vss: al.vdc dc=0
+      vsrc_in: al.vdc dc=0
+
+      sim_dc: sim.sim_dc source=vsrc_in from=0 to=3.3 step=0.01
+
+      code_block: sim.code_block code='print V(*)'
+
+    nets:
+      vdd: [vsrc_vdd.p, dut.vdd]
+      vss: [vsrc_vss.p, vsrc_<vdd|in>.n, dut.vss]
+      in: [vsrc_in.p, dut.<inp|inn>]
+      out: [dut.out]
+      '0': [vsrc_vss.n]
+

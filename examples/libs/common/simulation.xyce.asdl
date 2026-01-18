@@ -1,0 +1,19 @@
+devices:
+  sim_dc:
+    parameters:
+      source: ''
+      from: 0
+      to: 1
+      step: 0.01
+    backends:
+      sim.xyce:
+        template: |
+          .DC {source} {from} {to} {step}
+
+  code_block:
+    parameters:
+      code: ''
+    backends:
+      sim.xyce:
+        template: |
+          {code}

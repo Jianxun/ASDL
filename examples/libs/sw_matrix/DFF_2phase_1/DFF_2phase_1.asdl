@@ -1,0 +1,19 @@
+imports:
+  gf_std: gf180mcu_std.asdl
+
+modules:
+  DFF_2phase_1:
+    instances:
+      latch_master: gf_std.latq_1
+      latch_slave: gf_std.latq_1
+
+    nets:
+      $D: [latch_master.D]
+      $Q: [latch_slave.Q]
+      $PHI_1: [latch_master.EN]
+      $PHI_2: [latch_slave.EN]
+      $VDDd: [latch_<master|slave>.<VNB|VPWR>]
+      $VSSd: [latch_<master|slave>.<VPB|VGND>]
+      out_m: [latch_master.Q, latch_slave.D]
+
+

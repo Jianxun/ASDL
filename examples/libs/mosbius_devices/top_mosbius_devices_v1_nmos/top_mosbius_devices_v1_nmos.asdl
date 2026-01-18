@@ -1,3 +1,4 @@
+top: top_mosbius_devices_v1_nmos
 imports:
   gf: gf180mcu.asdl
   ota: ../ota_nmos/ota_nmos.asdl
@@ -20,6 +21,9 @@ modules:
 
       inv: inv.inv
 
+      mn_dummy: gf.nfet_03v3 L=0.5u W=5u NF=6 m=32
+      mp_dummy: gf.pfet_03v3 L=0.5u W=5u NF=6 m=18
+
     patterns:
       cm_size: <1|2|4|8|16>
 
@@ -32,7 +36,7 @@ modules:
       $NMOS_CM_<IREF|IOUT>: [nmos_cm.<iref|iout>]
 
       $NMOS_DP_1X_<A|B>_<D|G|S>: [mn_dp_1x_<a|b>.<d|g|s>]
-      $NMOS_DP_4X_<A|B>_<D|G|S>: [mn_cs_4x_<a|b>.<d|g|s>]
+      $NMOS_DP_4X_<A|B>_<D|G|S>: [mn_dp_4x_<a|b>.<d|g|s>]
       $NMOS_CS_4X_<A|B>_<D|G>: [mn_cs_4x_<a|b>.<d|g>]
 
       $INV_16X_A_<INN|OUT|INP>: [inv.<inn|out|inp>]
@@ -40,6 +44,7 @@ modules:
       $VDD: 
         - nmos_ota.vdd
         - inv.vdd
+        - mp_dummy.<d|g|s|b>
       $VSS: 
         - nmos_ota.vss
         - inv.vss
@@ -48,3 +53,4 @@ modules:
         - mn_dp_1x_<a|b>.b
         - mn_dp_4x_<a|b>.b
         - mn_cs_4x_<a|b>.<s|b>
+        - mn_dummy.<d|g|s|b>

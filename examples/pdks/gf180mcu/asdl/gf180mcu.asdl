@@ -22,7 +22,7 @@ devices:
         template: '{name} ({ports}) {model} L={L} W={W} NF={NF} m={m}'
       lvs.klayout:
         model: nfet_03v3
-        template: 'M{name} {ports} {model} L={L} W={W} NF={NF} m={m}'
+        template: 'M{name} {ports} {model} L={L} W={m}*{NF}*{W}'
 
   pfet_03v3:
     ports: [d, g, s, b]
@@ -47,7 +47,7 @@ devices:
         template: '{name} ({ports}) {model} L={L} W={W} NF={NF} m={m}'
       lvs.klayout:        
         model: pfet_03v3
-        template: 'M{name} {ports} {model} L={L} W={W} NF={NF} m={m}'
+        template: 'M{name} {ports} {model} L={L} W={m}*{NF}*{W}'
 
   gf180mcu_models:
     backends:
