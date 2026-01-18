@@ -99,7 +99,7 @@ def test_module_rejects_pattern_delimiters_in_instance_name() -> None:
         region=[
             NetOp(name="a"),
             InstanceOp(
-                name="M[0:1]",
+                name="M<0:1>",
                 ref="leaf",
                 conns=[ConnAttr(StringAttr("P"), StringAttr("a"))],
             ),
@@ -180,7 +180,7 @@ def test_design_roundtrip_pattern_origin() -> None:
         name="top",
         port_order=["VIN"],
         region=[
-            NetOp(name="VIN", pattern_origin="BUS[2:0]"),
+            NetOp(name="VIN", pattern_origin="BUS<2:0>"),
             InstanceOp(
                 name="M1",
                 ref="nfet",
@@ -217,7 +217,7 @@ def test_design_roundtrip_pattern_origin() -> None:
     )
 
     assert parsed_net.pattern_origin is not None
-    assert parsed_net.pattern_origin.data == "BUS[2:0]"
+    assert parsed_net.pattern_origin.data == "BUS<2:0>"
     assert parsed_instance.pattern_origin is not None
     assert parsed_instance.pattern_origin.data == "MN_<P|N>"
     assert _print_op(parsed_design) == text

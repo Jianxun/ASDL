@@ -47,7 +47,7 @@ def _endpoint(
 
 
 def test_expand_pattern_range_ordering() -> None:
-    expanded, diagnostics = expand_pattern("DATA[3:0]")
+    expanded, diagnostics = expand_pattern("DATA<3:0>")
 
     assert diagnostics == []
     assert expanded == ["DATA3", "DATA2", "DATA1", "DATA0"]
@@ -85,7 +85,7 @@ def test_expand_pattern_rejects_splice_when_disabled() -> None:
 
 
 def test_atomize_pattern_preserves_literal_parts_and_segments() -> None:
-    atoms, diagnostics = atomize_pattern("OUT<P|N>;CLK[1:0]")
+    atoms, diagnostics = atomize_pattern("OUT<P|N>;CLK<1:0>")
 
     assert diagnostics == []
     assert atoms == [
@@ -97,7 +97,7 @@ def test_atomize_pattern_preserves_literal_parts_and_segments() -> None:
 
 
 def test_atomize_pattern_preserves_literal_base_name() -> None:
-    atoms, diagnostics = atomize_pattern("BIAS_<A|B>_X[2:1]")
+    atoms, diagnostics = atomize_pattern("BIAS_<A|B>_X<2:1>")
 
     assert diagnostics == []
     assert atoms == [
