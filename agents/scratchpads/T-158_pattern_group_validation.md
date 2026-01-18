@@ -10,23 +10,28 @@
 - `agents/context/project_status.md`
 
 # Plan
-- [ ] Inspect pattern group validation and tokenizer handling for range groups.
-- [ ] Update validation/tokenization for `<start:end>` only and add error coverage.
-- [ ] Refresh parser unit tests for `<start:end>` expected strings.
-- [ ] Run targeted parser tests.
+- [x] Inspect pattern group validation and tokenizer handling for range groups.
+- [x] Update validation/tokenization for `<start:end>` only and add error coverage.
+- [x] Refresh parser unit tests for `<start:end>` expected strings.
+- [x] Run targeted parser tests.
 - [ ] Open PR and finalize task status.
 
 # Progress log
 - 2026-01-19: Initialized scratchpad and set task to in progress.
+- 2026-01-19: Updated parser tests for `<start:end>` ranges and added legacy/mixed delimiter coverage.
+- 2026-01-19: Updated AST pattern validation and tokenizer to enforce `<...>` ranges/enums.
+- 2026-01-19: Ran parser unit tests.
 
 # Patch summary
-- 
+- Updated parser unit tests to use `<start:end>` syntax and cover legacy/mixed delimiter rejection.
+- Updated AST pattern group validation to allow `<...>` tokens only.
+- Updated pattern tokenization to parse `<start:end>` ranges and reject `[]` delimiters.
 
 # PR URL
 - 
 
 # Verification
-- 
+- `venv/bin/pytest tests/unit_tests/parser/test_pattern_atomization.py tests/unit_tests/parser/test_pattern_expansion.py tests/unit_tests/parser/test_parser.py -v`
 
 # Status request (Done / Blocked / In Progress)
 - In Progress
@@ -35,4 +40,4 @@
 - None.
 
 # Next steps
-- Inspect current validation/tokenization behavior and adjust for `<start:end>` ranges.
+- Open PR and finalize task status.
