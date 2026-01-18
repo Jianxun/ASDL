@@ -20,9 +20,9 @@ T-159:
   pr: 165
   merged: true
 T-164:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 166
+  merged: true
 T-165:
   status: ready
   pr: null

@@ -25,6 +25,7 @@ from asdl.ir.ifir import (
     ModuleOp,
     NetOp,
 )
+from asdl.ir.patterns import encode_pattern_expression_table, register_pattern_expression
 
 BACKEND_NAME = "sim.ngspice"
 
@@ -746,6 +747,18 @@ def test_emit_netlist_uses_atomized_instance_params() -> None:
 
 
 def test_emit_netlist_uses_literal_names_from_atomized_patterns() -> None:
+    table = {}
+    inst_expr_id = register_pattern_expression(
+        table,
+        expression="M<1|2>",
+        kind="inst",
+    )
+    net_expr_id = register_pattern_expression(
+        table,
+        expression="OUT<P|N>",
+        kind="net",
+    )
+    pattern_table_attr = encode_pattern_expression_table(table)
     backend = BackendOp(
         name=BACKEND_NAME,
         template="{name} {ports} {model}",
@@ -760,7 +773,7 @@ def test_emit_netlist_uses_literal_names_from_atomized_patterns() -> None:
             ConnAttr(StringAttr("G"), StringAttr("VSS")),
             ConnAttr(StringAttr("S"), StringAttr("VSS")),
         ],
-        pattern_origin="M<1|2>",
+        pattern_origin=(inst_expr_id, 0, "M", [1]),
     )
     inst_n = InstanceOp(
         name="M2",
@@ -770,14 +783,15 @@ def test_emit_netlist_uses_literal_names_from_atomized_patterns() -> None:
             ConnAttr(StringAttr("G"), StringAttr("VSS")),
             ConnAttr(StringAttr("S"), StringAttr("VSS")),
         ],
-        pattern_origin="M<1|2>",
+        pattern_origin=(inst_expr_id, 0, "M", [2]),
     )
     module = ModuleOp(
         name="top",
         port_order=["OUTP", "OUTN", "VSS"],
+        pattern_expression_table=pattern_table_attr,
         region=[
-            NetOp(name="OUTP", pattern_origin="OUT<P|N>"),
-            NetOp(name="OUTN", pattern_origin="OUT<P|N>"),
+            NetOp(name="OUTP", pattern_origin=(net_expr_id, 0, "OUT", ["P"])),
+            NetOp(name="OUTN", pattern_origin=(net_expr_id, 0, "OUT", ["N"])),
             NetOp(name="VSS"),
             inst_p,
             inst_n,

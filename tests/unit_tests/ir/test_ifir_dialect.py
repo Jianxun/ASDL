@@ -11,6 +11,7 @@ from xdsl.parser import Parser
 from xdsl.printer import Printer
 from xdsl.utils.exceptions import VerifyException
 
+from asdl.ir.graphir import ASDL_GRAPHIR
 from asdl.ir.ifir import (
     ASDL_IFIR,
     BackendOp,
@@ -21,6 +22,8 @@ from asdl.ir.ifir import (
     ModuleOp,
     NetOp,
 )
+from asdl.ir.graphir import GraphPatternOriginAttr
+from asdl.ir.patterns import encode_pattern_expression_table, register_pattern_expression
 
 
 def _print_op(op) -> str:
@@ -167,6 +170,7 @@ def test_design_roundtrip_print_parse() -> None:
     text = _print_op(design)
     ctx = Context()
     ctx.load_dialect(builtin.Builtin)
+    ctx.load_dialect(ASDL_GRAPHIR)
     ctx.load_dialect(ASDL_IFIR)
     parsed_module = Parser(ctx, text).parse_module()
     parsed_design = next(
@@ -176,16 +180,29 @@ def test_design_roundtrip_print_parse() -> None:
 
 
 def test_design_roundtrip_pattern_origin() -> None:
+    table = {}
+    net_expr_id = register_pattern_expression(
+        table,
+        expression="BUS<2:0>",
+        kind="net",
+    )
+    inst_expr_id = register_pattern_expression(
+        table,
+        expression="MN_<P|N>",
+        kind="inst",
+    )
+    pattern_table_attr = encode_pattern_expression_table(table)
     module = ModuleOp(
         name="top",
-        port_order=["VIN"],
+        port_order=["BUS2"],
+        pattern_expression_table=pattern_table_attr,
         region=[
-            NetOp(name="VIN", pattern_origin="BUS<2:0>"),
+            NetOp(name="BUS2", pattern_origin=(net_expr_id, 0, "BUS", [2])),
             InstanceOp(
-                name="M1",
+                name="MN_P",
                 ref="nfet",
-                conns=[ConnAttr(StringAttr("G"), StringAttr("VIN"))],
-                pattern_origin="MN_<P|N>",
+                conns=[ConnAttr(StringAttr("G"), StringAttr("BUS2"))],
+                pattern_origin=(inst_expr_id, 0, "MN_", ["P"]),
             ),
         ],
     )
@@ -201,6 +218,7 @@ def test_design_roundtrip_pattern_origin() -> None:
     text = _print_op(design)
     ctx = Context()
     ctx.load_dialect(builtin.Builtin)
+    ctx.load_dialect(ASDL_GRAPHIR)
     ctx.load_dialect(ASDL_IFIR)
     parsed_module = Parser(ctx, text).parse_module()
     parsed_design = next(
@@ -217,9 +235,19 @@ def test_design_roundtrip_pattern_origin() -> None:
     )
 
     assert parsed_net.pattern_origin is not None
-    assert parsed_net.pattern_origin.data == "BUS<2:0>"
+    assert isinstance(parsed_net.pattern_origin, GraphPatternOriginAttr)
+    assert parsed_net.pattern_origin.expression_id.data == net_expr_id
+    assert parsed_net.pattern_origin.base_name.data == "BUS"
+    assert [part.data for part in parsed_net.pattern_origin.pattern_parts.data] == [2]
     assert parsed_instance.pattern_origin is not None
-    assert parsed_instance.pattern_origin.data == "MN_<P|N>"
+    assert isinstance(parsed_instance.pattern_origin, GraphPatternOriginAttr)
+    assert parsed_instance.pattern_origin.expression_id.data == inst_expr_id
+    assert parsed_instance.pattern_origin.base_name.data == "MN_"
+    assert [part.data for part in parsed_instance.pattern_origin.pattern_parts.data] == [
+        "P"
+    ]
+    assert parsed_module_op.pattern_expression_table is not None
+    assert parsed_module_op.pattern_expression_table.data == pattern_table_attr.data
     assert _print_op(parsed_design) == text
 
 

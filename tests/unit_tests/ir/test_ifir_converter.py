@@ -205,19 +205,26 @@ def test_convert_graphir_pattern_origin_uses_expression_table() -> None:
         op for op in ifir_module.body.block.ops if isinstance(op, IfirInstanceOp)
     ]
 
+    assert ifir_module.pattern_expression_table is not None
+    assert ifir_module.pattern_expression_table.data == pattern_table_attr.data
+
     net_origins = {
-        net.name_attr.data: net.pattern_origin.data
+        net.name_attr.data: net.pattern_origin
         for net in nets
         if net.pattern_origin is not None
     }
     inst_origins = {
-        inst.name_attr.data: inst.pattern_origin.data
+        inst.name_attr.data: inst.pattern_origin
         for inst in instances
         if inst.pattern_origin is not None
     }
 
-    assert net_origins == {"OUTP": "OUT<P|N>", "OUTN": "OUT<P|N>"}
-    assert inst_origins == {"UP": "U<P|N>", "UN": "U<P|N>"}
+    assert {origin.expression_id.data for origin in net_origins.values()} == {net_expr_id}
+    assert {origin.expression_id.data for origin in inst_origins.values()} == {inst_expr_id}
+    assert [part.data for part in net_origins["OUTP"].pattern_parts.data] == ["P"]
+    assert [part.data for part in net_origins["OUTN"].pattern_parts.data] == ["N"]
+    assert [part.data for part in inst_origins["UP"].pattern_parts.data] == ["P"]
+    assert [part.data for part in inst_origins["UN"].pattern_parts.data] == ["N"]
 
 
 def test_convert_graphir_device_variables_to_ifir() -> None:

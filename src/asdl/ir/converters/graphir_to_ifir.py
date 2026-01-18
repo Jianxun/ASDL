@@ -145,17 +145,17 @@ def _convert_module(
         )
         had_error = True
 
-    pattern_table, pattern_table_error = _load_pattern_expression_table(
+    pattern_table, pattern_table_attr, pattern_table_error = _load_pattern_expression_table(
         module, diagnostics
     )
     had_error = had_error or pattern_table_error
     missing_table_reported = False
 
-    def resolve_pattern_expression(
+    def resolve_pattern_origin(
         origin: GraphPatternOriginAttr | None,
         expected_kind: PatternExpressionKind,
         label: str,
-    ) -> str | None:
+    ) -> GraphPatternOriginAttr | None:
         nonlocal had_error, missing_table_reported
         if origin is None:
             return None
@@ -200,7 +200,7 @@ def _convert_module(
             )
             had_error = True
             return None
-        return entry.expression
+        return origin
 
     inst_by_id: Dict[str, GraphInstanceOp] = {
         inst.inst_id.value.data: inst for inst in instances
@@ -210,7 +210,7 @@ def _convert_module(
 
     for net in nets:
         net_name = net.name_attr.data
-        pattern_origin = resolve_pattern_expression(
+        pattern_origin = resolve_pattern_origin(
             net.pattern_origin,
             "net",
             f"net '{net_name}'",
@@ -256,7 +256,7 @@ def _convert_module(
         if ref_name is None:
             continue
         conns = conn_map.get(inst_id, [])
-        pattern_origin = resolve_pattern_expression(
+        pattern_origin = resolve_pattern_origin(
             inst.pattern_origin,
             "inst",
             f"instance '{inst.name_attr.data}'",
@@ -280,6 +280,7 @@ def _convert_module(
             port_order=port_order,
             region=[*net_ops, *inst_ops],
             file_id=module.file_id,
+            pattern_expression_table=pattern_table_attr,
         ),
         diagnostics,
         had_error,
@@ -331,13 +332,13 @@ def _convert_device(
 def _load_pattern_expression_table(
     module: GraphModuleOp,
     diagnostics: List[Diagnostic],
-) -> Tuple[PatternExpressionTable | None, bool]:
+) -> Tuple[PatternExpressionTable | None, DictionaryAttr | None, bool]:
     pattern_table = None
     if module.attrs is None:
-        return pattern_table, False
+        return pattern_table, None, False
     table_attr = module.attrs.data.get(PATTERN_EXPRESSION_TABLE_KEY)
     if table_attr is None:
-        return pattern_table, False
+        return pattern_table, None, False
     if not isinstance(table_attr, DictionaryAttr):
         diagnostics.append(
             _diagnostic(
@@ -348,7 +349,7 @@ def _load_pattern_expression_table(
                 ),
             )
         )
-        return None, True
+        return None, None, True
     try:
         pattern_table = decode_pattern_expression_table(table_attr)
     except (TypeError, ValueError) as exc:
@@ -361,8 +362,8 @@ def _load_pattern_expression_table(
                 ),
             )
         )
-        return None, True
-    return pattern_table, False
+        return None, None, True
+    return pattern_table, table_attr, False
 
 
 def _resolve_ref(
