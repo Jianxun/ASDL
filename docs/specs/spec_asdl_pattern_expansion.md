@@ -212,7 +212,15 @@ If expansion produces duplicate atoms *within the same expanded list*:
 - Binding compares **total expansion length**; splicing (`;`) is flattened into
   a single list with no segment alignment.
 - If a net expands to length **N > 1**, every bound endpoint expression must expand
-  to **N**; binding is by index.
+  to **N**; binding is by index **unless** named-pattern broadcast applies.
+- **Named-pattern broadcast**: if both the net and endpoint expressions are built
+  only from named pattern groups (`<@name>`) and the net's named group sequence
+  appears in the endpoint's named group sequence in the same left-to-right order,
+  the endpoint may expand to **N * K** where **K** is the product of the endpoint's
+  extra named group lengths. Binding repeats the net list for each extra-axis
+  combination in the endpoint expansion order.
+  - If either expression contains an unnamed group (`<...>` without `@`), or if
+    the named group order does not match, the strict length rule applies.
 - If a net is scalar (length **1**), it may bind to endpoints of any length;
   each expanded endpoint binds to that single net (endpoints may differ in
   length).

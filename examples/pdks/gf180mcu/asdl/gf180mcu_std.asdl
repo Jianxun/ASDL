@@ -1,4 +1,34 @@
 devices:
+  inv_1:
+    ports: [A, Y, VPWR, VNB, VPB, VGND]
+    backends:
+      lvs.klayout:
+        template: 'X{name} {ports} gf180mcu_fd_sc_mcu9t5v0__inv_1'
+  inv_4:
+      ports: [A, Y, VPWR, VNB, VPB, VGND]
+      backends:
+        lvs.klayout:
+          template: 'X{name} {ports} gf180mcu_fd_sc_mcu9t5v0__inv_4'
+  inv_8:
+    ports: [A, Y, VPWR, VNB, VPB, VGND]
+    backends:
+      lvs.klayout:
+        template: 'X{name} {ports} gf180mcu_fd_sc_mcu9t5v0__inv_8'
+  inv_12:
+    ports: [A, Y, VPWR, VNB, VPB, VGND]
+    backends:
+      lvs.klayout:
+        template: 'X{name} {ports} gf180mcu_fd_sc_mcu9t5v0__inv_12'
+  inv_20:
+    ports: [A, Y, VPWR, VNB, VPB, VGND]
+    backends:
+      lvs.klayout:
+        template: 'X{name} {ports} gf180mcu_fd_sc_mcu9t5v0__inv_20'
+  nand2_1:
+    ports: [A, B, Y, VPWR, VNB, VPB, VGND]
+    backends:
+      lvs.klayout:
+        template: 'X{name} {ports} gf180mcu_fd_sc_mcu9t5v0__nand2_1'
   latq_1:
     ports: [D, EN, Q, VPWR, VNB, VPB, VGND]
     backends:

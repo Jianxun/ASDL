@@ -153,4 +153,42 @@ current_sprint:
       - tests/unit_tests/netlist/test_netlist_emitter.py
     links:
       scratchpad: agents/scratchpads/T-167_netlist_pattern_rendering.md
-backlog: []
+backlog:
+  - id: T-168
+    title: Capture named pattern group metadata for nets/endpoints
+    owner: Executor
+    dod: >
+      Record named pattern group sequences and unnamed-group flags for net names
+      and endpoint expressions before named pattern macro substitution, store
+      the metadata on ModuleDecl, and add a helper for downstream consumers.
+      Keep existing named pattern expansion behavior intact (expression table
+      stores expanded forms). Add unit tests that assert the metadata is
+      preserved for nets/endpoints using `<@name>` and that macro expansion
+      still occurs.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+    files:
+      - src/asdl/ast/models.py
+      - src/asdl/ast/named_patterns.py
+      - tests/unit_tests/ir/test_graphir_converter.py
+    links:
+      scratchpad: agents/scratchpads/T-168_named_pattern_metadata.md
+  - id: T-169
+    title: Implement named-pattern broadcast binding in GraphIR lowering
+    owner: Executor
+    depends_on:
+      - T-168
+    dod: >
+      Update GraphIR net lowering to allow named-pattern broadcast when net and
+      endpoint expressions use only named groups and the net's named-group
+      sequence appears in the endpoint in the same order. Bind by repeating the
+      net list across endpoint extra axes in expansion order, and emit a clear
+      diagnostic when named groups are out of order or mixed with unnamed groups.
+      Add unit tests covering the bus broadcast case and a rejected mismatch.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+    files:
+      - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
+      - tests/unit_tests/ir/test_graphir_converter.py
+    links:
+      scratchpad: agents/scratchpads/T-169_named_pattern_broadcast_binding.md

@@ -20,18 +20,26 @@ T-159:
   pr: 165
   merged: true
 T-164:
-  status: done
-  pr: 166
-  merged: true
+  status: ready
+  pr: null
+  merged: false
 T-165:
-  status: done
-  pr: 167
-  merged: true
+  status: ready
+  pr: null
+  merged: false
 T-166:
-  status: done
-  pr: 168
-  merged: true
+  status: ready
+  pr: null
+  merged: false
 T-167:
-  status: done
-  pr: 169
-  merged: true
+  status: ready
+  pr: null
+  merged: false
+T-168:
+  status: backlog
+  pr: null
+  merged: false
+T-169:
+  status: backlog
+  pr: null
+  merged: false

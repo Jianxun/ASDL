@@ -1,0 +1,29 @@
+modules:
+  full_switch_matrix_130_by_25_no_probes:
+
+  
+    patterns:
+        ROW: <130:1>
+        BUS: <25:1>
+
+    instances:
+      sw_row<@ROW>: swmatrix_row_25_w_clkbuf.swmatrix_row_25_w_clkbuf
+
+    nets:
+      # data chain
+      $data: sw_row<1>.D_in
+      $D_out: [sw_row<130>.D_out]
+      D<129:1>: [sw_row<130:2>.D_in, sw_row<129:1>.D_out]
+
+      # clock broadcast
+      $PHI_1_in: [sw_row<@ROW>.PHI_1]
+      $PHI_2_in: [sw_row<@ROW>.PHI_2]
+      $enable_in: [sw_row<@ROW>.enable]
+
+      # buses and pins
+      $BUS<@BUS>: [sw_row<@ROW>.BUS<@BUS>] # need bus broadcast binding rules...
+      $pin<@ROW>: [sw_row<@ROW>.pin]
+
+      # power
+      $VDDd: [sw_row<@ROW>.VDDd]
+      $VSSd: [sw_row<@ROW>.VSSd]
