@@ -12,8 +12,8 @@ T-157:
   pr: 163
   merged: true
 T-158:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 164
   merged: false
 T-159:
   status: ready
