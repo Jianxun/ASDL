@@ -8,7 +8,7 @@ T-156:
   pr: 160
   merged: true
 T-157:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-158:
