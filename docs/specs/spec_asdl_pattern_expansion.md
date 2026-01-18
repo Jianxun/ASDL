@@ -55,6 +55,9 @@ Named patterns provide module-local aliases for single-group pattern tokens.
 ```yaml
 patterns:
   <name>: <pattern-group>
+  <name2>:
+    expr: <pattern-group>
+    tag: <axis-id>
 ```
 
 **Syntax (reference)**
@@ -63,14 +66,21 @@ patterns:
 ```
 
 **Semantics**
-- `<@name>` is replaced by the referenced **group token** before expansion.
+- `<@name>` is replaced by the referenced **group token** (`expr`) before expansion.
 - Substitution is purely textual and happens prior to any expansion or binding.
+- Axis metadata (axis_id, source span) is recorded before substitution and used
+  for binding checks and diagnostics.
 
 **Rules**
 - `patterns` are **module-local** only.
 - Pattern names must match `[A-Za-z_][A-Za-z0-9_]*`.
 - Pattern values must be a **single group token**: `<...>` using `|` for enums
   or `:` for ranges.
+- Object patterns may use only `expr` (required) and `tag` (optional).
+- `tag`, when present, must match `[A-Za-z_][A-Za-z0-9_]*`.
+- `axis_id = tag` if present, otherwise `axis_id = pattern name`.
+- If multiple patterns share an `axis_id`, their expansion lengths must match
+  (validated at definition time).
 - Named patterns must not reference other named patterns (no recursion).
 - Undefined names are errors.
 
@@ -211,16 +221,20 @@ If expansion produces duplicate atoms *within the same expanded list*:
 
 - Binding compares **total expansion length**; splicing (`;`) is flattened into
   a single list with no segment alignment.
-- If a net expands to length **N > 1**, every bound endpoint expression must expand
-  to **N**; binding is by index **unless** named-pattern broadcast applies.
-- **Named-pattern broadcast**: if both the net and endpoint expressions are built
-  only from named pattern groups (`<@name>`) and the net's named group sequence
-  appears in the endpoint's named group sequence in the same left-to-right order,
-  the endpoint may expand to **N * K** where **K** is the product of the endpoint's
-  extra named group lengths. Binding repeats the net list for each extra-axis
-  combination in the endpoint expansion order.
-  - If either expression contains an unnamed group (`<...>` without `@`), or if
-    the named group order does not match, the strict length rule applies.
+- Axis identity uses `axis_id` (tag if present, otherwise pattern name). Each
+  `axis_id` may appear at most once per expression; duplicates are errors.
+- If a net expands to length **N > 1**:
+  - If the endpoint expands to **N**, binding is by index.
+  - If the endpoint expands to a different length:
+    - If either expression contains an unnamed group (`<...>` without `@`),
+      broadcast is disallowed and the binding is an error.
+    - Otherwise, **named-axis broadcast** applies only when the net's axis_id
+      sequence appears as a left-to-right subsequence of the endpoint's axis_id
+      sequence, and all shared axis_ids have equal lengths. If any check fails,
+      the binding is an error.
+    - When the checks pass, the endpoint may expand to **N * K** where **K** is
+      the product of the endpoint's extra axis lengths. Binding repeats the net
+      list for each extra-axis combination in endpoint expansion order.
 - If a net is scalar (length **1**), it may bind to endpoints of any length;
   each expanded endpoint binds to that single net (endpoints may differ in
   length).
@@ -234,6 +248,45 @@ If expansion produces duplicate atoms *within the same expanded list*:
 - Equivalence checks use the fully expanded string atoms (e.g., `MN<A|B>` is
   equivalent to `MN_A` and `MN_B`). Binding verification and elaboration must
   share the same equivalence helper.
+
+### Examples
+
+Valid broadcast with extra axis in the endpoint:
+
+```yaml
+patterns:
+  cell: <99:0>
+  pol: <p|n>
+  bus: <7:0>
+
+nets:
+  net<@bus><@pol>: [cell<@cell><@bus>.<@pol>]
+```
+
+Valid broadcast with tagged axis identity across differing ranges:
+
+```yaml
+patterns:
+  cell: <99:0>
+  pol: {expr: <p|n>, tag: pol}
+  pol_b: {expr: <n|p>, tag: pol}
+  bus: <7:0>
+
+nets:
+  net<@bus><@pol>: [cell<@bus><@cell>.<@pol_b>]
+```
+
+Invalid broadcast when axis order breaks the subsequence rule:
+
+```yaml
+patterns:
+  cell: <99:0>
+  pol: <p|n>
+  bus: <7:0>
+
+nets:
+  net<@bus><@pol>: [cell<@pol><@bus>.<@pol>]
+```
 
 ---
 

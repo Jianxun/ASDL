@@ -92,14 +92,32 @@ instances:
 ## `PatternsBlock`
 
 ### AST shape
-- `PatternsBlock` is an ordered mapping: `Dict[str, str]`.
-- Values must be a **single group token**: `<...>` using `|` for enums or `:` for ranges.
+- `PatternsBlock` is an ordered mapping: `Dict[str, PatternDecl]`.
+- `PatternDecl` is either:
+  - a string **group token**: `<...>` using `|` for enums or `:` for ranges, or
+  - an object with:
+    - `expr: str` (required group token)
+    - `tag: Optional[str]` (axis identifier override)
+
+Example:
+```yaml
+patterns:
+  BUS25: <25:1>
+  BUS0:
+    expr: <24:0>
+    tag: BUS
+```
 
 ### Notes
 - Named pattern references use `<@name>`.
 - `patterns` are module-local only.
 - Named patterns must not reference other named patterns.
 - Pattern names must match `[A-Za-z_][A-Za-z0-9_]*`.
+- `expr` must be a single group token (`<...>`); `<@...>` is not allowed in `expr`.
+- `tag`, when present, must match `[A-Za-z_][A-Za-z0-9_]*`.
+- `axis_id = tag` if present, otherwise `axis_id = pattern name`.
+- If multiple patterns share an `axis_id`, their expansion lengths must match
+  (validated at definition time).
 
 ---
 
@@ -196,7 +214,9 @@ instances:
 - `DeviceBackendDecl.template` must exist and be a string.
 - `InstancesBlock` entries must be `InstanceExpr` strings.
 - `NetsBlock` values must be `EndpointListExpr` lists of strings.
-- `PatternsBlock` values must be strings.
+- `PatternsBlock` values must be strings or `{expr, tag}` objects; `expr` is required
+  and `tag` is optional, and no other keys are permitted.
+- `PatternsBlock` entries sharing an `axis_id` must have identical expansion lengths.
 - `InstanceDefaultsDecl.bindings` values must be strings.
 
 ---

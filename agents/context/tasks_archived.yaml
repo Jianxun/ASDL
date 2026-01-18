@@ -100,3 +100,5 @@ archive:
   - T-165: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-165_ifir_pattern_docs.md, pr: 167}
   - T-166: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-166_backend_pattern_render_config.md, pr: 168}
   - T-167: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-167_netlist_pattern_rendering.md, pr: 169}
+  - T-168: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-168_named_pattern_metadata.md, pr: null}
+  - T-169: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-169_named_pattern_broadcast_binding.md, pr: null}

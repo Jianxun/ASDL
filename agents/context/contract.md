@@ -25,6 +25,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Netlist emission uses backend names (e.g., `sim.ngspice`) as stable identifiers in CLI and config; the CLI exposes `--backend` with default `sim.ngspice`.
 - Backend config schema (`config/backends.yaml` or `ASDL_BACKEND_CONFIG`) must include per-backend `templates`, `extension` (verbatim output suffix), and `comment_prefix`.
 - Net-first authoring uses YAML map order for `nets:` when order matters; port order derives from `$`-prefixed net keys in `nets` first, then `$`-prefixed nets first-seen in `instance_defaults` bindings (deterministic order). The parser must preserve source order. Internal IR uses explicit lists; uniqueness is enforced by verification passes, not by dict key uniqueness.
+- Pattern definitions may be strings or `{expr, tag}` objects; `axis_id` derives from `tag` when present, otherwise the pattern name. Tags/axis_id are module-local and drive tagged-axis broadcast binding diagnostics.
 - Diagnostic schema is centralized (code, severity, message, primary span, labels, notes, help, fix-its, source); locations use file + line/col spans; all pipeline stages emit diagnostics via this contract.
 - Deprecated: AST->NFIR converter returns `(DesignOp | None, diagnostics)`; invalid instance or endpoint tokens emit `IR-001`/`IR-002` with `Severity.ERROR` and return `None`. Retained for legacy/roundtrip use only.
 - CLI exposes `ir-dump` to emit canonical GraphIR/IFIR textual IR (`--ir graphir|ifir`), with deterministic output that preserves region order and attribute insertion order.
@@ -79,7 +80,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - ADR-0016: Variables blocks at module/device/backend scopes; `params` renamed to `parameters`.
 - ADR-0017 (Proposed): Unified pattern group delimiters using `<...>` for enums and ranges.
 - ADR-0018 (Proposed): Backend pattern rendering policy for numeric parts.
-- ADR-0019 (Proposed): Named-pattern broadcast binding for bus fanout.
+- ADR-0020 (Proposed): Tagged pattern axes for broadcast binding (supersedes ADR-0019).
 
 - 2026-01-16: ADR-0014 -- GraphIR is the canonical semantic core with stable IDs; GraphIR defines program/module/device/net/instance/endpoint ops and module port_order; IFIR is a projection and NFIR is optional.
 - 2026-01-17: ADR-0015 -- GraphIR stores only atomized names; pattern provenance is attached to ops via typed pattern_origin pointing to a module attrs expression table; endpoint expressions expand as a whole then split on `.`.
@@ -87,6 +88,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-01-18: ADR-0017 -- Unify pattern group delimiters: enums and numeric ranges use `<...>` with `|` or `:`; ranges emit integer pattern parts and enums emit strings.
 - 2026-01-18: ADR-0018 -- Add backend pattern rendering policies to format numeric pattern parts (e.g., bracketed indices) during emission.
 - 2026-01-18: ADR-0019 -- Allow explicit named-pattern broadcast binding when net axes are a subset of endpoint axes.
+- 2026-01-19: ADR-0020 -- Tagged pattern axes for broadcast binding; axis_id derives from tag/name, match by subsequence with explicit errors; supersedes ADR-0019.
 - 2026-01-01: Net-first authoring schema infers ports only from `$`-prefixed net keys in `nets:`; inline pin bindings never create ports. Port order follows YAML source order of `$` nets. LHS `*` is invalid without an explicit domain (`<...>` or `[...]`). (Superseded 2026-01-11)
 - 2026-01-11: Inline pin bindings may introduce `$`-prefixed nets, which create ports if not already declared in `nets:`. Port order is `$` nets from `nets` first, then `$` nets first-seen in inline bindings. Rationale: avoid declaring ports solely for hierarchy wiring. Migration: remove `$` prefix in inline bindings to keep nets internal; or keep ports explicit in `nets` to control order. (Superseded 2026-01-12, ADR-0007)
 - 2026-01-12: ADR-0007 -- Inline pin bindings are removed in favor of `instance_defaults`. Defaults apply per instance `ref`; explicit `nets` bindings override defaults and emit warnings unless suppressed by `!inst.pin`. `$` nets introduced by defaults create ports after explicit `$` nets.
