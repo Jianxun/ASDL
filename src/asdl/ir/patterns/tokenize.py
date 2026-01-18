@@ -31,10 +31,10 @@ def _split_splice_segments(
     """
     segments: List[str] = []
     buffer: List[str] = []
-    state: Optional[str] = None
+    state: bool = False
 
     for char in expression:
-        if state is None:
+        if not state:
             if char == ";":
                 if not allow_splice:
                     return None, _diagnostic(
@@ -45,10 +45,8 @@ def _split_splice_segments(
                 buffer = []
                 continue
             if char == "<":
-                state = "enum"
-            elif char == "[":
-                state = "range"
-            elif char in ("]", ">"):
+                state = True
+            elif char in ("[", "]", ">"):
                 return None, _diagnostic(
                     PATTERN_UNEXPANDED,
                     f"Unexpected '{char}' in pattern expression '{expression}'.",
@@ -67,13 +65,16 @@ def _split_splice_segments(
                     PATTERN_UNEXPANDED,
                     f"Nested pattern delimiters are not allowed in '{expression}'.",
                 )
-            if state == "enum" and char == ">":
-                state = None
-            elif state == "range" and char == "]":
-                state = None
+            if char == ">":
+                state = False
+            elif char == "]":
+                return None, _diagnostic(
+                    PATTERN_UNEXPANDED,
+                    f"Unexpected '{char}' in pattern expression '{expression}'.",
+                )
         buffer.append(char)
 
-    if state is not None:
+    if state:
         return None, _diagnostic(
             PATTERN_UNEXPANDED,
             f"Unterminated pattern delimiter in '{expression}'.",
@@ -112,35 +113,28 @@ def _tokenize_segment(
                     f"Unterminated enumeration in '{expression}'.",
                 )
             content = segment[index + 1 : close]
-            diag = _validate_enum_content(content, expression)
-            if diag is not None:
-                return None, diag
-            alts = content.split("|") if content else []
-            if any(alt == "" for alt in alts):
-                return None, _diagnostic(PATTERN_EMPTY_ENUM, _empty_enum_message(expression))
-            tokens.append(("enum", alts))
+            if ":" in content:
+                if "|" in content:
+                    return None, _diagnostic(
+                        PATTERN_INVALID_RANGE,
+                        _invalid_range_message(expression),
+                    )
+                range_value, diag = _parse_range_content(content, expression)
+                if diag is not None:
+                    return None, diag
+                tokens.append(("range", range_value))
+            else:
+                diag = _validate_enum_content(content, expression)
+                if diag is not None:
+                    return None, diag
+                alts = content.split("|") if content else []
+                if any(alt == "" for alt in alts):
+                    return None, _diagnostic(PATTERN_EMPTY_ENUM, _empty_enum_message(expression))
+                tokens.append(("enum", alts))
             index = close + 1
             continue
 
-        if char == "[":
-            if literal:
-                tokens.append(("literal", "".join(literal)))
-                literal = []
-            close = segment.find("]", index + 1)
-            if close == -1:
-                return None, _diagnostic(
-                    PATTERN_UNEXPANDED,
-                    f"Unterminated numeric range in '{expression}'.",
-                )
-            content = segment[index + 1 : close]
-            range_value, diag = _parse_range_content(content, expression)
-            if diag is not None:
-                return None, diag
-            tokens.append(("range", range_value))
-            index = close + 1
-            continue
-
-        if char in "|]>":
+        if char in ("[", "]", "|", ">"):
             return None, _diagnostic(
                 PATTERN_UNEXPANDED,
                 f"Unexpected '{char}' in pattern expression '{expression}'.",

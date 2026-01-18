@@ -43,7 +43,7 @@ def _endpoint(
 
 
 def test_atomize_pattern_splice_order_and_origin() -> None:
-    token = "OUT<P|N>;CLK[1:0]"
+    token = "OUT<P|N>;CLK<1:0>"
     atoms, diagnostics = atomize_pattern(token)
 
     assert diagnostics == []
@@ -56,7 +56,7 @@ def test_atomize_pattern_splice_order_and_origin() -> None:
 
 
 def test_atomize_pattern_base_less() -> None:
-    token = "<INP|INN>;[2:0]"
+    token = "<INP|INN>;<2:0>"
     atoms, diagnostics = atomize_pattern(token)
 
     assert diagnostics == []
@@ -78,7 +78,7 @@ def test_atomize_pattern_single_atom_origin_preserves_pattern_token() -> None:
 
 
 def test_atomize_pattern_rejects_invalid_range() -> None:
-    atoms, diagnostics = atomize_pattern("BUS[3:]")
+    atoms, diagnostics = atomize_pattern("BUS<3:>")
 
     assert atoms is None
     assert len(diagnostics) == 1
