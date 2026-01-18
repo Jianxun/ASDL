@@ -71,6 +71,22 @@ def test_expand_rejects_invalid_range() -> None:
     assert diagnostics[0].code == PATTERN_INVALID_RANGE
 
 
+def test_expand_rejects_legacy_range_delimiters() -> None:
+    expanded, diagnostics = expand_pattern("BUS[3:0]")
+
+    assert expanded is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == PATTERN_UNEXPANDED
+
+
+def test_expand_rejects_mixed_group_delimiters() -> None:
+    expanded, diagnostics = expand_pattern("BUS<0:1|2>")
+
+    assert expanded is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == PATTERN_INVALID_RANGE
+
+
 def test_expand_rejects_unterminated_enum() -> None:
     expanded, diagnostics = expand_pattern("BUS<0|1")
 
