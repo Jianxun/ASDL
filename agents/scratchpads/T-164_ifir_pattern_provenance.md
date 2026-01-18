@@ -15,7 +15,7 @@
 - [x] Update GraphIR->IFIR conversion to propagate pattern origin attrs + table.
 - [x] Refresh IFIR dialect/converter tests for structured metadata.
 - [x] Run targeted IFIR tests.
-- [ ] Open PR and finalize task status.
+- [x] Open PR and finalize task status.
 
 # Progress log
 - 2026-01-19: Initialized scratchpad and set task to in progress.
@@ -23,6 +23,7 @@
 - 2026-01-19: Updated GraphIR->IFIR conversion to pass through pattern provenance metadata.
 - 2026-01-19: Refreshed IFIR/netlist tests for structured pattern metadata.
 - 2026-01-19: Ran IFIR unit tests.
+- 2026-01-19: Opened PR #166.
 
 # Patch summary
 - Added IFIR pattern provenance attributes and module expression table metadata.
@@ -30,16 +31,16 @@
 - Refreshed IFIR dialect/converter and netlist tests for new metadata.
 
 # PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/166
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/ir/test_ifir_dialect.py tests/unit_tests/ir/test_ifir_converter.py -v`
 
 # Status request (Done / Blocked / In Progress)
-- In Progress.
+- Done
 
 # Blockers / Questions
 - None.
 
 # Next steps
-- Open PR and finalize task status.
+- Await review feedback.
