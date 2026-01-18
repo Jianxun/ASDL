@@ -9,6 +9,8 @@ from asdl.diagnostics import Severity
 from asdl.emit.netlist import emit_netlist
 from asdl.ir.ifir import InstanceOp, ModuleOp, NetOp
 from asdl.ir.pipeline import run_mvp_pipeline
+from asdl.ir.patterns import decode_pattern_expression_table
+from asdl.ir.patterns.origin import lookup_pattern_origin_entry
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -247,13 +249,21 @@ def test_pipeline_atomizes_patterns_before_emission() -> None:
     assert [net.name_attr.data for net in nets] == ["OUTP", "OUTN"]
     assert [inst.name_attr.data for inst in instances] == ["UP", "UN"]
 
+    assert ifir_module.pattern_expression_table is not None
+    pattern_table = decode_pattern_expression_table(
+        ifir_module.pattern_expression_table
+    )
     net_origins = {
-        net.name_attr.data: net.pattern_origin.data
+        net.name_attr.data: lookup_pattern_origin_entry(
+            net.pattern_origin, pattern_table
+        ).expression
         for net in nets
         if net.pattern_origin is not None
     }
     inst_origins = {
-        inst.name_attr.data: inst.pattern_origin.data
+        inst.name_attr.data: lookup_pattern_origin_entry(
+            inst.pattern_origin, pattern_table
+        ).expression
         for inst in instances
         if inst.pattern_origin is not None
     }

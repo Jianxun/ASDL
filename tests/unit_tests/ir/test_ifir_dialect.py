@@ -11,6 +11,7 @@ from xdsl.parser import Parser
 from xdsl.printer import Printer
 from xdsl.utils.exceptions import VerifyException
 
+from asdl.ir.graphir import ASDL_GRAPHIR
 from asdl.ir.ifir import (
     ASDL_IFIR,
     BackendOp,
@@ -169,6 +170,7 @@ def test_design_roundtrip_print_parse() -> None:
     text = _print_op(design)
     ctx = Context()
     ctx.load_dialect(builtin.Builtin)
+    ctx.load_dialect(ASDL_GRAPHIR)
     ctx.load_dialect(ASDL_IFIR)
     parsed_module = Parser(ctx, text).parse_module()
     parsed_design = next(
@@ -216,6 +218,7 @@ def test_design_roundtrip_pattern_origin() -> None:
     text = _print_op(design)
     ctx = Context()
     ctx.load_dialect(builtin.Builtin)
+    ctx.load_dialect(ASDL_GRAPHIR)
     ctx.load_dialect(ASDL_IFIR)
     parsed_module = Parser(ctx, text).parse_module()
     parsed_design = next(

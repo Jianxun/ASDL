@@ -10,6 +10,7 @@ from xdsl.passes import ModulePass, PassPipeline
 from asdl.diagnostics import Diagnostic, Severity
 from asdl.diagnostics.collector import DiagnosticCollector
 from asdl.emit.backend_config import BackendConfig, validate_system_devices
+from asdl.ir.graphir import ASDL_GRAPHIR
 from asdl.ir.ifir import ASDL_IFIR, DesignOp, InstanceOp
 
 from .diagnostics import (
@@ -212,5 +213,6 @@ def _run_netlist_verification(
 def _build_context() -> Context:
     ctx = Context()
     ctx.load_dialect(builtin.Builtin)
+    ctx.load_dialect(ASDL_GRAPHIR)
     ctx.load_dialect(ASDL_IFIR)
     return ctx

@@ -443,7 +443,7 @@ ASDL_IFIR = Dialect(
         DeviceOp,
         BackendOp,
     ],
-    [ConnAttr, GraphPatternOriginAttr],
+    [ConnAttr],
 )
 
 
