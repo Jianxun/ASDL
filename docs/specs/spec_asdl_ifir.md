@@ -12,7 +12,8 @@ and is the final pre-emission representation for backend output.
 - Named-only connections (no positional conns).
 - Explicit net objects are declared per module.
 - Pattern tokens are expanded before IFIR; IFIR names are literal.
-- Optional `pattern_origin` metadata may preserve provenance.
+- Optional structured `pattern_origin` metadata preserves provenance; modules may
+  carry a `pattern_expression_table` keyed by expression IDs.
 - Model names are literals; patterns are forbidden in model names.
 
 ---
@@ -37,6 +38,8 @@ and is the final pre-emission representation for backend output.
 **Attributes**
 - `sym_name: StringAttr`
 - `file_id: StringAttr`
+- `pattern_expression_table: DictionaryAttr?`
+  - Module-local table mapping pattern expression IDs to metadata entries.
 - `port_order: ArrayAttr<StringAttr>`
   - Ordered list of port names derived from `$` nets (carried from GraphIR).
   - Port names are stored without the `$` prefix and are literal.
@@ -51,7 +54,7 @@ and is the final pre-emission representation for backend output.
 - `name: StringAttr`
   - Net name; literal (post-expansion).
 - `net_type: StringAttr?`
-- `pattern_origin: StringAttr?`
+- `pattern_origin: graphir.pattern_origin?`
 - `src: LocAttr?`
 
 ### `asdl_ifir.instance`
@@ -65,7 +68,7 @@ and is the final pre-emission representation for backend output.
 - `params: DictAttr?`
   - Instance parameters parsed from AST after module variable substitution.
 - `conns: ArrayAttr<asdl_ifir.conn>`  (**named-only**)
-- `pattern_origin: StringAttr?`
+- `pattern_origin: graphir.pattern_origin?`
 - `doc: StringAttr?`
 - `src: LocAttr?`
 
@@ -103,20 +106,61 @@ and is the final pre-emission representation for backend output.
 
 ---
 
+## Pattern provenance
+
+IFIR preserves pattern provenance from GraphIR using structured metadata.
+
+### `pattern_origin`
+
+Each atomized net or instance may carry `graphir.pattern_origin`:
+
+```
+PatternOrigin {
+  expression_id: str
+  segment_index: int            # 0-based segment position
+  base_name: str
+  pattern_parts: list[str | int]
+}
+```
+
+Rules:
+- `expression_id` refers to a module-local expression table entry.
+- `segment_index` counts `;`-separated segments within the expression.
+- `pattern_origin` is provenance only; identity uses the literal atomized name.
+
+### `pattern_expression_table`
+
+Modules store a table under `pattern_expression_table` that maps `expression_id`
+to:
+
+```
+PatternExpressionTableEntry {
+  expression: str
+  kind: net | inst | endpoint | param
+  span?: SourceSpan
+}
+```
+
+Entries are registered during GraphIR construction and copied into IFIR.
+
+---
+
 ## Derivation rules (GraphIR -> IFIR)
 - GraphIR verification must run and succeed before projection.
 - `asdl_ifir.design.top` is the entry module name (if entry is set).
 - `asdl_ifir.design.entry_file_id` is the entry module `file_id` (if entry is set).
 - For each GraphIR module:
   - copy `sym_name`, `file_id`, and `port_order` from module attributes.
+  - copy `pattern_expression_table` from module attributes when present.
   - expand pattern bundles into literal atoms and create one `asdl_ifir.net`
-    per net atom; set `pattern_origin` when derived from a pattern token.
+    per net atom; set `pattern_origin` when derived from a pattern token and
+    validated against the expression table.
   - invert GraphIR endpoints into instance conns:
     - for each endpoint atom, add a conn `{port=<port_literal>, net=<net_literal>}`
       to the matching instance.
 - For each GraphIR instance:
   - create one IFIR instance per atomized name; set `pattern_origin` when derived
-    from a pattern token.
+    from a pattern token and validated against the expression table.
   - set `ref` and `ref_file_id` from the resolved `SymbolRef`.
 - Devices and their backends are copied 1:1 from GraphIR, including `file_id`.
 
@@ -124,6 +168,9 @@ and is the final pre-emission representation for backend output.
 
 ## Verification (IFIR, pre-emission)
 - All net, instance, and port names are literal; pattern delimiters are forbidden.
+- If any net or instance has `pattern_origin`, the module must provide
+  `pattern_expression_table`, and each `expression_id` must exist with matching
+  `kind` (net or inst).
 - Net names are unique within a module.
 - Instance names are unique within a module.
 - Each instance's `conns` list has unique `port` names.
