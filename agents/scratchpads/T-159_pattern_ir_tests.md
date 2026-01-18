@@ -10,23 +10,27 @@
 - `agents/context/project_status.md`
 
 # Plan
-- [ ] Review GraphIR lowering and IFIR delimiter checks for pattern detection.
-- [ ] Update delimiter detection to remove `[`/`]` and rely on `<`, `>`, `|`, `;`.
-- [ ] Refresh IR unit tests and expected pattern_origin strings for `<start:end>` ranges.
-- [ ] Run targeted IR tests.
+- [x] Review GraphIR lowering and IFIR delimiter checks for pattern detection.
+- [x] Update delimiter detection to remove `[`/`]` and rely on `<`, `>`, `|`, `;`.
+- [x] Refresh IR unit tests and expected pattern_origin strings for `<start:end>` ranges.
+- [x] Run targeted IR tests.
 - [ ] Open PR and finalize task status.
 
 # Progress log
 - 2026-01-19: Initialized scratchpad and set task to in progress.
+- 2026-01-19: Updated IR tests to use `<start:end>` ranges and refreshed pattern origin strings.
+- 2026-01-19: Updated GraphIR lowering + IFIR delimiter checks to drop `[]` and include `|`.
+- 2026-01-19: Ran IR unit tests for pattern engine and IFIR dialect.
 
 # Patch summary
-- TBD.
+- Updated IR unit tests to use `<start:end>` ranges and adjusted pattern_origin expectations.
+- Updated GraphIR lowering and IFIR delimiter detection to drop `[`/`]` and include `|`.
 
 # PR URL
 - TBD.
 
 # Verification
-- TBD.
+- `venv/bin/pytest tests/unit_tests/ir/test_pattern_engine.py tests/unit_tests/ir/test_ifir_dialect.py -v`
 
 # Status request (Done / Blocked / In Progress)
 - In Progress
@@ -35,4 +39,4 @@
 - None.
 
 # Next steps
-- Update delimiter detection and tests, then run verification.
+- Open PR and finalize task status.
