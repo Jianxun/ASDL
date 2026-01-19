@@ -81,17 +81,49 @@ def test_module_rejects_extra_fields() -> None:
 def test_module_accepts_patterns_and_instance_defaults() -> None:
     module = ModuleDecl.model_validate(
         {
-            "patterns": {"k": "<1|2>"},
+            "patterns": {"k": "<1|2>", "bus": {"expr": "<A|B>", "tag": "axis"}},
             "instance_defaults": {"mos": {"bindings": {"B": "$VSS"}}},
         }
     )
-    assert module.patterns == {"k": "<1|2>"}
+    assert module.patterns is not None
+    assert module.patterns["k"] == "<1|2>"
+    assert module.patterns["bus"].expr == "<A|B>"
+    assert module.patterns["bus"].tag == "axis"
+    assert module.pattern_axis_id("k") == "k"
+    assert module.pattern_axis_id("bus") == "axis"
     assert module.instance_defaults["mos"].bindings == {"B": "$VSS"}
 
 
 def test_module_rejects_invalid_pattern_group() -> None:
     with pytest.raises(ValidationError):
         ModuleDecl.model_validate({"patterns": {"k": "MN<1|2>"}})
+
+
+def test_module_rejects_invalid_pattern_object_expr() -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"patterns": {"k": {"expr": "MN<1|2>"}}})
+
+
+def test_module_rejects_pattern_object_extra_keys() -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate(
+            {"patterns": {"k": {"expr": "<1|2>", "tag": "axis", "extra": "nope"}}}
+        )
+
+
+def test_module_rejects_pattern_object_missing_expr() -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"patterns": {"k": {"tag": "axis"}}})
+
+
+def test_module_rejects_pattern_object_non_string_tag() -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"patterns": {"k": {"expr": "<1|2>", "tag": 123}}})
+
+
+def test_module_rejects_pattern_object_invalid_tag_name() -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"patterns": {"k": {"expr": "<1|2>", "tag": "<1|2>"}}})
 
 
 def test_module_rejects_instance_defaults_missing_bindings() -> None:

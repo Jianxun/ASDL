@@ -13,6 +13,7 @@ from .models import (
     ModuleDecl,
     NetsBlock,
     PatternsBlock,
+    PatternDecl,
     ParamValue,
 )
 from .location import Locatable, LocationIndex
@@ -42,6 +43,7 @@ __all__ = [
     "InstancesBlock",
     "NetsBlock",
     "PatternsBlock",
+    "PatternDecl",
     "AST_NAMED_PATTERN_INVALID",
     "AST_NAMED_PATTERN_UNDEFINED",
     "AST_NAMED_PATTERN_RECURSIVE",

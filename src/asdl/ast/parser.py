@@ -13,7 +13,7 @@ from ruamel.yaml.nodes import MappingNode, ScalarNode
 
 from ..diagnostics import Diagnostic, Severity, SourcePos, SourceSpan
 from .location import Locatable, LocationIndex, PathSegment, to_plain
-from .models import AsdlDocument, AstBaseModel, InstanceDefaultsDecl, ModuleDecl
+from .models import AsdlDocument, AstBaseModel, InstanceDefaultsDecl, ModuleDecl, PatternDecl
 
 PARSE_YAML_ERROR = "PARSE-001"
 PARSE_ROOT_ERROR = "PARSE-002"
@@ -330,15 +330,23 @@ def _attach_module_entry_locations(
     """Attach key locations for module instance/net entries."""
     base_path = tuple(path)
     if module.patterns:
-        for pattern_name in module.patterns.keys():
+        for pattern_name, pattern_value in module.patterns.items():
             key_loc = location_index.lookup(
                 (*base_path, "patterns", pattern_name), prefer_key=True
             )
             if key_loc is not None:
                 module._patterns_loc[pattern_name] = key_loc
-            value_loc = location_index.lookup((*base_path, "patterns", pattern_name))
-            if value_loc is not None:
-                module._pattern_value_loc[pattern_name] = value_loc
+            if isinstance(pattern_value, PatternDecl):
+                expr_loc = location_index.lookup((*base_path, "patterns", pattern_name, "expr"))
+                if expr_loc is not None:
+                    module._pattern_value_loc[pattern_name] = expr_loc
+                tag_loc = location_index.lookup((*base_path, "patterns", pattern_name, "tag"))
+                if tag_loc is not None:
+                    module._pattern_tag_loc[pattern_name] = tag_loc
+            else:
+                value_loc = location_index.lookup((*base_path, "patterns", pattern_name))
+                if value_loc is not None:
+                    module._pattern_value_loc[pattern_name] = value_loc
     if module.nets:
         for net_name, endpoints in module.nets.items():
             loc = location_index.lookup((*base_path, "nets", net_name), prefer_key=True)
