@@ -4,9 +4,9 @@ T-170:
   pr: 171
   merged: true
 T-171:
-  status: ready_for_review
+  status: done
   pr: 172
-  merged: false
+  merged: true
 T-172:
   status: ready
   pr: null
