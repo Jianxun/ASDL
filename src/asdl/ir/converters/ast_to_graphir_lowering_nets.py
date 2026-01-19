@@ -930,6 +930,8 @@ def lower_module_nets(
                 for inst_name in inst_names:
                     inst_loc = module._instances_loc.get(inst_name)
                     endpoint_loc = inst_loc or binding_loc
+                    # Endpoint expressions from defaults are synthetic; avoid partial source spans.
+                    endpoint_axis_loc = None
                     endpoint_expr = f"{inst_name}.{port_name}"
                     endpoint_atoms, endpoint_diags = atomize_endpoint(
                         inst_name, port_name
@@ -950,7 +952,7 @@ def lower_module_nets(
                         )
                     endpoint_axis = _axis_metadata(
                         expression=endpoint_expr,
-                        loc=endpoint_loc,
+                        loc=endpoint_axis_loc,
                         module=module,
                         names_by_expr=pattern_names_by_expr,
                         length_by_name=pattern_lengths,
