@@ -578,3 +578,135 @@ def test_convert_document_device_backend_variables_are_stringified() -> None:
     assert backend.variables is not None
     assert backend.variables.data["MODEL"].data == "rm"
     assert backend.variables.data["ACTIVE"].data == "false"
+
+
+def test_convert_document_tagged_axis_broadcasts_bus() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                patterns={
+                    "ROW": "<1|2|3>",
+                    "BUS25": {"expr": "<25:1>", "tag": "BUS"},
+                    "BUS0": {"expr": "<24:0>", "tag": "BUS"},
+                },
+                instances={"sw<@ROW>": "switch"},
+                nets={"BUS<@BUS25>": ["sw<@ROW>.BUS<@BUS0>"]},
+            )
+        },
+        devices={
+            "switch": DeviceDecl(
+                ports=["BUS"],
+                backends={"ngspice": DeviceBackendDecl(template="X{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert diagnostics == []
+    assert isinstance(program, ProgramOp)
+    module = next(op for op in program.body.block.ops if isinstance(op, ModuleOp))
+    nets = {
+        net.name_attr.data: net
+        for net in module.body.block.ops
+        if isinstance(net, NetOp)
+    }
+    instances = {
+        inst.name_attr.data: inst
+        for inst in module.body.block.ops
+        if isinstance(inst, InstanceOp)
+    }
+
+    assert set(instances.keys()) == {"sw1", "sw2", "sw3"}
+    bus25_endpoints = [
+        op for op in nets["BUS25"].body.block.ops if isinstance(op, EndpointOp)
+    ]
+    assert {ep.port_path.data for ep in bus25_endpoints} == {"BUS24"}
+    assert {ep.inst_id.value.data for ep in bus25_endpoints} == {
+        instances["sw1"].inst_id.value.data,
+        instances["sw2"].inst_id.value.data,
+        instances["sw3"].inst_id.value.data,
+    }
+
+    bus1_endpoints = [
+        op for op in nets["BUS1"].body.block.ops if isinstance(op, EndpointOp)
+    ]
+    assert {ep.port_path.data for ep in bus1_endpoints} == {"BUS0"}
+
+
+def test_convert_document_tagged_axis_order_mismatch_errors() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                patterns={
+                    "A": {"expr": "<0|1>", "tag": "A"},
+                    "B": {"expr": "<2|3>", "tag": "B"},
+                },
+                instances={"U<@B><@A>": "res"},
+                nets={"OUT<@A><@B>": ["U<@B><@A>.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert program is None
+    assert any(diag.code == "IR-015" for diag in diagnostics)
+
+
+def test_convert_document_tagged_axis_length_mismatch_errors() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                patterns={
+                    "BUS2": {"expr": "<0|1>", "tag": "BUS"},
+                    "BUS3": {"expr": "<0|1|2>", "tag": "BUS"},
+                },
+                instances={"U<@BUS3>": "res"},
+                nets={"OUT<@BUS2>": ["U<@BUS3>.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert program is None
+    assert any(diag.code == "IR-016" for diag in diagnostics)
+
+
+def test_convert_document_tagged_axis_duplicate_errors() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                patterns={
+                    "A": {"expr": "<0|1>", "tag": "BUS"},
+                    "B": {"expr": "<2|3>", "tag": "BUS"},
+                },
+                instances={"U<@A><@B>": "res"},
+                nets={"OUT<@A><@B>": ["U<@A><@B>.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                backends={"ngspice": DeviceBackendDecl(template="R{inst} {ports}")},
+            )
+        },
+    )
+
+    program, diagnostics = convert_document(document)
+
+    assert program is None
+    assert any(diag.code == "IR-014" for diag in diagnostics)
