@@ -37,7 +37,7 @@ DEFAULT_OVERRIDE = format_code("LINT", 2)
 
 @dataclass(frozen=True)
 class _PreparedNetPattern:
-    """Prepared net pattern metadata for explicit net lowering.
+    """Prepared net pattern metadata for net lowering.
 
     Attributes:
         name: Net name without the port prefix.
@@ -67,7 +67,7 @@ def _prepare_net_pattern(
     pattern_index_by_name: Dict[str, Dict[object, int]],
     diagnostics: List[Diagnostic],
 ) -> Tuple[Optional[_PreparedNetPattern], bool]:
-    """Prepare net atoms and axis metadata for explicit net lowering.
+    """Prepare net atoms and axis metadata for net lowering.
 
     Args:
         net_token: Raw net token from the module nets map.
@@ -127,6 +127,8 @@ def _map_explicit_endpoints(
     *,
     endpoint_expr: object,
     endpoint_locs: List[Optional[object]],
+    endpoint_axis_locs: Optional[List[Optional[object]]] = None,
+    stop_on_error: bool = False,
     net_atoms: List[AtomizedPattern],
     net_axis: object,
     net_name: str,
@@ -142,11 +144,13 @@ def _map_explicit_endpoints(
 ) -> Tuple[
     List[List[Tuple[AtomizedEndpoint, Optional[str], Optional[object], bool]]], bool
 ]:
-    """Map explicit endpoint expressions onto net atoms.
+    """Map endpoint expressions onto net atoms.
 
     Args:
-        endpoint_expr: Raw endpoint expression from the module nets map.
+        endpoint_expr: Raw endpoint expression sequence.
         endpoint_locs: Optional source spans for each endpoint entry.
+        endpoint_axis_locs: Optional source spans for axis metadata lookups.
+        stop_on_error: Whether to stop processing endpoints after the first error.
         net_atoms: Atomized net pattern expansion.
         net_axis: Tagged-axis metadata for the net expression.
         net_name: Net expression string.
@@ -182,11 +186,16 @@ def _map_explicit_endpoints(
         endpoint_loc = None
         if endpoint_index < len(endpoint_locs):
             endpoint_loc = endpoint_locs[endpoint_index]
+        axis_loc = endpoint_loc
+        if endpoint_axis_locs is not None and endpoint_index < len(endpoint_axis_locs):
+            axis_loc = endpoint_axis_locs[endpoint_index]
         endpoint_expr_text = f"{inst_name}.{port_path}"
         endpoint_atoms, endpoint_diags = atomize_endpoint(inst_name, port_path)
         if endpoint_atoms is None:
             diagnostics.extend(endpoint_diags)
             net_error = True
+            if stop_on_error:
+                break
             continue
         endpoint_expr_id = None
         if is_pattern_expression(endpoint_expr_text):
@@ -199,7 +208,7 @@ def _map_explicit_endpoints(
             )
         endpoint_axis = _axis_metadata(
             expression=endpoint_expr_text,
-            loc=endpoint_loc,
+            loc=axis_loc,
             module=module,
             names_by_expr=pattern_names_by_expr,
             length_by_name=pattern_lengths,
@@ -210,6 +219,8 @@ def _map_explicit_endpoints(
         )
         if endpoint_axis.had_error:
             net_error = True
+            if stop_on_error:
+                break
             continue
         mapping, axis_used, axis_error = _axis_broadcast_mapping(
             net_atoms=net_atoms,
@@ -225,6 +236,8 @@ def _map_explicit_endpoints(
         )
         if axis_error:
             net_error = True
+            if stop_on_error:
+                break
             continue
         if axis_used and mapping is not None:
             for endpoint_atom, net_index in zip(endpoint_atoms, mapping):
@@ -246,6 +259,8 @@ def _map_explicit_endpoints(
                 )
             )
             net_error = True
+            if stop_on_error:
+                break
             continue
 
         if len(net_atoms) == 1:
@@ -432,140 +447,64 @@ def lower_module_nets(
                 continue
             for port_name, net_token in defaults.bindings.items():
                 binding_loc = defaults._bindings_loc.get(port_name)
-                net_name, is_port = split_net_token(net_token)
-                net_atoms, atom_diags = atomize_pattern(
-                    net_name, allow_splice=not is_port
-                )
-                if net_atoms is None:
-                    diagnostics.extend(atom_diags)
-                    had_error = True
-                    continue
-                net_expr_id = None
-                if is_pattern_expression(net_name):
-                    net_expr_id = register_pattern_entry(
-                        pattern_table,
-                        pattern_cache,
-                        expression=net_name,
-                        kind="net",
-                        loc=binding_loc or module._loc,
-                    )
-                net_axis = _axis_metadata(
-                    expression=net_name,
-                    loc=binding_loc,
+                prepared_net, net_error = _prepare_net_pattern(
+                    net_token=net_token,
+                    net_loc=binding_loc,
                     module=module,
-                    names_by_expr=pattern_names_by_expr,
-                    length_by_name=pattern_lengths,
-                    index_by_name=pattern_index_by_name,
-                    diagnostics=diagnostics,
                     module_name=name,
-                    context="net",
+                    pattern_table=pattern_table,
+                    pattern_cache=pattern_cache,
+                    pattern_names_by_expr=pattern_names_by_expr,
+                    pattern_lengths=pattern_lengths,
+                    pattern_index_by_name=pattern_index_by_name,
+                    diagnostics=diagnostics,
                 )
-                if net_axis.had_error:
-                    had_error = True
+                if net_error or prepared_net is None:
+                    had_error = had_error or net_error
                     continue
 
-                net_endpoints_by_atom: List[
-                    List[Tuple[AtomizedEndpoint, Optional[str]]]
-                ] = [[] for _ in range(len(net_atoms))]
-                net_error = False
+                endpoint_exprs = [
+                    f"{inst_name}.{port_name}" for inst_name in inst_names
+                ]
+                endpoint_locs: List[Optional[object]] = []
+                endpoint_axis_locs: List[Optional[object]] = []
                 for inst_name in inst_names:
                     inst_loc = module._instances_loc.get(inst_name)
-                    endpoint_loc = inst_loc or binding_loc
+                    endpoint_locs.append(inst_loc or binding_loc)
                     # Endpoint expressions from defaults are synthetic; avoid partial source spans.
-                    endpoint_axis_loc = None
-                    endpoint_expr = f"{inst_name}.{port_name}"
-                    endpoint_atoms, endpoint_diags = atomize_endpoint(
-                        inst_name, port_name
-                    )
-                    if endpoint_atoms is None:
-                        diagnostics.extend(endpoint_diags)
-                        had_error = True
-                        net_error = True
-                        break
-                    endpoint_expr_id = None
-                    if is_pattern_expression(endpoint_expr):
-                        endpoint_expr_id = register_pattern_entry(
-                            pattern_table,
-                            pattern_cache,
-                            expression=endpoint_expr,
-                            kind="endpoint",
-                            loc=binding_loc or module._loc,
-                        )
-                    endpoint_axis = _axis_metadata(
-                        expression=endpoint_expr,
-                        loc=endpoint_axis_loc,
-                        module=module,
-                        names_by_expr=pattern_names_by_expr,
-                        length_by_name=pattern_lengths,
-                        index_by_name=pattern_index_by_name,
-                        diagnostics=diagnostics,
-                        module_name=name,
-                        context="endpoint",
-                    )
-                    if endpoint_axis.had_error:
-                        had_error = True
-                        net_error = True
-                        break
-                    mapping, axis_used, axis_error = _axis_broadcast_mapping(
-                        net_atoms=net_atoms,
-                        net_axis=net_axis,
-                        endpoint_atoms=endpoint_atoms,
-                        endpoint_axis=endpoint_axis,
-                        module_name=name,
-                        net_expr=net_name,
-                        endpoint_expr=endpoint_expr,
-                        net_loc=binding_loc or module._loc,
-                        endpoint_loc=endpoint_loc,
-                        diagnostics=diagnostics,
-                    )
-                    if axis_error:
-                        had_error = True
-                        net_error = True
-                        break
-                    if axis_used and mapping is not None:
-                        for endpoint_atom, net_index in zip(endpoint_atoms, mapping):
-                            net_endpoints_by_atom[net_index].append(
-                                (endpoint_atom, endpoint_expr_id)
-                            )
-                        continue
+                    endpoint_axis_locs.append(None)
 
-                    if len(net_atoms) != 1 and len(endpoint_atoms) != len(net_atoms):
-                        diagnostics.append(
-                            diagnostic(
-                                PATTERN_LENGTH_MISMATCH,
-                                (
-                                    f"Endpoint '{endpoint_expr}' expands to "
-                                    f"{len(endpoint_atoms)} atoms but net '{net_name}' "
-                                    f"expands to {len(net_atoms)} atoms in module "
-                                    f"'{name}'"
-                                ),
-                                binding_loc or module._loc,
-                            )
-                        )
-                        had_error = True
-                        net_error = True
-                        break
-
-                    if len(net_atoms) == 1:
-                        for endpoint_atom in endpoint_atoms:
-                            net_endpoints_by_atom[0].append(
-                                (endpoint_atom, endpoint_expr_id)
-                            )
-                    else:
-                        for index, endpoint_atom in enumerate(endpoint_atoms):
-                            net_endpoints_by_atom[index].append(
-                                (endpoint_atom, endpoint_expr_id)
-                            )
-
+                net_endpoints_by_atom, net_error = _map_explicit_endpoints(
+                    endpoint_expr=endpoint_exprs,
+                    endpoint_locs=endpoint_locs,
+                    endpoint_axis_locs=endpoint_axis_locs,
+                    stop_on_error=True,
+                    net_atoms=prepared_net.atoms,
+                    net_axis=prepared_net.axis,
+                    net_name=prepared_net.name,
+                    net_loc=binding_loc,
+                    module=module,
+                    module_name=name,
+                    pattern_table=pattern_table,
+                    pattern_cache=pattern_cache,
+                    pattern_names_by_expr=pattern_names_by_expr,
+                    pattern_lengths=pattern_lengths,
+                    pattern_index_by_name=pattern_index_by_name,
+                    diagnostics=diagnostics,
+                )
                 if net_error:
+                    had_error = True
                     continue
 
-                for index, net_atom in enumerate(net_atoms):
+                for index, net_atom in enumerate(prepared_net.atoms):
                     net_literal = net_atom.literal
                     new_endpoints: List[EndpointOp] = []
-                    for endpoint_atom, endpoint_expr_id in net_endpoints_by_atom[
-                        index
-                    ]:
+                    for (
+                        endpoint_atom,
+                        endpoint_expr_id,
+                        _endpoint_loc,
+                        _suppressed,
+                    ) in net_endpoints_by_atom[index]:
                         key = (endpoint_atom.inst, endpoint_atom.port)
                         explicit = explicit_endpoints.get(key)
                         if explicit is not None:
@@ -624,15 +563,15 @@ def lower_module_nets(
                     if net_literal not in net_endpoints:
                         net_endpoints[net_literal] = []
                         net_pattern_origin = None
-                        if net_expr_id is not None:
+                        if prepared_net.expr_id is not None:
                             net_pattern_origin = pattern_origin_from_atom(
-                                net_expr_id, net_atom
+                                prepared_net.expr_id, net_atom
                             )
                         net_pattern_origins[net_literal] = net_pattern_origin
                         net_order.append(net_literal)
 
                     net_endpoints[net_literal].extend(new_endpoints)
-                    if is_port and net_literal not in port_order:
+                    if prepared_net.is_port and net_literal not in port_order:
                         port_order.append(net_literal)
 
     for net_name in net_order:
