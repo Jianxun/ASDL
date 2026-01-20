@@ -11,21 +11,24 @@
 - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
 
 # Plan
-- [ ] Identify axis helper boundaries + public API.
-- [ ] Move helpers to new module and update imports.
-- [ ] Run targeted GraphIR converter tests.
+- [x] Identify axis helper boundaries + public API.
+- [x] Move helpers to new module and update imports.
+- [x] Run targeted GraphIR converter tests.
 
 # Progress log
 - 2026-01-20: Created scratchpad.
+- 2026-01-20: Extracted tagged-axis helpers into dedicated module.
+- 2026-01-20: Verified GraphIR converter unit tests.
 
 # Patch summary
-- None yet.
+- Added `src/asdl/ir/converters/ast_to_graphir_axis.py` for tagged-axis helpers.
+- Updated `src/asdl/ir/converters/ast_to_graphir_lowering_nets.py` to import helpers.
 
 # PR URL
 - None yet.
 
 # Verification
-- Not run yet.
+- `venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v`
 
 # Status request (Done / Blocked / In Progress)
 - In Progress
