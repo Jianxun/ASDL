@@ -12,9 +12,9 @@ T-172:
   pr: 173
   merged: true
 T-173:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 174
+  merged: true
 T-174:
   status: ready
   pr: null
