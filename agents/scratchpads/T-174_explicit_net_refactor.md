@@ -11,27 +11,29 @@
 - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
 
 # Plan
-- [ ] Identify shared explicit-net prep/mapping logic.
-- [ ] Add helper functions and refactor explicit-net flow.
-- [ ] Run targeted GraphIR converter tests.
+- [x] Refactor explicit-net prep and endpoint mapping into helpers.
+- [x] Verify GraphIR converter tests.
 
 # Progress log
 - 2026-01-20: Created scratchpad.
+- 2026-01-20: Task started; reviewing explicit-net lowering flow.
+- 2026-01-20: Refactored explicit-net lowering helpers and verified tests.
 
 # Patch summary
-- None yet.
+- Added explicit-net helper utilities for net preparation and endpoint mapping.
+- Flattened explicit-net lowering flow to use helpers without behavior change.
 
 # PR URL
-- None yet.
+- https://github.com/Jianxun/ASDL/pull/175
 
 # Verification
-- Not run yet.
+- ./venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None yet.
 
 # Next steps
-- Wait for T-173 completion, then start explicit-net refactor.
+- Await review.
