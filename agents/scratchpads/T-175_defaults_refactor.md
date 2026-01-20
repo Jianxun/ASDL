@@ -11,27 +11,29 @@
 - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
 
 # Plan
-- [ ] Identify default-net flow that can reuse shared helpers.
-- [ ] Refactor instance-defaults lowering to call shared helpers.
-- [ ] Run targeted GraphIR converter tests.
+- [x] Identify default-net flow that can reuse shared helpers.
+- [x] Refactor instance-defaults lowering to call shared helpers.
+- [x] Run targeted GraphIR converter tests.
 
 # Progress log
 - 2026-01-20: Created scratchpad.
+- 2026-01-20: Refactored instance-defaults lowering to reuse helpers and ran tests.
 
 # Patch summary
-- None yet.
+- Reused shared net preparation and endpoint mapping helpers for instance defaults.
+- Preserved diagnostic behavior while reducing duplicated mapping logic.
 
 # PR URL
-- None yet.
+- https://github.com/Jianxun/ASDL/pull/176
 
 # Verification
-- Not run yet.
+- venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None yet.
 
 # Next steps
-- Wait for T-174 completion, then refactor instance-defaults lowering.
+- Await review.
