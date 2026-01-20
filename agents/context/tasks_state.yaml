@@ -12,7 +12,7 @@ T-172:
   pr: 173
   merged: true
 T-173:
-  status: review_in_progress
+  status: review_clean
   pr: 174
   merged: false
 T-174:
