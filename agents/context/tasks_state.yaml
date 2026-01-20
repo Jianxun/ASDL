@@ -1,37 +1,9 @@
 schema_version: 2
-T-170:
-  status: done
-  pr: 171
-  merged: true
-T-171:
-  status: done
-  pr: 172
-  merged: true
-T-172:
-  status: done
-  pr: 173
-  merged: true
-T-173:
-  status: done
-  pr: 174
-  merged: true
-T-174:
-  status: done
-  pr: 175
-  merged: true
-T-175:
-  status: done
-  pr: 176
-  merged: true
-T-176:
-  status: in_progress
-  pr: null
-  merged: false
 T-177:
-  status: backlog
+  status: ready
   pr: null
   merged: false
 T-178:
-  status: backlog
+  status: ready
   pr: null
   merged: false

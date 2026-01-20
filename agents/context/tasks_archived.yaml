@@ -102,3 +102,10 @@ archive:
   - T-167: {completed_on: 2026-01-18, owner: Executor, scratchpad: agents/scratchpads/T-167_netlist_pattern_rendering.md, pr: 169}
   - T-168: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-168_named_pattern_metadata.md, pr: null}
   - T-169: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-169_named_pattern_broadcast_binding.md, pr: null}
+  - T-170: {completed_on: 2026-01-20, owner: Architect, scratchpad: agents/scratchpads/T-170_pattern_tags_specs.md, pr: 171}
+  - T-171: {completed_on: 2026-01-20, owner: Executor, scratchpad: agents/scratchpads/T-171_tagged_pattern_ast.md, pr: 172}
+  - T-172: {completed_on: 2026-01-20, owner: Executor, scratchpad: agents/scratchpads/T-172_tagged_axis_broadcast.md, pr: 173}
+  - T-173: {completed_on: 2026-01-20, owner: Executor, scratchpad: agents/scratchpads/T-173_axis_helpers_refactor.md, pr: 174}
+  - T-174: {completed_on: 2026-01-20, owner: Executor, scratchpad: agents/scratchpads/T-174_explicit_net_refactor.md, pr: 175}
+  - T-175: {completed_on: 2026-01-20, owner: Executor, scratchpad: agents/scratchpads/T-175_defaults_refactor.md, pr: 176}
+  - T-176: {completed_on: 2026-01-20, owner: Architect, scratchpad: agents/scratchpads/T-176_asdl_docstrings_spec.md, pr: 177}
