@@ -24,16 +24,16 @@
 - Flattened explicit-net lowering flow to use helpers without behavior change.
 
 # PR URL
-- None yet.
+- https://github.com/Jianxun/ASDL/pull/175
 
 # Verification
 - ./venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None yet.
 
 # Next steps
-- Refactor explicit-net lowering with helpers, then run targeted tests.
+- Await review.

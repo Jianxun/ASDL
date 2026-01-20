@@ -16,8 +16,8 @@ T-173:
   pr: 174
   merged: true
 T-174:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 175
   merged: false
 T-175:
   status: ready
