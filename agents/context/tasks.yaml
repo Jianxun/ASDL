@@ -100,4 +100,55 @@ current_sprint:
       - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
     links:
       scratchpad: agents/scratchpads/T-175_defaults_refactor.md
-backlog: []
+  - id: T-176
+    title: Specify ASDL docstring extraction and Markdown layout
+    owner: Architect
+    dod: >
+      Create docs/specs/spec_asdl_docs.md describing comment extraction rules
+      (block, inline, section bundles), mapping to the Markdown layout with a
+      ports/pins contract emphasis, and concrete examples referencing the
+      swmatrix ASDL files.
+    verify:
+      - rg -n "docstring" docs/specs/spec_asdl_docs.md
+    files:
+      - docs/specs/spec_asdl_docs.md
+    links:
+      scratchpad: agents/scratchpads/T-176_asdl_docstrings_spec.md
+backlog:
+  - id: T-177
+    title: Implement comment-based docstring extractor
+    owner: Executor
+    dod: >
+      Add a comment-preserving extractor that parses ASDL YAML with ruamel.yaml
+      and yields docstrings for keys, inline comments, and section bundles.
+      Expose a structured representation for Markdown rendering and add tests
+      covering swmatrix_Tgate and full_switch_matrix bundle comments.
+    verify:
+      - venv/bin/pytest tests/unit_tests/docs/test_docstrings.py -v
+    files:
+      - src/asdl/docs/docstrings.py
+      - src/asdl/docs/__init__.py
+      - tests/unit_tests/docs/test_docstrings.py
+      - examples/libs/sw_matrix/swmatrix_Tgate/swmatrix_Tgate.asdl
+      - examples/libs/sw_matrix/full_switch_matrix_130_by_25/full_switch_matrix_130_by_25.asdl
+    links:
+      scratchpad: agents/scratchpads/T-177_asdl_docstring_extractor.md
+  - id: T-178
+    title: Render Markdown docs from ASDL docstrings
+    owner: Executor
+    depends_on:
+      - T-177
+    dod: >
+      Implement a Markdown renderer and generator script that emit the agreed
+      layout (overview, interface ports/pins, variables, instances, nets with
+      sections) from the extractor output. Provide a CLI that writes to a target
+      directory and a short docs/asdl/README.md describing usage.
+    verify:
+      - venv/bin/python scripts/gen_asdl_docs.py examples/libs/sw_matrix/swmatrix_Tgate/swmatrix_Tgate.asdl --out /tmp/asdl-docs
+    files:
+      - src/asdl/docs/markdown.py
+      - scripts/gen_asdl_docs.py
+      - docs/asdl/README.md
+      - tests/unit_tests/docs/test_markdown.py
+    links:
+      scratchpad: agents/scratchpads/T-178_asdl_markdown_render.md
