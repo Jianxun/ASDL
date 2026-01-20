@@ -3,33 +3,21 @@
 ## Error PARSE-003: 
 we should be clear what is going on. we should say "invalid section name <invalid_key>, valid names are: ports, parameters, backends
 
-## LINT-001
-(venv) jianxunzhu@Jianxuns-MacBook-Pro scratch % asdlc netlist tb.asdl  --backend sim.ngspice
-warning LINT-001: Unused import namespace 'dut'.
-  note: No source span available.
+## [BUG?] required `top` field even if the ASDL file has only a single module (importing other ASDL files)
 
-## PASS-001
-MN<P> is not identified as part of MN<P,N>
+## suppress same type of errors beyond a certain threshold? (don't want 2000 same type of errors swamping out the meaningful ones)
 
-## import system
-need to resolve system env vars. say $PDK_MODEL_DIR
+## in general we should provide more information on "how to fix it", like 
+- can't resolve instance name, did you forget to import?
+- the endpoint name can't be found from the instance module, valid pins are: ...
+- Also if there are case mismatch errors we should suggest "gf.nfet_03v3 has endpoint `g` instead of `G`
+- case sensitive check bypass options?
 
-## Title
-what netlist header do we need to emit? more placeholders?
-
-## No source spans
-(venv) jianxunzhu@Jianxuns-MacBook-Pro mosbius_devices % asdlc netlist ./ota_nmos.asdl
-error EMIT-005: Instance 'MN_TAIL' is missing conns for ports: D
-  note: No source span available.
-warning LINT-001: Unused import namespace 'gf'.
-  note: No source span available.
-(venv) jianxunzhu@Jianxuns-MacBook-Pro mosbius_devices % 
-
-
-## instantiation pin bindings 
-
+# can't use variable placeholders in endpoint lists
 ```
-MN_TAIL: mos.nmos_unit m=2 (B:$VSS, S:$VSS)
-MN_IN_<P|N>: mos.nmos_unit m=1 (B:$VSS)
-MP_<DIO|OUT>: mos.pmos_unit m=3 (B:$VDD, S:$VDD)
+    nets:
+      # data chain
+      $data: [sw_row<1>.D_in]
+      $D_out: [sw_row<{N_ROW}:{N_ROW}>.D_out]
+      D<{N_ROW_M1}:1>: [sw_row<{N_ROW}:2>.D_in, sw_row<{N_ROW_M1}:1>.D_out]
 ```

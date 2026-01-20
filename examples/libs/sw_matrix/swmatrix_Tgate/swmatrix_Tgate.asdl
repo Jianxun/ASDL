@@ -5,12 +5,16 @@ imports:
 
 modules:
   swmatrix_Tgate:
+    variables:
+      L: 0.28u
+      W: 8u
+      NF: 6
     instances:
       inv1: gf_std.inv_1
       inv2: gf_std.inv_1
       nand2: gf_std.nand2_1
-      mn: gf.nfet_03v3 L=0.28u W=8u NF=6 m=1
-      mp: gf.pfet_03v3 L=0.28u W=8u NF=18 m=1
+      mn: gf.nfet_03v3 L={L} W={W} NF={NF} m=1
+      mp: gf.pfet_03v3 L={L} W={W} NF={NF} m=3
     nets:
 
 

@@ -54,4 +54,50 @@ current_sprint:
       - tests/unit_tests/ir/test_graphir_converter.py
     links:
       scratchpad: agents/scratchpads/T-172_tagged_axis_broadcast.md
+  - id: T-173
+    title: Extract tagged-axis analysis helpers for GraphIR net lowering
+    owner: Executor
+    dod: >
+      Move tagged-axis analysis helpers from
+      ast_to_graphir_lowering_nets.py into a dedicated module, update
+      imports/callers, and keep diagnostics behavior identical. Public helpers
+      must keep or add docstrings.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+    files:
+      - src/asdl/ir/converters/ast_to_graphir_axis.py
+      - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
+      - tests/unit_tests/ir/test_graphir_converter.py
+    links:
+      scratchpad: agents/scratchpads/T-173_axis_helpers_refactor.md
+  - id: T-174
+    title: Refactor explicit net lowering to reduce nested branching
+    owner: Executor
+    depends_on:
+      - T-173
+    dod: >
+      Introduce small helpers for net-pattern preparation and endpoint mapping
+      in the explicit-net path, and flatten the control flow without changing
+      diagnostics or outputs.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+    files:
+      - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
+    links:
+      scratchpad: agents/scratchpads/T-174_explicit_net_refactor.md
+  - id: T-175
+    title: Refactor instance-default net lowering to share helpers
+    owner: Executor
+    depends_on:
+      - T-174
+    dod: >
+      Apply the shared net-prep and endpoint-mapping helpers to the
+      instance-defaults path and reduce duplicated if/else blocks while keeping
+      diagnostics identical.
+    verify:
+      - venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v
+    files:
+      - src/asdl/ir/converters/ast_to_graphir_lowering_nets.py
+    links:
+      scratchpad: agents/scratchpads/T-175_defaults_refactor.md
 backlog: []
