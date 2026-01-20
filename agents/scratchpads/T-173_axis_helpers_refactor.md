@@ -19,19 +19,20 @@
 - 2026-01-20: Created scratchpad.
 - 2026-01-20: Extracted tagged-axis helpers into dedicated module.
 - 2026-01-20: Verified GraphIR converter unit tests.
+- 2026-01-20: Opened PR #174.
 
 # Patch summary
 - Added `src/asdl/ir/converters/ast_to_graphir_axis.py` for tagged-axis helpers.
 - Updated `src/asdl/ir/converters/ast_to_graphir_lowering_nets.py` to import helpers.
 
 # PR URL
-- None yet.
+- https://github.com/Jianxun/ASDL/pull/174
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/ir/test_graphir_converter.py -v`
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None yet.
