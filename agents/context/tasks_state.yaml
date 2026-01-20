@@ -20,6 +20,6 @@ T-174:
   pr: 175
   merged: true
 T-175:
-  status: ready_for_review
+  status: done
   pr: 176
-  merged: false
+  merged: true
