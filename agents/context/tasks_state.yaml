@@ -20,6 +20,6 @@ T-174:
   pr: 175
   merged: true
 T-175:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
