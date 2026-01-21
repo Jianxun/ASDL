@@ -58,27 +58,6 @@ current_sprint:
     links:
       spec: docs/specs_refactor/spec_refactor_patterned_graph.md
       scratchpad: agents/scratchpads/T-182_patterned_graph_query.md
-  - id: T-183
-    title: Align PatternedGraph registries and metadata contracts
-    owner: Architect
-    depends_on:
-      - T-180
-    dod: >
-      Add missing provenance registries (PatternOriginIndex, ParamPatternOriginIndex)
-      to the core registry set, expand PatternExpr protocol to capture parsed
-      structure used by the pattern service, and resolve annotation storage
-      (registry vs bundle fields) with tests covering the chosen contract.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph.py -v
-    files:
-      - src/asdl/core/registries.py
-      - src/asdl/core/graph.py
-      - src/asdl/core/__init__.py
-      - tests/unit_tests/core/test_patterned_graph.py
-      - docs/specs_refactor/spec_refactor_patterned_graph.md
-    links:
-      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
-      scratchpad: agents/scratchpads/T-183_patterned_graph_registry_alignment.md
   - id: T-184
     title: Lower AST modules into PatternedGraph
     owner: Executor

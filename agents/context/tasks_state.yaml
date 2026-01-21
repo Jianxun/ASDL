@@ -15,7 +15,3 @@ T-184:
   status: ready
   pr: null
   merged: false
-T-183:
-  status: done
-  pr: 183
-  merged: true
