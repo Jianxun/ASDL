@@ -12,11 +12,16 @@ from .graph import (
 )
 from .registries import (
     AnnotationIndex,
+    AxisId,
+    AxisSpec,
     ExprId,
     GraphId,
     GroupSlice,
+    ParamPatternOriginIndex,
     PatternExpr,
     PatternExpressionRegistry,
+    PatternOriginIndex,
+    PatternSegment,
     RegistrySet,
     SchematicHints,
     SourceSpanIndex,
@@ -24,6 +29,8 @@ from .registries import (
 
 __all__ = [
     "AnnotationIndex",
+    "AxisId",
+    "AxisSpec",
     "EndpointBundle",
     "ExprId",
     "GraphId",
@@ -34,8 +41,11 @@ __all__ = [
     "ModuleId",
     "NetBundle",
     "NetId",
+    "ParamPatternOriginIndex",
     "PatternExpr",
     "PatternExpressionRegistry",
+    "PatternOriginIndex",
+    "PatternSegment",
     "ProgramGraph",
     "RegistrySet",
     "SchematicHints",

@@ -22,14 +22,12 @@ class NetBundle:
         name_expr_id: Expression ID for the net name.
         endpoint_ids: Ordered endpoint bundle IDs owned by this net.
         attrs: Optional attributes for tools or passes.
-        annotations: Optional annotation payloads for consumers.
     """
 
     net_id: NetId
     name_expr_id: ExprId
     endpoint_ids: list[EndpointId]
     attrs: Optional[Dict[str, object]] = None
-    annotations: Optional[Dict[str, object]] = None
 
 
 @dataclass
@@ -44,7 +42,6 @@ class InstanceBundle:
         ref_raw: Raw reference token.
         param_expr_ids: Optional mapping of parameter names to expression IDs.
         attrs: Optional attributes for tools or passes.
-        annotations: Optional annotation payloads for consumers.
     """
 
     inst_id: InstId
@@ -54,7 +51,6 @@ class InstanceBundle:
     ref_raw: str
     param_expr_ids: Optional[Dict[str, ExprId]] = None
     attrs: Optional[Dict[str, object]] = None
-    annotations: Optional[Dict[str, object]] = None
 
 
 @dataclass
@@ -66,14 +62,12 @@ class EndpointBundle:
         net_id: Owning net identifier.
         port_expr_id: Expression ID for the endpoint token expression.
         attrs: Optional attributes for tools or passes.
-        annotations: Optional annotation payloads for consumers.
     """
 
     endpoint_id: EndpointId
     net_id: NetId
     port_expr_id: ExprId
     attrs: Optional[Dict[str, object]] = None
-    annotations: Optional[Dict[str, object]] = None
 
 
 @dataclass

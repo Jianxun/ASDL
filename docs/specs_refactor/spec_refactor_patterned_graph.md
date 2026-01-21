@@ -42,7 +42,6 @@ NetBundle {
   name_expr_id: ExprId
   endpoint_ids: list[EndpointId]
   attrs: dict | None
-  annotations: dict | None
 }
 ```
 
@@ -56,7 +55,6 @@ InstanceBundle {
   ref_raw: str
   param_expr_ids: dict[str, ExprId] | None
   attrs: dict | None
-  annotations: dict | None
 }
 ```
 
@@ -69,7 +67,6 @@ EndpointBundle {
   net_id: GraphId
   port_expr_id: ExprId
   attrs: dict | None
-  annotations: dict | None
 }
 ```
 
@@ -79,6 +76,8 @@ Registries hold metadata keyed by IDs; they are not stored on the graph nodes.
 ```
 RegistrySet {
   pattern_expressions: PatternExpressionRegistry
+  pattern_origins: PatternOriginIndex
+  param_pattern_origins: ParamPatternOriginIndex
   source_spans: SourceSpanIndex
   schematic_hints: SchematicHints
   annotations: AnnotationIndex
@@ -93,6 +92,20 @@ PatternExpressionRegistry {
 ```
 `PatternExpr` retains parsed segments, axis metadata, and source spans. See
 `spec_refactor_pattern_service.md`.
+
+### 4.1a PatternOriginIndex
+```
+PatternOriginIndex {
+  entity_id: (expr_id, segment_index, atom_index)
+}
+```
+
+### 4.1b ParamPatternOriginIndex
+```
+ParamPatternOriginIndex {
+  (inst_id, param_name): (expr_id, atom_index)
+}
+```
 
 ### 4.2 SourceSpanIndex
 ```
