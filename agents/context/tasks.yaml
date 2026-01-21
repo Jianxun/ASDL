@@ -1,41 +1,61 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-177
-    title: Implement comment-based docstring extractor
+  - id: T-180
+    title: Define PatternedGraph core dataclasses + registries
     owner: Executor
     dod: >
-      Add a comment-preserving extractor that parses ASDL YAML with ruamel.yaml
-      and yields docstrings for keys, inline comments, and section bundles.
-      Expose a structured representation for Markdown rendering and add tests
-      covering swmatrix_Tgate and full_switch_matrix bundle comments.
+      Implement dataclass-based ProgramGraph/ModuleGraph/NetBundle/InstanceBundle/
+      EndpointBundle plus registry types (PatternExpressionRegistry, SourceSpanIndex,
+      SchematicHints). Add tests covering construction, endpoint ownership, and
+      registry optionality.
     verify:
-      - venv/bin/pytest tests/unit_tests/docs/test_docstrings.py -v
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph.py -v
     files:
-      - src/asdl/docs/docstrings.py
-      - src/asdl/docs/__init__.py
-      - tests/unit_tests/docs/test_docstrings.py
-      - examples/libs/sw_matrix/swmatrix_Tgate/swmatrix_Tgate.asdl
-      - examples/libs/sw_matrix/full_switch_matrix_130_by_25/full_switch_matrix_130_by_25.asdl
+      - src/asdl/core/graph.py
+      - src/asdl/core/registries.py
+      - src/asdl/core/__init__.py
+      - tests/unit_tests/core/test_patterned_graph.py
     links:
-      scratchpad: agents/scratchpads/T-177_asdl_docstring_extractor.md
-  - id: T-178
-    title: Render Markdown docs from ASDL docstrings
+      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
+      scratchpad: agents/scratchpads/T-180_patterned_graph_core.md
+  - id: T-181
+    title: Implement refactor pattern service (parse/bind/expand)
     owner: Executor
     depends_on:
-      - T-177
+      - T-180
     dod: >
-      Implement a Markdown renderer and generator script that emit the agreed
-      layout (overview, interface ports/pins, variables, instances, nets with
-      sections) from the extractor output. Provide a CLI that writes to a target
-      directory and a short docs/asdl/README.md describing usage.
+      Build pure pattern service modules for parsing PatternExpr, named pattern
+      substitution, expansion, and binding (named-axis broadcast). Add tests for
+      splice flattening, endpoint expansion, and axis broadcast mismatches.
     verify:
-      - venv/bin/python scripts/gen_asdl_docs.py examples/libs/sw_matrix/swmatrix_Tgate/swmatrix_Tgate.asdl --out /tmp/asdl-docs
+      - venv/bin/pytest tests/unit_tests/patterns_refactor -v
     files:
-      - src/asdl/docs/markdown.py
-      - scripts/gen_asdl_docs.py
-      - docs/asdl/README.md
-      - tests/unit_tests/docs/test_markdown.py
+      - src/asdl/patterns_refactor/parser.py
+      - src/asdl/patterns_refactor/expand.py
+      - src/asdl/patterns_refactor/bind.py
+      - src/asdl/patterns_refactor/__init__.py
+      - tests/unit_tests/patterns_refactor/test_binding.py
     links:
-      scratchpad: agents/scratchpads/T-178_asdl_markdown_render.md
+      spec: docs/specs_refactor/spec_refactor_pattern_service.md
+      scratchpad: agents/scratchpads/T-181_pattern_service.md
+  - id: T-182
+    title: Add PatternedGraph query/index helpers
+    owner: Executor
+    depends_on:
+      - T-180
+    dod: >
+      Implement GraphIndex and DesignQuery helpers (net/instance lookup and
+      adjacency lists) derived from PatternedGraph. Add tests for deterministic
+      lookup and adjacency construction.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_query.py -v
+    files:
+      - src/asdl/core/index.py
+      - src/asdl/core/query.py
+      - src/asdl/core/__init__.py
+      - tests/unit_tests/core/test_query.py
+    links:
+      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
+      scratchpad: agents/scratchpads/T-182_patterned_graph_query.md
 backlog: []
