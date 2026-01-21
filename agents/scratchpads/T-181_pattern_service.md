@@ -24,17 +24,17 @@
 - Implemented parser, expansion, and binding helpers for refactor pattern service.
 
 ## Patch summary
-- Added tests for pattern service expectations.
-- Added refactor pattern service modules for parsing, expansion, and binding.
+- Added tests for splice flattening, endpoint expansion, and axis mismatch diagnostics.
+- Added refactor pattern service parser/expand/bind modules with named pattern handling.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/186
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/patterns_refactor -v`
 
 ## Status request
-- In Progress
+- Done
 
 ## Blockers / Questions
 - None.
