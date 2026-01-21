@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from xdsl.dialects.builtin import (
     DictionaryAttr,
@@ -76,6 +76,8 @@ def diagnostic(
     message: str,
     loc: Optional[Locatable],
     severity: Severity = Severity.ERROR,
+    notes: Optional[List[str]] = None,
+    help: Optional[str] = None,
 ) -> Diagnostic:
     """Create a diagnostic from a source location.
 
@@ -84,18 +86,26 @@ def diagnostic(
         message: Diagnostic message.
         loc: Optional source location.
         severity: Diagnostic severity.
+        notes: Optional notes to include.
+        help: Optional help text to include.
 
     Returns:
         Diagnostic instance.
     """
     span = loc.to_source_span() if loc is not None else None
-    notes = None if span is not None else [NO_SPAN_NOTE]
+    resolved_notes = notes
+    if span is None:
+        if resolved_notes is None:
+            resolved_notes = [NO_SPAN_NOTE]
+        elif NO_SPAN_NOTE not in resolved_notes:
+            resolved_notes = [*resolved_notes, NO_SPAN_NOTE]
     return Diagnostic(
         code=code,
         severity=severity,
         message=message,
         primary_span=span,
-        notes=notes,
+        notes=resolved_notes,
+        help=help,
         source="ir",
     )
 

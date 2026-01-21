@@ -13,7 +13,15 @@ from ruamel.yaml.nodes import MappingNode, ScalarNode
 
 from ..diagnostics import Diagnostic, Severity, SourcePos, SourceSpan
 from .location import Locatable, LocationIndex, PathSegment, to_plain
-from .models import AsdlDocument, AstBaseModel, InstanceDefaultsDecl, ModuleDecl, PatternDecl
+from .models import (
+    AsdlDocument,
+    AstBaseModel,
+    DeviceBackendDecl,
+    DeviceDecl,
+    InstanceDefaultsDecl,
+    ModuleDecl,
+    PatternDecl,
+)
 
 PARSE_YAML_ERROR = "PARSE-001"
 PARSE_ROOT_ERROR = "PARSE-002"
@@ -166,18 +174,20 @@ def _validation_errors_to_diagnostics(
         prefer_key = entry.get("type") == "extra_forbidden"
         location = location_index.lookup_with_fallback(loc, prefer_key=prefer_key)
         span = location.to_source_span() if location else None
-        message = _format_validation_message(entry)
+        message = _format_validation_message(entry, loc)
         notes = _hint_notes(entry)
         if span is None:
             notes.append(NO_SPAN_NOTE)
         if not notes:
             notes = None
         path_str = _format_path(loc)
+        if _should_append_path(entry, path_str, loc):
+            message = f"{message} at {path_str}"
         diagnostics.append(
             Diagnostic(
                 code=PARSE_VALIDATION_ERROR,
                 severity=Severity.ERROR,
-                message=f"{message} at {path_str}",
+                message=message,
                 primary_span=span,
                 notes=notes,
                 source="parser",
@@ -261,7 +271,11 @@ def _validate_imports(plain: Any, location_index: LocationIndex) -> List[Diagnos
     return diagnostics
 
 
-def _format_validation_message(entry: dict) -> str:
+def _format_validation_message(entry: dict, loc: Iterable[PathSegment]) -> str:
+    if entry.get("type") == "extra_forbidden":
+        extra_message = _format_extra_forbidden_message(loc)
+        if extra_message:
+            return extra_message
     message = entry.get("msg", "Validation error")
     ctx = entry.get("ctx") or {}
     error = ctx.get("error")
@@ -270,6 +284,50 @@ def _format_validation_message(entry: dict) -> str:
         if ENDPOINT_LIST_NOTE in error_message:
             return error_message
     return message
+
+
+def _format_extra_forbidden_message(loc: Iterable[PathSegment]) -> Optional[str]:
+    invalid_key = _last_string_segment(loc)
+    if not invalid_key:
+        return None
+    valid_keys = _valid_keys_for_path(loc)
+    if valid_keys:
+        valid_list = ", ".join(valid_keys)
+        return f"Invalid section name '{invalid_key}'. Valid names are: {valid_list}"
+    return f"Invalid section name '{invalid_key}'."
+
+
+def _should_append_path(entry: dict, path_str: str, loc: Iterable[PathSegment]) -> bool:
+    if entry.get("type") != "extra_forbidden":
+        return True
+    invalid_key = _last_string_segment(loc)
+    if not invalid_key:
+        return True
+    return path_str != invalid_key
+
+
+def _valid_keys_for_path(loc: Iterable[PathSegment]) -> Optional[List[str]]:
+    path = list(loc)
+    if len(path) == 1:
+        return list(AsdlDocument.model_fields)
+    if len(path) >= 3 and path[0] == "modules":
+        if len(path) >= 5 and path[2] == "instance_defaults":
+            return list(InstanceDefaultsDecl.model_fields)
+        if len(path) >= 5 and path[2] == "patterns":
+            return list(PatternDecl.model_fields)
+        return list(ModuleDecl.model_fields)
+    if len(path) >= 3 and path[0] == "devices":
+        if len(path) >= 5 and path[2] == "backends":
+            return list(DeviceBackendDecl.model_fields)
+        return list(DeviceDecl.model_fields)
+    return None
+
+
+def _last_string_segment(path: Iterable[PathSegment]) -> Optional[str]:
+    for segment in reversed(tuple(path)):
+        if isinstance(segment, str):
+            return segment
+    return None
 
 
 def _hint_notes(entry: dict) -> List[str]:

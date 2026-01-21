@@ -47,6 +47,39 @@ class _SymbolMaps:
 
 
 _ENV_VAR_PATTERN = re.compile(r"\$(\w+|\{[^}]+\})")
+_MAX_PORT_PREVIEW = 8
+_MAX_PORT_MATCH_SCAN = 200
+
+
+def _preview_names(names: Iterable[str], limit: int) -> Tuple[List[str], bool]:
+    preview: List[str] = []
+    iterator = iter(names)
+    for _ in range(limit):
+        try:
+            preview.append(next(iterator))
+        except StopIteration:
+            return preview, False
+    has_more = next(iterator, None) is not None
+    return preview, has_more
+
+
+def _case_insensitive_match(
+    target: str, candidates: Iterable[str], *, max_scan: int
+) -> Optional[str]:
+    target_lower = target.lower()
+    match: Optional[str] = None
+    scanned = 0
+    for candidate in candidates:
+        scanned += 1
+        if scanned > max_scan:
+            return None
+        if candidate == target:
+            continue
+        if candidate.lower() == target_lower:
+            if match is not None and match != candidate:
+                return None
+            match = candidate
+    return match
 
 def _emit_design(
     design: "DesignOp", options: "EmitOptions"
@@ -387,6 +420,10 @@ def _emit_instance(
                 ),
                 Severity.ERROR,
                 instance.src,
+                help=(
+                    "Check that the symbol is defined or imported; use `ns.symbol` "
+                    "for imported definitions."
+                ),
             )
         )
         return None, True
@@ -635,6 +672,23 @@ def _ordered_conns(
     unknown_ports = [port for port in conn_map if port not in port_set]
     if unknown_ports:
         unknown_str = ", ".join(unknown_ports)
+        notes: List[str] = []
+        preview, truncated = _preview_names(port_list, _MAX_PORT_PREVIEW)
+        if preview:
+            notes.append(f"Valid ports are: {', '.join(preview)}")
+            if truncated:
+                notes.append("See the symbol definition for the full port list.")
+        for port in unknown_ports:
+            case_match = _case_insensitive_match(
+                port,
+                port_list,
+                max_scan=_MAX_PORT_MATCH_SCAN,
+            )
+            if case_match:
+                notes.append(
+                    f"Port names are case-sensitive; did you mean '{case_match}'?"
+                )
+                break
         _emit_diagnostic(
             diagnostics,
             _diagnostic(
@@ -645,6 +699,8 @@ def _ordered_conns(
                 ),
                 Severity.ERROR,
                 instance.src,
+                notes=notes or None,
+                help="Update endpoint names to match the device/module port list.",
             ),
         )
         had_error = True

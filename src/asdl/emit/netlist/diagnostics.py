@@ -36,16 +36,27 @@ def _emit_diagnostic(
 
 
 def _diagnostic(
-    code: str, message: str, severity: Severity, loc: LocationAttr | None = None
+    code: str,
+    message: str,
+    severity: Severity,
+    loc: LocationAttr | None = None,
+    notes: list[str] | None = None,
+    help: str | None = None,
 ) -> Diagnostic:
     span = location_attr_to_span(loc)
-    notes = None if span is not None else [NO_SPAN_NOTE]
+    resolved_notes = notes
+    if span is None:
+        if resolved_notes is None:
+            resolved_notes = [NO_SPAN_NOTE]
+        elif NO_SPAN_NOTE not in resolved_notes:
+            resolved_notes = [*resolved_notes, NO_SPAN_NOTE]
     return Diagnostic(
         code=code,
         severity=severity,
         message=message,
         primary_span=span,
-        notes=notes,
+        notes=resolved_notes,
+        help=help,
         source="emit",
     )
 

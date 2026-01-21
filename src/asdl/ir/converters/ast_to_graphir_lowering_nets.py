@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from asdl.ast import ModuleDecl
 from asdl.diagnostics import Diagnostic, Severity, format_code
@@ -33,6 +33,58 @@ from asdl.ir.patterns import (
 )
 
 DEFAULT_OVERRIDE = format_code("LINT", 2)
+_MAX_INSTANCE_PREVIEW = 6
+_MAX_INSTANCE_MATCH_SCAN = 200
+
+
+def _preview_names(names: Iterable[str], limit: int) -> Tuple[List[str], bool]:
+    preview: List[str] = []
+    iterator = iter(names)
+    for _ in range(limit):
+        try:
+            preview.append(next(iterator))
+        except StopIteration:
+            return preview, False
+    has_more = next(iterator, None) is not None
+    return preview, has_more
+
+
+def _case_insensitive_match(
+    target: str, candidates: Iterable[str], *, max_scan: int
+) -> Optional[str]:
+    target_lower = target.lower()
+    match: Optional[str] = None
+    scanned = 0
+    for candidate in candidates:
+        scanned += 1
+        if scanned > max_scan:
+            return None
+        if candidate == target:
+            continue
+        if candidate.lower() == target_lower:
+            if match is not None and match != candidate:
+                return None
+            match = candidate
+    return match
+
+
+def _unknown_instance_notes(
+    inst_name: str, inst_name_to_id: Dict[str, str]
+) -> Optional[List[str]]:
+    notes: List[str] = []
+    preview, truncated = _preview_names(inst_name_to_id.keys(), _MAX_INSTANCE_PREVIEW)
+    if preview:
+        notes.append(f"Known instances: {', '.join(preview)}")
+        if truncated:
+            notes.append("See the module instances section for the full list.")
+    case_match = _case_insensitive_match(
+        inst_name,
+        inst_name_to_id.keys(),
+        max_scan=_MAX_INSTANCE_MATCH_SCAN,
+    )
+    if case_match:
+        notes.append(f"Instance names are case-sensitive; did you mean '{case_match}'?")
+    return notes or None
 
 
 @dataclass(frozen=True)
@@ -405,6 +457,14 @@ def lower_module_nets(
                                     f"in module '{name}'"
                                 ),
                                 net_loc or module._loc,
+                                notes=_unknown_instance_notes(
+                                    endpoint_atom.inst,
+                                    inst_name_to_id,
+                                ),
+                                help=(
+                                    f"Declare the instance under modules.{name}.instances "
+                                    "before wiring it in nets."
+                                ),
                             )
                         )
                         had_error = True
@@ -538,6 +598,14 @@ def lower_module_nets(
                                         f"in module '{name}'"
                                     ),
                                     binding_loc or module._loc,
+                                    notes=_unknown_instance_notes(
+                                        endpoint_atom.inst,
+                                        inst_name_to_id,
+                                    ),
+                                    help=(
+                                        f"Declare the instance under modules.{name}.instances "
+                                        "before wiring it in nets."
+                                    ),
                                 )
                             )
                             had_error = True
