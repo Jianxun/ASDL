@@ -10,6 +10,8 @@ from .graph import (
     NetId,
     ProgramGraph,
 )
+from .index import GraphIndex
+from .query import DesignQuery, query
 from .registries import (
     AnnotationIndex,
     AxisId,
@@ -31,10 +33,12 @@ __all__ = [
     "AnnotationIndex",
     "AxisId",
     "AxisSpec",
+    "DesignQuery",
     "EndpointBundle",
     "ExprId",
     "GraphId",
     "GroupSlice",
+    "GraphIndex",
     "InstanceBundle",
     "InstId",
     "ModuleGraph",
@@ -47,6 +51,7 @@ __all__ = [
     "PatternOriginIndex",
     "PatternSegment",
     "ProgramGraph",
+    "query",
     "RegistrySet",
     "SchematicHints",
     "SourceSpanIndex",

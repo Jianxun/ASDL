@@ -19,19 +19,24 @@
 
 # Todo list
 - [x] Draft query/index tests for deterministic lookup + adjacency.
-- [ ] Implement GraphIndex + DesignQuery helpers.
-- [ ] Update core exports.
-- [ ] Run verification.
+- [x] Implement GraphIndex + DesignQuery helpers.
+- [x] Update core exports.
+- [x] Run verification.
 
 # Progress log
 - 2026-01-20: Created scratchpad and gathered requirements.
 - 2026-01-20: Added failing query/index tests (TDD baseline).
+- 2026-01-20: Implemented GraphIndex + DesignQuery helpers and exports.
+- 2026-01-20: Verified tests for query helpers.
 
 # Patch summary
+- Added GraphIndex and DesignQuery/query helpers for deterministic lookups.
+- Updated core exports and added query tests.
 
 # PR URL
 
 # Verification
+- `venv/bin/pytest tests/unit_tests/core/test_query.py -v`
 
 # Status request (Done / Blocked / In Progress)
 
