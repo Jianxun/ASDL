@@ -75,6 +75,7 @@ current_sprint:
       - src/asdl/core/graph.py
       - src/asdl/core/__init__.py
       - tests/unit_tests/core/test_patterned_graph.py
+      - docs/specs_refactor/spec_refactor_patterned_graph.md
     links:
       spec: docs/specs_refactor/spec_refactor_patterned_graph.md
       scratchpad: agents/scratchpads/T-183_patterned_graph_registry_alignment.md

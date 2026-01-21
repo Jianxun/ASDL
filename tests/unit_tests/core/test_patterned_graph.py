@@ -14,8 +14,27 @@ from asdl.core import (
 
 
 @dataclass(frozen=True)
+class DummyPatternSegment:
+    tokens: list[object]
+    span: object | None
+
+
+@dataclass(frozen=True)
+class DummyAxisSpec:
+    axis_id: str
+    kind: str
+    labels: list[str | int]
+    size: int
+    order: int
+
+
+@dataclass(frozen=True)
 class DummyPatternExpr:
     raw: str
+    segments: list[DummyPatternSegment]
+    axes: list[DummyAxisSpec]
+    axis_order: list[str]
+    span: object | None
 
 
 def _build_module() -> ModuleGraph:
@@ -72,18 +91,31 @@ def test_registry_optionality() -> None:
     graph = ProgramGraph(modules={})
 
     assert graph.registries.pattern_expressions is None
+    assert graph.registries.pattern_origins is None
+    assert graph.registries.param_pattern_origins is None
     assert graph.registries.source_spans is None
     assert graph.registries.schematic_hints is None
     assert graph.registries.annotations is None
 
     hints = SchematicHints(net_groups={"net1": []})
+    expr = DummyPatternExpr(
+        raw="N<1>",
+        segments=[DummyPatternSegment(tokens=["N", "<1>"], span=None)],
+        axes=[DummyAxisSpec(axis_id="n", kind="range", labels=[1], size=1, order=0)],
+        axis_order=["n"],
+        span=None,
+    )
     registries = RegistrySet(
-        pattern_expressions={"expr1": DummyPatternExpr("N<1>")},
+        pattern_expressions={"expr1": expr},
+        pattern_origins={"net1": ("expr1", 0, 0)},
+        param_pattern_origins={("inst1", "w"): ("expr1", 0)},
         schematic_hints=hints,
         annotations={"net1": {"role": "signal"}},
     )
     graph = ProgramGraph(modules={}, registries=registries)
 
-    assert graph.registries.pattern_expressions == {"expr1": DummyPatternExpr("N<1>")}
+    assert graph.registries.pattern_expressions == {"expr1": expr}
+    assert graph.registries.pattern_origins == {"net1": ("expr1", 0, 0)}
+    assert graph.registries.param_pattern_origins == {("inst1", "w"): ("expr1", 0)}
     assert graph.registries.schematic_hints is hints
     assert graph.registries.annotations == {"net1": {"role": "signal"}}

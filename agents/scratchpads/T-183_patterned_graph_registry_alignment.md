@@ -19,13 +19,21 @@
 - [ ] Run verification.
 
 # Progress log
-- 
+- Expanded PatternExpr protocol with parsed fields and added pattern origin registries.
+- Removed bundle-level annotations in favor of registry-only storage.
+- Updated PatternedGraph spec and tests; ran targeted pytest.
 
 # Patch summary
-- 
+- agents/context/tasks.yaml: add spec file to T-183 file list.
+- agents/context/tasks_state.yaml: mark T-183 in progress.
+- src/asdl/core/registries.py: add Axis/Pattern protocols + origin registries.
+- src/asdl/core/graph.py: remove bundle annotations fields.
+- src/asdl/core/__init__.py: export new registry/protocol types.
+- docs/specs_refactor/spec_refactor_patterned_graph.md: align bundle/registry docs.
+- tests/unit_tests/core/test_patterned_graph.py: extend registry optionality coverage.
 
 # Verification
-- 
+- venv/bin/pytest tests/unit_tests/core/test_patterned_graph.py -v
 
 # Status request (Done / Blocked / In Progress)
 - 
