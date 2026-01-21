@@ -31,7 +31,7 @@
 - TBD
 
 ## Verification
-- TBD
+- `venv/bin/pytest tests/unit_tests/patterns_refactor -v`
 
 ## Status request
 - In Progress
