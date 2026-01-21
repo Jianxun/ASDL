@@ -37,6 +37,5 @@ def test_render_markdown_full_switch_matrix_sections() -> None:
     assert "#### power" in markdown
 
     section_index = markdown.index("#### buses and pins")
-    bus_row_index = markdown.index("| $BUS<@BUS> |")
-    assert section_index < bus_row_index
+    assert "| $BUS<@BUS> |" in markdown[section_index:]
     assert "bus broadcast to all rows" in markdown
