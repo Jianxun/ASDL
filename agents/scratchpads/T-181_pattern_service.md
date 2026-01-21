@@ -21,9 +21,11 @@
 ## Progress log
 - Created scratchpad and captured DoD.
 - Added initial pattern service tests for splice flattening, endpoint expansion, and axis mismatch.
+- Implemented parser, expansion, and binding helpers for refactor pattern service.
 
 ## Patch summary
 - Added tests for pattern service expectations.
+- Added refactor pattern service modules for parsing, expansion, and binding.
 
 ## PR URL
 - TBD
