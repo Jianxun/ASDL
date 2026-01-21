@@ -1,8 +1,8 @@
 schema_version: 2
 T-180:
-  status: review_clean
+  status: done
   pr: 182
-  merged: false
+  merged: true
 T-181:
   status: ready
   pr: null
