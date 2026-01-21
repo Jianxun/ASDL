@@ -4,7 +4,7 @@ T-180:
   pr: 182
   merged: true
 T-181:
-  status: request_changes
+  status: ready_for_review
   pr: 186
   merged: false
 T-182:
