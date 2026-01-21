@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from xdsl.dialects.builtin import DictionaryAttr
 
@@ -42,6 +42,39 @@ RECURSIVE_MODULE_VARIABLE = format_code("IR", 13)
 
 _PATTERN_DELIMITERS = set("<>;|")
 _VARIABLE_PLACEHOLDER_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
+_MAX_SYMBOL_PREVIEW = 6
+_MAX_MATCH_SCAN = 200
+
+
+def _preview_names(names: Iterable[str], limit: int) -> Tuple[List[str], bool]:
+    preview: List[str] = []
+    iterator = iter(names)
+    for _ in range(limit):
+        try:
+            preview.append(next(iterator))
+        except StopIteration:
+            return preview, False
+    has_more = next(iterator, None) is not None
+    return preview, has_more
+
+
+def _case_insensitive_match(
+    target: str, candidates: Iterable[str], *, max_scan: int
+) -> Optional[str]:
+    target_lower = target.lower()
+    match: Optional[str] = None
+    scanned = 0
+    for candidate in candidates:
+        scanned += 1
+        if scanned > max_scan:
+            return None
+        if candidate == target:
+            continue
+        if candidate.lower() == target_lower:
+            if match is not None and match != candidate:
+                return None
+            match = candidate
+    return match
 
 
 def is_pattern_expression(expression: str) -> bool:
@@ -298,54 +331,96 @@ def resolve_symbol_reference(
     Returns:
         Resolved symbol metadata or None if unresolved.
     """
+    def _emit_unresolved(
+        code: str,
+        *,
+        notes: Optional[List[str]] = None,
+        help_text: Optional[str] = None,
+    ) -> None:
+        diagnostics.append(
+            diagnostic(
+                code,
+                f"Unresolved symbol '{ref}'.",
+                loc,
+                notes=notes,
+                help=help_text,
+            )
+        )
+
     if "." in ref:
         if name_env is None or program_db is None or global_symbols is None:
-            diagnostics.append(
-                diagnostic(
-                    UNRESOLVED_QUALIFIED,
-                    f"Unresolved symbol '{ref}'.",
-                    loc,
-                )
+            _emit_unresolved(
+                UNRESOLVED_QUALIFIED,
+                help_text=(
+                    "Qualified symbols require imports. Add them under `imports:` "
+                    "and reference as `ns.symbol`."
+                ),
             )
             return None
         namespace, symbol = ref.split(".", 1)
         if not namespace or not symbol:
-            diagnostics.append(
-                diagnostic(
-                    UNRESOLVED_QUALIFIED,
-                    f"Unresolved symbol '{ref}'.",
-                    loc,
-                )
+            _emit_unresolved(
+                UNRESOLVED_QUALIFIED,
+                help_text="Qualified symbols must be in `ns.symbol` form.",
             )
             return None
         resolved_file_id = name_env.resolve(namespace)
         if resolved_file_id is None:
-            diagnostics.append(
-                diagnostic(
-                    UNRESOLVED_QUALIFIED,
-                    f"Unresolved symbol '{ref}'.",
-                    loc,
+            notes: List[str] = []
+            preview, truncated = _preview_names(name_env.bindings.keys(), _MAX_SYMBOL_PREVIEW)
+            if preview:
+                notes.append(f"Available import namespaces: {', '.join(preview)}")
+                if truncated:
+                    notes.append("See the imports section for the full list.")
+            case_match = _case_insensitive_match(
+                namespace,
+                name_env.bindings.keys(),
+                max_scan=_MAX_MATCH_SCAN,
+            )
+            if case_match:
+                notes.append(
+                    f"Import namespaces are case-sensitive; did you mean '{case_match}'?"
                 )
+            _emit_unresolved(
+                UNRESOLVED_QUALIFIED,
+                notes=notes or None,
+                help_text=(
+                    "Add the namespace to `imports:` and reference the symbol as "
+                    "`ns.symbol`."
+                ),
             )
             return None
-        if program_db.lookup(resolved_file_id, symbol) is None:
-            diagnostics.append(
-                diagnostic(
-                    UNRESOLVED_QUALIFIED,
-                    f"Unresolved symbol '{ref}'.",
-                    loc,
+        candidates_by_symbol = global_symbols.get(resolved_file_id, {})
+        candidates = candidates_by_symbol.get(symbol)
+        if program_db.lookup(resolved_file_id, symbol) is None or not candidates:
+            notes = []
+            preview, truncated = _preview_names(
+                candidates_by_symbol.keys(),
+                _MAX_SYMBOL_PREVIEW,
+            )
+            if preview:
+                notes.append(
+                    f"Available symbols in namespace '{namespace}': {', '.join(preview)}"
                 )
+                if truncated:
+                    notes.append("See the imported file for the full list.")
+            case_match = _case_insensitive_match(
+                symbol,
+                candidates_by_symbol.keys(),
+                max_scan=_MAX_MATCH_SCAN,
+            )
+            if case_match:
+                notes.append(
+                    f"Symbols are case-sensitive; did you mean '{case_match}'?"
+                )
+            _emit_unresolved(
+                UNRESOLVED_QUALIFIED,
+                notes=notes or None,
+                help_text="Check the symbol spelling or update the import target.",
             )
             return None
-        candidates = global_symbols.get(resolved_file_id, {}).get(symbol)
         if not candidates:
-            diagnostics.append(
-                diagnostic(
-                    UNRESOLVED_QUALIFIED,
-                    f"Unresolved symbol '{ref}'.",
-                    loc,
-                )
-            )
+            _emit_unresolved(UNRESOLVED_QUALIFIED)
             return None
         if len(candidates) > 1:
             diagnostics.append(
@@ -359,12 +434,26 @@ def resolve_symbol_reference(
         return candidates[0]
     candidates = symbol_table.get(ref)
     if not candidates:
-        diagnostics.append(
-            diagnostic(
-                UNRESOLVED_UNQUALIFIED,
-                f"Unresolved symbol '{ref}'.",
-                loc,
-            )
+        notes = []
+        preview, truncated = _preview_names(symbol_table.keys(), _MAX_SYMBOL_PREVIEW)
+        if preview:
+            notes.append(f"Known symbols: {', '.join(preview)}")
+            if truncated:
+                notes.append("See the module/device definitions for the full list.")
+        case_match = _case_insensitive_match(
+            ref,
+            symbol_table.keys(),
+            max_scan=_MAX_MATCH_SCAN,
+        )
+        if case_match:
+            notes.append(f"Symbols are case-sensitive; did you mean '{case_match}'?")
+        _emit_unresolved(
+            UNRESOLVED_UNQUALIFIED,
+            notes=notes or None,
+            help_text=(
+                "If the symbol is defined in another file, add it under `imports:` "
+                "and reference it as `ns.symbol`."
+            ),
         )
         return None
     if len(candidates) > 1:
