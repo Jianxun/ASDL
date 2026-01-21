@@ -28,16 +28,16 @@
 - tests/unit_tests/core/test_patterned_graph.py: add coverage for construction, endpoint ownership, and registry optionality.
 
 # PR URL
-- 
+- https://github.com/Jianxun/ASDL/pull/182
 
 # Verification
 - ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph.py -v
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - 
 
 # Next steps
-- 
+- Await review feedback.

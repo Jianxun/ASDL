@@ -1,7 +1,7 @@
 schema_version: 2
 T-180:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 182
   merged: false
 T-181:
   status: ready
