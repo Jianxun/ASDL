@@ -4,7 +4,7 @@ T-180:
   pr: 182
   merged: true
 T-181:
-  status: review_in_progress
+  status: review_clean
   pr: 186
   merged: false
 T-182:
