@@ -34,11 +34,13 @@
 - Updated core exports and added query tests.
 
 # PR URL
+https://github.com/Jianxun/ASDL/pull/187
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/core/test_query.py -v`
 
 # Status request (Done / Blocked / In Progress)
+Done
 
 # Blockers / Questions
 
