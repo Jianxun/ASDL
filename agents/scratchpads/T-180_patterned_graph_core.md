@@ -11,10 +11,10 @@
 - agents/context/project_status.md
 
 # Plan
-- [ ] Review spec and existing patterns/diagnostics helpers to align types and IDs.
-- [ ] Add tests for construction, endpoint ownership, and registry optionality.
-- [ ] Implement core dataclasses + registries and exports.
-- [ ] Run verification and capture results.
+- [x] Review spec and existing patterns/diagnostics helpers to align types and IDs.
+- [x] Add tests for construction, endpoint ownership, and registry optionality.
+- [x] Implement core dataclasses + registries and exports.
+- [x] Run verification and capture results.
 
 # Progress log
 - Added tests for construction, endpoint ownership, and registry optionality.
