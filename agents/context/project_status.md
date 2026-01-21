@@ -3,31 +3,12 @@
 Brief context record for the Architect; reconcile from task status and reviews.
 
 ## Current state
-- MVP specs live under `docs/specs_mvp/` for AST, NFIR, IFIR, and ngspice emission; full specs remain under `docs/specs/` pending reconciliation.
-- MVP pipeline is AST -> GraphIR -> IFIR -> emit; GraphIR is the canonical semantic core, and NFIR is optional for AST projection only.
-- Clean slate for IR implementation; prior CIR/NLIR tasks archived.
-- OKR tracking is deprecated; planning is spec-driven.
-- Import system clarified: `file_id` propagation, PATH-style `ASDL_LIB_PATH`, diagnostics codes, and subckt auto-disambiguation via hash.
-- AST models + parser updated to MVP net-first schema; parser/AST tests refreshed.
-- ASDL_NFIR dialect + AST->NFIR conversion implemented with unit tests (deprecated path).
-- ASDL_IFIR dialect + NFIR->IFIR conversion implemented with unit tests (deprecated path; GraphIR -> IFIR is canonical).
-- ngspice emitter from IFIR implemented with MVP netlist tests.
-- MVP pipeline orchestrator implemented with xDSL pass pipeline and an end-to-end pipeline test.
-- T-036 CLI netlist command merged under `src/asdl/cli/` with tests passing locally (PR #31).
-- T-043 list-only endpoint authoring enforced in AST/converter with parser coverage merged (PR #32).
-- T-037 PARSE-003 diagnostics updated with endpoint list and instance expr hints merged (PR #33).
-- T-041 device ports optional support merged with AST/IR/netlist coverage (PR #34).
-- T-035 IFIR/emit diagnostics now attach source spans where available (PR #35).
-- T-038 netlist template placeholders updated to `{ports}` (optional); reserved placeholder enforcement removed; CLI help/tests updated (PR #36).
-- T-039 CLI help test added to verify command listing (PR #37).
-- T-046 individual merged parameter values now exposed as template placeholders; templates can reference device/backend/instance params directly (e.g., `{L}`, `{W}`, `{NF}`, `{m}`).
-- T-047 system devices refactor complete: ngspice emitter now uses backend config (`config/backends.yaml`) with 5 required system devices; all hardcoded ngspice syntax removed; all tests passing with byte-for-byte identical output.
-- T-048 complete: unified netlist backend with CLI `--backend` (default `sim.ngspice`), backend config `extension`, and dedicated netlist verification pass; `emit_ngspice` removed.
-- T-049 complete: split `src/asdl/emit/netlist.py` into `src/asdl/emit/netlist/` package with API/verify/render/templates/params/IR helpers/diagnostics; updated codebase map; tests passing; PR https://github.com/Jianxun/ASDL/pull/41.
-- Imports spec work landed: AST `imports` schema + parser validation + import resolver + ProgramDB/NameEnv exist in `src/asdl/imports/`, but import resolution is not yet wired into CLI/pipeline.
-- Pattern expansion/elaboration engine exists (`src/asdl/patterns.py`, `src/asdl/ir/pattern_elaboration.py`) and is used by netlist emission after IFIR, but NFIR/IFIR metadata fields and pattern-aware verifiers remain incomplete.
-- Netlist emission supports system devices + `{ports}` + merged param placeholders; `{file_id}`/`{sym_name}`/`{top_sym_name}` placeholders and subckt disambiguation are still pending.
-- Inline pin bindings are deprecated in favor of `instance_defaults` and module-local named patterns; explicit joiner semantics and patterned params are queued (ADRs 0007-0010).
+- MVP specs live under `docs/specs_mvp/` for AST/NFIR/IFIR/emission; full specs remain under `docs/specs/`.
+- Legacy pipeline is AST -> GraphIR (xDSL) -> IFIR -> emit; NFIR remains optional for AST projection.
+- Refactor specs drafted under `docs/specs_refactor/` (PatternedGraph core, pattern service, migration plan); legacy pipeline remains default.
+- Refactor Phase 1 tasks (T-180/T-181/T-182) are in the current sprint.
+- Import resolver exists under `src/asdl/imports/` but is not yet wired into CLI/pipeline.
+- Netlist emission is backend-config driven; placeholder disambiguation (`{file_id}`, `{sym_name}`, `{top_sym_name}`) is still pending.
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ast`
@@ -41,13 +22,12 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - `venv/bin/python -m py_compile src/asdl/emit/netlist/*.py`
 
 ## Next steps (1-3)
-1. Wire import resolution into CLI/pipeline (resolve graph, pass NameEnv/ProgramDB, honor `ASDL_LIB_PATH` and CLI roots).
-2. Complete pattern-aware NFIR/GraphIR/IFIR metadata + verification (expansion lengths, equivalence checks) and align boolean param normalization.
-3. Finish netlist placeholders and subckt name disambiguation (`{file_id}`, `{sym_name}`, `{top_sym_name}`) per specs.
+1. Implement PatternedGraph core dataclasses + registries (T-180).
+2. Implement refactor pattern service (parse/bind/expand with named-axis broadcast) (T-181).
+3. Add PatternedGraph query/index helpers to support API/visualization (T-182).
 
 ## Risks / unknowns
-- Coordinating pattern expansion across AST, NFIR, IFIR, and netlist diagnostics is currently the highest ambiguity.
+- Coordinating pattern expansion semantics across legacy and refactor pipelines is currently the highest ambiguity.
 - IFIR and emission semantics are new; tests will drive final API shape.
 - Backend-specific emission rules beyond ngspice remain undefined.
-- System devices successfully decouple backend syntax; backend config schema is evolving to include output extensions.
 - Import-aware compilation is partially implemented but not yet exercised end-to-end in CLI or pipeline tests.
