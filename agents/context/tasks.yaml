@@ -79,4 +79,25 @@ current_sprint:
     links:
       spec: docs/specs_refactor/spec_refactor_patterned_graph.md
       scratchpad: agents/scratchpads/T-183_patterned_graph_registry_alignment.md
+  - id: T-184
+    title: Lower AST modules into PatternedGraph
+    owner: Executor
+    depends_on:
+      - T-181
+      - T-180
+    dod: >
+      Implement AST->PatternedGraph lowering that builds ProgramGraph/ModuleGraph
+      bundles with registries (pattern expressions, origins, source spans, and
+      schematic hints) without atomization, returning diagnostics instead of
+      raising. Add tests for a minimal module with patterned nets/endpoints and
+      grouped endpoints.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
+    files:
+      - src/asdl/core/build_patterned_graph.py
+      - src/asdl/core/__init__.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+    links:
+      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
+      scratchpad: agents/scratchpads/T-184_patterned_graph_lowering.md
 backlog: []
