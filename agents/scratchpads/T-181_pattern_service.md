@@ -23,11 +23,13 @@
 - Added initial pattern service tests for splice flattening, endpoint expansion, and axis mismatch.
 - Implemented parser, expansion, and binding helpers for refactor pattern service.
 - Guarded broadcast binding for splices and axis-size mismatches with regression test coverage.
+- Added regression test for axis-size product mismatch in broadcast binding.
 
 ## Patch summary
 - Added tests for splice flattening, endpoint expansion, and axis mismatch diagnostics.
 - Added refactor pattern service parser/expand/bind modules with named pattern handling.
 - Disallowed named-axis broadcast for spliced expressions and validated axis-size products.
+- Added axis-size product mismatch regression test for broadcast binding.
 
 ## PR URL
 - https://github.com/Jianxun/ASDL/pull/186

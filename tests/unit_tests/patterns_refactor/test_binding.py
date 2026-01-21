@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from asdl.patterns_refactor import (
+    AxisSpec,
     NamedPattern,
+    PatternExpr,
+    PatternGroup,
+    PatternLiteral,
+    PatternSegment,
     bind_patterns,
     expand_endpoint,
     expand_pattern,
@@ -77,3 +82,47 @@ def test_bind_disallows_broadcast_with_splice() -> None:
     assert plan is None
     assert errors
     assert "splice" in errors[0].message.lower()
+
+
+def test_bind_rejects_axis_size_product_mismatch() -> None:
+    net_expr = PatternExpr(
+        raw="NET<@A>",
+        segments=[
+            PatternSegment(
+                tokens=[
+                    PatternLiteral("NET"),
+                    PatternGroup(kind="enum", labels=[0, 1], axis_id="a"),
+                ]
+            )
+        ],
+        axes=[AxisSpec(axis_id="a", kind="enum", labels=[0, 1], size=2, order=0)],
+        axis_order=["a"],
+    )
+    endpoint_expr = PatternExpr(
+        raw="U<@A>.P<@B>",
+        segments=[
+            PatternSegment(
+                tokens=[
+                    PatternLiteral("U"),
+                    PatternGroup(kind="enum", labels=[0, 1, 2], axis_id="a"),
+                    PatternLiteral(".P"),
+                    PatternGroup(kind="enum", labels=["X"], axis_id="b"),
+                ]
+            )
+        ],
+        axes=[
+            AxisSpec(axis_id="a", kind="enum", labels=[0, 1], size=2, order=0),
+            AxisSpec(axis_id="b", kind="enum", labels=[0, 1], size=2, order=1),
+        ],
+        axis_order=["a", "b"],
+    )
+
+    plan, errors = bind_patterns(
+        net_expr,
+        endpoint_expr,
+        net_expr_id="net",
+        endpoint_expr_id="endpoint",
+    )
+    assert plan is None
+    assert errors
+    assert "axis-size" in errors[0].message.lower()
