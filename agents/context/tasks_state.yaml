@@ -4,6 +4,6 @@ T-177:
   pr: 178
   merged: true
 T-178:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 179
+  merged: true
