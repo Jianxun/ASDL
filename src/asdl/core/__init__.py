@@ -11,6 +11,7 @@ from .graph import (
     ProgramGraph,
 )
 from .registries import (
+    AnnotationIndex,
     ExprId,
     GraphId,
     GroupSlice,
@@ -22,6 +23,7 @@ from .registries import (
 )
 
 __all__ = [
+    "AnnotationIndex",
     "EndpointBundle",
     "ExprId",
     "GraphId",

@@ -23,6 +23,7 @@ class PatternExpr(Protocol):
 
 PatternExpressionRegistry: TypeAlias = Dict[ExprId, PatternExpr]
 SourceSpanIndex: TypeAlias = Dict[GraphId, SourceSpan]
+AnnotationIndex: TypeAlias = Dict[GraphId, Dict[str, object]]
 
 
 @dataclass(frozen=True)
@@ -61,11 +62,13 @@ class RegistrySet:
         pattern_expressions: Optional registry of parsed pattern expressions.
         source_spans: Optional registry of source spans per entity ID.
         schematic_hints: Optional schematic-only metadata.
+        annotations: Optional registry of annotations by entity ID.
     """
 
     pattern_expressions: Optional[PatternExpressionRegistry] = None
     source_spans: Optional[SourceSpanIndex] = None
     schematic_hints: Optional[SchematicHints] = None
+    annotations: Optional[AnnotationIndex] = None
 
 
 __all__ = [
@@ -77,4 +80,5 @@ __all__ = [
     "RegistrySet",
     "SchematicHints",
     "SourceSpanIndex",
+    "AnnotationIndex",
 ]
