@@ -1,7 +1,6 @@
 schema_version: 2
 
-current_sprint: []
-backlog:
+current_sprint:
   - id: T-180
     title: Define PatternedGraph core dataclasses + registries
     owner: Executor
@@ -59,3 +58,4 @@ backlog:
     links:
       spec: docs/specs_refactor/spec_refactor_patterned_graph.md
       scratchpad: agents/scratchpads/T-182_patterned_graph_query.md
+backlog: []
