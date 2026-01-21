@@ -21,22 +21,25 @@
 - Wire module exports in `src/asdl/docs/__init__.py`.
 
 ## Progress log
-- 
+- Added unit tests for swmatrix_Tgate and full_switch_matrix section bundles.
+- Implemented comment-based docstring extractor with key + section support.
+- Verified docstring tests pass.
 
 ## Patch summary
-- 
+- Added `src/asdl/docs` package with docstring extraction helpers and data structures.
+- Added docstring extractor tests covering inline comments and section bundles.
 
 ## PR URL
-- 
+- https://github.com/Jianxun/ASDL/pull/178
 
 ## Verification
-- 
+- `venv/bin/pytest tests/unit_tests/docs/test_docstrings.py -v`
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - 
 
 ## Next steps
-- 
+- Open PR and set task status to ready_for_review.
