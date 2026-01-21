@@ -195,6 +195,7 @@ def test_parse_string_rejects_top_level_patterns() -> None:
     diag = diagnostics[0]
     assert diag.code == "PARSE-003"
     assert "patterns" in diag.message
+    assert "Valid names are" in diag.message
 
 
 def test_parse_string_rejects_invalid_pattern_group() -> None:
@@ -320,6 +321,7 @@ def test_parse_string_forbids_exports_in_module() -> None:
     assert diag.code == "PARSE-003"
     assert diag.primary_span is not None
     assert (diag.primary_span.start.line, diag.primary_span.start.col) == (6, 5)
+    assert "Valid names are" in diag.message
 
 
 def test_parse_string_rejects_endpoint_string() -> None:
