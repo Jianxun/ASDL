@@ -109,3 +109,5 @@ archive:
   - T-174: {completed_on: 2026-01-20, owner: Executor, scratchpad: agents/scratchpads/T-174_explicit_net_refactor.md, pr: 175}
   - T-175: {completed_on: 2026-01-20, owner: Executor, scratchpad: agents/scratchpads/T-175_defaults_refactor.md, pr: 176}
   - T-176: {completed_on: 2026-01-20, owner: Architect, scratchpad: agents/scratchpads/T-176_asdl_docstrings_spec.md, pr: 177}
+  - T-177: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-177_asdl_docstring_extractor.md, pr: 178}
+  - T-178: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-178_asdl_markdown_render.md, pr: 179}
