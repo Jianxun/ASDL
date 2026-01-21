@@ -122,6 +122,14 @@ def bind_patterns(
             )
         ]
 
+    if len(net_expr.segments) > 1 or len(endpoint_expr.segments) > 1:
+        return None, [
+            PatternError(
+                "Named-axis broadcast is not supported for spliced expressions.",
+                net_expr.span or endpoint_expr.span,
+            )
+        ]
+
     if not net_expr.axis_order or not endpoint_expr.axis_order:
         return None, [
             PatternError(
@@ -146,6 +154,19 @@ def bind_patterns(
 
     net_axis_sizes = {axis.axis_id: axis.size for axis in net_expr.axes}
     endpoint_axis_sizes = {axis.axis_id: axis.size for axis in endpoint_expr.axes}
+    net_expected = _axis_size_product(net_expr.axis_order, net_axis_sizes)
+    endpoint_expected = _axis_size_product(endpoint_expr.axis_order, endpoint_axis_sizes)
+    if net_expected != net_length or endpoint_expected != endpoint_length:
+        return None, [
+            PatternError(
+                (
+                    "Axis broadcast requires expansion lengths to match axis-size "
+                    f"products (net {net_length}/{net_expected}, "
+                    f"endpoint {endpoint_length}/{endpoint_expected})."
+                ),
+                net_expr.span or endpoint_expr.span,
+            )
+        ]
     for axis_id in net_expr.axis_order:
         net_size = net_axis_sizes.get(axis_id)
         endpoint_size = endpoint_axis_sizes.get(axis_id)
@@ -247,6 +268,25 @@ def _coords_to_index(coords: list[int], sizes: list[int]) -> int:
     for coord, size in zip(coords, sizes):
         index = index * size + coord
     return index
+
+
+def _axis_size_product(axis_order: list[str], axis_sizes: dict[str, int]) -> int:
+    """Compute the product of axis sizes in expression order.
+
+    Args:
+        axis_order: Axis identifier ordering.
+        axis_sizes: Mapping from axis identifier to size.
+
+    Returns:
+        Product of axis sizes, or 0 when any axis is missing.
+    """
+    product = 1
+    for axis_id in axis_order:
+        size = axis_sizes.get(axis_id)
+        if size is None:
+            return 0
+        product *= size
+    return product
 
 
 __all__ = ["BindingPlan", "bind_patterns"]

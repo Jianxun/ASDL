@@ -54,3 +54,26 @@ def test_bind_axis_size_mismatch_reports_error() -> None:
     assert plan is None
     assert errors
     assert "axis" in errors[0].message.lower()
+
+
+def test_bind_disallows_broadcast_with_splice() -> None:
+    named_patterns = {
+        "BUS": NamedPattern(expr="<0|1>", tag="bit"),
+    }
+    net_expr, errors = parse_pattern_expr("NET<@BUS>;EXTRA", named_patterns=named_patterns)
+    assert errors == []
+    endpoint_expr, errors = parse_pattern_expr(
+        "U<@BUS>.P",
+        named_patterns=named_patterns,
+    )
+    assert errors == []
+
+    plan, errors = bind_patterns(
+        net_expr,
+        endpoint_expr,
+        net_expr_id="net",
+        endpoint_expr_id="endpoint",
+    )
+    assert plan is None
+    assert errors
+    assert "splice" in errors[0].message.lower()
