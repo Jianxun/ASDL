@@ -74,13 +74,16 @@ def test_registry_optionality() -> None:
     assert graph.registries.pattern_expressions is None
     assert graph.registries.source_spans is None
     assert graph.registries.schematic_hints is None
+    assert graph.registries.annotations is None
 
     hints = SchematicHints(net_groups={"net1": []})
     registries = RegistrySet(
         pattern_expressions={"expr1": DummyPatternExpr("N<1>")},
         schematic_hints=hints,
+        annotations={"net1": {"role": "signal"}},
     )
     graph = ProgramGraph(modules={}, registries=registries)
 
     assert graph.registries.pattern_expressions == {"expr1": DummyPatternExpr("N<1>")}
     assert graph.registries.schematic_hints is hints
+    assert graph.registries.annotations == {"net1": {"role": "signal"}}
