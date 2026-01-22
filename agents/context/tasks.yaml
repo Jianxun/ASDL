@@ -39,6 +39,24 @@ current_sprint:
     links:
       spec: docs/specs_refactor/spec_refactor_stack.md
       scratchpad: agents/scratchpads/T-190_cli_patterned_graph_dump.md
+  - id: T-191
+    title: Define AtomizedGraph core model
+    owner: Executor
+    dod: >
+      Add a core dataclass model for fully-atomized graphs (program, module,
+      net, instance, endpoint) including stable IDs, resolved atom names, and
+      optional provenance back-references to PatternedGraph entities. Document
+      the model in a refactor spec and export it from `asdl.core`.
+    verify:
+      - venv/bin/python -m py_compile src/asdl/core/atomized_graph.py
+    files:
+      - src/asdl/core/atomized_graph.py
+      - src/asdl/core/__init__.py
+      - docs/specs_refactor/spec_refactor_atomized_graph.md
+    links:
+      spec: docs/specs_refactor/spec_refactor_stack.md
+      scratchpad: agents/scratchpads/T-191_atomized_graph_model.md
+
   - id: T-192
     title: Convert PatternedGraph to AtomizedGraph
     owner: Executor
@@ -78,20 +96,3 @@ current_sprint:
       spec: docs/specs_refactor/spec_refactor_atomized_graph.md
       scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md
 backlog:
-  - id: T-191
-    title: Define AtomizedGraph core model
-    owner: Executor
-    dod: >
-      Add a core dataclass model for fully-atomized graphs (program, module,
-      net, instance, endpoint) including stable IDs, resolved atom names, and
-      optional provenance back-references to PatternedGraph entities. Document
-      the model in a refactor spec and export it from `asdl.core`.
-    verify:
-      - venv/bin/python -m py_compile src/asdl/core/atomized_graph.py
-    files:
-      - src/asdl/core/atomized_graph.py
-      - src/asdl/core/__init__.py
-      - docs/specs_refactor/spec_refactor_atomized_graph.md
-    links:
-      spec: docs/specs_refactor/spec_refactor_stack.md
-      scratchpad: agents/scratchpads/T-191_atomized_graph_model.md
