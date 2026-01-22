@@ -12,23 +12,24 @@
 - `agents/context/project_status.md`
 
 ## Plan
-- [ ] Inspect current patterned graph lowering module and tests to understand responsibilities.
-- [ ] Extract helpers into new lowering modules and refactor orchestration.
-- [ ] Rename the lowering module and update exports/imports.
-- [ ] Run verify command and record results.
+- [x] Inspect current patterned graph lowering module and tests to understand responsibilities.
+- [x] Extract helpers into new lowering modules and refactor orchestration.
+- [x] Rename the lowering module and update exports/imports.
+- [x] Run verify command and record results.
 
 ## Progress log
 - 2026-01-XX: Initialized scratchpad and began splitting lowering helpers.
 - 2026-01-XX: Renamed lowering module and updated exports.
 
 ## Patch summary
-- TBD
+- Added focused lowering modules for diagnostics, expressions, instances, and nets.
+- Renamed the main lowering module to `ast_to_patterned_graph.py` and updated exports.
 
 ## PR URL
 - TBD
 
 ## Verification
-- TBD
+- `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v` (passed)
 
 ## Status request
 - In Progress
