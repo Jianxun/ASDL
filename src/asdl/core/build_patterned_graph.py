@@ -184,6 +184,7 @@ def _lower_module(
     _register_span(source_spans, module_id, getattr(module, "_loc", None))
 
     port_order: List[str] = []
+    instance_refs: set[str] = set()
 
     for inst_name, inst_expr in (module.instances or {}).items():
         inst_loc = module._instances_loc.get(inst_name)
@@ -223,6 +224,7 @@ def _lower_module(
         if resolved is None:
             continue
 
+        instance_refs.add(ref)
         inst_id = id_allocator.next("i")
         param_expr_ids: Dict[str, str] = {}
         if params:
@@ -328,6 +330,15 @@ def _lower_module(
 
         if group_slices:
             net_groups[net_id] = group_slices
+
+    if module.instance_defaults and instance_refs:
+        for ref, defaults in module.instance_defaults.items():
+            if ref not in instance_refs:
+                continue
+            for net_token in defaults.bindings.values():
+                net_name, is_port = _split_net_token(net_token)
+                if is_port and net_name not in port_order:
+                    port_order.append(net_name)
 
     module_graph.port_order = port_order or None
     return module_graph

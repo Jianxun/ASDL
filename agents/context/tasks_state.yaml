@@ -1,8 +1,8 @@
 schema_version: 2
 T-185:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 190
+  merged: true
 T-186:
   status: ready
   pr: null

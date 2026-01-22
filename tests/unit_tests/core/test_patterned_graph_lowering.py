@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl, PatternDecl
+from asdl.ast import (
+    AsdlDocument,
+    DeviceBackendDecl,
+    DeviceDecl,
+    InstanceDefaultsDecl,
+    ModuleDecl,
+    PatternDecl,
+)
 from asdl.ast.location import Locatable
 from asdl.core import GroupSlice, build_patterned_graph
 
@@ -83,3 +90,40 @@ def test_build_patterned_graph_with_groups_and_patterns() -> None:
     spans = graph.registries.source_spans
     assert spans is not None
     assert spans[net_id].file == "design.asdl"
+
+
+def test_build_patterned_graph_port_order_appends_default_ports() -> None:
+    module = ModuleDecl.model_construct(
+        instances={"U1": "nmos"},
+        nets={
+            "$A": ["U1.D"],
+            "$B": ["U1.G"],
+        },
+        instance_defaults={
+            "nmos": InstanceDefaultsDecl.model_construct(
+                bindings={
+                    "G": "$CTRL",
+                    "S": "VSS",
+                    "B": "$A",
+                    "D": "$VDD",
+                }
+            )
+        },
+    )
+    device = DeviceDecl(
+        ports=None,
+        parameters=None,
+        variables=None,
+        backends={"sim.ngspice": DeviceBackendDecl(template="M")},
+    )
+    document = AsdlDocument.model_construct(
+        modules={"top": module},
+        devices={"nmos": device},
+        top="top",
+    )
+
+    graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert diagnostics == []
+    module_graph = next(iter(graph.modules.values()))
+    assert module_graph.port_order == ["A", "B", "CTRL", "VDD"]
