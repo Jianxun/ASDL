@@ -20,19 +20,20 @@
 ## Progress log
 - 2026-01-XX: Initialized scratchpad and began splitting lowering helpers.
 - 2026-01-XX: Renamed lowering module and updated exports.
+- 2026-01-XX: Opened PR #194.
 
 ## Patch summary
 - Added focused lowering modules for diagnostics, expressions, instances, and nets.
 - Renamed the main lowering module to `ast_to_patterned_graph.py` and updated exports.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/194
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v` (passed)
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - None yet.
