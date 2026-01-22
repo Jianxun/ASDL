@@ -125,10 +125,11 @@ def build_atomized_graph(
 
         inst_name_to_ids: Dict[str, list[str]] = {}
         for inst_bundle in module.instances.values():
+            inst_span = _entity_span(source_spans, inst_bundle.inst_id)
             inst_expr = _lookup_expr(
                 inst_bundle.name_expr_id,
                 expr_registry,
-                span=_entity_span(source_spans, inst_bundle.inst_id),
+                span=inst_span,
                 diagnostics=diagnostics,
             )
             if inst_expr is None:
@@ -138,7 +139,7 @@ def build_atomized_graph(
                 inst_expr,
                 diagnostics=diagnostics,
                 context=f"instance '{inst_expr.raw}' in module '{module.name}'",
-                fallback_span=_entity_span(source_spans, inst_bundle.inst_id),
+                fallback_span=inst_span,
             )
             if inst_atoms is None:
                 continue
@@ -149,10 +150,26 @@ def build_atomized_graph(
                 inst_atoms,
                 diagnostics=diagnostics,
                 module_name=module.name,
-                fallback_span=_entity_span(source_spans, inst_bundle.inst_id),
+                fallback_span=inst_span,
             )
 
+            reported_duplicates: set[str] = set()
             for index, name in enumerate(inst_atoms):
+                if name in inst_name_to_ids:
+                    if name not in reported_duplicates:
+                        diagnostics.append(
+                            _diagnostic(
+                                PATTERN_EXPANSION_ERROR,
+                                (
+                                    "Pattern expansion for instance "
+                                    f"'{inst_expr.raw}' in module '{module.name}' "
+                                    f"produced duplicate atom '{name}'."
+                                ),
+                                inst_span or inst_expr.span,
+                            )
+                        )
+                        reported_duplicates.add(name)
+                    continue
                 inst_id = allocator.next_inst()
                 values = param_values[index] if param_values else None
                 atomized_module.instances[inst_id] = AtomizedInstance(
@@ -167,11 +184,13 @@ def build_atomized_graph(
                 )
                 inst_name_to_ids.setdefault(name, []).append(inst_id)
 
+        net_name_to_id: Dict[str, str] = {}
         for net_bundle in module.nets.values():
+            net_span = _entity_span(source_spans, net_bundle.net_id)
             net_expr = _lookup_expr(
                 net_bundle.name_expr_id,
                 expr_registry,
-                span=_entity_span(source_spans, net_bundle.net_id),
+                span=net_span,
                 diagnostics=diagnostics,
             )
             if net_expr is None:
@@ -181,13 +200,31 @@ def build_atomized_graph(
                 net_expr,
                 diagnostics=diagnostics,
                 context=f"net '{net_expr.raw}' in module '{module.name}'",
-                fallback_span=_entity_span(source_spans, net_bundle.net_id),
+                fallback_span=net_span,
             )
             if net_atoms is None:
                 continue
 
             net_atom_ids: list[str] = []
+            reported_duplicates: set[str] = set()
             for name in net_atoms:
+                existing_id = net_name_to_id.get(name)
+                if existing_id is not None:
+                    if name not in reported_duplicates:
+                        diagnostics.append(
+                            _diagnostic(
+                                PATTERN_EXPANSION_ERROR,
+                                (
+                                    "Pattern expansion for net "
+                                    f"'{net_expr.raw}' in module '{module.name}' "
+                                    f"produced duplicate atom '{name}'."
+                                ),
+                                net_span or net_expr.span,
+                            )
+                        )
+                        reported_duplicates.add(name)
+                    net_atom_ids.append(existing_id)
+                    continue
                 net_id = allocator.next_net()
                 atomized_module.nets[net_id] = AtomizedNet(
                     net_id=net_id,
@@ -196,6 +233,7 @@ def build_atomized_graph(
                     patterned_net_id=net_bundle.net_id,
                     attrs=net_bundle.attrs,
                 )
+                net_name_to_id[name] = net_id
                 net_atom_ids.append(net_id)
 
             _expand_endpoints_for_net(
@@ -420,7 +458,7 @@ def _expand_instance_params(
     diagnostics: list[Diagnostic],
     module_name: str,
     fallback_span: Optional[SourceSpan],
-) -> list[dict[str, object]]:
+) -> Optional[list[dict[str, object]]]:
     """Expand instance parameter expressions.
 
     Args:
@@ -433,11 +471,13 @@ def _expand_instance_params(
 
     Returns:
         List of parameter dictionaries aligned with instance expansion order.
+        Returns None when parameter expansion errors occur.
     """
     param_values: list[dict[str, object]] = [{} for _ in range(len(inst_atoms))]
     if not inst_bundle.param_expr_ids:
         return param_values
 
+    had_error = False
     for param_name, expr_id in inst_bundle.param_expr_ids.items():
         param_expr = _lookup_expr(
             expr_id,
@@ -446,6 +486,7 @@ def _expand_instance_params(
             diagnostics=diagnostics,
         )
         if param_expr is None:
+            had_error = True
             continue
         param_atoms = _expand_pattern(
             param_expr,
@@ -456,6 +497,7 @@ def _expand_instance_params(
             fallback_span=fallback_span,
         )
         if param_atoms is None:
+            had_error = True
             continue
 
         if len(param_atoms) == 1:
@@ -473,11 +515,14 @@ def _expand_instance_params(
                     fallback_span or param_expr.span,
                 )
             )
+            had_error = True
             continue
 
         for index, value in enumerate(param_atoms):
             param_values[index][param_name] = value
 
+    if had_error:
+        return None
     return param_values
 
 
