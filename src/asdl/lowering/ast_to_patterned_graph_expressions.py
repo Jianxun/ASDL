@@ -46,6 +46,7 @@ def _register_expression(
     diagnostics: List[Diagnostic],
     module_name: str,
     context: str,
+    require_single_segment: bool = False,
 ) -> Optional[str]:
     """Register and parse a pattern expression.
 
@@ -58,6 +59,7 @@ def _register_expression(
         diagnostics: Diagnostic collection to append to.
         module_name: Module name for context.
         context: Short string describing the expression context.
+        require_single_segment: When True, reject spliced expressions.
 
     Returns:
         Expression ID or None on parse failure.
@@ -88,6 +90,16 @@ def _register_expression(
                 PATTERN_PARSE_ERROR,
                 f"Failed to parse '{expression}' in module '{module_name}'",
                 loc,
+            )
+        )
+        return None
+    if require_single_segment and len(parsed.segments) > 1:
+        diagnostics.extend(
+            _pattern_error_diagnostics(
+                [PatternError("Net name expressions must not contain splices.", span)],
+                module_name=module_name,
+                context=context,
+                fallback_loc=loc,
             )
         )
         return None

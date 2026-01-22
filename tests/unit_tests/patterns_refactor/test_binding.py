@@ -84,6 +84,64 @@ def test_bind_disallows_broadcast_with_splice() -> None:
     assert "splice" in errors[0].message.lower()
 
 
+def test_bind_allows_spliced_endpoint_with_index_binding() -> None:
+    net_expr, errors = parse_pattern_expr("NET<0|1|2>")
+    assert errors == []
+    endpoint_expr, errors = parse_pattern_expr("U0.P;U1.P;U2.P")
+    assert errors == []
+
+    plan, errors = bind_patterns(
+        net_expr,
+        endpoint_expr,
+        net_expr_id="net",
+        endpoint_expr_id="endpoint",
+    )
+    assert errors == []
+    assert plan is not None
+    assert plan.mapping == [0, 1, 2]
+
+
+def test_bind_allows_spliced_endpoint_with_scalar_net() -> None:
+    net_expr, errors = parse_pattern_expr("NET")
+    assert errors == []
+    endpoint_expr, errors = parse_pattern_expr("U0.P;U1.P")
+    assert errors == []
+
+    plan, errors = bind_patterns(
+        net_expr,
+        endpoint_expr,
+        net_expr_id="net",
+        endpoint_expr_id="endpoint",
+    )
+    assert errors == []
+    assert plan is not None
+    assert plan.mapping == [0, 0]
+
+
+def test_bind_disallows_spliced_endpoint_broadcast() -> None:
+    named_patterns = {
+        "BUS": NamedPattern(expr="<0|1>", tag="bit"),
+        "LANE": NamedPattern(expr="<0|1>", tag="lane"),
+    }
+    net_expr, errors = parse_pattern_expr("NET<@BUS>", named_patterns=named_patterns)
+    assert errors == []
+    endpoint_expr, errors = parse_pattern_expr(
+        "U<@BUS>.P;U<@LANE>.Q",
+        named_patterns=named_patterns,
+    )
+    assert errors == []
+
+    plan, errors = bind_patterns(
+        net_expr,
+        endpoint_expr,
+        net_expr_id="net",
+        endpoint_expr_id="endpoint",
+    )
+    assert plan is None
+    assert errors
+    assert "splice" in errors[0].message.lower()
+
+
 def test_bind_rejects_axis_size_product_mismatch() -> None:
     net_expr = PatternExpr(
         raw="NET<@A>",

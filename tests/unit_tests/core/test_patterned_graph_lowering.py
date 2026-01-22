@@ -202,6 +202,30 @@ def test_build_patterned_graph_pattern_parse_failure_emits_ir003() -> None:
     assert any(diag.code == "IR-003" for diag in diagnostics)
 
 
+def test_build_patterned_graph_spliced_net_name_emits_ir003() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"M1": "res"},
+                nets={"NET<0|1>;EXTRA": ["M1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=None,
+                parameters=None,
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="R")},
+            )
+        },
+    )
+
+    _, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert any(diag.code == "IR-003" for diag in diagnostics)
+    assert any("splice" in diag.message.lower() for diag in diagnostics)
+
+
 def _instance_by_raw(
     module_graph: object,
     expr_ids_by_raw: dict[str, str],
