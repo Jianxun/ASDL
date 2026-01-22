@@ -127,3 +127,72 @@ def test_build_patterned_graph_port_order_appends_default_ports() -> None:
     assert diagnostics == []
     module_graph = next(iter(graph.modules.values()))
     assert module_graph.port_order == ["A", "B", "CTRL", "VDD"]
+
+
+def test_build_patterned_graph_invalid_instance_expr_emits_ir001() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"M1": "res bad"},
+                nets={"OUT": ["M1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=None,
+                parameters=None,
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="R")},
+            )
+        },
+    )
+
+    _, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert any(diag.code == "IR-001" for diag in diagnostics)
+
+
+def test_build_patterned_graph_invalid_endpoint_expr_emits_ir002() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"M1": "res"},
+                nets={"OUT": ["M1"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=None,
+                parameters=None,
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="R")},
+            )
+        },
+    )
+
+    _, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert any(diag.code == "IR-002" for diag in diagnostics)
+
+
+def test_build_patterned_graph_pattern_parse_failure_emits_ir003() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"M1": "res"},
+                nets={"$BUS<>": ["M1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=None,
+                parameters=None,
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="R")},
+            )
+        },
+    )
+
+    _, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert any(diag.code == "IR-003" for diag in diagnostics)

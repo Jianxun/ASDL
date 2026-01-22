@@ -27,11 +27,11 @@ from .registries import (
     SourceSpanIndex,
 )
 
-PATTERN_PARSE_ERROR = format_code("IR", 30)
-INVALID_INSTANCE_EXPR = format_code("IR", 31)
-INVALID_ENDPOINT_EXPR = format_code("IR", 32)
-UNKNOWN_REFERENCE = format_code("IR", 33)
-AMBIGUOUS_REFERENCE = format_code("IR", 34)
+PATTERN_PARSE_ERROR = format_code("IR", 3)
+INVALID_INSTANCE_EXPR = format_code("IR", 1)
+INVALID_ENDPOINT_EXPR = format_code("IR", 2)
+UNKNOWN_REFERENCE = INVALID_INSTANCE_EXPR
+AMBIGUOUS_REFERENCE = INVALID_INSTANCE_EXPR
 
 NO_SPAN_NOTE = "No source span available."
 
