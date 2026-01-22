@@ -95,4 +95,4 @@ current_sprint:
     links:
       spec: docs/specs_refactor/spec_refactor_atomized_graph.md
       scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md
-backlog:
+backlog: []
