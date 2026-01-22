@@ -26,13 +26,13 @@
 - Added unit test covering spliced `$` defaults and ensured port order stays unchanged.
 
 ## PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/198
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v`
 
 ## Status request
-- In progress.
+- Done.
 
 ## Blockers / Questions
 - None yet.
