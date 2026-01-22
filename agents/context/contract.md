@@ -29,6 +29,9 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Diagnostic schema is centralized (code, severity, message, primary span, labels, notes, help, fix-its, source); locations use file + line/col spans; all pipeline stages emit diagnostics via this contract.
 - Deprecated: AST->NFIR converter returns `(DesignOp | None, diagnostics)`; invalid instance or endpoint tokens emit `IR-001`/`IR-002` with `Severity.ERROR` and return `None`. Retained for legacy/roundtrip use only.
 - CLI exposes `ir-dump` to emit canonical GraphIR/IFIR textual IR (`--ir graphir|ifir`), with deterministic output that preserves region order and attribute insertion order.
+- PatternedGraph serialization is exposed via `asdl.core.dump_patterned_graph` / `patterned_graph_to_jsonable`, producing stable JSON with modules, registries, and spans encoded using the diagnostics span JSON shape.
+- CLI adds `patterned-graph-dump` to emit PatternedGraph JSON for refactor inspection/visualization workflows.
+- PatternedGraph -> AtomizedGraph conversion produces a core, fully-atomized dataclass graph (nets, instances, endpoints) for stateless verification and emission adapters; verifiers must be pure functions that return diagnostics without mutating inputs.
 
 ## Invariants
 - xDSL is the single source of semantic truth; pydantic is a shape/type gate only.

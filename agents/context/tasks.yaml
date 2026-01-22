@@ -70,4 +70,95 @@ current_sprint:
       spec: docs/specs_refactor/spec_refactor_pattern_service.md
       adr: agents/adr/ADR-0022-no-net-splices.md
       scratchpad: agents/scratchpads/T-188_splice_binding_rules.md
-backlog: []
+  - id: T-189
+    title: Add PatternedGraph JSON serialization helper
+    owner: Executor
+    dod: >
+      Add a JSON-serializable conversion for ProgramGraph plus registries
+      (pattern expressions, origins, spans, schematic hints) and a
+      deterministic `dump_patterned_graph` string helper. Document the JSON
+      shape in `docs/specs_refactor/spec_refactor_patterned_graph.md` and add
+      unit tests for a minimal graph serialization.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_dump.py -v
+    files:
+      - src/asdl/core/dump.py
+      - src/asdl/core/__init__.py
+      - tests/unit_tests/core/test_patterned_graph_dump.py
+      - docs/specs_refactor/spec_refactor_patterned_graph.md
+    links:
+      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
+      scratchpad: agents/scratchpads/T-189_patterned_graph_dump.md
+  - id: T-190
+    title: Add CLI PatternedGraph dump command
+    owner: Executor
+    dod: >
+      Add a `patterned-graph-dump` CLI command that parses AST, builds
+      PatternedGraph via a core pipeline helper, and emits JSON to stdout or an
+      output file (pretty by default, compact via flag). JSON-only output (no
+      format switching) and no `--lib` option yet. Ensure diagnostics are
+      emitted and exit codes match existing CLI conventions. Add CLI tests.
+    verify:
+      - venv/bin/pytest tests/unit_tests/cli/test_patterned_graph_dump.py -v
+    files:
+      - src/asdl/cli/__init__.py
+      - src/asdl/core/pipeline.py
+      - src/asdl/core/__init__.py
+      - tests/unit_tests/cli/test_patterned_graph_dump.py
+    links:
+      spec: docs/specs_refactor/spec_refactor_stack.md
+      scratchpad: agents/scratchpads/T-190_cli_patterned_graph_dump.md
+backlog:
+  - id: T-191
+    title: Define AtomizedGraph core model
+    owner: Executor
+    dod: >
+      Add a core dataclass model for fully-atomized graphs (program, module,
+      net, instance, endpoint) including stable IDs, resolved atom names, and
+      optional provenance back-references to PatternedGraph entities. Document
+      the model in a refactor spec and export it from `asdl.core`.
+    verify:
+      - venv/bin/python -m py_compile src/asdl/core/atomized_graph.py
+    files:
+      - src/asdl/core/atomized_graph.py
+      - src/asdl/core/__init__.py
+      - docs/specs_refactor/spec_refactor_atomized_graph.md
+    links:
+      spec: docs/specs_refactor/spec_refactor_stack.md
+      scratchpad: agents/scratchpads/T-191_atomized_graph_model.md
+  - id: T-192
+    title: Convert PatternedGraph to AtomizedGraph
+    owner: Executor
+    dod: >
+      Implement a converter that expands PatternedGraph nets/instances/endpoints
+      into a fully atomized core graph using the refactor pattern service and
+      binding rules, emitting diagnostics for expansion/binding errors. Ensure
+      deterministic ordering for atoms and endpoints. Add unit tests covering
+      basic expansion, broadcast binding, and error cases.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_atomize.py -v
+    files:
+      - src/asdl/core/atomize_patterned_graph.py
+      - src/asdl/core/atomized_graph.py
+      - tests/unit_tests/core/test_patterned_graph_atomize.py
+    links:
+      spec: docs/specs_refactor/spec_refactor_pattern_service.md
+      scratchpad: agents/scratchpads/T-192_patterned_graph_atomize.md
+  - id: T-193
+    title: Add stateless verifiers for AtomizedGraph
+    owner: Executor
+    dod: >
+      Add pure verification helpers for the atomized core graph (unique
+      net/instance names, endpoints reference existing instances/ports, and
+      port_order consistency) that return diagnostics without mutating inputs.
+      Define diagnostic codes used by the verifiers and add unit tests.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_atomized_graph_verify.py -v
+    files:
+      - src/asdl/core/verify_atomized_graph.py
+      - src/asdl/core/atomized_graph.py
+      - tests/unit_tests/core/test_atomized_graph_verify.py
+      - docs/specs/spec_diagnostic_codes.md
+    links:
+      spec: docs/specs_refactor/spec_refactor_atomized_graph.md
+      scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md
