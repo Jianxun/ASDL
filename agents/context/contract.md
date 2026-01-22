@@ -4,7 +4,7 @@
 ASDL (Analog Structured Description Language) is a Python framework for analog circuit design: parse YAML ASDL, elaborate/validate, and emit SPICE/netlist artifacts. The MVP refactor uses a Pydantic AST with ruamel-based parsing and xDSL dialects for GraphIR/IFIR (NFIR is an optional authoring/roundtrip projection); ngspice emission is the initial backend. The MVP pipeline (AST -> GraphIR -> IFIR -> emit) supersedes older main spec staging and is reconciled in `docs/specs/`.
 
 ## System boundaries / components
-- Active refactor surface under `src/asdl/ast/` and `src/asdl/ir/`; other pipeline modules are archived under `legacy/src/asdl/`.
+- Active refactor surface under `src/asdl/ast/`, `src/asdl/core/`, `src/asdl/ir/`, and `src/asdl/lowering/`; other pipeline modules are archived under `legacy/src/asdl/`.
 - xDSL refactor work tracked via `agents/context` and `agents/scratchpads/` (e.g., `T-030_ast_parser_mvp.md`).
 - Docs under `docs/`; MVP specs under `docs/specs_mvp/`; full specs under `docs/specs/`.
 - Examples under `examples/`; archived tests under `legacy/tests/`.
@@ -86,6 +86,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - ADR-0020 (Proposed): Tagged pattern axes for broadcast binding (supersedes ADR-0019).
 - ADR-0021 (Proposed): Comment-based docstrings for ASDL docs via YAML comment blocks, inline comments, and section bundles.
 - ADR-0022: Net name expressions must not use splice delimiters; split net entries per segment (refactor-only until canonical reconciliation).
+
+- 2026-01-21: PatternedGraph construction now uses a core builder API; AST lowering lives under `src/asdl/lowering/` instead of `asdl.core`.
 
 - 2026-01-16: ADR-0014 -- GraphIR is the canonical semantic core with stable IDs; GraphIR defines program/module/device/net/instance/endpoint ops and module port_order; IFIR is a projection and NFIR is optional.
 - 2026-01-17: ADR-0015 -- GraphIR stores only atomized names; pattern provenance is attached to ops via typed pattern_origin pointing to a module attrs expression table; endpoint expressions expand as a whole then split on `.`.
