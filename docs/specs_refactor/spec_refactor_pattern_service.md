@@ -2,6 +2,9 @@
 
 Status: Draft (refactor-only; not canonical)
 
+Note: Refactor specs may diverge from canonical specs until the end-to-end
+pipeline is functional; reconcile at that point.
+
 ## 1. Purpose
 Define the pattern service API that parses, validates, binds, and expands
 pattern expressions for PatternedGraph. All pattern semantics live here; graph
@@ -67,6 +70,10 @@ Let `N` be the net expansion length and `E` be the endpoint expansion length.
 
 If `N == E`, bind by index.
 
+Splicing (`;`) is permitted in endpoint expressions only when binding is by
+index (`N == E`) or the net is scalar (`N == 1`). Spliced expressions are
+invalid for named-axis broadcast.
+
 If `N != E`:
 - If either expression contains an unnamed group, broadcast is disallowed.
 - Otherwise, named-axis broadcast applies only when the net's axis_id sequence
@@ -102,3 +109,5 @@ BindingPlan {
 - Endpoint atoms without exactly one `.` delimiter.
 - Binding mismatch when lengths differ and named-axis broadcast rules fail.
 - Expansion exceeds configured maximum length (default 10k).
+- Net name expressions must not contain splices (`;`); split net entries per segment.
+- Spliced expressions are invalid for named-axis broadcast.

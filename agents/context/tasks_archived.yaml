@@ -112,3 +112,7 @@ archive:
   - T-177: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-177_asdl_docstring_extractor.md, pr: 178}
   - T-178: {completed_on: null, owner: Executor, scratchpad: agents/scratchpads/T-178_asdl_markdown_render.md, pr: 179}
   - T-183: {completed_on: 2026-01-21, owner: Architect, scratchpad: agents/scratchpads/T-183_patterned_graph_registry_alignment.md, pr: 183}
+  - T-180: {completed_on: 2026-01-21, owner: Executor, scratchpad: agents/scratchpads/T-180_patterned_graph_core.md, pr: 182}
+  - T-181: {completed_on: 2026-01-21, owner: Executor, scratchpad: agents/scratchpads/T-181_pattern_service.md, pr: 186}
+  - T-182: {completed_on: 2026-01-21, owner: Executor, scratchpad: agents/scratchpads/T-182_patterned_graph_query.md, pr: 187}
+  - T-184: {completed_on: 2026-01-21, owner: Executor, scratchpad: agents/scratchpads/T-184_patterned_graph_lowering.md, pr: 188}
