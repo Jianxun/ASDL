@@ -10,6 +10,8 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - Import resolver exists under `src/asdl/imports/` but is not yet wired into the core lowering path.
 - Netlist emission is backend-config driven; placeholder disambiguation (`{file_id}`, `{sym_name}`, `{top_sym_name}`) is still pending.
 - ADR-0022 forbids spliced net names; refactor specs updated and implementation queued (T-188).
+- Planned refactor inspection tooling: PatternedGraph JSON dump + CLI `patterned-graph-dump` (T-189/T-190).
+- Atomized core graph conversion and stateless verification passes are planned next (T-191/T-192/T-193).
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ast`
