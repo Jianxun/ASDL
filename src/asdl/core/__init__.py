@@ -1,5 +1,6 @@
 """PatternedGraph core dataclasses and registries."""
 
+from .build_patterned_graph import build_patterned_graph
 from .graph import (
     EndpointBundle,
     InstanceBundle,
@@ -33,6 +34,7 @@ __all__ = [
     "AnnotationIndex",
     "AxisId",
     "AxisSpec",
+    "build_patterned_graph",
     "DesignQuery",
     "EndpointBundle",
     "ExprId",
