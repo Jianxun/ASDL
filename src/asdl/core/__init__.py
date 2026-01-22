@@ -1,5 +1,20 @@
-"""PatternedGraph core dataclasses and registries."""
+"""PatternedGraph and AtomizedGraph core dataclasses and registries."""
 
+from .atomized_graph import (
+    AtomizedEndpoint,
+    AtomizedEndpointId,
+    AtomizedInstance,
+    AtomizedInstId,
+    AtomizedModuleGraph,
+    AtomizedModuleId,
+    AtomizedNet,
+    AtomizedNetId,
+    AtomizedProgramGraph,
+    PatternedEndpointId,
+    PatternedInstId,
+    PatternedModuleId,
+    PatternedNetId,
+)
 from .dump import dump_patterned_graph, patterned_graph_to_jsonable
 from .graph_builder import PatternedGraphBuilder
 from .graph import (
@@ -33,6 +48,15 @@ from .registries import (
 )
 
 __all__ = [
+    "AtomizedEndpoint",
+    "AtomizedEndpointId",
+    "AtomizedInstance",
+    "AtomizedInstId",
+    "AtomizedModuleGraph",
+    "AtomizedModuleId",
+    "AtomizedNet",
+    "AtomizedNetId",
+    "AtomizedProgramGraph",
     "AnnotationIndex",
     "AxisId",
     "AxisSpec",
@@ -56,6 +80,10 @@ __all__ = [
     "PatternSegment",
     "PatternedGraphBuilder",
     "patterned_graph_to_jsonable",
+    "PatternedEndpointId",
+    "PatternedInstId",
+    "PatternedModuleId",
+    "PatternedNetId",
     "ProgramGraph",
     "query",
     "RegistrySet",
