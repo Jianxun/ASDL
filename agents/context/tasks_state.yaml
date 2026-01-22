@@ -8,8 +8,8 @@ T-190:
   pr: 200
   merged: true
 T-191:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 201
   merged: false
 T-192:
   status: ready

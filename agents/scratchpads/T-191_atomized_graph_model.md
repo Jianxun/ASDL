@@ -24,13 +24,13 @@
 - Added refactor spec for AtomizedGraph.
 
 # PR URL
-- 
+- https://github.com/Jianxun/ASDL/pull/201
 
 # Verification
 - `venv/bin/python -m py_compile src/asdl/core/atomized_graph.py`
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None.
