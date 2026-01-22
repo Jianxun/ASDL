@@ -15,16 +15,19 @@
 - Run the specified pytest command and record results.
 
 # Progress log
-- 
+- Added unit tests for invalid instance/endpoint and pattern parse diagnostic codes.
+- Aligned PatternedGraph diagnostic codes with IR-001/IR-002/IR-003.
+- Ran patterned graph lowering tests.
 
 # Patch summary
-- 
+- `tests/unit_tests/core/test_patterned_graph_lowering.py`: assert IR codes for instance/endpoint/pattern parse failures.
+- `src/asdl/core/build_patterned_graph.py`: map diagnostics to IR-001/IR-002/IR-003.
 
 # PR URL
 - 
 
 # Verification
-- 
+- `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v`
 
 # Status request (Done / Blocked / In Progress)
 - In Progress
@@ -33,4 +36,4 @@
 - 
 
 # Next steps
-- 
+- Open PR and request review.
