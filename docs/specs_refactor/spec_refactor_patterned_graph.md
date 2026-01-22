@@ -152,6 +152,94 @@ GraphIndex {
 ```
 Per-instance endpoints require expansion via the pattern service.
 
-## 7. Compatibility
+## 7. JSON Serialization
+PatternedGraph can be serialized via `patterned_graph_to_jsonable` and
+`dump_patterned_graph`. The JSON payload mirrors the graph structure and
+registries with deterministic ordering (sorted keys).
+
+```
+{
+  "modules": [
+    {
+      "module_id": "m1",
+      "name": "top",
+      "file_id": "design.asdl",
+      "port_order": ["$vdd"],
+      "nets": [
+        {"net_id": "n1", "name_expr_id": "expr1", "endpoint_ids": ["e1"], "attrs": null}
+      ],
+      "instances": [
+        {
+          "inst_id": "i1",
+          "name_expr_id": "expr2",
+          "ref_kind": "device",
+          "ref_id": "dev1",
+          "ref_raw": "M1",
+          "param_expr_ids": {"w": "expr3"},
+          "attrs": null
+        }
+      ],
+      "endpoints": [
+        {"endpoint_id": "e1", "net_id": "n1", "port_expr_id": "expr4", "attrs": null}
+      ]
+    }
+  ],
+  "registries": {
+    "pattern_expressions": {"expr1": PatternExprJson} | null,
+    "pattern_origins": {
+      "n1": {"expr_id": "expr1", "segment_index": 0, "token_index": 0}
+    } | null,
+    "param_pattern_origins": [
+      {"inst_id": "i1", "param_name": "w", "expr_id": "expr1", "token_index": 0}
+    ] | null,
+    "source_spans": {"n1": SourceSpanJson} | null,
+    "schematic_hints": {
+      "net_groups": {"n1": [{"start": 0, "count": 1, "label": "bus"}]},
+      "hub_group_index": 0
+    } | null,
+    "annotations": {"n1": {"role": "signal"}} | null
+  }
+}
+```
+
+`PatternExprJson` mirrors the pattern service data:
+```
+PatternExprJson {
+  "raw": "N<1|2>",
+  "segments": [
+    {
+      "tokens": [
+        {"kind": "literal", "text": "N", "span": SourceSpanJson},
+        {
+          "kind": "group",
+          "group_kind": "enum",
+          "labels": [1, 2],
+          "axis_id": "n",
+          "span": SourceSpanJson
+        }
+      ],
+      "span": SourceSpanJson
+    }
+  ],
+  "axes": [
+    {"axis_id": "n", "kind": "enum", "labels": [1, 2], "size": 2, "order": 0}
+  ],
+  "axis_order": ["n"],
+  "span": SourceSpanJson
+}
+```
+
+`SourceSpanJson` uses the diagnostics span schema:
+```
+SourceSpanJson {
+  "file": "design.asdl",
+  "start": {"line": 1, "col": 1},
+  "end": {"line": 1, "col": 6},
+  "byte_start": 0,
+  "byte_end": 5
+}
+```
+
+## 8. Compatibility
 PatternedGraph is the primary API model. Atomized GraphIR (legacy or emission)
 is a derived view produced by applying the pattern service and expansion plans.

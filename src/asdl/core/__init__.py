@@ -1,5 +1,6 @@
 """PatternedGraph core dataclasses and registries."""
 
+from .dump import dump_patterned_graph, patterned_graph_to_jsonable
 from .graph_builder import PatternedGraphBuilder
 from .graph import (
     EndpointBundle,
@@ -35,6 +36,7 @@ __all__ = [
     "AxisId",
     "AxisSpec",
     "DesignQuery",
+    "dump_patterned_graph",
     "EndpointBundle",
     "ExprId",
     "GraphId",
@@ -52,6 +54,7 @@ __all__ = [
     "PatternOriginIndex",
     "PatternSegment",
     "PatternedGraphBuilder",
+    "patterned_graph_to_jsonable",
     "ProgramGraph",
     "query",
     "RegistrySet",
