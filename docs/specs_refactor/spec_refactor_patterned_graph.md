@@ -137,6 +137,7 @@ for the flattened endpoint order.
 - Endpoint bundles do not store instance IDs; per-instance endpoints are derived
   by pattern expansion.
 - Registry data is optional; tools must tolerate missing registries.
+- Net name expressions must not contain splices (`;`); split net entries per segment.
 
 ## 6. Query/Index Layer (Derived)
 The query layer builds indices from the graph + registries. Indices are not

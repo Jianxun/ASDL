@@ -1,82 +1,73 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-180
-    title: Define PatternedGraph core dataclasses + registries
+  - id: T-185
+    title: Align core port order with instance_defaults rules
     owner: Executor
     dod: >
-      Implement dataclass-based ProgramGraph/ModuleGraph/NetBundle/InstanceBundle/
-      EndpointBundle plus registry types (PatternExpressionRegistry, SourceSpanIndex,
-      SchematicHints). Add tests covering construction, endpoint ownership, and
-      registry optionality.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph.py -v
-    files:
-      - src/asdl/core/graph.py
-      - src/asdl/core/registries.py
-      - src/asdl/core/__init__.py
-      - tests/unit_tests/core/test_patterned_graph.py
-    links:
-      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
-      scratchpad: agents/scratchpads/T-180_patterned_graph_core.md
-  - id: T-181
-    title: Implement refactor pattern service (parse/bind/expand)
-    owner: Executor
-    depends_on:
-      - T-180
-    dod: >
-      Build pure pattern service modules for parsing PatternExpr, named pattern
-      substitution, expansion, and binding (named-axis broadcast). Add tests for
-      splice flattening, endpoint expansion, and axis broadcast mismatches.
-    verify:
-      - venv/bin/pytest tests/unit_tests/patterns_refactor -v
-    files:
-      - src/asdl/patterns_refactor/parser.py
-      - src/asdl/patterns_refactor/expand.py
-      - src/asdl/patterns_refactor/bind.py
-      - src/asdl/patterns_refactor/__init__.py
-      - tests/unit_tests/patterns_refactor/test_binding.py
-    links:
-      spec: docs/specs_refactor/spec_refactor_pattern_service.md
-      scratchpad: agents/scratchpads/T-181_pattern_service.md
-  - id: T-182
-    title: Add PatternedGraph query/index helpers
-    owner: Executor
-    depends_on:
-      - T-180
-    dod: >
-      Implement GraphIndex and DesignQuery helpers (net/instance lookup and
-      adjacency lists) derived from PatternedGraph. Add tests for deterministic
-      lookup and adjacency construction.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_query.py -v
-    files:
-      - src/asdl/core/index.py
-      - src/asdl/core/query.py
-      - src/asdl/core/__init__.py
-      - tests/unit_tests/core/test_query.py
-    links:
-      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
-      scratchpad: agents/scratchpads/T-182_patterned_graph_query.md
-  - id: T-184
-    title: Lower AST modules into PatternedGraph
-    owner: Executor
-    depends_on:
-      - T-181
-      - T-180
-    dod: >
-      Implement AST->PatternedGraph lowering that builds ProgramGraph/ModuleGraph
-      bundles with registries (pattern expressions, origins, source spans, and
-      schematic hints) without atomization, returning diagnostics instead of
-      raising. Add tests for a minimal module with patterned nets/endpoints and
-      grouped endpoints.
+      Extend PatternedGraph lowering to include `$` nets introduced by
+      `instance_defaults` in `module_graph.port_order`, appended after explicit
+      `$` nets from `nets`. Add coverage for port order when defaults introduce
+      new `$` nets.
     verify:
       - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
     files:
       - src/asdl/core/build_patterned_graph.py
-      - src/asdl/core/__init__.py
       - tests/unit_tests/core/test_patterned_graph_lowering.py
     links:
-      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
-      scratchpad: agents/scratchpads/T-184_patterned_graph_lowering.md
+      spec: docs/specs/spec_ast.md
+      scratchpad: agents/scratchpads/T-185_port_order_defaults.md
+  - id: T-186
+    title: Align refactor diagnostics with existing IR codes
+    owner: Executor
+    dod: >
+      Update PatternedGraph lowering diagnostics to use existing IR codes
+      (IR-001/IR-002/IR-003 where applicable) per `docs/specs/spec_diagnostic_codes.md`.
+      Add tests asserting the emitted codes for invalid instance/endpoint and
+      pattern parse failures.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
+    files:
+      - src/asdl/core/build_patterned_graph.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+      - docs/specs/spec_diagnostic_codes.md
+    links:
+      spec: docs/specs/spec_diagnostic_codes.md
+      scratchpad: agents/scratchpads/T-186_refactor_diag_codes.md
+  - id: T-187
+    title: Resolve multi-file references in PatternedGraph lowering
+    owner: Executor
+    dod: >
+      Add ProgramDB-backed reference resolution for modules/devices during
+      PatternedGraph lowering so cross-file instance refs are resolved. Include
+      tests for multi-file resolution via import roots.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
+    files:
+      - src/asdl/core/build_patterned_graph.py
+      - src/asdl/imports/resolve.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+      - tests/unit_tests/imports/test_import_pipeline.py
+    links:
+      spec: docs/specs_refactor/spec_refactor_stack.md
+      scratchpad: agents/scratchpads/T-187_patterned_graph_programdb.md
+  - id: T-188
+    title: Enforce splice rules for refactor bindings
+    owner: Executor
+    dod: >
+      Treat spliced net names as errors in PatternedGraph lowering and add
+      binding tests that allow spliced endpoints only for index or scalar
+      bindings while rejecting spliced broadcast. Ensure diagnostics align with
+      the refactor spec updates.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/patterns_refactor/test_binding.py -v
+    files:
+      - src/asdl/core/build_patterned_graph.py
+      - src/asdl/patterns_refactor/bind.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+      - tests/unit_tests/patterns_refactor/test_binding.py
+    links:
+      spec: docs/specs_refactor/spec_refactor_pattern_service.md
+      adr: agents/adr/ADR-0022-no-net-splices.md
+      scratchpad: agents/scratchpads/T-188_splice_binding_rules.md
 backlog: []
