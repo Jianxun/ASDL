@@ -129,3 +129,76 @@ def test_patterned_graph_atomize_binding_error_emits_diagnostic() -> None:
     assert any(diag.code == "IR-003" for diag in diagnostics)
     module_graph = next(iter(atomized.modules.values()))
     assert module_graph.endpoints == {}
+
+
+def test_patterned_graph_atomize_duplicate_instance_atoms() -> None:
+    builder = PatternedGraphBuilder()
+    module = builder.add_module("top", "design.asdl")
+    net_expr_id = builder.add_expression(_parse_expr("NET0"))
+    inst_expr_id = builder.add_expression(_parse_expr("U<0>;U<0>"))
+    endpoint_expr_id = builder.add_expression(_parse_expr("U0.D"))
+
+    net_id = builder.add_net(module.module_id, net_expr_id)
+    builder.add_instance(
+        module.module_id,
+        inst_expr_id,
+        ref_kind="device",
+        ref_id="dev1",
+        ref_raw="nmos",
+    )
+    builder.add_endpoint(module.module_id, net_id, endpoint_expr_id)
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    assert any("duplicate" in diag.message.lower() for diag in diagnostics)
+    module_graph = next(iter(atomized.modules.values()))
+    assert [inst.name for inst in module_graph.instances.values()] == ["U0"]
+
+
+def test_patterned_graph_atomize_duplicate_net_atoms() -> None:
+    builder = PatternedGraphBuilder()
+    module = builder.add_module("top", "design.asdl")
+    net_expr_id = builder.add_expression(_parse_expr("NET<0>;NET<0>"))
+    inst_expr_id = builder.add_expression(_parse_expr("U0"))
+    endpoint_expr_id = builder.add_expression(_parse_expr("U0.D;U0.D"))
+
+    net_id = builder.add_net(module.module_id, net_expr_id)
+    builder.add_instance(
+        module.module_id,
+        inst_expr_id,
+        ref_kind="device",
+        ref_id="dev1",
+        ref_raw="nmos",
+    )
+    builder.add_endpoint(module.module_id, net_id, endpoint_expr_id)
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    assert any("duplicate" in diag.message.lower() for diag in diagnostics)
+    module_graph = next(iter(atomized.modules.values()))
+    assert [net.name for net in module_graph.nets.values()] == ["NET0"]
+
+
+def test_patterned_graph_atomize_param_length_mismatch_omits_params() -> None:
+    builder = PatternedGraphBuilder()
+    module = builder.add_module("top", "design.asdl")
+    inst_expr_id = builder.add_expression(_parse_expr("U<0|1>"))
+    param_expr_id = builder.add_expression(_parse_expr("P<0|1|2>"))
+
+    builder.add_instance(
+        module.module_id,
+        inst_expr_id,
+        ref_kind="device",
+        ref_id="dev1",
+        ref_raw="nmos",
+        param_expr_ids={"W": param_expr_id},
+    )
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    assert any(diag.code == "IR-003" for diag in diagnostics)
+    module_graph = next(iter(atomized.modules.values()))
+    assert all(inst.param_values is None for inst in module_graph.instances.values())
