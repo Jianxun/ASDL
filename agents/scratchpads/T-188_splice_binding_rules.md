@@ -27,13 +27,13 @@
 - Added lowering diagnostic test for spliced net names.
 
 # PR URL
-- (pending)
+- https://github.com/Jianxun/ASDL/pull/196
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/patterns_refactor/test_binding.py -v`
 
 # Status request
-- In Progress
+- Done
 
 # Blockers / Questions
 - None.
