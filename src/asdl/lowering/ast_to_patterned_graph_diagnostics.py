@@ -8,11 +8,11 @@ from asdl.ast.location import Locatable
 from asdl.core.graph_builder import PatternedGraphBuilder
 from asdl.diagnostics import Diagnostic, Severity, SourceSpan, format_code
 
-PATTERN_PARSE_ERROR = format_code("IR", 3)
 INVALID_INSTANCE_EXPR = format_code("IR", 1)
 INVALID_ENDPOINT_EXPR = format_code("IR", 2)
-UNKNOWN_REFERENCE = INVALID_INSTANCE_EXPR
-AMBIGUOUS_REFERENCE = INVALID_INSTANCE_EXPR
+PATTERN_PARSE_ERROR = format_code("IR", 3)
+QUALIFIED_REFERENCE_ERROR = format_code("IR", 10)
+UNQUALIFIED_REFERENCE_ERROR = format_code("IR", 11)
 
 NO_SPAN_NOTE = "No source span available."
 
