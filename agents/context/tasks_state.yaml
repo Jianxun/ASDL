@@ -12,6 +12,6 @@ T-182:
   pr: 187
   merged: true
 T-184:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
