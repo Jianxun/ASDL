@@ -116,3 +116,10 @@ archive:
   - T-181: {completed_on: 2026-01-21, owner: Executor, scratchpad: agents/scratchpads/T-181_pattern_service.md, pr: 186}
   - T-182: {completed_on: 2026-01-21, owner: Executor, scratchpad: agents/scratchpads/T-182_patterned_graph_query.md, pr: 187}
   - T-184: {completed_on: 2026-01-21, owner: Executor, scratchpad: agents/scratchpads/T-184_patterned_graph_lowering.md, pr: 188}
+  - T-196: {completed_on: 2026-01-22, owner: Executor, scratchpad: agents/scratchpads/T-196_patterned_graph_ref_diag_codes.md, pr: 197}
+  - T-197: {completed_on: 2026-01-22, owner: Executor, scratchpad: agents/scratchpads/T-197_instance_defaults_splice_validation.md, pr: 198}
+  - T-185: {completed_on: 2026-01-22, owner: Executor, scratchpad: agents/scratchpads/T-185_port_order_defaults.md, pr: 190}
+  - T-186: {completed_on: 2026-01-22, owner: Executor, scratchpad: agents/scratchpads/T-186_refactor_diag_codes.md, pr: 191}
+  - T-187: {completed_on: 2026-01-22, owner: Executor, scratchpad: agents/scratchpads/T-187_patterned_graph_programdb.md, pr: 195}
+  - T-188: {completed_on: 2026-01-22, owner: Executor, scratchpad: agents/scratchpads/T-188_splice_binding_rules.md, pr: 196}
+  - T-195: {completed_on: 2026-01-22, owner: Executor, scratchpad: agents/scratchpads/T-195_ast_to_patterned_graph_split.md, pr: 194}

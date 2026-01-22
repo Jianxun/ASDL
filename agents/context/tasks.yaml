@@ -1,143 +1,9 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-195
-    title: Rename and split AST->PatternedGraph lowering
-    owner: Executor
-    dod: >
-      Rename `src/asdl/lowering/patterned_graph.py` to
-      `src/asdl/lowering/ast_to_patterned_graph.py`. Split orchestration,
-      expression parsing, instance lowering, net/endpoint lowering, and
-      diagnostics helpers into focused lowering modules. Update
-      `asdl.lowering` exports and tests to use the new module name. Preserve
-      diagnostics, ordering, and registry behavior.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
-    files:
-      - src/asdl/lowering/ast_to_patterned_graph.py
-      - src/asdl/lowering/ast_to_patterned_graph_instances.py
-      - src/asdl/lowering/ast_to_patterned_graph_nets.py
-      - src/asdl/lowering/ast_to_patterned_graph_expressions.py
-      - tests/unit_tests/core/test_patterned_graph_lowering.py
-    links:
-      scratchpad: agents/scratchpads/T-195_ast_to_patterned_graph_split.md
-  - id: T-185
-    title: Align core port order with instance_defaults rules
-    owner: Executor
-    dod: >
-      Extend PatternedGraph lowering to include `$` nets introduced by
-      `instance_defaults` in `module_graph.port_order`, appended after explicit
-      `$` nets from `nets`. Add coverage for port order when defaults introduce
-      new `$` nets.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
-    files:
-      - src/asdl/core/build_patterned_graph.py
-      - tests/unit_tests/core/test_patterned_graph_lowering.py
-    links:
-      spec: docs/specs/spec_ast.md
-      scratchpad: agents/scratchpads/T-185_port_order_defaults.md
-  - id: T-186
-    title: Align refactor diagnostics with existing IR codes
-    owner: Executor
-    dod: >
-      Update PatternedGraph lowering diagnostics to use existing IR codes
-      (IR-001/IR-002/IR-003 where applicable) per `docs/specs/spec_diagnostic_codes.md`.
-      Add tests asserting the emitted codes for invalid instance/endpoint and
-      pattern parse failures.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
-    files:
-      - src/asdl/core/build_patterned_graph.py
-      - tests/unit_tests/core/test_patterned_graph_lowering.py
-      - docs/specs/spec_diagnostic_codes.md
-    links:
-      spec: docs/specs/spec_diagnostic_codes.md
-      scratchpad: agents/scratchpads/T-186_refactor_diag_codes.md
-  - id: T-187
-    title: Resolve multi-file references in PatternedGraph lowering
-    owner: Executor
-    depends_on:
-      - T-195
-    dod: >
-      Add ProgramDB-backed reference resolution for modules/devices during
-      PatternedGraph lowering so cross-file instance refs are resolved. Include
-      tests for multi-file resolution via import roots.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
-    files:
-      - src/asdl/lowering/ast_to_patterned_graph.py
-      - src/asdl/imports/resolve.py
-      - tests/unit_tests/core/test_patterned_graph_lowering.py
-      - tests/unit_tests/imports/test_import_pipeline.py
-    links:
-      spec: docs/specs_refactor/spec_refactor_stack.md
-      scratchpad: agents/scratchpads/T-187_patterned_graph_programdb.md
-  - id: T-188
-    title: Enforce splice rules for refactor bindings
-    owner: Executor
-    depends_on:
-      - T-195
-    dod: >
-      Treat spliced net names as errors in PatternedGraph lowering and add
-      binding tests that allow spliced endpoints only for index or scalar
-      bindings while rejecting spliced broadcast. Ensure diagnostics align with
-      the refactor spec updates.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/patterns_refactor/test_binding.py -v
-    files:
-      - src/asdl/lowering/ast_to_patterned_graph.py
-      - src/asdl/patterns_refactor/bind.py
-      - tests/unit_tests/core/test_patterned_graph_lowering.py
-      - tests/unit_tests/patterns_refactor/test_binding.py
-    links:
-      spec: docs/specs_refactor/spec_refactor_pattern_service.md
-      adr: agents/adr/ADR-0022-no-net-splices.md
-      scratchpad: agents/scratchpads/T-188_splice_binding_rules.md
-  - id: T-196
-    title: Use IR-010/IR-011 for PatternedGraph reference diagnostics
-    owner: Executor
-    depends_on:
-      - T-195
-    dod: >
-      Update PatternedGraph instance reference diagnostics to emit IR-010 for
-      qualified `ns.symbol` failures and IR-011 for unqualified/ambiguous
-      references while keeping IR-001 for malformed instance expressions. Add
-      tests covering unresolved qualified namespaces/symbols and ambiguous or
-      missing unqualified references.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
-    files:
-      - src/asdl/lowering/ast_to_patterned_graph_diagnostics.py
-      - src/asdl/lowering/ast_to_patterned_graph_instances.py
-      - tests/unit_tests/core/test_patterned_graph_lowering.py
-    links:
-      spec: docs/specs/spec_diagnostic_codes.md
-      scratchpad: agents/scratchpads/T-196_patterned_graph_ref_diag_codes.md
-  - id: T-197
-    title: Validate instance_defaults net tokens against splice rules
-    owner: Executor
-    depends_on:
-      - T-195
-    dod: >
-      Validate net tokens referenced by `instance_defaults` with the same
-      pattern parsing and no-splice rules as `nets` entries. Emit IR-003
-      diagnostics for invalid/spliced default net tokens and only append `$`
-      ports when validation succeeds. Add unit tests for spliced `$` defaults.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
-    files:
-      - src/asdl/lowering/ast_to_patterned_graph.py
-      - tests/unit_tests/core/test_patterned_graph_lowering.py
-    links:
-      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
-      adr: agents/adr/ADR-0022-no-net-splices.md
-      scratchpad: agents/scratchpads/T-197_instance_defaults_splice_validation.md
   - id: T-189
     title: Add PatternedGraph JSON serialization helper
     owner: Executor
-    depends_on:
-      - T-195
     dod: >
       Add a JSON-serializable conversion for ProgramGraph plus registries
       (pattern expressions, origins, spans, schematic hints) and a
@@ -157,8 +23,6 @@ current_sprint:
   - id: T-190
     title: Add CLI PatternedGraph dump command
     owner: Executor
-    depends_on:
-      - T-195
     dod: >
       Add a `patterned-graph-dump` CLI command that parses AST, builds
       PatternedGraph via a core pipeline helper, and emits JSON to stdout or an
@@ -175,37 +39,21 @@ current_sprint:
     links:
       spec: docs/specs_refactor/spec_refactor_stack.md
       scratchpad: agents/scratchpads/T-190_cli_patterned_graph_dump.md
-backlog:
-  - id: T-191
-    title: Define AtomizedGraph core model
-    owner: Executor
-    dod: >
-      Add a core dataclass model for fully-atomized graphs (program, module,
-      net, instance, endpoint) including stable IDs, resolved atom names, and
-      optional provenance back-references to PatternedGraph entities. Document
-      the model in a refactor spec and export it from `asdl.core`.
-    verify:
-      - venv/bin/python -m py_compile src/asdl/core/atomized_graph.py
-    files:
-      - src/asdl/core/atomized_graph.py
-      - src/asdl/core/__init__.py
-      - docs/specs_refactor/spec_refactor_atomized_graph.md
-    links:
-      spec: docs/specs_refactor/spec_refactor_stack.md
-      scratchpad: agents/scratchpads/T-191_atomized_graph_model.md
   - id: T-192
     title: Convert PatternedGraph to AtomizedGraph
     owner: Executor
     dod: >
-      Implement a converter that expands PatternedGraph nets/instances/endpoints
-      into a fully atomized core graph using the refactor pattern service and
-      binding rules, emitting diagnostics for expansion/binding errors. Ensure
-      deterministic ordering for atoms and endpoints. Add unit tests covering
-      basic expansion, broadcast binding, and error cases.
+      Implement a lowering pass under
+      `src/asdl/lowering/patterned_graph_to_atomized.py` that expands
+      PatternedGraph nets/instances/endpoints into a fully atomized core graph
+      using the refactor pattern service and binding rules, emitting diagnostics
+      for expansion/binding errors. Ensure deterministic ordering for atoms and
+      endpoints. Add unit tests covering basic expansion, broadcast binding, and
+      error cases.
     verify:
       - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_atomize.py -v
     files:
-      - src/asdl/core/atomize_patterned_graph.py
+      - src/asdl/lowering/patterned_graph_to_atomized.py
       - src/asdl/core/atomized_graph.py
       - tests/unit_tests/core/test_patterned_graph_atomize.py
     links:
@@ -229,3 +77,21 @@ backlog:
     links:
       spec: docs/specs_refactor/spec_refactor_atomized_graph.md
       scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md
+backlog:
+  - id: T-191
+    title: Define AtomizedGraph core model
+    owner: Executor
+    dod: >
+      Add a core dataclass model for fully-atomized graphs (program, module,
+      net, instance, endpoint) including stable IDs, resolved atom names, and
+      optional provenance back-references to PatternedGraph entities. Document
+      the model in a refactor spec and export it from `asdl.core`.
+    verify:
+      - venv/bin/python -m py_compile src/asdl/core/atomized_graph.py
+    files:
+      - src/asdl/core/atomized_graph.py
+      - src/asdl/core/__init__.py
+      - docs/specs_refactor/spec_refactor_atomized_graph.md
+    links:
+      spec: docs/specs_refactor/spec_refactor_stack.md
+      scratchpad: agents/scratchpads/T-191_atomized_graph_model.md
