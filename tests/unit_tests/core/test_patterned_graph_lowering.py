@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from asdl.ast import (
     AsdlDocument,
     DeviceBackendDecl,
@@ -10,7 +12,8 @@ from asdl.ast import (
 )
 from asdl.ast.location import Locatable
 from asdl.core import GroupSlice
-from asdl.lowering import build_patterned_graph
+from asdl.imports import resolve_import_graph
+from asdl.lowering import build_patterned_graph, build_patterned_graph_from_import_graph
 
 
 def _loc(line: int, col: int, length: int = 1, file_name: str = "design.asdl") -> Locatable:
@@ -197,3 +200,81 @@ def test_build_patterned_graph_pattern_parse_failure_emits_ir003() -> None:
     _, diagnostics = build_patterned_graph(document, file_id="design.asdl")
 
     assert any(diag.code == "IR-003" for diag in diagnostics)
+
+
+def _instance_by_raw(
+    module_graph: object,
+    expr_ids_by_raw: dict[str, str],
+    raw_name: str,
+) -> object:
+    expr_id = expr_ids_by_raw[raw_name]
+    for inst in module_graph.instances.values():
+        if inst.name_expr_id == expr_id:
+            return inst
+    raise AssertionError(f"Missing instance '{raw_name}'")
+
+
+def test_build_patterned_graph_resolves_imported_refs(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    lib_root = tmp_path / "lib"
+    lib_root.mkdir()
+    lib_file = lib_root / "cells.asdl"
+    lib_file.write_text(
+        "\n".join(
+            [
+                "modules:",
+                "  child: {}",
+                "devices:",
+                "  nmos:",
+                "    backends:",
+                "      sim.ngspice:",
+                "        template: M",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    entry_file = tmp_path / "entry.asdl"
+    entry_file.write_text(
+        "\n".join(
+            [
+                "imports:",
+                "  lib: cells.asdl",
+                "modules:",
+                "  top:",
+                "    instances:",
+                "      X1: lib.child",
+                "      M1: lib.nmos",
+                "    nets:",
+                "      OUT: [X1.P, M1.D]",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    import_graph, import_diags = resolve_import_graph(
+        entry_file,
+        lib_roots=[lib_root],
+    )
+
+    assert import_diags == []
+    assert import_graph is not None
+
+    graph, diagnostics = build_patterned_graph_from_import_graph(import_graph)
+
+    assert diagnostics == []
+    exprs = graph.registries.pattern_expressions
+    assert exprs is not None
+    expr_ids_by_raw = {expr.raw: expr_id for expr_id, expr in exprs.items()}
+    modules = {(module.name, module.file_id): module for module in graph.modules.values()}
+    entry_module = modules[("top", str(entry_file.absolute()))]
+    imported_module = modules[("child", str(lib_file.absolute()))]
+
+    inst_module = _instance_by_raw(entry_module, expr_ids_by_raw, "X1")
+    assert inst_module.ref_kind == "module"
+    assert inst_module.ref_id == imported_module.module_id
+
+    inst_device = _instance_by_raw(entry_module, expr_ids_by_raw, "M1")
+    assert inst_device.ref_kind == "device"
+    assert inst_device.ref_raw == "lib.nmos"
