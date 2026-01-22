@@ -4,7 +4,7 @@ T-189:
   pr: 199
   merged: true
 T-190:
-  status: review_in_progress
+  status: review_clean
   pr: 200
   merged: false
 T-191:
