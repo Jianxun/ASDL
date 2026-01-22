@@ -12,7 +12,10 @@ from asdl.diagnostics import Diagnostic
 from asdl.imports import ImportGraph, NameEnv, ProgramDB
 
 from .ast_to_patterned_graph_diagnostics import _register_span
-from .ast_to_patterned_graph_expressions import _collect_named_patterns
+from .ast_to_patterned_graph_expressions import (
+    _collect_named_patterns,
+    _register_expression,
+)
 from .ast_to_patterned_graph_instances import _lower_instances
 from .ast_to_patterned_graph_nets import _lower_nets, _split_net_token
 
@@ -240,8 +243,22 @@ def _lower_module(
         for ref, defaults in module.instance_defaults.items():
             if ref not in instance_refs:
                 continue
-            for net_token in defaults.bindings.values():
+            for port_name, net_token in defaults.bindings.items():
+                binding_loc = defaults._bindings_loc.get(port_name)
                 net_name, is_port = _split_net_token(net_token)
+                net_expr_id = _register_expression(
+                    net_name,
+                    builder=builder,
+                    expr_cache=expr_cache,
+                    named_patterns=named_patterns,
+                    loc=binding_loc,
+                    diagnostics=diagnostics,
+                    module_name=name,
+                    context=f"instance_defaults binding '{port_name}'",
+                    require_single_segment=True,
+                )
+                if net_expr_id is None:
+                    continue
                 if is_port and net_name not in port_order:
                     port_order.append(net_name)
 

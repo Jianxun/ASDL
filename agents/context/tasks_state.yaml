@@ -16,7 +16,7 @@ T-196:
   pr: 197
   merged: true
 T-197:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-189:

@@ -133,6 +133,38 @@ def test_build_patterned_graph_port_order_appends_default_ports() -> None:
     assert module_graph.port_order == ["A", "B", "CTRL", "VDD"]
 
 
+def test_build_patterned_graph_spliced_default_port_emits_ir003() -> None:
+    module = ModuleDecl.model_construct(
+        instances={"U1": "nmos"},
+        nets={"$A": ["U1.D"]},
+        instance_defaults={
+            "nmos": InstanceDefaultsDecl.model_construct(
+                bindings={
+                    "G": "$BUS<0|1>;TAIL",
+                }
+            )
+        },
+    )
+    device = DeviceDecl(
+        ports=None,
+        parameters=None,
+        variables=None,
+        backends={"sim.ngspice": DeviceBackendDecl(template="M")},
+    )
+    document = AsdlDocument.model_construct(
+        modules={"top": module},
+        devices={"nmos": device},
+        top="top",
+    )
+
+    graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert any(diag.code == "IR-003" for diag in diagnostics)
+    assert any("splice" in diag.message.lower() for diag in diagnostics)
+    module_graph = next(iter(graph.modules.values()))
+    assert module_graph.port_order == ["A"]
+
+
 def test_build_patterned_graph_invalid_instance_expr_emits_ir001() -> None:
     document = AsdlDocument(
         modules={

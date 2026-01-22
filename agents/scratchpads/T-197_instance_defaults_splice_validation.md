@@ -12,25 +12,27 @@
 - `agents/context/project_status.md`
 
 ## Plan
-- [ ] Inspect instance_defaults handling in lowering.
-- [ ] Add validation for default net tokens and enforce no-splice rule.
-- [ ] Extend tests for spliced defaults and diagnostic expectations.
-- [ ] Run verify command and record results.
+- [x] Inspect instance_defaults handling in lowering.
+- [x] Add validation for default net tokens and enforce no-splice rule.
+- [x] Extend tests for spliced defaults and diagnostic expectations.
+- [x] Run verify command and record results.
 
 ## Progress log
 - 2026-01-XX: Initialized scratchpad.
+- 2026-01-XX: Added validation for instance_defaults net tokens and tests for spliced defaults.
 
 ## Patch summary
-- TBD.
+- Validated instance_defaults net tokens with pattern parsing/no-splice rules before port-order updates.
+- Added unit test covering spliced `$` defaults and ensured port order stays unchanged.
 
 ## PR URL
 - TBD.
 
 ## Verification
-- Not run.
+- `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v`
 
 ## Status request
-- Not started.
+- In progress.
 
 ## Blockers / Questions
 - None yet.
