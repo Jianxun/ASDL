@@ -11,6 +11,14 @@ T-188:
   status: done
   pr: 196
   merged: true
+T-196:
+  status: ready
+  pr: null
+  merged: false
+T-197:
+  status: ready
+  pr: null
+  merged: false
 T-189:
   status: ready
   pr: null

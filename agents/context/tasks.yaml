@@ -94,6 +94,45 @@ current_sprint:
       spec: docs/specs_refactor/spec_refactor_pattern_service.md
       adr: agents/adr/ADR-0022-no-net-splices.md
       scratchpad: agents/scratchpads/T-188_splice_binding_rules.md
+  - id: T-196
+    title: Use IR-010/IR-011 for PatternedGraph reference diagnostics
+    owner: Executor
+    depends_on:
+      - T-195
+    dod: >
+      Update PatternedGraph instance reference diagnostics to emit IR-010 for
+      qualified `ns.symbol` failures and IR-011 for unqualified/ambiguous
+      references while keeping IR-001 for malformed instance expressions. Add
+      tests covering unresolved qualified namespaces/symbols and ambiguous or
+      missing unqualified references.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
+    files:
+      - src/asdl/lowering/ast_to_patterned_graph_diagnostics.py
+      - src/asdl/lowering/ast_to_patterned_graph_instances.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+    links:
+      spec: docs/specs/spec_diagnostic_codes.md
+      scratchpad: agents/scratchpads/T-196_patterned_graph_ref_diag_codes.md
+  - id: T-197
+    title: Validate instance_defaults net tokens against splice rules
+    owner: Executor
+    depends_on:
+      - T-195
+    dod: >
+      Validate net tokens referenced by `instance_defaults` with the same
+      pattern parsing and no-splice rules as `nets` entries. Emit IR-003
+      diagnostics for invalid/spliced default net tokens and only append `$`
+      ports when validation succeeds. Add unit tests for spliced `$` defaults.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
+    files:
+      - src/asdl/lowering/ast_to_patterned_graph.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+    links:
+      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
+      adr: agents/adr/ADR-0022-no-net-splices.md
+      scratchpad: agents/scratchpads/T-197_instance_defaults_splice_validation.md
   - id: T-189
     title: Add PatternedGraph JSON serialization helper
     owner: Executor
