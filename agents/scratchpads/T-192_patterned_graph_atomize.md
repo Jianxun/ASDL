@@ -20,10 +20,13 @@
 
 ## Progress log
 - 2026-01-22: Reviewed specs + core models; implemented atomization lowering + tests.
+- 2026-01-23: Added duplicate-atom diagnostics, tightened param expansion handling, and extended tests.
 
 ## Patch summary
 - Added `build_atomized_graph` lowering with pattern expansion/binding diagnostics.
 - Added unit tests for atomization expansion, broadcast binding, and binding errors.
+- Added duplicate atom diagnostics for nets/instances and skipped duplicate emissions.
+- Stopped applying instance params when expansion errors occur; added tests for duplicates/mismatch.
 
 ## PR URL
 - https://github.com/Jianxun/ASDL/pull/202
