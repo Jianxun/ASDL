@@ -214,9 +214,7 @@ def _instance_by_raw(
     raise AssertionError(f"Missing instance '{raw_name}'")
 
 
-def test_build_patterned_graph_resolves_imported_refs(
-    tmp_path: Path, monkeypatch: object
-) -> None:
+def test_build_patterned_graph_resolves_imported_refs(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
     lib_root = tmp_path / "lib"
     lib_root.mkdir()
