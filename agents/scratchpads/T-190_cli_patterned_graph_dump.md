@@ -26,16 +26,16 @@
 - Added CLI tests in `tests/unit_tests/cli/test_patterned_graph_dump.py`.
 
 # PR URL
-- TODO
+- https://github.com/Jianxun/ASDL/pull/200
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/cli/test_patterned_graph_dump.py -v`
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None.
 
 # Next steps
-- Open PR and flip task to ready_for_review.
+- Await reviewer feedback.
