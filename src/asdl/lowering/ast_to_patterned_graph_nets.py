@@ -54,6 +54,7 @@ def _lower_nets(
             diagnostics=diagnostics,
             module_name=module_name,
             context="net name",
+            require_single_segment=True,
         )
         if net_expr_id is None:
             continue
