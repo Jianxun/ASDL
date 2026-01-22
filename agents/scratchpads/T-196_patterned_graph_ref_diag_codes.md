@@ -18,22 +18,24 @@
 - [ ] Run verify command and record results.
 
 ## Progress log
-- 2026-01-XX: Initialized scratchpad.
+- 2026-01-22: Added reference diagnostic coverage for qualified/unqualified cases and updated lowering codes.
 
 ## Patch summary
-- TBD.
+- Updated instance reference diagnostics to emit IR-010/IR-011 per qualified/unqualified failures.
+- Added tests for missing and ambiguous references across qualified and unqualified cases.
 
 ## PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/197
 
 ## Verification
-- Not run.
+- `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v`
+  - Result: PASS
 
 ## Status request
-- Not started.
+- Ready for review.
 
 ## Blockers / Questions
 - None yet.
 
 ## Next steps
-- Review lowering diagnostics and reference resolution behavior.
+- Await review feedback.

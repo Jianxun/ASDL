@@ -13,9 +13,9 @@ from asdl.imports import NameEnv, ProgramDB
 from asdl.patterns_refactor.parser import NamedPattern
 
 from .ast_to_patterned_graph_diagnostics import (
-    AMBIGUOUS_REFERENCE,
     INVALID_INSTANCE_EXPR,
-    UNKNOWN_REFERENCE,
+    QUALIFIED_REFERENCE_ERROR,
+    UNQUALIFIED_REFERENCE_ERROR,
 )
 from .ast_to_patterned_graph_diagnostics import _diagnostic, _register_span
 from .ast_to_patterned_graph_expressions import _register_expression
@@ -209,7 +209,7 @@ def _resolve_reference(
     if module_id and device_id:
         diagnostics.append(
             _diagnostic(
-                AMBIGUOUS_REFERENCE,
+                UNQUALIFIED_REFERENCE_ERROR,
                 (
                     f"Reference '{ref}' is ambiguous between module and device "
                     f"in module '{module_name}'"
@@ -224,7 +224,7 @@ def _resolve_reference(
         return "device", device_id
     diagnostics.append(
         _diagnostic(
-            UNKNOWN_REFERENCE,
+            UNQUALIFIED_REFERENCE_ERROR,
             f"Unresolved instance reference '{ref}' in module '{module_name}'",
             loc,
         )
@@ -266,7 +266,7 @@ def _resolve_qualified_reference(
     ):
         diagnostics.append(
             _diagnostic(
-                UNKNOWN_REFERENCE,
+                QUALIFIED_REFERENCE_ERROR,
                 (
                     f"Qualified reference '{ref}' requires imports in module "
                     f"'{module_name}'"
@@ -279,7 +279,7 @@ def _resolve_qualified_reference(
     if not namespace or not symbol:
         diagnostics.append(
             _diagnostic(
-                UNKNOWN_REFERENCE,
+                QUALIFIED_REFERENCE_ERROR,
                 (
                     f"Qualified reference '{ref}' must be in 'ns.symbol' form in "
                     f"module '{module_name}'"
@@ -292,7 +292,7 @@ def _resolve_qualified_reference(
     if resolved_file is None:
         diagnostics.append(
             _diagnostic(
-                UNKNOWN_REFERENCE,
+                QUALIFIED_REFERENCE_ERROR,
                 (
                     f"Unknown import namespace '{namespace}' for '{ref}' in module "
                     f"'{module_name}'"
@@ -305,7 +305,7 @@ def _resolve_qualified_reference(
     if symbol_def is None:
         diagnostics.append(
             _diagnostic(
-                UNKNOWN_REFERENCE,
+                QUALIFIED_REFERENCE_ERROR,
                 f"Unresolved instance reference '{ref}' in module '{module_name}'",
                 loc,
             )
@@ -318,7 +318,7 @@ def _resolve_qualified_reference(
     if ref_id is None:
         diagnostics.append(
             _diagnostic(
-                UNKNOWN_REFERENCE,
+                QUALIFIED_REFERENCE_ERROR,
                 f"Unresolved instance reference '{ref}' in module '{module_name}'",
                 loc,
             )

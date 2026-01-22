@@ -179,6 +179,45 @@ def test_build_patterned_graph_invalid_endpoint_expr_emits_ir002() -> None:
     assert any(diag.code == "IR-002" for diag in diagnostics)
 
 
+def test_build_patterned_graph_missing_unqualified_ref_emits_ir011() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"X1": "missing"},
+            )
+        },
+        devices={},
+    )
+
+    _, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert any(diag.code == "IR-011" for diag in diagnostics)
+
+
+def test_build_patterned_graph_ambiguous_unqualified_ref_emits_ir011() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"X1": "cell"},
+            ),
+            "cell": ModuleDecl(),
+        },
+        devices={
+            "cell": DeviceDecl(
+                ports=None,
+                parameters=None,
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="C")},
+            )
+        },
+        top="top",
+    )
+
+    _, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert any(diag.code == "IR-011" for diag in diagnostics)
+
+
 def test_build_patterned_graph_pattern_parse_failure_emits_ir003() -> None:
     document = AsdlDocument(
         modules={
@@ -302,3 +341,91 @@ def test_build_patterned_graph_resolves_imported_refs(tmp_path: Path, monkeypatc
     inst_device = _instance_by_raw(entry_module, expr_ids_by_raw, "M1")
     assert inst_device.ref_kind == "device"
     assert inst_device.ref_raw == "lib.nmos"
+
+
+def test_build_patterned_graph_missing_qualified_namespace_emits_ir010(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    lib_root = tmp_path / "lib"
+    lib_root.mkdir()
+    lib_file = lib_root / "cells.asdl"
+    lib_file.write_text(
+        "\n".join(
+            [
+                "modules:",
+                "  child: {}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    entry_file = tmp_path / "entry.asdl"
+    entry_file.write_text(
+        "\n".join(
+            [
+                "imports:",
+                "  lib: cells.asdl",
+                "modules:",
+                "  top:",
+                "    instances:",
+                "      X1: missing.child",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    import_graph, import_diags = resolve_import_graph(entry_file, lib_roots=[lib_root])
+
+    assert import_diags == []
+    assert import_graph is not None
+
+    _, diagnostics = build_patterned_graph_from_import_graph(import_graph)
+
+    assert any(diag.code == "IR-010" for diag in diagnostics)
+
+
+def test_build_patterned_graph_missing_qualified_symbol_emits_ir010(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    lib_root = tmp_path / "lib"
+    lib_root.mkdir()
+    lib_file = lib_root / "cells.asdl"
+    lib_file.write_text(
+        "\n".join(
+            [
+                "modules:",
+                "  child: {}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    entry_file = tmp_path / "entry.asdl"
+    entry_file.write_text(
+        "\n".join(
+            [
+                "imports:",
+                "  lib: cells.asdl",
+                "modules:",
+                "  top:",
+                "    instances:",
+                "      X1: lib.missing",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    import_graph, import_diags = resolve_import_graph(entry_file, lib_roots=[lib_root])
+
+    assert import_diags == []
+    assert import_graph is not None
+
+    _, diagnostics = build_patterned_graph_from_import_graph(import_graph)
+
+    assert any(diag.code == "IR-010" for diag in diagnostics)
