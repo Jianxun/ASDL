@@ -16,7 +16,7 @@ T-196:
   pr: 197
   merged: true
 T-197:
-  status: review_in_progress
+  status: review_clean
   pr: 198
   merged: false
 T-189:
