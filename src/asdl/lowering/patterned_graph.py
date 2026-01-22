@@ -2,29 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from asdl.ast import AsdlDocument, ModuleDecl, PatternDecl
 from asdl.ast.location import Locatable
+from asdl.core.graph import ProgramGraph
+from asdl.core.graph_builder import PatternedGraphBuilder
+from asdl.core.registries import GroupSlice
 from asdl.diagnostics import Diagnostic, Severity, SourceSpan, format_code
 from asdl.patterns_refactor.parser import (
     NamedPattern,
     PatternError,
-    PatternExpr,
     parse_pattern_expr,
-)
-
-from .graph import EndpointBundle, InstanceBundle, ModuleGraph, NetBundle, ProgramGraph
-from .registries import (
-    ExprId,
-    GroupSlice,
-    ParamPatternOriginIndex,
-    PatternExpressionRegistry,
-    PatternOriginIndex,
-    RegistrySet,
-    SchematicHints,
-    SourceSpanIndex,
 )
 
 PATTERN_PARSE_ERROR = format_code("IR", 3)
@@ -34,29 +23,6 @@ UNKNOWN_REFERENCE = INVALID_INSTANCE_EXPR
 AMBIGUOUS_REFERENCE = INVALID_INSTANCE_EXPR
 
 NO_SPAN_NOTE = "No source span available."
-
-
-@dataclass
-class _IdAllocator:
-    """Deterministic ID allocator for PatternedGraph entities."""
-
-    _counts: Dict[str, int]
-
-    def __init__(self) -> None:
-        self._counts = {}
-
-    def next(self, prefix: str) -> str:
-        """Return the next identifier for a prefix.
-
-        Args:
-            prefix: Prefix to namespace the identifier.
-
-        Returns:
-            A stable identifier string.
-        """
-        count = self._counts.get(prefix, 0) + 1
-        self._counts[prefix] = count
-        return f"{prefix}{count}"
 
 
 def build_patterned_graph(
@@ -74,49 +40,42 @@ def build_patterned_graph(
         Tuple of (ProgramGraph, diagnostics).
     """
     diagnostics: List[Diagnostic] = []
-    id_allocator = _IdAllocator()
+    builder = PatternedGraphBuilder()
 
-    module_ids = {
-        name: id_allocator.next("m") for name in (document.modules or {}).keys()
-    }
-    device_ids = {
-        name: id_allocator.next("d") for name in (document.devices or {}).keys()
-    }
-
-    pattern_expressions: PatternExpressionRegistry = {}
-    pattern_origins: PatternOriginIndex = {}
-    param_pattern_origins: ParamPatternOriginIndex = {}
-    source_spans: SourceSpanIndex = {}
-    net_groups: Dict[str, list[GroupSlice]] = {}
-
-    modules: Dict[str, ModuleGraph] = {}
+    module_graphs: Dict[str, str] = {}
     for name, module in (document.modules or {}).items():
-        module_id = module_ids[name]
-        module_file_id = _resolve_file_id(file_id, module)
-        modules[module_id] = _lower_module(
+        module_graph = builder.add_module(name, _resolve_file_id(file_id, module))
+        module_graphs[name] = module_graph.module_id
+        _register_span(builder, module_graph.module_id, getattr(module, "_loc", None))
+
+    device_ids = _allocate_ids((document.devices or {}).keys(), "d")
+
+    for name, module in (document.modules or {}).items():
+        module_id = module_graphs[name]
+        _lower_module(
             name,
             module,
             module_id=module_id,
-            file_id=module_file_id,
-            module_ids=module_ids,
+            module_ids=module_graphs,
             device_ids=device_ids,
-            id_allocator=id_allocator,
             diagnostics=diagnostics,
-            pattern_expressions=pattern_expressions,
-            pattern_origins=pattern_origins,
-            param_pattern_origins=param_pattern_origins,
-            source_spans=source_spans,
-            net_groups=net_groups,
+            builder=builder,
         )
 
-    registries = RegistrySet(
-        pattern_expressions=pattern_expressions or None,
-        pattern_origins=pattern_origins or None,
-        param_pattern_origins=param_pattern_origins or None,
-        source_spans=source_spans or None,
-        schematic_hints=SchematicHints(net_groups=net_groups) if net_groups else None,
-    )
-    return ProgramGraph(modules=modules, registries=registries), diagnostics
+    return builder.build(), diagnostics
+
+
+def _allocate_ids(names: Iterable[str], prefix: str) -> Dict[str, str]:
+    """Allocate deterministic identifiers for named symbols.
+
+    Args:
+        names: Ordered sequence of names.
+        prefix: Prefix for the identifiers.
+
+    Returns:
+        Mapping of name to allocated identifier.
+    """
+    return {name: f"{prefix}{index}" for index, name in enumerate(names, start=1)}
 
 
 def _resolve_file_id(file_id: Optional[str], module: ModuleDecl) -> str:
@@ -142,46 +101,24 @@ def _lower_module(
     module: ModuleDecl,
     *,
     module_id: str,
-    file_id: str,
     module_ids: Mapping[str, str],
     device_ids: Mapping[str, str],
-    id_allocator: _IdAllocator,
     diagnostics: List[Diagnostic],
-    pattern_expressions: PatternExpressionRegistry,
-    pattern_origins: PatternOriginIndex,
-    param_pattern_origins: ParamPatternOriginIndex,
-    source_spans: SourceSpanIndex,
-    net_groups: Dict[str, list[GroupSlice]],
-) -> ModuleGraph:
+    builder: PatternedGraphBuilder,
+) -> None:
     """Lower a module declaration into a ModuleGraph.
 
     Args:
         name: Module name.
         module: Module declaration.
         module_id: Stable module identifier.
-        file_id: Source file identifier.
         module_ids: Mapping of module names to IDs.
         device_ids: Mapping of device names to IDs.
-        id_allocator: Shared ID allocator.
         diagnostics: Diagnostics list to append to.
-        pattern_expressions: Pattern expression registry to populate.
-        pattern_origins: Pattern origin registry to populate.
-        param_pattern_origins: Parameter origin registry to populate.
-        source_spans: Source span registry to populate.
-        net_groups: Schematic group registry to populate.
-
-    Returns:
-        Lowered ModuleGraph instance.
+        builder: PatternedGraph builder instance.
     """
     expr_cache: Dict[str, str] = {}
     named_patterns = _collect_named_patterns(module)
-    module_graph = ModuleGraph(
-        module_id=module_id,
-        name=name,
-        file_id=file_id,
-    )
-
-    _register_span(source_spans, module_id, getattr(module, "_loc", None))
 
     port_order: List[str] = []
     instance_refs: set[str] = set()
@@ -191,8 +128,8 @@ def _lower_module(
         inst_expr_loc = module._instance_expr_loc.get(inst_name)
         inst_expr_id = _register_expression(
             inst_name,
+            builder=builder,
             expr_cache=expr_cache,
-            pattern_expressions=pattern_expressions,
             named_patterns=named_patterns,
             loc=inst_loc,
             diagnostics=diagnostics,
@@ -225,14 +162,13 @@ def _lower_module(
             continue
 
         instance_refs.add(ref)
-        inst_id = id_allocator.next("i")
         param_expr_ids: Dict[str, str] = {}
         if params:
             for param_name, param_expr in params.items():
                 param_expr_id = _register_expression(
                     param_expr,
+                    builder=builder,
                     expr_cache=expr_cache,
-                    pattern_expressions=pattern_expressions,
                     named_patterns=named_patterns,
                     loc=inst_expr_loc or inst_loc,
                     diagnostics=diagnostics,
@@ -242,26 +178,28 @@ def _lower_module(
                 if param_expr_id is None:
                     continue
                 param_expr_ids[param_name] = param_expr_id
-                param_pattern_origins[(inst_id, param_name)] = (param_expr_id, 0)
 
-        module_graph.instances[inst_id] = InstanceBundle(
-            inst_id=inst_id,
-            name_expr_id=inst_expr_id,
+        inst_id = builder.add_instance(
+            module_id,
+            inst_expr_id,
             ref_kind=resolved[0],
             ref_id=resolved[1],
             ref_raw=ref,
             param_expr_ids=param_expr_ids or None,
         )
-        pattern_origins[inst_id] = (inst_expr_id, 0, 0)
-        _register_span(source_spans, inst_id, inst_loc)
+        builder.register_pattern_origin(inst_id, inst_expr_id, 0, 0)
+        if params:
+            for param_name, param_expr_id in param_expr_ids.items():
+                builder.register_param_origin(inst_id, param_name, param_expr_id, 0)
+        _register_span(builder, inst_id, inst_loc)
 
     for net_token, raw_endpoints in (module.nets or {}).items():
         net_loc = module._nets_loc.get(net_token)
         net_name, is_port = _split_net_token(net_token)
         net_expr_id = _register_expression(
             net_name,
+            builder=builder,
             expr_cache=expr_cache,
-            pattern_expressions=pattern_expressions,
             named_patterns=named_patterns,
             loc=net_loc,
             diagnostics=diagnostics,
@@ -284,8 +222,7 @@ def _lower_module(
             net_loc=net_loc or getattr(module, "_loc", None),
         )
 
-        net_id = id_allocator.next("n")
-        endpoint_ids: List[str] = []
+        net_id = builder.add_net(module_id, net_expr_id)
 
         for token, endpoint_loc in zip(endpoints, endpoint_loc_map):
             endpoint_expr, endpoint_error = _normalize_endpoint_token(token)
@@ -300,8 +237,8 @@ def _lower_module(
                 continue
             endpoint_expr_id = _register_expression(
                 endpoint_expr,
+                builder=builder,
                 expr_cache=expr_cache,
-                pattern_expressions=pattern_expressions,
                 named_patterns=named_patterns,
                 loc=endpoint_loc or net_loc,
                 diagnostics=diagnostics,
@@ -310,26 +247,13 @@ def _lower_module(
             )
             if endpoint_expr_id is None:
                 continue
-            endpoint_id = id_allocator.next("e")
-            module_graph.endpoints[endpoint_id] = EndpointBundle(
-                endpoint_id=endpoint_id,
-                net_id=net_id,
-                port_expr_id=endpoint_expr_id,
-            )
-            endpoint_ids.append(endpoint_id)
-            pattern_origins[endpoint_id] = (endpoint_expr_id, 0, 0)
-            _register_span(source_spans, endpoint_id, endpoint_loc)
+            endpoint_id = builder.add_endpoint(module_id, net_id, endpoint_expr_id)
+            builder.register_pattern_origin(endpoint_id, endpoint_expr_id, 0, 0)
+            _register_span(builder, endpoint_id, endpoint_loc)
 
-        module_graph.nets[net_id] = NetBundle(
-            net_id=net_id,
-            name_expr_id=net_expr_id,
-            endpoint_ids=endpoint_ids,
-        )
-        pattern_origins[net_id] = (net_expr_id, 0, 0)
-        _register_span(source_spans, net_id, net_loc)
-
-        if group_slices:
-            net_groups[net_id] = group_slices
+        builder.register_pattern_origin(net_id, net_expr_id, 0, 0)
+        _register_span(builder, net_id, net_loc)
+        builder.register_net_groups(net_id, group_slices)
 
     if module.instance_defaults and instance_refs:
         for ref, defaults in module.instance_defaults.items():
@@ -340,8 +264,7 @@ def _lower_module(
                 if is_port and net_name not in port_order:
                     port_order.append(net_name)
 
-    module_graph.port_order = port_order or None
-    return module_graph
+    builder.set_port_order(module_id, port_order or None)
 
 
 def _collect_named_patterns(module: ModuleDecl) -> Dict[str, NamedPattern]:
@@ -365,20 +288,20 @@ def _collect_named_patterns(module: ModuleDecl) -> Dict[str, NamedPattern]:
 def _register_expression(
     expression: str,
     *,
-    expr_cache: Dict[str, ExprId],
-    pattern_expressions: PatternExpressionRegistry,
+    builder: PatternedGraphBuilder,
+    expr_cache: Dict[str, str],
     named_patterns: Mapping[str, NamedPattern],
     loc: Optional[Locatable],
     diagnostics: List[Diagnostic],
     module_name: str,
     context: str,
-) -> Optional[ExprId]:
+) -> Optional[str]:
     """Register and parse a pattern expression.
 
     Args:
         expression: Raw expression string to parse.
+        builder: PatternedGraph builder instance.
         expr_cache: Module-local cache of raw expressions to IDs.
-        pattern_expressions: Registry to populate.
         named_patterns: Named pattern definitions for parsing.
         loc: Optional source location for spans.
         diagnostics: Diagnostic collection to append to.
@@ -418,8 +341,7 @@ def _register_expression(
         )
         return None
 
-    expr_id = f"expr{len(pattern_expressions) + 1}"
-    pattern_expressions[expr_id] = parsed
+    expr_id = builder.add_expression(parsed)
     expr_cache[expression] = expr_id
     return expr_id
 
@@ -656,14 +578,14 @@ def _normalize_endpoint_token(token: str) -> Tuple[Optional[str], Optional[str]]
 
 
 def _register_span(
-    spans: SourceSpanIndex,
+    builder: PatternedGraphBuilder,
     entity_id: str,
     loc: Optional[Locatable],
 ) -> None:
     """Register a source span for an entity when available.
 
     Args:
-        spans: Source span registry to populate.
+        builder: PatternedGraph builder instance.
         entity_id: Graph entity identifier.
         loc: Optional location payload.
     """
@@ -671,7 +593,7 @@ def _register_span(
         return
     span = loc.to_source_span()
     if span is not None:
-        spans[entity_id] = span
+        builder.register_source_span(entity_id, span)
 
 
 def _diagnostic(

@@ -1,7 +1,7 @@
 # Codebase Map
 
 ## Directories
-- `src/asdl/`: active refactor code (`ast/`, `diagnostics/`, `ir/`, `cli/`, `emit/`, `imports/`).
+- `src/asdl/`: active refactor code (`ast/`, `diagnostics/`, `ir/`, `cli/`, `emit/`, `imports/`, `lowering/`).
 - `legacy/`: archived code and tests for reference only.
 - `legacy/tests/`: archived pytest suites and fixtures.
 - `docs/`: design docs (parser, elaborator, diagnostic system, CLI, schema, logging, xDSL plans, etc.).
@@ -20,6 +20,9 @@
 
 ## Quick Reference: Imports Subsystem
 - `src/asdl/imports/`: import resolution package (resolver, program DB, name env, diagnostics).
+
+## Quick Reference: Lowering
+- `src/asdl/lowering/`: refactor pipeline lowerers (e.g., AST -> PatternedGraph).
 
 ## Quick Reference: AST
 - `src/asdl/ast/schema.py`: JSON/text schema generator helpers for CLI/scripts.

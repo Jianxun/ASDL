@@ -1,6 +1,26 @@
 schema_version: 2
 
 current_sprint:
+  - id: T-195
+    title: Rename and split AST->PatternedGraph lowering
+    owner: Executor
+    dod: >
+      Rename `src/asdl/lowering/patterned_graph.py` to
+      `src/asdl/lowering/ast_to_patterned_graph.py`. Split orchestration,
+      expression parsing, instance lowering, net/endpoint lowering, and
+      diagnostics helpers into focused lowering modules. Update
+      `asdl.lowering` exports and tests to use the new module name. Preserve
+      diagnostics, ordering, and registry behavior.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
+    files:
+      - src/asdl/lowering/ast_to_patterned_graph.py
+      - src/asdl/lowering/ast_to_patterned_graph_instances.py
+      - src/asdl/lowering/ast_to_patterned_graph_nets.py
+      - src/asdl/lowering/ast_to_patterned_graph_expressions.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+    links:
+      scratchpad: agents/scratchpads/T-195_ast_to_patterned_graph_split.md
   - id: T-185
     title: Align core port order with instance_defaults rules
     owner: Executor
@@ -37,6 +57,8 @@ current_sprint:
   - id: T-187
     title: Resolve multi-file references in PatternedGraph lowering
     owner: Executor
+    depends_on:
+      - T-195
     dod: >
       Add ProgramDB-backed reference resolution for modules/devices during
       PatternedGraph lowering so cross-file instance refs are resolved. Include
@@ -44,7 +66,7 @@ current_sprint:
     verify:
       - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
     files:
-      - src/asdl/core/build_patterned_graph.py
+      - src/asdl/lowering/ast_to_patterned_graph.py
       - src/asdl/imports/resolve.py
       - tests/unit_tests/core/test_patterned_graph_lowering.py
       - tests/unit_tests/imports/test_import_pipeline.py
@@ -54,6 +76,8 @@ current_sprint:
   - id: T-188
     title: Enforce splice rules for refactor bindings
     owner: Executor
+    depends_on:
+      - T-195
     dod: >
       Treat spliced net names as errors in PatternedGraph lowering and add
       binding tests that allow spliced endpoints only for index or scalar
@@ -62,7 +86,7 @@ current_sprint:
     verify:
       - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/patterns_refactor/test_binding.py -v
     files:
-      - src/asdl/core/build_patterned_graph.py
+      - src/asdl/lowering/ast_to_patterned_graph.py
       - src/asdl/patterns_refactor/bind.py
       - tests/unit_tests/core/test_patterned_graph_lowering.py
       - tests/unit_tests/patterns_refactor/test_binding.py
@@ -73,6 +97,8 @@ current_sprint:
   - id: T-189
     title: Add PatternedGraph JSON serialization helper
     owner: Executor
+    depends_on:
+      - T-195
     dod: >
       Add a JSON-serializable conversion for ProgramGraph plus registries
       (pattern expressions, origins, spans, schematic hints) and a
@@ -92,6 +118,8 @@ current_sprint:
   - id: T-190
     title: Add CLI PatternedGraph dump command
     owner: Executor
+    depends_on:
+      - T-195
     dod: >
       Add a `patterned-graph-dump` CLI command that parses AST, builds
       PatternedGraph via a core pipeline helper, and emits JSON to stdout or an

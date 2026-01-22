@@ -9,7 +9,8 @@ from asdl.ast import (
     PatternDecl,
 )
 from asdl.ast.location import Locatable
-from asdl.core import GroupSlice, build_patterned_graph
+from asdl.core import GroupSlice
+from asdl.lowering import build_patterned_graph
 
 
 def _loc(line: int, col: int, length: int = 1, file_name: str = "design.asdl") -> Locatable:
