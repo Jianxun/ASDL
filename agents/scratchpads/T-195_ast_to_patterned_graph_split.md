@@ -19,6 +19,7 @@
 
 ## Progress log
 - 2026-01-XX: Initialized scratchpad and began splitting lowering helpers.
+- 2026-01-XX: Renamed lowering module and updated exports.
 
 ## Patch summary
 - TBD
