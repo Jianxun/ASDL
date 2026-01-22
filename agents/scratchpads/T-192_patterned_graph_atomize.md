@@ -12,29 +12,33 @@
 - `agents/context/project_status.md`
 
 ## Plan
-- [ ] Review PatternedGraph and AtomizedGraph specs and current core models.
-- [ ] Implement PatternedGraph -> AtomizedGraph lowering under `src/asdl/lowering/`.
-- [ ] Add deterministic ordering and diagnostics for expansion/binding failures.
-- [ ] Add/extend tests for expansion, broadcast, and error cases.
-- [ ] Run verify command and record results.
+- [x] Review PatternedGraph and AtomizedGraph specs and current core models.
+- [x] Draft atomization tests (basic expansion, broadcast binding, error case).
+- [x] Implement PatternedGraph -> AtomizedGraph lowering under `src/asdl/lowering/`.
+- [x] Add deterministic ordering + diagnostics for expansion/binding failures.
+- [x] Run verify command and record results.
 
 ## Progress log
-- 2026-01-XX: Initialized scratchpad.
+- 2026-01-22: Reviewed specs + core models; implemented atomization lowering + tests.
+- 2026-01-23: Added duplicate-atom diagnostics, tightened param expansion handling, and extended tests.
 
 ## Patch summary
-- TBD.
+- Added `build_atomized_graph` lowering with pattern expansion/binding diagnostics.
+- Added unit tests for atomization expansion, broadcast binding, and binding errors.
+- Added duplicate atom diagnostics for nets/instances and skipped duplicate emissions.
+- Stopped applying instance params when expansion errors occur; added tests for duplicates/mismatch.
 
 ## PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/202
 
 ## Verification
-- Not run.
+- `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_atomize.py -v`
 
 ## Status request
-- Not started.
+- Ready for review.
 
 ## Blockers / Questions
 - None yet.
 
 ## Next steps
-- Confirm conversion API shape and diagnostic expectations.
+- Await review.
