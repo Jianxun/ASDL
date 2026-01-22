@@ -4,9 +4,9 @@ T-195:
   pr: 194
   merged: true
 T-187:
-  status: ready_for_review
+  status: done
   pr: 195
-  merged: false
+  merged: true
 T-188:
   status: ready
   pr: null
