@@ -27,16 +27,16 @@
 - Documented JSON payload shape in refactor PatternedGraph spec.
 
 # PR URL
-- TODO
+- https://github.com/Jianxun/ASDL/pull/199
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_dump.py -v`
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - None
 
 # Next steps
-- TODO
+- Await review feedback.
