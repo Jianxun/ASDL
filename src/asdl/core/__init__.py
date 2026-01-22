@@ -14,6 +14,7 @@ from .graph import (
 )
 from .index import GraphIndex
 from .query import DesignQuery, query
+from .pipeline import run_patterned_graph_pipeline
 from .registries import (
     AnnotationIndex,
     AxisId,
@@ -58,6 +59,7 @@ __all__ = [
     "ProgramGraph",
     "query",
     "RegistrySet",
+    "run_patterned_graph_pipeline",
     "SchematicHints",
     "SourceSpanIndex",
 ]

@@ -4,9 +4,9 @@ T-189:
   pr: 199
   merged: true
 T-190:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 200
+  merged: true
 T-191:
   status: backlog
   pr: null
