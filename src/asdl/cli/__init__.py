@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Iterable, List, Optional
 
@@ -163,6 +164,74 @@ def ir_dump(
                 _diagnostic(
                     CLI_WRITE_ERROR,
                     f"Failed to write IR dump to '{output_path}': {exc}",
+                )
+            )
+            _emit_diagnostics(diagnostics)
+            raise click.exceptions.Exit(1)
+
+    _emit_diagnostics(diagnostics)
+
+
+@cli.command("patterned-graph-dump")
+@click.argument("input_file", type=click.Path(dir_okay=False, path_type=Path))
+@click.option(
+    "-o",
+    "--output",
+    "output_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Output file path.",
+)
+@click.option(
+    "--compact",
+    is_flag=True,
+    default=False,
+    help="Emit compact JSON output.",
+)
+def patterned_graph_dump(
+    input_file: Path,
+    output_path: Optional[Path],
+    compact: bool,
+) -> None:
+    """Emit PatternedGraph JSON."""
+    diagnostics: List[Diagnostic] = []
+    try:
+        from asdl.core import dump_patterned_graph, patterned_graph_to_jsonable
+        from asdl.core.pipeline import run_patterned_graph_pipeline
+    except Exception as exc:  # pragma: no cover - defensive: missing optional deps
+        diagnostics.append(
+            _diagnostic(
+                CLI_IMPORT_ERROR,
+                f"Failed to load PatternedGraph pipeline dependencies: {exc}",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    graph, pipeline_diags = run_patterned_graph_pipeline(entry_file=input_file)
+    diagnostics.extend(pipeline_diags)
+    if graph is None or _has_error_diagnostics(diagnostics):
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    if compact:
+        output_text = json.dumps(
+            patterned_graph_to_jsonable(graph),
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    else:
+        output_text = dump_patterned_graph(graph)
+
+    if output_path is None:
+        click.echo(output_text, nl=False)
+    else:
+        try:
+            output_path.write_text(output_text, encoding="utf-8")
+        except OSError as exc:
+            diagnostics.append(
+                _diagnostic(
+                    CLI_WRITE_ERROR,
+                    f"Failed to write PatternedGraph dump to '{output_path}': {exc}",
                 )
             )
             _emit_diagnostics(diagnostics)
