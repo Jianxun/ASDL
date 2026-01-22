@@ -12,8 +12,8 @@ T-191:
   pr: 201
   merged: true
 T-192:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 202
   merged: false
 T-193:
   status: ready
