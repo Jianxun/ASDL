@@ -17,23 +17,27 @@
 - [ ] Add unit tests and run verification.
 
 # Todo
-- [ ] Draft tests for minimal patterned module + grouped endpoints.
-- [ ] Implement build_patterned_graph lowering + registry wiring.
-- [ ] Update core exports and docs/tests as needed.
+- [x] Draft tests for minimal patterned module + grouped endpoints.
+- [x] Implement build_patterned_graph lowering + registry wiring.
+- [x] Update core exports and docs/tests as needed.
 
 # Progress log
 - Understanding: Build a new AST -> PatternedGraph lowerer that produces ProgramGraph/ModuleGraph
   with parsed pattern expression registry, origin/source span metadata, and schematic group slices
   while avoiding atomization; invalid inputs should yield diagnostics instead of exceptions.
+- Added lowerer module with expression registry, endpoint grouping, and diagnostics plumbing.
+- Added unit test for patterned module lowering and schematic group slices.
 
 # Patch summary
-- 
+- Added AST->PatternedGraph lowering with registry population.
+- Added unit test for patterned module lowering and endpoint grouping.
+- Exported build_patterned_graph from core API.
 
 # Verification
-- 
+- venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
 
 # Status request (Done / Blocked / In Progress)
-- 
+- In Progress
 
 # Blockers / Questions
 - 
