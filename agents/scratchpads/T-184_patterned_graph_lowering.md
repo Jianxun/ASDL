@@ -33,11 +33,14 @@
 - Added unit test for patterned module lowering and endpoint grouping.
 - Exported build_patterned_graph from core API.
 
+# PR URL
+- https://github.com/Jianxun/ASDL/pull/188
+
 # Verification
 - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 - 
