@@ -24,13 +24,13 @@
 - `src/asdl/core/build_patterned_graph.py`: map diagnostics to IR-001/IR-002/IR-003.
 
 # PR URL
-- 
+- https://github.com/Jianxun/ASDL/pull/191
 
 # Verification
 - `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v`
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Ready for Review
 
 # Blockers / Questions
 - 
