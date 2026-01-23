@@ -1,6 +1,6 @@
 schema_version: 2
 T-193:
-  status: blocked
+  status: ready
   pr: null
   merged: false
 T-199:
@@ -8,14 +8,14 @@ T-199:
   pr: 204
   merged: true
 T-200:
-  status: blocked
+  status: ready
   pr: null
   merged: false
 T-201:
-  status: blocked
+  status: ready
   pr: null
   merged: false
 T-202:
-  status: blocked
+  status: ready
   pr: null
   merged: false
