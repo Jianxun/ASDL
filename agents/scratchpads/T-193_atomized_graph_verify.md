@@ -25,6 +25,7 @@
 - 2026-01-23 18:57 — Reviewed verifier/docs/tests for gaps; no code changes required; next step run unit tests.
 - 2026-01-23 18:58 — Commit ec2a208 "Chore: start T-193 execution" (tasks_state + scratchpad); next step run unit tests.
 - 2026-01-23 18:59 — Ran `venv/bin/pytest tests/unit_tests/core/test_atomized_graph_verify.py -v` (pass); next step update scratchpad/task state + open PR.
+- 2026-01-23 19:00 — Commit cf976ee "Docs: log T-193 verification run" (scratchpad update); next step update task state + open PR.
 
 ## Open questions
 - None yet.
