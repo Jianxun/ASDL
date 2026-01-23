@@ -28,6 +28,7 @@
 - 2026-01-23: Updated atomization tests to cover module ports list expansion and device propagation.
 - 2026-01-23: Updated atomization lowering to copy device definitions and expand module ports lists.
 - 2026-01-23: Ran venv/bin/pytest tests/unit_tests/core/test_patterned_graph_atomize.py -v.
+- 2026-01-23: Review started; status set to review_in_progress.
 
 ## Patch summary
 - Propagated device definitions into AtomizedGraph and ensured module ports lists are expanded from PatternedGraph.
