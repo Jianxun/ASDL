@@ -21,6 +21,7 @@
 
 ## Progress log
 - 2026-01-23: Scratchpad created; DoD updated with gating + distinct codes.
+- 2026-01-23: Read executor context files and refactor specs; set T-193 to in_progress, ran lint_tasks_state, and created feature branch.
 
 ## Open questions
 - None yet.
