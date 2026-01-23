@@ -12,7 +12,7 @@ T-200:
   pr: 205
   merged: true
 T-201:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-202:

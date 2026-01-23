@@ -7,7 +7,14 @@ from typing import Optional
 
 from asdl.diagnostics import SourcePos, SourceSpan
 
-from .graph import EndpointBundle, InstanceBundle, ModuleGraph, NetBundle, ProgramGraph
+from .graph import (
+    DeviceDef,
+    EndpointBundle,
+    InstanceBundle,
+    ModuleGraph,
+    NetBundle,
+    ProgramGraph,
+)
 from .registries import (
     AxisSpec,
     GroupSlice,
@@ -349,10 +356,30 @@ def _module_graph_to_dict(module: ModuleGraph) -> dict:
         "module_id": module.module_id,
         "name": module.name,
         "file_id": module.file_id,
-        "port_order": module.port_order,
+        "ports": list(module.ports),
         "nets": nets,
         "instances": instances,
         "endpoints": endpoints,
+    }
+
+
+def _device_def_to_dict(device: DeviceDef) -> dict:
+    """Convert a device definition into a JSON-ready dict.
+
+    Args:
+        device: Device definition to serialize.
+
+    Returns:
+        Mapping payload for the device definition.
+    """
+    return {
+        "device_id": device.device_id,
+        "name": device.name,
+        "file_id": device.file_id,
+        "ports": list(device.ports),
+        "parameters": device.parameters,
+        "variables": device.variables,
+        "attrs": device.attrs,
     }
 
 
@@ -369,7 +396,15 @@ def patterned_graph_to_jsonable(graph: ProgramGraph) -> dict:
         _module_graph_to_dict(graph.modules[module_id])
         for module_id in sorted(graph.modules.keys())
     ]
-    return {"modules": modules, "registries": _registry_set_to_dict(graph.registries)}
+    devices = [
+        _device_def_to_dict(graph.devices[device_id])
+        for device_id in sorted(graph.devices.keys())
+    ]
+    return {
+        "modules": modules,
+        "devices": devices,
+        "registries": _registry_set_to_dict(graph.registries),
+    }
 
 
 def dump_patterned_graph(graph: ProgramGraph, *, indent: int = 2) -> str:
