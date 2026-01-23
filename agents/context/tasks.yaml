@@ -85,17 +85,4 @@ current_sprint:
       - tests/unit_tests/core/test_patterned_graph_atomize.py
     links:
       scratchpad: agents/scratchpads/T-202_atomized_ports_devices.md
-  - id: T-203
-    title: Update refactor specs for ports and devices
-    owner: Executor
-    depends_on: [T-199, T-200, T-202]
-    dod: >
-      Update refactor specs for PatternedGraph and AtomizedGraph to describe
-      ports lists (non-optional) and device definitions, including JSON shapes.
-    verify: []
-    files:
-      - docs/specs_refactor/spec_refactor_patterned_graph.md
-      - docs/specs_refactor/spec_refactor_atomized_graph.md
-    links:
-      scratchpad: agents/scratchpads/T-203_ports_devices_specs.md
 backlog: []

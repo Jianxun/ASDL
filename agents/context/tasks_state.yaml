@@ -19,7 +19,3 @@ T-202:
   status: blocked
   pr: null
   merged: false
-T-203:
-  status: in_progress
-  pr: 203
-  merged: false

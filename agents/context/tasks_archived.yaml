@@ -1,6 +1,7 @@
 schema_version: 1
 
 archive:
+  - T-203: {completed_on: 2026-01-23, owner: Executor, pr: 203}
   - T-189: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-189_patterned_graph_dump.md, pr: 199}
   - T-190: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-190_cli_patterned_graph_dump.md, pr: 200}
   - T-191: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-191_atomized_graph_model.md, pr: 201}
