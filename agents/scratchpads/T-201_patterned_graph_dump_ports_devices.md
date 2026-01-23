@@ -19,15 +19,18 @@
 
 ## Progress log
 - 2026-01-23: Scratchpad created.
+- 2026-01-23: Updated PatternedGraph dump JSON to emit module ports and device definitions; adjusted dump tests to cover ports/devices.
+- 2026-01-23: Ran venv/bin/pytest tests/unit_tests/core/test_patterned_graph_dump.py -v
 
 ## Patch summary
-- TBD
+- Emitted module `ports` and device definitions in PatternedGraph JSON dumps.
+- Added device fixtures and assertions for ports/devices in dump tests.
 
 ## PR URL
 - TBD
 
 ## Verification
-- TBD
+- venv/bin/pytest tests/unit_tests/core/test_patterned_graph_dump.py -v
 
 ## Status request (Done / Blocked / In Progress)
 - In Progress
@@ -36,7 +39,4 @@
 - None yet.
 
 ## Next steps
-- Inspect dump helpers/tests and implement ports/devices emission.
-
-- 2026-01-23: Updated PatternedGraph dump JSON to emit module ports and device definitions; adjusted dump tests to cover ports/devices.
-- 2026-01-23: Ran venv/bin/pytest tests/unit_tests/core/test_patterned_graph_dump.py -v
+- Open PR and update tasks_state to ready_for_review after push.
