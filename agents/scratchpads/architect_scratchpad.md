@@ -1,6 +1,15 @@
 # Architect Scratchpad
 
 ## Architecture notes (session summary; not yet ADRs)
+## Current status (2026-01-24)
+- Implemented stricter AtomizedGraph validation and binding rules; diagnostics now flag
+  duplicate instance names, duplicate instance ports, and nets with zero endpoints.
+- Port order atomization now stays literal-only and requires registry-backed expansion
+  for patterns; non-literal fallback is disallowed.
+- Tests updated to cover port order expansion and endpoint uniqueness.
+- Work is committed on feature branch `feature/atomized-graph-strictness` (commit 537ab06).
+- Next session: refactor `src/asdl/lowering/patterned_graph_to_atomized.py` into modular
+  chunks while preserving current behavior and diagnostics.
 
 GraphIR core:
 - Move GraphIR to dataclass-based core model; pydantic stays on AST only.

@@ -21,6 +21,7 @@ and endpoints. Nets own endpoint bundles (hyperedges).
 ```
 ProgramGraph {
   modules: dict[ModuleId, ModuleGraph]
+  devices: dict[DeviceId, DeviceDef]
   registries: RegistrySet
 }
 
@@ -28,7 +29,7 @@ ModuleGraph {
   module_id: GraphId
   name: str
   file_id: str
-  port_order: list[str] | None
+  ports: list[str]
   nets: dict[NetId, NetBundle]
   instances: dict[InstId, InstanceBundle]
   endpoints: dict[EndpointId, EndpointBundle]
@@ -66,6 +67,21 @@ EndpointBundle {
   endpoint_id: GraphId
   net_id: GraphId
   port_expr_id: ExprId
+  attrs: dict | None
+}
+```
+
+### 3.4 DeviceDef
+Devices are leaf definitions that provide port ordering and metadata for
+emission and verification. Backend templates are not stored here.
+```
+DeviceDef {
+  device_id: GraphId
+  name: str
+  file_id: str
+  ports: list[str]
+  parameters: dict[str, object] | None
+  variables: dict[str, object] | None
   attrs: dict | None
 }
 ```
@@ -136,6 +152,7 @@ for the flattened endpoint order.
 - All referenced IDs must exist in the module.
 - Endpoint bundles do not store instance IDs; per-instance endpoints are derived
   by pattern expansion.
+- Module and device `ports` are always lists (empty list allowed).
 - Registry data is optional; tools must tolerate missing registries.
 - Net name expressions must not contain splices (`;`); split net entries per segment.
 
@@ -164,7 +181,7 @@ registries with deterministic ordering (sorted keys).
       "module_id": "m1",
       "name": "top",
       "file_id": "design.asdl",
-      "port_order": ["$vdd"],
+      "ports": ["$vdd"],
       "nets": [
         {"net_id": "n1", "name_expr_id": "expr1", "endpoint_ids": ["e1"], "attrs": null}
       ],
@@ -182,6 +199,17 @@ registries with deterministic ordering (sorted keys).
       "endpoints": [
         {"endpoint_id": "e1", "net_id": "n1", "port_expr_id": "expr4", "attrs": null}
       ]
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "d1",
+      "name": "nmos",
+      "file_id": "design.asdl",
+      "ports": ["D", "G", "S", "B"],
+      "parameters": null,
+      "variables": null,
+      "attrs": null
     }
   ],
   "registries": {
