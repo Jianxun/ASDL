@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from asdl.core.atomized_graph import AtomizedModuleGraph, AtomizedProgramGraph
+from asdl.core.atomized_graph import (
+    AtomizedDeviceDef,
+    AtomizedModuleGraph,
+    AtomizedProgramGraph,
+)
 from asdl.core.graph import ProgramGraph
 from asdl.diagnostics import Diagnostic
 
@@ -33,6 +37,18 @@ def build_atomized_graph(
         Tuple of (atomized program graph, diagnostics).
     """
     diagnostics: list[Diagnostic] = []
+    atomized = AtomizedProgramGraph()
+    for device_id, device in graph.devices.items():
+        atomized.devices[device_id] = AtomizedDeviceDef(
+            device_id=device.device_id,
+            name=device.name,
+            file_id=device.file_id,
+            ports=list(device.ports or []),
+            parameters=device.parameters,
+            variables=device.variables,
+            attrs=device.attrs,
+        )
+
     expr_registry = graph.registries.pattern_expressions
     if expr_registry is None:
         diagnostics.append(
@@ -42,10 +58,9 @@ def build_atomized_graph(
                 None,
             )
         )
-        return AtomizedProgramGraph(), diagnostics
+        return atomized, diagnostics
 
     source_spans = graph.registries.source_spans
-    atomized = AtomizedProgramGraph()
 
     for module_id, module in graph.modules.items():
         allocator = _IdAllocator()
@@ -53,19 +68,19 @@ def build_atomized_graph(
             module_id=module_id,
             name=module.name,
             file_id=module.file_id,
-            port_order=None,
+            ports=[],
             patterned_module_id=module.module_id,
         )
         atomized.modules[module_id] = atomized_module
 
         module_exprs = _collect_module_expressions(module, expr_registry)
-        port_order, port_diags = _expand_port_order(
-            module.port_order,
+        ports, port_diags = _expand_port_order(
+            module.ports,
             module_exprs,
             module_name=module.name,
         )
         diagnostics.extend(port_diags)
-        atomized_module.port_order = port_order or None
+        atomized_module.ports = ports
 
         context = ModuleAtomizationContext(
             module=module,
