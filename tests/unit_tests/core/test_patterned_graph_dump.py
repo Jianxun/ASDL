@@ -62,7 +62,7 @@ def _build_graph() -> ProgramGraph:
         module_id="mod1",
         name="top",
         file_id="design.asdl",
-        ports=["$vdd"],
+        ports=["vdd"],
         nets={net_id: net},
         instances={inst_id: inst},
         endpoints={endpoint_id: endpoint},
@@ -131,7 +131,7 @@ def test_patterned_graph_jsonable_shape() -> None:
     payload = patterned_graph_to_jsonable(graph)
 
     assert payload["modules"][0]["module_id"] == "mod1"
-    assert payload["modules"][0]["ports"] == ["$vdd"]
+    assert payload["modules"][0]["ports"] == ["vdd"]
     assert payload["modules"][0]["nets"][0]["net_id"] == "net1"
     assert payload["modules"][0]["instances"][0]["ref_kind"] == "device"
     assert payload["devices"][0]["name"] == "nmos"

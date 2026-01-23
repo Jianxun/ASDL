@@ -153,6 +153,8 @@ for the flattened endpoint order.
 - Endpoint bundles do not store instance IDs; per-instance endpoints are derived
   by pattern expansion.
 - Module and device `ports` are always lists (empty list allowed).
+- Module `ports` entries are normalized names (strip leading `$` at ingest).
+- Module `ports` ordering is semantic and must be preserved (never sorted).
 - Registry data is optional; tools must tolerate missing registries.
 - Net name expressions must not contain splices (`;`); split net entries per segment.
 
@@ -181,7 +183,7 @@ registries with deterministic ordering (sorted keys).
       "module_id": "m1",
       "name": "top",
       "file_id": "design.asdl",
-      "ports": ["$vdd"],
+      "ports": ["vdd"],
       "nets": [
         {"net_id": "n1", "name_expr_id": "expr1", "endpoint_ids": ["e1"], "attrs": null}
       ],

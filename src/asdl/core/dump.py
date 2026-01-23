@@ -265,16 +265,6 @@ def _registry_set_to_dict(registries: RegistrySet) -> dict:
         "schematic_hints": _schematic_hints_to_dict(registries.schematic_hints),
         "annotations": annotations,
     }
-    return {
-        "pattern_expressions": pattern_expressions,
-        "pattern_origins": _pattern_origins_to_dict(registries.pattern_origins),
-        "param_pattern_origins": _param_pattern_origins_to_list(
-            registries.param_pattern_origins
-        ),
-        "source_spans": _source_spans_to_dict(registries.source_spans),
-        "schematic_hints": _schematic_hints_to_dict(registries.schematic_hints),
-        "annotations": registries.annotations,
-    }
 
 
 def _net_bundle_to_dict(net: NetBundle) -> dict:
