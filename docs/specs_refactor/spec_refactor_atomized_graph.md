@@ -21,13 +21,14 @@ atomized endpoints.
 ```
 AtomizedProgramGraph {
   modules: dict[AtomizedModuleId, AtomizedModuleGraph]
+  devices: dict[AtomizedDeviceId, AtomizedDeviceDef]
 }
 
 AtomizedModuleGraph {
   module_id: GraphId
   name: str
   file_id: str
-  port_order: list[str] | None
+  ports: list[str]
   nets: dict[AtomizedNetId, AtomizedNet]
   instances: dict[AtomizedInstId, AtomizedInstance]
   endpoints: dict[AtomizedEndpointId, AtomizedEndpoint]
@@ -72,6 +73,21 @@ AtomizedEndpoint {
 }
 ```
 
+### 3.4 AtomizedDeviceDef
+Atomized devices are leaf definitions that provide ports and metadata for
+verification and emission adapters. Backend templates remain external.
+```
+AtomizedDeviceDef {
+  device_id: GraphId
+  name: str
+  file_id: str
+  ports: list[str]
+  parameters: dict[str, object] | None
+  variables: dict[str, object] | None
+  attrs: dict | None
+}
+```
+
 ## 4. Provenance
 Provenance fields (`patterned_*_id`) are optional back-references to the
 originating PatternedGraph entities. They enable traceability without
@@ -85,5 +101,5 @@ reintroducing pattern expressions into the atomized view.
 - Instance names must be unique within a module.
 - Each instance port binds to exactly one net.
 - Each net must have at least one endpoint.
-- `port_order`, when present, lists only literal port names.
+- Module and device `ports` are always lists (empty list allowed).
 - Provenance references may be absent; consumers must tolerate missing data.

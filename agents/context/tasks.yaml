@@ -80,11 +80,12 @@ current_sprint:
   - id: T-193
     title: Add stateless verifiers for AtomizedGraph
     owner: Executor
+    depends_on: [T-194, T-197]
     dod: >
-      Add pure verification helpers for the atomized core graph (unique
-      net/instance names, endpoints reference existing instances/ports, and
-      port_order consistency) that return diagnostics without mutating inputs.
-      Define diagnostic codes used by the verifiers and add unit tests.
+      Add pure verification helpers for the atomized core graph that validate
+      unique net/instance names, endpoint references, and endpoint ports against
+      module/device ports lists in the atomized program. Define diagnostic codes
+      used by the verifiers and add unit tests.
     verify:
       - venv/bin/pytest tests/unit_tests/core/test_atomized_graph_verify.py -v
     files:
@@ -95,4 +96,82 @@ current_sprint:
     links:
       spec: docs/specs_refactor/spec_refactor_atomized_graph.md
       scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md
+  - id: T-194
+    title: Add device definitions and ports lists to core graphs
+    owner: Executor
+    dod: >
+      Extend PatternedGraph and AtomizedGraph core dataclasses with device
+      definitions (stable ID, name, file_id, ports list, optional params/vars/
+      attrs). Replace module port_order with a canonical ports list (empty list
+      allowed, never None) and add builder support for devices/ports while
+      preserving compatibility for existing callers.
+    verify:
+      - venv/bin/python -m py_compile src/asdl/core/graph.py src/asdl/core/atomized_graph.py src/asdl/core/graph_builder.py src/asdl/core/__init__.py
+    files:
+      - src/asdl/core/graph.py
+      - src/asdl/core/atomized_graph.py
+      - src/asdl/core/graph_builder.py
+      - src/asdl/core/__init__.py
+    links:
+      scratchpad: agents/scratchpads/T-194_core_graph_ports_devices.md
+  - id: T-195
+    title: Populate PatternedGraph devices and ports in lowering
+    owner: Executor
+    depends_on: [T-194]
+    dod: >
+      Update AST -> PatternedGraph lowering to populate device definitions and
+      module ports lists (empty list when absent). Update core PatternedGraph
+      tests to assert ports lists and device definitions.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/core/test_patterned_graph.py -v
+    files:
+      - src/asdl/lowering/ast_to_patterned_graph.py
+      - src/asdl/lowering/ast_to_patterned_graph_nets.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+      - tests/unit_tests/core/test_patterned_graph.py
+    links:
+      scratchpad: agents/scratchpads/T-195_patterned_graph_ports_devices.md
+  - id: T-196
+    title: Update PatternedGraph dump for ports and devices
+    owner: Executor
+    depends_on: [T-194, T-195]
+    dod: >
+      Update PatternedGraph JSON dump helpers to emit ports lists and device
+      definitions. Adjust dump tests for the new JSON shape.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_dump.py -v
+    files:
+      - src/asdl/core/dump.py
+      - tests/unit_tests/core/test_patterned_graph_dump.py
+    links:
+      scratchpad: agents/scratchpads/T-196_patterned_graph_dump_ports_devices.md
+  - id: T-197
+    title: Propagate ports and devices into AtomizedGraph
+    owner: Executor
+    depends_on: [T-194, T-195]
+    dod: >
+      Update PatternedGraph -> AtomizedGraph lowering to consume module ports
+      lists, propagate device definitions into the atomized program, and ensure
+      atomized modules always carry ports lists. Update atomization tests.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_atomize.py -v
+    files:
+      - src/asdl/lowering/patterned_graph_to_atomized.py
+      - src/asdl/lowering/patterned_graph_to_atomized_instances.py
+      - tests/unit_tests/core/test_patterned_graph_atomize.py
+    links:
+      scratchpad: agents/scratchpads/T-197_atomized_ports_devices.md
+  - id: T-198
+    title: Update refactor specs for ports and devices
+    owner: Executor
+    depends_on: [T-194, T-195, T-197]
+    dod: >
+      Update refactor specs for PatternedGraph and AtomizedGraph to describe
+      ports lists (non-optional) and device definitions, including JSON shapes.
+    verify: []
+    files:
+      - docs/specs_refactor/spec_refactor_patterned_graph.md
+      - docs/specs_refactor/spec_refactor_atomized_graph.md
+    links:
+      scratchpad: agents/scratchpads/T-198_ports_devices_specs.md
 backlog: []
