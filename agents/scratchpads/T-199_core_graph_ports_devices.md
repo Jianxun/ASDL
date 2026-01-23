@@ -40,3 +40,6 @@
 # Blockers / Questions
 
 # Next steps
+
+# Review log
+- 2026-01-23: Reviewer intake complete; PR #204 targets main and scratchpad/verify command present.
