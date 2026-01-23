@@ -34,16 +34,16 @@
 - Updated atomization tests to assert ports list expansion and device propagation.
 
 ## PR URL
-- TBD.
+- https://github.com/Jianxun/ASDL/pull/207
 
 ## Verification
 - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_atomize.py -v
 
 ## Status request (Done / Blocked / In Progress)
-- In progress.
+- Ready for review.
 
 ## Blockers / Questions
 - None yet.
 
 ## Next steps
-- Implement T-202 changes and update tests.
+- Await reviewer feedback.
