@@ -7,7 +7,14 @@ from typing import Dict, Literal, Optional
 
 from asdl.diagnostics import SourceSpan
 
-from .graph import EndpointBundle, InstanceBundle, ModuleGraph, NetBundle, ProgramGraph
+from .graph import (
+    DeviceDef,
+    EndpointBundle,
+    InstanceBundle,
+    ModuleGraph,
+    NetBundle,
+    ProgramGraph,
+)
 from .registries import (
     AnnotationIndex,
     ExprId,
@@ -52,6 +59,7 @@ class PatternedGraphBuilder:
     def __init__(self) -> None:
         self._id_allocator = _IdAllocator()
         self._modules: Dict[str, ModuleGraph] = {}
+        self._devices: Dict[str, DeviceDef] = {}
         self._pattern_expressions: PatternExpressionRegistry = {}
         self._pattern_origins: PatternOriginIndex = {}
         self._param_pattern_origins: ParamPatternOriginIndex = {}
@@ -73,6 +81,42 @@ class PatternedGraphBuilder:
         module = ModuleGraph(module_id=module_id, name=name, file_id=file_id)
         self._modules[module_id] = module
         return module
+
+    def add_device(
+        self,
+        name: str,
+        file_id: str,
+        *,
+        ports: Optional[list[str]] = None,
+        parameters: Optional[Dict[str, object]] = None,
+        variables: Optional[Dict[str, object]] = None,
+        attrs: Optional[Dict[str, object]] = None,
+    ) -> DeviceDef:
+        """Create a device definition and register it in the program.
+
+        Args:
+            name: Device name.
+            file_id: Source file identifier.
+            ports: Ordered port list (empty list allowed).
+            parameters: Optional parameter metadata.
+            variables: Optional variable metadata.
+            attrs: Optional attributes for tools or passes.
+
+        Returns:
+            Newly created DeviceDef instance.
+        """
+        device_id = self._id_allocator.next("d")
+        device = DeviceDef(
+            device_id=device_id,
+            name=name,
+            file_id=file_id,
+            ports=list(ports or []),
+            parameters=parameters or None,
+            variables=variables or None,
+            attrs=attrs or None,
+        )
+        self._devices[device_id] = device
+        return device
 
     def add_net(self, module_id: str, name_expr_id: ExprId) -> str:
         """Create a net bundle in the specified module.
@@ -230,18 +274,22 @@ class PatternedGraphBuilder:
         """
         self._annotations[entity_id] = payload
 
-    def set_port_order(self, module_id: str, port_order: Optional[list[str]]) -> None:
-        """Update the port order for a module graph.
+    def set_ports(self, module_id: str, ports: Optional[list[str]]) -> None:
+        """Update the ports list for a module graph.
 
         Args:
             module_id: Module identifier to update.
-            port_order: Ordered list of ports or None.
+            ports: Ordered list of ports or None.
 
         Raises:
             KeyError: If the module does not exist.
         """
         module = self._modules[module_id]
-        module.port_order = port_order or None
+        module.ports = list(ports) if ports else []
+
+    def set_port_order(self, module_id: str, port_order: Optional[list[str]]) -> None:
+        """Backward-compatible alias for set_ports."""
+        self.set_ports(module_id, port_order)
 
     def build(self) -> ProgramGraph:
         """Finalize and return a ProgramGraph with optional registries.
@@ -259,7 +307,11 @@ class PatternedGraphBuilder:
             ),
             annotations=self._annotations or None,
         )
-        return ProgramGraph(modules=self._modules, registries=registries)
+        return ProgramGraph(
+            modules=self._modules,
+            devices=self._devices,
+            registries=registries,
+        )
 
 
 __all__ = ["PatternedGraphBuilder"]
