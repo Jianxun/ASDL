@@ -14,14 +14,36 @@
 - `docs/specs/spec_diagnostic_codes.md`
 
 ## Plan
-- [ ] Define diagnostic codes for atomized graph verification in the spec doc.
-- [ ] Implement `verify_atomized_graph` helpers (pure functions; no mutation).
-- [ ] Add unit tests covering each verifier error case.
-- [ ] Document/implement caller-level gating to run verifier only when upstream diagnostics contain no ERROR.
+- [x] Define diagnostic codes for atomized graph verification in the spec doc.
+- [x] Implement `verify_atomized_graph` helpers (pure functions; no mutation).
+- [x] Add unit tests covering each verifier error case.
+- [x] Document/implement caller-level gating to run verifier only when upstream diagnostics contain no ERROR.
 
 ## Progress log
 - 2026-01-23: Scratchpad created; DoD updated with gating + distinct codes.
 - 2026-01-23: Read executor context files and refactor specs; set T-193 to in_progress, ran lint_tasks_state, and created feature branch.
+- 2026-01-23: Added AtomizedGraph verification helpers, gating wrapper, diagnostics spec entries, and unit tests.
+- 2026-01-23: Opened PR #208 and prepared ready_for_review status update.
 
 ## Open questions
 - None yet.
+
+## Patch summary
+- Added AtomizedGraph verification helpers with distinct IR codes and gated verification wrapper.
+- Documented new AtomizedGraph verification diagnostics in spec.
+- Added unit tests for duplicate names, endpoint references, port validation, and gating.
+
+## Verification
+- `venv/bin/pytest tests/unit_tests/core/test_atomized_graph_verify.py -v`
+
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/208
+
+## Status request
+- ready_for_review
+
+## Blockers / Questions
+- None.
+
+## Next steps
+- Open PR, update tasks_state to ready_for_review, and record PR URL.
