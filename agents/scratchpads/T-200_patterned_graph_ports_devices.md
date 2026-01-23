@@ -35,13 +35,13 @@
 - Adjusted ModuleGraph/AtomizedModuleGraph port_order aliasing to avoid InitVar default conflicts.
 
 ## PR URL
-- Pending.
+- https://github.com/Jianxun/ASDL/pull/205
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/core/test_patterned_graph.py -v`
 
 ## Status request
-- In Progress.
+- Ready for review.
 
 ## Blockers / Questions
 - None yet.
