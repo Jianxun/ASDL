@@ -1,86 +1,10 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-189
-    title: Add PatternedGraph JSON serialization helper
-    owner: Executor
-    dod: >
-      Add a JSON-serializable conversion for ProgramGraph plus registries
-      (pattern expressions, origins, spans, schematic hints) and a
-      deterministic `dump_patterned_graph` string helper. Document the JSON
-      shape in `docs/specs_refactor/spec_refactor_patterned_graph.md` and add
-      unit tests for a minimal graph serialization.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_dump.py -v
-    files:
-      - src/asdl/core/dump.py
-      - src/asdl/core/__init__.py
-      - tests/unit_tests/core/test_patterned_graph_dump.py
-      - docs/specs_refactor/spec_refactor_patterned_graph.md
-    links:
-      spec: docs/specs_refactor/spec_refactor_patterned_graph.md
-      scratchpad: agents/scratchpads/T-189_patterned_graph_dump.md
-  - id: T-190
-    title: Add CLI PatternedGraph dump command
-    owner: Executor
-    dod: >
-      Add a `patterned-graph-dump` CLI command that parses AST, builds
-      PatternedGraph via a core pipeline helper, and emits JSON to stdout or an
-      output file (pretty by default, compact via flag). JSON-only output (no
-      format switching) and no `--lib` option yet. Ensure diagnostics are
-      emitted and exit codes match existing CLI conventions. Add CLI tests.
-    verify:
-      - venv/bin/pytest tests/unit_tests/cli/test_patterned_graph_dump.py -v
-    files:
-      - src/asdl/cli/__init__.py
-      - src/asdl/core/pipeline.py
-      - src/asdl/core/__init__.py
-      - tests/unit_tests/cli/test_patterned_graph_dump.py
-    links:
-      spec: docs/specs_refactor/spec_refactor_stack.md
-      scratchpad: agents/scratchpads/T-190_cli_patterned_graph_dump.md
-  - id: T-191
-    title: Define AtomizedGraph core model
-    owner: Executor
-    dod: >
-      Add a core dataclass model for fully-atomized graphs (program, module,
-      net, instance, endpoint) including stable IDs, resolved atom names, and
-      optional provenance back-references to PatternedGraph entities. Document
-      the model in a refactor spec and export it from `asdl.core`.
-    verify:
-      - venv/bin/python -m py_compile src/asdl/core/atomized_graph.py
-    files:
-      - src/asdl/core/atomized_graph.py
-      - src/asdl/core/__init__.py
-      - docs/specs_refactor/spec_refactor_atomized_graph.md
-    links:
-      spec: docs/specs_refactor/spec_refactor_stack.md
-      scratchpad: agents/scratchpads/T-191_atomized_graph_model.md
-
-  - id: T-192
-    title: Convert PatternedGraph to AtomizedGraph
-    owner: Executor
-    dod: >
-      Implement a lowering pass under
-      `src/asdl/lowering/patterned_graph_to_atomized.py` that expands
-      PatternedGraph nets/instances/endpoints into a fully atomized core graph
-      using the refactor pattern service and binding rules, emitting diagnostics
-      for expansion/binding errors. Ensure deterministic ordering for atoms and
-      endpoints. Add unit tests covering basic expansion, broadcast binding, and
-      error cases.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_atomize.py -v
-    files:
-      - src/asdl/lowering/patterned_graph_to_atomized.py
-      - src/asdl/core/atomized_graph.py
-      - tests/unit_tests/core/test_patterned_graph_atomize.py
-    links:
-      spec: docs/specs_refactor/spec_refactor_pattern_service.md
-      scratchpad: agents/scratchpads/T-192_patterned_graph_atomize.md
   - id: T-193
     title: Add stateless verifiers for AtomizedGraph
     owner: Executor
-    depends_on: [T-194, T-197]
+    depends_on: [T-199, T-202]
     dod: >
       Add pure verification helpers for the atomized core graph that validate
       unique net/instance names, endpoint references, and endpoint ports against
@@ -96,7 +20,7 @@ current_sprint:
     links:
       spec: docs/specs_refactor/spec_refactor_atomized_graph.md
       scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md
-  - id: T-194
+  - id: T-199
     title: Add device definitions and ports lists to core graphs
     owner: Executor
     dod: >
@@ -113,11 +37,11 @@ current_sprint:
       - src/asdl/core/graph_builder.py
       - src/asdl/core/__init__.py
     links:
-      scratchpad: agents/scratchpads/T-194_core_graph_ports_devices.md
-  - id: T-195
+      scratchpad: agents/scratchpads/T-199_core_graph_ports_devices.md
+  - id: T-200
     title: Populate PatternedGraph devices and ports in lowering
     owner: Executor
-    depends_on: [T-194]
+    depends_on: [T-199]
     dod: >
       Update AST -> PatternedGraph lowering to populate device definitions and
       module ports lists (empty list when absent). Update core PatternedGraph
@@ -130,11 +54,11 @@ current_sprint:
       - tests/unit_tests/core/test_patterned_graph_lowering.py
       - tests/unit_tests/core/test_patterned_graph.py
     links:
-      scratchpad: agents/scratchpads/T-195_patterned_graph_ports_devices.md
-  - id: T-196
+      scratchpad: agents/scratchpads/T-200_patterned_graph_ports_devices.md
+  - id: T-201
     title: Update PatternedGraph dump for ports and devices
     owner: Executor
-    depends_on: [T-194, T-195]
+    depends_on: [T-199, T-200]
     dod: >
       Update PatternedGraph JSON dump helpers to emit ports lists and device
       definitions. Adjust dump tests for the new JSON shape.
@@ -144,11 +68,11 @@ current_sprint:
       - src/asdl/core/dump.py
       - tests/unit_tests/core/test_patterned_graph_dump.py
     links:
-      scratchpad: agents/scratchpads/T-196_patterned_graph_dump_ports_devices.md
-  - id: T-197
+      scratchpad: agents/scratchpads/T-201_patterned_graph_dump_ports_devices.md
+  - id: T-202
     title: Propagate ports and devices into AtomizedGraph
     owner: Executor
-    depends_on: [T-194, T-195]
+    depends_on: [T-199, T-200]
     dod: >
       Update PatternedGraph -> AtomizedGraph lowering to consume module ports
       lists, propagate device definitions into the atomized program, and ensure
@@ -160,11 +84,11 @@ current_sprint:
       - src/asdl/lowering/patterned_graph_to_atomized_instances.py
       - tests/unit_tests/core/test_patterned_graph_atomize.py
     links:
-      scratchpad: agents/scratchpads/T-197_atomized_ports_devices.md
-  - id: T-198
+      scratchpad: agents/scratchpads/T-202_atomized_ports_devices.md
+  - id: T-203
     title: Update refactor specs for ports and devices
     owner: Executor
-    depends_on: [T-194, T-195, T-197]
+    depends_on: [T-199, T-200, T-202]
     dod: >
       Update refactor specs for PatternedGraph and AtomizedGraph to describe
       ports lists (non-optional) and device definitions, including JSON shapes.
@@ -173,5 +97,5 @@ current_sprint:
       - docs/specs_refactor/spec_refactor_patterned_graph.md
       - docs/specs_refactor/spec_refactor_atomized_graph.md
     links:
-      scratchpad: agents/scratchpads/T-198_ports_devices_specs.md
+      scratchpad: agents/scratchpads/T-203_ports_devices_specs.md
 backlog: []

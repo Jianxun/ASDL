@@ -1,6 +1,10 @@
 schema_version: 1
 
 archive:
+  - T-189: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-189_patterned_graph_dump.md, pr: 199}
+  - T-190: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-190_cli_patterned_graph_dump.md, pr: 200}
+  - T-191: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-191_atomized_graph_model.md, pr: 201}
+  - T-192: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-192_patterned_graph_atomize.md, pr: 202}
   - T-038: {completed_on: 2026-01-03, owner: Executor, scratchpad: agents/scratchpads/T-038_template_placeholders.md, pr: https://github.com/Jianxun/ASDL/pull/36}
   - T-046: {completed_on: 2026-01-03, owner: Architect, scratchpad: agents/scratchpads/T-046_individual_param_placeholders.md, pr: https://github.com/Jianxun/ASDL/pull/38}
   - T-047: {completed_on: 2026-01-04, owner: Executor, scratchpad: agents/scratchpads/T-047_system_devices.md, pr: https://github.com/Jianxun/ASDL/pull/39}
