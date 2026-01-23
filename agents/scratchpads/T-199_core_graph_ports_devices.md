@@ -21,6 +21,7 @@
 - 2026-01-23: Initialized scratchpad.
 - 2026-01-23: Added device definitions and ports lists to core graphs with port_order compatibility.
 - 2026-01-23: Added device/ports support to graph builder and updated core exports.
+- 2026-01-23: Opened PR #204.
 
 # Patch summary
 - Added DeviceDef/AtomizedDeviceDef dataclasses, device registries, and canonical ports lists for modules.
@@ -28,11 +29,13 @@
 - Exported new device types in core __init__.
 
 # PR URL
+- https://github.com/Jianxun/ASDL/pull/204
 
 # Verification
 - `venv/bin/python -m py_compile src/asdl/core/graph.py src/asdl/core/atomized_graph.py src/asdl/core/graph_builder.py src/asdl/core/__init__.py`
 
 # Status request (Done / Blocked / In Progress)
+- Ready for review.
 
 # Blockers / Questions
 
