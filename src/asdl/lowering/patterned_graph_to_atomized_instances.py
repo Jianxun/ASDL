@@ -53,7 +53,7 @@ def _collect_module_expressions(
         expr = expr_registry.get(expr_id)
         if expr is not None:
             exprs_by_raw.setdefault(expr.raw, expr)
-    for raw_name in module.port_order or []:
+    for raw_name in module.ports:
         if raw_name in exprs_by_raw:
             continue
         expr = _find_expr_by_raw(expr_registry, raw_name, module.file_id)
@@ -71,7 +71,7 @@ def _expand_port_order(
     """Expand port order expressions into literal port names.
 
     Args:
-        port_order: Optional port order list from the PatternedGraph.
+        port_order: Optional ports list from the PatternedGraph.
         exprs_by_raw: Parsed expressions keyed by raw string.
         module_name: Module name for diagnostics.
 
