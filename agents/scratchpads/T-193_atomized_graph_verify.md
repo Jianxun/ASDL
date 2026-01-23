@@ -14,39 +14,33 @@
 - `docs/specs/spec_diagnostic_codes.md`
 
 ## Plan
-- [x] Define diagnostic codes for atomized graph verification in the spec doc.
-- [x] Implement `verify_atomized_graph` helpers (pure functions; no mutation).
-- [x] Add unit tests covering each verifier error case.
-- [x] Document/implement caller-level gating to run verifier only when upstream diagnostics contain no ERROR.
+- [x] Review existing AtomizedGraph verifier implementation + diagnostics docs.
+- [x] Identify gaps vs DoD and adjust code/tests/docs if needed.
+- [ ] Run unit tests for atomized graph verification.
+- [ ] Update scratchpad/task state and open PR.
 
 ## Progress log
-- 2026-01-23: Scratchpad created; DoD updated with gating + distinct codes.
-- 2026-01-23: Read executor context files and refactor specs; set T-193 to in_progress, ran lint_tasks_state, and created feature branch.
-- 2026-01-23: Added AtomizedGraph verification helpers, gating wrapper, diagnostics spec entries, and unit tests.
-- 2026-01-23: Opened PR #208 and prepared ready_for_review status update.
-- 2026-01-23: Reviewer intake complete; PR targets main, set status to review_in_progress, linted tasks_state.
-- 2026-01-23: Reviewed code/spec/test changes; no blockers found.
-- 2026-01-23: Posted review comment, marked review_clean, proceeding to merge.
+- 2026-01-23 18:55 — Task intake; read context/specs + current AtomizedGraph verifier code; confirmed existing implementation appears aligned with DoD; next step update task state + branch.
+- 2026-01-23 18:56 — Set T-193 to in_progress, ran lint_tasks_state, created feature branch; next step confirm no gaps and run tests.
+- 2026-01-23 18:57 — Reviewed verifier/docs/tests for gaps; no code changes required; next step run unit tests.
 
 ## Open questions
 - None yet.
 
 ## Patch summary
-- Added AtomizedGraph verification helpers with distinct IR codes and gated verification wrapper.
-- Documented new AtomizedGraph verification diagnostics in spec.
-- Added unit tests for duplicate names, endpoint references, port validation, and gating.
+- In progress.
 
 ## Verification
-- `venv/bin/pytest tests/unit_tests/core/test_atomized_graph_verify.py -v`
+- Pending.
 
 ## PR URL
-- https://github.com/Jianxun/ASDL/pull/208
+- Pending.
 
 ## Status request
-- ready_for_review
+- in_progress
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Open PR, update tasks_state to ready_for_review, and record PR URL.
+- Confirm no gaps, run unit tests, update task state + open PR.
