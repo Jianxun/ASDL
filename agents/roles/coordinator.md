@@ -26,7 +26,9 @@ Your job is to orchestrate task execution across the Executor and Reviewer roles
    - Provide the task ID and repo path.
    - Require that the Executor uses the scratchpad as a running record.
 3. **Monitor progress**
-   - Wait for the Executor result; if it runs long, poll at a user-approved cadence.
+   - Wait for the Executor result while polling repo status every 2 minutes.
+   - On each poll, check `git status -sb` and read `agents/context/tasks_state.yaml` to detect state transitions.
+   - Enforce a 20-minute hard limit per agent session; if exceeded, kill the agent session and note the timeout.
    - If the Executor reports `blocked`, stop and request Architect or user input.
 4. **Launch Reviewer**
    - When the task is `ready_for_review`, start a Reviewer agent and point it to `agents/roles/reviewer.md`.
@@ -90,3 +92,4 @@ When you report progress, include:
 ## Notes
 - If an agent disappears or fails to report, re-launch the same role with the same inputs and note the retry.
 - Respect user-specified timeouts and polling cadence.
+- Monitor `agents/context/tasks_state.yaml` until the Reviewer sets status to `done`; do not stop earlier.
