@@ -39,6 +39,7 @@ Your job is to orchestrate task execution across the Executor and Reviewer roles
 6. **Close the loop**
    - Confirm the task status in `agents/context/tasks_state.yaml` matches the outcome.
    - Summarize the cycle for the user (task ID, PR, status, next step).
+   - Do not send a final user response until the Reviewer has closed the task (`done`).
 
 ---
 
