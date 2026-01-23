@@ -23,9 +23,11 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
    - PR must target `main`.
    - PR must include a task ID, updated scratchpad, and verify commands/logs.
    - If the PR base is not `main`, request a rebase.
+   - Use the scratchpad as a running record; append key findings and decisions as you go.
 2. **Start review**
    - Set the task status to `review_in_progress`.
    - Run required checks or confirm logs exist; note any skips in the PR.
+   - Append review progress and findings to the scratchpad after each review phase.
 3. **Evaluate scope**
    - Compare changes to the task DoD and `links.spec`.
    - Spec/doc edits are in-scope only when the DoD or `links.spec` calls for them; otherwise request changes or escalate.
@@ -34,6 +36,7 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
    - **Escalation**: comment `[Reviewer]:`, open/link an issue, set `escalation_needed`.
    - **Clean**: comment `[Reviewer]:` with results, set `review_clean`. Then **immediately** follow the merge and closeout process to close the task (no stop after summary).
    - All review comments must be GitHub PR comments. To avoid malformed comments, create a temporary file, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
+   - Append the final review decision and rationale to the scratchpad.
 
 5. **Merge & closeout**
    When the review is clean, follow the following steps **without** asking for user clarification or permissions.

@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from typing import Dict, Literal, Optional, TypeAlias
 
 from .registries import ExprId, GraphId, RegistrySet
 
 ModuleId: TypeAlias = GraphId
+DeviceId: TypeAlias = GraphId
 NetId: TypeAlias = GraphId
 InstId: TypeAlias = GraphId
 EndpointId: TypeAlias = GraphId
@@ -71,6 +72,29 @@ class EndpointBundle:
 
 
 @dataclass
+class DeviceDef:
+    """Represent a device definition for PatternedGraph.
+
+    Attributes:
+        device_id: Stable device identifier.
+        name: Device name.
+        file_id: Source file identifier.
+        ports: Ordered port list (empty list allowed).
+        parameters: Optional mapping of parameter defaults or metadata.
+        variables: Optional mapping of variable defaults or metadata.
+        attrs: Optional attributes for tools or passes.
+    """
+
+    device_id: DeviceId
+    name: str
+    file_id: str
+    ports: list[str] = field(default_factory=list)
+    parameters: Optional[Dict[str, object]] = None
+    variables: Optional[Dict[str, object]] = None
+    attrs: Optional[Dict[str, object]] = None
+
+
+@dataclass
 class ModuleGraph:
     """Module-scoped graph data for PatternedGraph.
 
@@ -78,7 +102,7 @@ class ModuleGraph:
         module_id: Stable module identifier.
         name: Module name.
         file_id: Source file identifier.
-        port_order: Optional ordered port list for emission.
+        ports: Ordered port list (empty list allowed).
         nets: Net bundles keyed by net ID.
         instances: Instance bundles keyed by instance ID.
         endpoints: Endpoint bundles keyed by endpoint ID.
@@ -87,10 +111,27 @@ class ModuleGraph:
     module_id: ModuleId
     name: str
     file_id: str
-    port_order: Optional[list[str]] = None
+    ports: list[str] = field(default_factory=list)
     nets: Dict[NetId, NetBundle] = field(default_factory=dict)
     instances: Dict[InstId, InstanceBundle] = field(default_factory=dict)
     endpoints: Dict[EndpointId, EndpointBundle] = field(default_factory=dict)
+    port_order: InitVar[Optional[list[str]]] = None
+
+    def __post_init__(self, port_order: Optional[list[str]]) -> None:
+        """Normalize ports for legacy callers that pass port_order."""
+        if self.ports is None:
+            self.ports = []
+        if port_order is not None:
+            self.ports = list(port_order)
+
+    @property
+    def port_order(self) -> list[str]:
+        """Backward-compatible alias for ports."""
+        return self.ports
+
+    @port_order.setter
+    def port_order(self, value: Optional[list[str]]) -> None:
+        self.ports = list(value) if value else []
 
 
 @dataclass
@@ -99,14 +140,18 @@ class ProgramGraph:
 
     Attributes:
         modules: Module graphs keyed by module ID.
+        devices: Device definitions keyed by device ID.
         registries: Optional registry set for pattern and metadata lookup.
     """
 
     modules: Dict[ModuleId, ModuleGraph] = field(default_factory=dict)
+    devices: Dict[DeviceId, DeviceDef] = field(default_factory=dict)
     registries: RegistrySet = field(default_factory=RegistrySet)
 
 
 __all__ = [
+    "DeviceDef",
+    "DeviceId",
     "EndpointBundle",
     "InstanceBundle",
     "InstId",

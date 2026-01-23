@@ -1,6 +1,8 @@
 """PatternedGraph and AtomizedGraph core dataclasses and registries."""
 
 from .atomized_graph import (
+    AtomizedDeviceDef,
+    AtomizedDeviceId,
     AtomizedEndpoint,
     AtomizedEndpointId,
     AtomizedInstance,
@@ -18,6 +20,8 @@ from .atomized_graph import (
 from .dump import dump_patterned_graph, patterned_graph_to_jsonable
 from .graph_builder import PatternedGraphBuilder
 from .graph import (
+    DeviceDef,
+    DeviceId,
     EndpointBundle,
     InstanceBundle,
     InstId,
@@ -57,11 +61,15 @@ __all__ = [
     "AtomizedNet",
     "AtomizedNetId",
     "AtomizedProgramGraph",
+    "AtomizedDeviceDef",
+    "AtomizedDeviceId",
     "AnnotationIndex",
     "AxisId",
     "AxisSpec",
     "DesignQuery",
     "dump_patterned_graph",
+    "DeviceDef",
+    "DeviceId",
     "EndpointBundle",
     "ExprId",
     "GraphId",

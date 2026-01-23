@@ -25,12 +25,14 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
      `agents/context/tasks.yaml`, `agents/context/tasks_state.yaml`,
      `agents/context/project_status.md`.
    - Create `agents/scratchpads/T-00X.md` if missing and copy DoD + verify.
+   - Use the scratchpad as a running record; append key findings and decisions as you go.
    - Set task status to `in_progress` and run `./venv/bin/python scripts/lint_tasks_state.py`.
    - Create a feature branch from `main` (e.g., `feature/T-00X-short-slug`)
    - Explain your understanding of the task before implementation.
 3. **Implement**
    - Break down the task into subtasks and track them with a todo list.
    - After each subtask is done, commit the changes.
+   - Append progress, findings, and decisions to the scratchpad after each subtask or significant decision.
    - Follow TDD (test-driven development) practice.
    - Change code/tests/docs strictly within the DoD.
    - Keep changes focused; avoid unrelated refactors.

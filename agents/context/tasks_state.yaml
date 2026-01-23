@@ -4,9 +4,9 @@ T-193:
   pr: null
   merged: false
 T-199:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 204
+  merged: true
 T-200:
   status: blocked
   pr: null
