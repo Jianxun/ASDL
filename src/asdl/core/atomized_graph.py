@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from typing import Dict, Literal, Optional, TypeAlias
 
 from .registries import GraphId
 
 AtomizedModuleId: TypeAlias = GraphId
+AtomizedDeviceId: TypeAlias = GraphId
 AtomizedNetId: TypeAlias = GraphId
 AtomizedInstId: TypeAlias = GraphId
 AtomizedEndpointId: TypeAlias = GraphId
@@ -84,6 +85,29 @@ class AtomizedEndpoint:
 
 
 @dataclass
+class AtomizedDeviceDef:
+    """Represent an atomized device definition.
+
+    Attributes:
+        device_id: Stable device identifier.
+        name: Device name.
+        file_id: Source file identifier.
+        ports: Ordered port list (empty list allowed).
+        parameters: Optional mapping of parameter defaults or metadata.
+        variables: Optional mapping of variable defaults or metadata.
+        attrs: Optional attributes for tools or passes.
+    """
+
+    device_id: AtomizedDeviceId
+    name: str
+    file_id: str
+    ports: list[str] = field(default_factory=list)
+    parameters: Optional[Dict[str, object]] = None
+    variables: Optional[Dict[str, object]] = None
+    attrs: Optional[Dict[str, object]] = None
+
+
+@dataclass
 class AtomizedModuleGraph:
     """Module-scoped graph data for AtomizedGraph.
 
@@ -91,7 +115,7 @@ class AtomizedModuleGraph:
         module_id: Stable module identifier.
         name: Module name.
         file_id: Source file identifier.
-        port_order: Optional ordered port list for emission.
+        ports: Ordered port list (empty list allowed).
         nets: Atomized nets keyed by net ID.
         instances: Atomized instances keyed by instance ID.
         endpoints: Atomized endpoints keyed by endpoint ID.
@@ -101,11 +125,28 @@ class AtomizedModuleGraph:
     module_id: AtomizedModuleId
     name: str
     file_id: str
-    port_order: Optional[list[str]] = None
+    ports: list[str] = field(default_factory=list)
     nets: Dict[AtomizedNetId, AtomizedNet] = field(default_factory=dict)
     instances: Dict[AtomizedInstId, AtomizedInstance] = field(default_factory=dict)
     endpoints: Dict[AtomizedEndpointId, AtomizedEndpoint] = field(default_factory=dict)
     patterned_module_id: Optional[PatternedModuleId] = None
+    port_order: InitVar[Optional[list[str]]] = None
+
+    def __post_init__(self, port_order: Optional[list[str]]) -> None:
+        """Normalize ports for legacy callers that pass port_order."""
+        if self.ports is None:
+            self.ports = []
+        if port_order is not None:
+            self.ports = list(port_order)
+
+    @property
+    def port_order(self) -> list[str]:
+        """Backward-compatible alias for ports."""
+        return self.ports
+
+    @port_order.setter
+    def port_order(self, value: Optional[list[str]]) -> None:
+        self.ports = list(value) if value else []
 
 
 @dataclass
@@ -114,12 +155,16 @@ class AtomizedProgramGraph:
 
     Attributes:
         modules: Module graphs keyed by module ID.
+        devices: Device definitions keyed by device ID.
     """
 
     modules: Dict[AtomizedModuleId, AtomizedModuleGraph] = field(default_factory=dict)
+    devices: Dict[AtomizedDeviceId, AtomizedDeviceDef] = field(default_factory=dict)
 
 
 __all__ = [
+    "AtomizedDeviceDef",
+    "AtomizedDeviceId",
     "AtomizedEndpoint",
     "AtomizedEndpointId",
     "AtomizedInstance",
