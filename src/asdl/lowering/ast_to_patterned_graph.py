@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, Optional, Set
+from typing import Dict, List, Mapping, Optional, Set
 
 from asdl.ast import AsdlDocument, ModuleDecl
 from asdl.core.graph import ProgramGraph
@@ -43,7 +43,7 @@ def build_patterned_graph(
         module_graphs[name] = module_graph.module_id
         _register_span(builder, module_graph.module_id, getattr(module, "_loc", None))
 
-    device_ids = _allocate_ids((document.devices or {}).keys(), "d")
+    device_ids = _lower_devices(document, file_id=file_id, builder=builder)
 
     for name, module in (document.modules or {}).items():
         module_id = module_graphs[name]
@@ -88,10 +88,17 @@ def build_patterned_graph_from_import_graph(
             _register_span(builder, module_graph.module_id, getattr(module, "_loc", None))
         module_ids_by_file[file_id] = module_ids
 
-    device_ids_by_file = _allocate_device_ids_by_file(
-        graph.documents,
-        file_order=file_order,
-    )
+    device_ids_by_file: Dict[Path, Dict[str, str]] = {}
+    for file_id in file_order:
+        document = graph.documents.get(file_id)
+        if document is None:
+            device_ids_by_file[file_id] = {}
+            continue
+        device_ids_by_file[file_id] = _lower_devices(
+            document,
+            file_id=str(file_id),
+            builder=builder,
+        )
 
     for file_id in file_order:
         document = graph.documents.get(file_id)
@@ -121,63 +128,51 @@ def build_patterned_graph_from_import_graph(
     return builder.build(), diagnostics
 
 
-def _allocate_ids(names: Iterable[str], prefix: str) -> Dict[str, str]:
-    """Allocate deterministic identifiers for named symbols.
-
-    Args:
-        names: Ordered sequence of names.
-        prefix: Prefix for the identifiers.
-
-    Returns:
-        Mapping of name to allocated identifier.
-    """
-    return {name: f"{prefix}{index}" for index, name in enumerate(names, start=1)}
-
-
-def _allocate_device_ids_by_file(
-    documents: Mapping[Path, AsdlDocument],
+def _lower_devices(
+    document: AsdlDocument,
     *,
-    file_order: Iterable[Path],
-) -> Dict[Path, Dict[str, str]]:
-    """Allocate deterministic device IDs across an import graph.
+    file_id: Optional[str],
+    builder: PatternedGraphBuilder,
+) -> Dict[str, str]:
+    """Lower device declarations into the program graph.
 
     Args:
-        documents: Mapping of file IDs to parsed documents.
-        file_order: Deterministic ordering of file IDs.
+        document: Parsed AST document.
+        file_id: Optional file identifier override.
+        builder: PatternedGraph builder instance.
 
     Returns:
-        Mapping of file IDs to device name-to-ID maps.
+        Mapping of device names to stable IDs.
     """
-    device_ids_by_file: Dict[Path, Dict[str, str]] = {}
-    next_id = 1
-    for file_id in file_order:
-        document = documents.get(file_id)
-        if document is None:
-            device_ids_by_file[file_id] = {}
-            continue
-        file_devices: Dict[str, str] = {}
-        for name in (document.devices or {}).keys():
-            file_devices[name] = f"d{next_id}"
-            next_id += 1
-        device_ids_by_file[file_id] = file_devices
-    return device_ids_by_file
+    device_ids: Dict[str, str] = {}
+    for name, device in (document.devices or {}).items():
+        device_def = builder.add_device(
+            name,
+            _resolve_file_id(file_id, device),
+            ports=device.ports,
+            parameters=device.parameters,
+            variables=device.variables,
+        )
+        device_ids[name] = device_def.device_id
+        _register_span(builder, device_def.device_id, getattr(device, "_loc", None))
+    return device_ids
 
 
-def _resolve_file_id(file_id: Optional[str], module: ModuleDecl) -> str:
-    """Resolve a module file identifier with best-effort fallbacks.
+def _resolve_file_id(file_id: Optional[str], decl: object) -> str:
+    """Resolve a declaration file identifier with best-effort fallbacks.
 
     Args:
         file_id: Optional explicit file identifier.
-        module: Module declaration for span fallback.
+        decl: Declaration payload for span fallback.
 
     Returns:
         File identifier string.
     """
     if file_id:
         return file_id
-    module_loc = getattr(module, "_loc", None)
-    if module_loc is not None and module_loc.file:
-        return module_loc.file
+    decl_loc = getattr(decl, "_loc", None)
+    if decl_loc is not None and decl_loc.file:
+        return decl_loc.file
     return "<unknown>"
 
 
