@@ -7,6 +7,7 @@ from asdl.core.atomized_graph import (
     AtomizedModuleGraph,
     AtomizedProgramGraph,
 )
+from asdl.core.verify_atomized_graph import verify_atomized_graph_if_clean
 from asdl.core.graph import ProgramGraph
 from asdl.diagnostics import Diagnostic
 
@@ -109,4 +110,20 @@ def build_atomized_graph(
     return atomized, diagnostics
 
 
-__all__ = ["build_atomized_graph"]
+def build_atomized_graph_and_verify(
+    graph: ProgramGraph,
+) -> tuple[AtomizedProgramGraph, list[Diagnostic]]:
+    """Lower and verify a PatternedGraph program into an AtomizedGraph program.
+
+    Args:
+        graph: PatternedGraph program to atomize.
+
+    Returns:
+        Tuple of (atomized program graph, diagnostics).
+    """
+    atomized, diagnostics = build_atomized_graph(graph)
+    diagnostics = verify_atomized_graph_if_clean(atomized, diagnostics)
+    return atomized, diagnostics
+
+
+__all__ = ["build_atomized_graph", "build_atomized_graph_and_verify"]

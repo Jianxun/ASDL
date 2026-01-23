@@ -67,6 +67,14 @@ meaning, source, and span expectations.
 - `IR-024` (error): endpoint references unknown instance in GraphIR. Span: none.
 - `IR-025` (error): invalid GraphIR pattern origin or missing pattern table.
   Span: none.
+- `IR-030` (error, source=`core`): duplicate net name in AtomizedGraph module.
+  Span: none.
+- `IR-031` (error, source=`core`): duplicate instance name in AtomizedGraph
+  module. Span: none.
+- `IR-032` (error, source=`core`): AtomizedGraph endpoint references unknown
+  net or instance. Span: none.
+- `IR-033` (error, source=`core`): AtomizedGraph endpoint uses an undefined port
+  for the referenced module or device. Span: none.
 
 ### LINT (source: `ir`)
 - `LINT-002` (warning): default binding overridden by explicit net binding.
