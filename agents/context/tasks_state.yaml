@@ -8,9 +8,9 @@ T-199:
   pr: 204
   merged: true
 T-200:
-  status: ready_for_review
+  status: done
   pr: 205
-  merged: false
+  merged: true
 T-201:
   status: ready
   pr: null

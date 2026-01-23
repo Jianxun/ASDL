@@ -48,3 +48,9 @@
 
 ## Next steps
 - Run required verification tests.
+- 2026-01-23: Reviewer intake: PR targets main; scratchpad includes DoD + verify command; verify logs noted in scratchpad.
+- 2026-01-23: Review started; set T-200 status to review_in_progress; linted tasks_state.yaml.
+- 2026-01-23: Reviewer ran verify: `./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/core/test_patterned_graph.py -v` (pass).
+- 2026-01-23: Scope check: changes align with DoD (device defs + ports population + tests); small core graph port_order alias fix noted as supportive follow-up.
+- 2026-01-23: Review decision: review_clean; PR comment posted with passing tests.
+- 2026-01-23: Set task status to done (merged true) in tasks_state; proceeding with merge/closeout.
