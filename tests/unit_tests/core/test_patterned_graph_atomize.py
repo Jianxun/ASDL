@@ -152,8 +152,10 @@ def test_patterned_graph_atomize_duplicate_instance_atoms() -> None:
     atomized, diagnostics = build_atomized_graph(graph)
 
     assert any("duplicate" in diag.message.lower() for diag in diagnostics)
+    assert any("non-unique" in diag.message.lower() for diag in diagnostics)
     module_graph = next(iter(atomized.modules.values()))
     assert [inst.name for inst in module_graph.instances.values()] == ["U0"]
+    assert _endpoint_map(module_graph) == {"NET0": []}
 
 
 def test_patterned_graph_atomize_duplicate_net_atoms() -> None:
@@ -202,3 +204,45 @@ def test_patterned_graph_atomize_param_length_mismatch_omits_params() -> None:
     assert any(diag.code == "IR-003" for diag in diagnostics)
     module_graph = next(iter(atomized.modules.values()))
     assert all(inst.param_values is None for inst in module_graph.instances.values())
+
+
+def test_patterned_graph_atomize_port_order_expands_registered_expr() -> None:
+    builder = PatternedGraphBuilder()
+    module = builder.add_module("top", "design.asdl")
+    builder.add_expression(_parse_expr("P<0|1>"))
+    builder.set_port_order(module.module_id, ["P<0|1>"])
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    assert diagnostics == []
+    module_graph = next(iter(atomized.modules.values()))
+    assert module_graph.port_order == ["P0", "P1"]
+
+
+def test_patterned_graph_atomize_endpoint_uniqueness() -> None:
+    builder = PatternedGraphBuilder()
+    module = builder.add_module("top", "design.asdl")
+    net0_expr_id = builder.add_expression(_parse_expr("N0"))
+    net1_expr_id = builder.add_expression(_parse_expr("N1"))
+    inst_expr_id = builder.add_expression(_parse_expr("U0"))
+    endpoint_expr_id = builder.add_expression(_parse_expr("U0.D"))
+
+    net0_id = builder.add_net(module.module_id, net0_expr_id)
+    net1_id = builder.add_net(module.module_id, net1_expr_id)
+    builder.add_instance(
+        module.module_id,
+        inst_expr_id,
+        ref_kind="device",
+        ref_id="dev1",
+        ref_raw="nmos",
+    )
+    builder.add_endpoint(module.module_id, net0_id, endpoint_expr_id)
+    builder.add_endpoint(module.module_id, net1_id, endpoint_expr_id)
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    assert any(diag.code == "IR-002" for diag in diagnostics)
+    module_graph = next(iter(atomized.modules.values()))
+    assert _endpoint_map(module_graph) == {"N0": [("U0", "D")], "N1": []}

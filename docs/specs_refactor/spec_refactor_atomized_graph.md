@@ -81,5 +81,9 @@ reintroducing pattern expressions into the atomized view.
 - Atomized names must not contain pattern delimiters (`<`, `>`, `;`).
 - Endpoint atoms must reference existing nets and instances.
 - Each endpoint belongs to exactly one net.
+- Net names must be unique within a module.
+- Instance names must be unique within a module.
+- Each instance port binds to exactly one net.
+- Each net must have at least one endpoint.
 - `port_order`, when present, lists only literal port names.
 - Provenance references may be absent; consumers must tolerate missing data.

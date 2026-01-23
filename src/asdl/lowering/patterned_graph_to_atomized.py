@@ -24,6 +24,8 @@ from asdl.patterns_refactor import (
     BindingPlan,
     PatternError,
     PatternExpr,
+    PatternGroup,
+    PatternLiteral,
     bind_patterns,
     expand_endpoint,
     expand_pattern,
@@ -123,7 +125,9 @@ def build_atomized_graph(
         diagnostics.extend(port_diags)
         atomized_module.port_order = port_order or None
 
-        inst_name_to_ids: Dict[str, list[str]] = {}
+        inst_name_to_id: Dict[str, str] = {}
+        duplicate_inst_names: set[str] = set()
+        endpoint_keys: set[tuple[str, str]] = set()
         for inst_bundle in module.instances.values():
             inst_span = _entity_span(source_spans, inst_bundle.inst_id)
             inst_expr = _lookup_expr(
@@ -155,7 +159,7 @@ def build_atomized_graph(
 
             reported_duplicates: set[str] = set()
             for index, name in enumerate(inst_atoms):
-                if name in inst_name_to_ids:
+                if name in inst_name_to_id:
                     if name not in reported_duplicates:
                         diagnostics.append(
                             _diagnostic(
@@ -169,6 +173,7 @@ def build_atomized_graph(
                             )
                         )
                         reported_duplicates.add(name)
+                        duplicate_inst_names.add(name)
                     continue
                 inst_id = allocator.next_inst()
                 values = param_values[index] if param_values else None
@@ -182,9 +187,10 @@ def build_atomized_graph(
                     patterned_inst_id=inst_bundle.inst_id,
                     attrs=inst_bundle.attrs,
                 )
-                inst_name_to_ids.setdefault(name, []).append(inst_id)
+                inst_name_to_id[name] = inst_id
 
         net_name_to_id: Dict[str, str] = {}
+        net_spans: Dict[str, Optional[SourceSpan]] = {}
         for net_bundle in module.nets.values():
             net_span = _entity_span(source_spans, net_bundle.net_id)
             net_expr = _lookup_expr(
@@ -234,6 +240,7 @@ def build_atomized_graph(
                     attrs=net_bundle.attrs,
                 )
                 net_name_to_id[name] = net_id
+                net_spans[net_id] = net_span or net_expr.span
                 net_atom_ids.append(net_id)
 
             _expand_endpoints_for_net(
@@ -241,13 +248,28 @@ def build_atomized_graph(
                 module,
                 net_expr,
                 net_atom_ids,
-                inst_name_to_ids,
+                inst_name_to_id,
+                duplicate_inst_names,
+                endpoint_keys,
                 expr_registry,
                 source_spans=source_spans,
                 allocator=allocator,
                 atomized_module=atomized_module,
                 diagnostics=diagnostics,
             )
+
+        for net_id, net in atomized_module.nets.items():
+            if not net.endpoint_ids:
+                diagnostics.append(
+                    _diagnostic(
+                        INVALID_ENDPOINT_EXPR,
+                        (
+                            f"Net '{net.name}' in module '{module.name}' has no "
+                            "legal endpoints after atomization."
+                        ),
+                        net_spans.get(net_id),
+                    )
+                )
 
     return atomized, diagnostics
 
@@ -257,7 +279,9 @@ def _expand_endpoints_for_net(
     module: ModuleGraph,
     net_expr: PatternExpr,
     net_atom_ids: list[str],
-    inst_name_to_ids: Dict[str, list[str]],
+    inst_name_to_id: Dict[str, str],
+    duplicate_inst_names: set[str],
+    endpoint_keys: set[tuple[str, str]],
     expr_registry: PatternExpressionRegistry,
     *,
     source_spans: Optional[SourceSpanIndex],
@@ -272,7 +296,9 @@ def _expand_endpoints_for_net(
         module: Patterned module graph containing the endpoint bundles.
         net_expr: Parsed net name expression.
         net_atom_ids: Ordered atomized net identifiers.
-        inst_name_to_ids: Mapping of instance names to atomized IDs.
+        inst_name_to_id: Mapping of instance names to atomized IDs.
+        duplicate_inst_names: Instance names with duplicate atoms.
+        endpoint_keys: Set of instance-port pairs already bound to a net.
         expr_registry: Registry of parsed pattern expressions.
         source_spans: Optional source span registry.
         allocator: ID allocator for atomized entities.
@@ -317,25 +343,25 @@ def _expand_endpoints_for_net(
             continue
 
         for endpoint_index, (inst_name, port) in enumerate(endpoint_atoms):
-            inst_ids = inst_name_to_ids.get(inst_name)
-            if inst_ids is None:
+            if inst_name in duplicate_inst_names:
                 diagnostics.append(
                     _diagnostic(
                         INVALID_ENDPOINT_EXPR,
                         (
-                            f"Endpoint '{endpoint_expr.raw}' references unknown "
+                            f"Endpoint '{endpoint_expr.raw}' references non-unique "
                             f"instance '{inst_name}' in module '{module.name}'."
                         ),
                         _entity_span(source_spans, endpoint_bundle.endpoint_id),
                     )
                 )
                 continue
-            if len(inst_ids) > 1:
+            inst_id = inst_name_to_id.get(inst_name)
+            if inst_id is None:
                 diagnostics.append(
                     _diagnostic(
                         INVALID_ENDPOINT_EXPR,
                         (
-                            f"Endpoint '{endpoint_expr.raw}' references non-unique "
+                            f"Endpoint '{endpoint_expr.raw}' references unknown "
                             f"instance '{inst_name}' in module '{module.name}'."
                         ),
                         _entity_span(source_spans, endpoint_bundle.endpoint_id),
@@ -358,11 +384,26 @@ def _expand_endpoints_for_net(
                 continue
 
             net_id = net_atom_ids[net_index]
+            endpoint_key = (inst_id, port)
+            if endpoint_key in endpoint_keys:
+                diagnostics.append(
+                    _diagnostic(
+                        INVALID_ENDPOINT_EXPR,
+                        (
+                            f"Endpoint '{endpoint_expr.raw}' binds instance "
+                            f"'{inst_name}' port '{port}' multiple times in module "
+                            f"'{module.name}'."
+                        ),
+                        _entity_span(source_spans, endpoint_bundle.endpoint_id),
+                    )
+                )
+                continue
+            endpoint_keys.add(endpoint_key)
             endpoint_atom_id = allocator.next_endpoint()
             atomized_module.endpoints[endpoint_atom_id] = AtomizedEndpoint(
                 endpoint_id=endpoint_atom_id,
                 net_id=net_id,
-                inst_id=inst_ids[0],
+                inst_id=inst_id,
                 port=port,
                 patterned_endpoint_id=endpoint_bundle.endpoint_id,
                 attrs=endpoint_bundle.attrs,
@@ -396,6 +437,12 @@ def _collect_module_expressions(
     exprs_by_raw: Dict[str, PatternExpr] = {}
     for expr_id in expr_ids:
         expr = expr_registry.get(expr_id)
+        if expr is not None:
+            exprs_by_raw.setdefault(expr.raw, expr)
+    for raw_name in module.port_order or []:
+        if raw_name in exprs_by_raw:
+            continue
+        expr = _find_expr_by_raw(expr_registry, raw_name, module.file_id)
         if expr is not None:
             exprs_by_raw.setdefault(expr.raw, expr)
     return exprs_by_raw
@@ -437,8 +484,22 @@ def _expand_port_order(
                         fallback_span=None,
                     )
                 )
-                expanded.append(raw_name)
                 continue
+            if not _is_literal_expr(expr):
+                diagnostics.append(
+                    _diagnostic(
+                        PATTERN_EXPANSION_ERROR,
+                        (
+                            f"Port order entry '{raw_name}' in module '{module_name}' "
+                            "is not a literal and is missing from the pattern "
+                            "expression registry."
+                        ),
+                        expr.span,
+                    )
+                )
+                continue
+            expanded.append(raw_name)
+            continue
         atoms = _expand_pattern(
             expr,
             diagnostics=diagnostics,
@@ -524,6 +585,47 @@ def _expand_instance_params(
     if had_error:
         return None
     return param_values
+
+
+def _find_expr_by_raw(
+    expr_registry: PatternExpressionRegistry,
+    raw_name: str,
+    file_id: str,
+) -> Optional[PatternExpr]:
+    """Lookup a pattern expression by raw string with optional file hint.
+
+    Args:
+        expr_registry: Registry of parsed pattern expressions.
+        raw_name: Raw expression string to match.
+        file_id: Module file identifier for span disambiguation.
+
+    Returns:
+        Matching PatternExpr or None when missing/ambiguous.
+    """
+    matches = [expr for expr in expr_registry.values() if expr.raw == raw_name]
+    if not matches:
+        return None
+    if len(matches) == 1:
+        return matches[0]
+    if file_id:
+        file_matches = [
+            expr for expr in matches if expr.span is not None and expr.span.file == file_id
+        ]
+        if len(file_matches) == 1:
+            return file_matches[0]
+    return None
+
+
+def _is_literal_expr(expr: PatternExpr) -> bool:
+    """Return True when a parsed expression is a literal without patterns."""
+    if len(expr.segments) != 1:
+        return False
+    for token in expr.segments[0].tokens:
+        if isinstance(token, PatternGroup):
+            return False
+        if not isinstance(token, PatternLiteral):
+            return False
+    return True
 
 
 def _lookup_expr(
