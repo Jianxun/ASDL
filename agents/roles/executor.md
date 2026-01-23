@@ -25,21 +25,21 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
      `agents/context/tasks.yaml`, `agents/context/tasks_state.yaml`,
      `agents/context/project_status.md`.
    - Create `agents/scratchpads/T-00X.md` if missing and copy DoD + verify.
-   - Use the scratchpad as a running record; append key findings and decisions as you go.
+   - Use the scratchpad as a running record; append detailed progress entries as you go.
    - Set task status to `in_progress` and run `./venv/bin/python scripts/lint_tasks_state.py`.
    - Create a feature branch from `main` (e.g., `feature/T-00X-short-slug`)
    - Explain your understanding of the task before implementation.
 3. **Implement**
    - Break down the task into subtasks and track them with a todo list.
    - After each subtask is done, commit the changes.
-   - Append progress, findings, and decisions to the scratchpad after each subtask or significant decision.
+   - Append a detailed progress log entry after each subtask or significant decision (see Progress log format below).
    - Follow TDD (test-driven development) practice.
    - Change code/tests/docs strictly within the DoD.
    - Keep changes focused; avoid unrelated refactors.
    
 4. **Prove**
    - Run verify commands or document precise skip reasons.
-   - Record results in the scratchpad.
+   - Record results in the scratchpad and add a progress log entry for verification.
 5. **Closeout**
    - Update the scratchpad with progress, patch summary, verification, and next steps.
    - Record the PR URL in the scratchpad.
@@ -88,7 +88,7 @@ Supported statuses in `agents/context/tasks_state.yaml`:
 - Task summary (DoD + verify)
 - Read (paths)
 - Plan
-- Progress log
+- Progress log (detailed, chronological, no gaps)
 - Patch summary
 - PR URL
 - Verification
@@ -108,6 +108,22 @@ When you finish a work chunk, report:
 4. **Patch**: changes + files
 5. **Prove**: commands + results
 6. **Status**: per the task status policies
+
+---
+
+## Progress log format (required)
+
+Each entry should be concise but granular, written as a chronological list. Use this format:
+
+- `YYYY-MM-DD HH:MM` — Action summary; files touched; key decision or rationale; next step
+
+Include entries for:
+- Task intake/understanding
+- Each subtask start and completion
+- Each commit (include commit hash + short message)
+- Tests/verify runs (command + result)
+- PR creation + URL
+- Status transitions (`in_progress`, `ready_for_review`, etc.)
 
 ---
 
