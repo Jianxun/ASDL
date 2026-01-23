@@ -18,22 +18,26 @@
 - Run targeted tests.
 
 ## Todo
-- [ ] Update atomization lowering to propagate ports list and devices.
-- [ ] Update atomization tests for ports list/device propagation.
-- [ ] Run targeted verification.
+- [x] Update atomization lowering to propagate ports list and devices.
+- [x] Update atomization tests for ports list/device propagation.
+- [x] Run targeted verification.
 
 ## Progress log
 - 2026-01-23: Scratchpad created.
 - 2026-01-23: Reviewed task scope and understood changes needed to propagate module ports and device definitions from PatternedGraph into AtomizedGraph lowering and update atomization tests accordingly.
+- 2026-01-23: Updated atomization tests to cover module ports list expansion and device propagation.
+- 2026-01-23: Updated atomization lowering to copy device definitions and expand module ports lists.
+- 2026-01-23: Ran venv/bin/pytest tests/unit_tests/core/test_patterned_graph_atomize.py -v.
 
 ## Patch summary
-- TBD.
+- Propagated device definitions into AtomizedGraph and ensured module ports lists are expanded from PatternedGraph.
+- Updated atomization tests to assert ports list expansion and device propagation.
 
 ## PR URL
 - TBD.
 
 ## Verification
-- TBD.
+- venv/bin/pytest tests/unit_tests/core/test_patterned_graph_atomize.py -v
 
 ## Status request (Done / Blocked / In Progress)
 - In progress.
