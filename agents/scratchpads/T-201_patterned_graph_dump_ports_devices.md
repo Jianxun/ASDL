@@ -40,3 +40,9 @@
 
 ## Next steps
 - Await reviewer feedback.
+
+## Review log
+- 2026-01-23: Set task status to review_in_progress. Started PR review.
+- 2026-01-23: Reviewed code changes in src/asdl/core/dump.py and tests; scope matches DoD. Tests not rerun (relied on scratchpad log).
+- 2026-01-23: Review decision: review_clean. Commented on PR.
+- 2026-01-23: Updated task status to done in tasks_state.yaml for merge/closeout.
