@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from asdl.core import (
+    DeviceDef,
     EndpointBundle,
     GroupSlice,
     InstanceBundle,
@@ -61,10 +62,19 @@ def _build_graph() -> ProgramGraph:
         module_id="mod1",
         name="top",
         file_id="design.asdl",
-        port_order=["$vdd"],
+        ports=["$vdd"],
         nets={net_id: net},
         instances={inst_id: inst},
         endpoints={endpoint_id: endpoint},
+    )
+    device = DeviceDef(
+        device_id="dev1",
+        name="nmos",
+        file_id="design.asdl",
+        ports=["D", "G", "S"],
+        parameters={"w": 1},
+        variables={"l": 2},
+        attrs={"vendor": "acme"},
     )
 
     expr = PatternExpr(
@@ -108,7 +118,11 @@ def _build_graph() -> ProgramGraph:
         annotations={net_id: {"role": "signal"}},
     )
 
-    return ProgramGraph(modules={module.module_id: module}, registries=registries)
+    return ProgramGraph(
+        modules={module.module_id: module},
+        devices={device.device_id: device},
+        registries=registries,
+    )
 
 
 def test_patterned_graph_jsonable_shape() -> None:
@@ -117,8 +131,11 @@ def test_patterned_graph_jsonable_shape() -> None:
     payload = patterned_graph_to_jsonable(graph)
 
     assert payload["modules"][0]["module_id"] == "mod1"
+    assert payload["modules"][0]["ports"] == ["$vdd"]
     assert payload["modules"][0]["nets"][0]["net_id"] == "net1"
     assert payload["modules"][0]["instances"][0]["ref_kind"] == "device"
+    assert payload["devices"][0]["name"] == "nmos"
+    assert payload["devices"][0]["ports"] == ["D", "G", "S"]
     assert payload["registries"]["pattern_expressions"]["expr1"]["raw"] == "N<1|2>"
     assert payload["registries"]["pattern_origins"]["net1"]["expr_id"] == "expr1"
     assert payload["registries"]["param_pattern_origins"][0]["param_name"] == "w"

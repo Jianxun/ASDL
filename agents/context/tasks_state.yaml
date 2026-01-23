@@ -12,9 +12,9 @@ T-200:
   pr: 205
   merged: true
 T-201:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 206
+  merged: true
 T-202:
   status: ready
   pr: null
