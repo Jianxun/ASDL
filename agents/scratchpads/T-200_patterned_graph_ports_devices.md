@@ -18,21 +18,27 @@
 - Run required tests and record results.
 
 ## Todo
-- [ ] Add test assertions for device defs and ports lists.
-- [ ] Populate device definitions + ports lists in lowering.
-- [ ] Run required verification tests.
+- [x] Add test assertions for device defs and ports lists.
+- [x] Populate device definitions + ports lists in lowering.
+- [x] Run required verification tests.
 
 ## Progress log
-- 2026-01-23: Scratchpad created; task status pending updates.
+- 2026-01-23: Scratchpad created; task status set to in progress.
+- 2026-01-23: Updated PatternedGraph tests to assert device defs and ports lists.
+- 2026-01-23: Lowering now registers device definitions and fills device ID maps from builder.
+- 2026-01-23: Fixed port_order aliasing to avoid InitVar/property conflicts in core graphs.
+- 2026-01-23: Verified PatternedGraph tests.
 
 ## Patch summary
-- Pending.
+- Added device definition lowering with ports/params/vars capture.
+- Added device/ports assertions in PatternedGraph tests.
+- Adjusted ModuleGraph/AtomizedModuleGraph port_order aliasing to avoid InitVar default conflicts.
 
 ## PR URL
 - Pending.
 
 ## Verification
-- Pending.
+- `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/core/test_patterned_graph.py -v`
 
 ## Status request
 - In Progress.
@@ -41,4 +47,4 @@
 - None yet.
 
 ## Next steps
-- Inspect lowering paths and existing tests.
+- Run required verification tests.

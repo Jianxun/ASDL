@@ -124,15 +124,6 @@ class ModuleGraph:
         if port_order is not None:
             self.ports = list(port_order)
 
-    @property
-    def port_order(self) -> list[str]:
-        """Backward-compatible alias for ports."""
-        return self.ports
-
-    @port_order.setter
-    def port_order(self, value: Optional[list[str]]) -> None:
-        self.ports = list(value) if value else []
-
 
 @dataclass
 class ProgramGraph:
@@ -147,6 +138,18 @@ class ProgramGraph:
     modules: Dict[ModuleId, ModuleGraph] = field(default_factory=dict)
     devices: Dict[DeviceId, DeviceDef] = field(default_factory=dict)
     registries: RegistrySet = field(default_factory=RegistrySet)
+
+
+def _module_port_order(module: ModuleGraph) -> list[str]:
+    """Backward-compatible alias for ModuleGraph ports."""
+    return module.ports
+
+
+def _set_module_port_order(module: ModuleGraph, value: Optional[list[str]]) -> None:
+    module.ports = list(value) if value else []
+
+
+ModuleGraph.port_order = property(_module_port_order, _set_module_port_order)
 
 
 __all__ = [
