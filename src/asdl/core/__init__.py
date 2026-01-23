@@ -50,6 +50,14 @@ from .registries import (
     SchematicHints,
     SourceSpanIndex,
 )
+from .verify_atomized_graph import (
+    DUPLICATE_INSTANCE_NAME,
+    DUPLICATE_NET_NAME,
+    UNKNOWN_ENDPOINT_PORT,
+    UNKNOWN_ENDPOINT_REF,
+    verify_atomized_graph,
+    verify_atomized_graph_if_clean,
+)
 
 __all__ = [
     "AtomizedEndpoint",
@@ -70,6 +78,8 @@ __all__ = [
     "dump_patterned_graph",
     "DeviceDef",
     "DeviceId",
+    "DUPLICATE_INSTANCE_NAME",
+    "DUPLICATE_NET_NAME",
     "EndpointBundle",
     "ExprId",
     "GraphId",
@@ -98,4 +108,8 @@ __all__ = [
     "run_patterned_graph_pipeline",
     "SchematicHints",
     "SourceSpanIndex",
+    "UNKNOWN_ENDPOINT_PORT",
+    "UNKNOWN_ENDPOINT_REF",
+    "verify_atomized_graph",
+    "verify_atomized_graph_if_clean",
 ]
