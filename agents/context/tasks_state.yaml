@@ -1,13 +1,13 @@
 schema_version: 2
 T-193:
-  status: done
-  pr: 208
-  merged: true
+  status: ready
+  pr: null
+  merged: false
 T-203:
-  status: backlog
+  status: ready
   pr: null
   merged: false
 T-204:
-  status: backlog
+  status: ready
   pr: null
   merged: false
