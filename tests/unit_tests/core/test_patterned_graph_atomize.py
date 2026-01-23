@@ -210,14 +210,40 @@ def test_patterned_graph_atomize_port_order_expands_registered_expr() -> None:
     builder = PatternedGraphBuilder()
     module = builder.add_module("top", "design.asdl")
     builder.add_expression(_parse_expr("P<0|1>"))
-    builder.set_port_order(module.module_id, ["P<0|1>"])
+    builder.set_ports(module.module_id, ["P<0|1>"])
 
     graph = builder.build()
     atomized, diagnostics = build_atomized_graph(graph)
 
     assert diagnostics == []
     module_graph = next(iter(atomized.modules.values()))
-    assert module_graph.port_order == ["P0", "P1"]
+    assert module_graph.ports == ["P0", "P1"]
+
+
+def test_patterned_graph_atomize_propagates_devices() -> None:
+    builder = PatternedGraphBuilder()
+    builder.add_expression(_parse_expr("P0"))
+    device = builder.add_device(
+        "nmos",
+        "design.asdl",
+        ports=["D", "G", "S"],
+        parameters={"w": 1},
+        variables={"l": 2},
+        attrs={"kind": "mos"},
+    )
+    builder.add_module("top", "design.asdl")
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    assert diagnostics == []
+    assert device.device_id in atomized.devices
+    atomized_device = atomized.devices[device.device_id]
+    assert atomized_device.name == "nmos"
+    assert atomized_device.ports == ["D", "G", "S"]
+    assert atomized_device.parameters == {"w": 1}
+    assert atomized_device.variables == {"l": 2}
+    assert atomized_device.attrs == {"kind": "mos"}
 
 
 def test_patterned_graph_atomize_endpoint_uniqueness() -> None:
