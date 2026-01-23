@@ -26,6 +26,7 @@
 - 2026-01-23: Opened PR #208 and prepared ready_for_review status update.
 - 2026-01-23: Reviewer intake complete; PR targets main, set status to review_in_progress, linted tasks_state.
 - 2026-01-23: Reviewed code/spec/test changes; no blockers found.
+- 2026-01-23: Posted review comment, marked review_clean, proceeding to merge.
 
 ## Open questions
 - None yet.
