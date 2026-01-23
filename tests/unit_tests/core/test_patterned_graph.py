@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from asdl.core import (
+    DeviceDef,
     EndpointBundle,
     InstanceBundle,
     ModuleGraph,
@@ -70,11 +71,27 @@ def _build_module() -> ModuleGraph:
     )
 
 
+def _build_device() -> DeviceDef:
+    return DeviceDef(
+        device_id="dev1",
+        name="nmos",
+        file_id="file.asdl",
+        ports=["D", "G", "S"],
+        parameters={"w": 1},
+        variables={"l": 2},
+    )
+
+
 def test_patterned_graph_construction() -> None:
     module = _build_module()
-    graph = ProgramGraph(modules={module.module_id: module})
+    device = _build_device()
+    graph = ProgramGraph(
+        modules={module.module_id: module},
+        devices={device.device_id: device},
+    )
 
     assert graph.modules[module.module_id] is module
+    assert graph.devices[device.device_id] is device
     assert module.instances["inst1"].ref_raw == "M1"
 
 

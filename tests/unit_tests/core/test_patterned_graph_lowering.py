@@ -26,6 +26,13 @@ def _loc(line: int, col: int, length: int = 1, file_name: str = "design.asdl") -
     )
 
 
+def _device_by_name(graph: object, name: str) -> object:
+    for device in graph.devices.values():
+        if device.name == name:
+            return device
+    raise AssertionError(f"Missing device '{name}'")
+
+
 def test_build_patterned_graph_with_groups_and_patterns() -> None:
     module = ModuleDecl.model_construct(
         instances={"U<@cols>": "nmos W=<0|1>"},
@@ -44,7 +51,7 @@ def test_build_patterned_graph_with_groups_and_patterns() -> None:
     module._net_endpoint_locs["$BUS<@cols>"] = [_loc(4, 5), _loc(5, 5)]
 
     device = DeviceDecl(
-        ports=None,
+        ports=["D", "G", "S"],
         parameters=None,
         variables=None,
         backends={"sim.ngspice": DeviceBackendDecl(template="M")},
@@ -58,6 +65,9 @@ def test_build_patterned_graph_with_groups_and_patterns() -> None:
     graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
 
     assert diagnostics == []
+    device_def = _device_by_name(graph, "nmos")
+    assert device_def.ports == ["D", "G", "S"]
+    assert device_def.file_id == "design.asdl"
     module_graph = next(iter(graph.modules.values()))
     assert module_graph.port_order == ["BUS<@cols>"]
 
@@ -129,6 +139,8 @@ def test_build_patterned_graph_port_order_appends_default_ports() -> None:
     graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
 
     assert diagnostics == []
+    device_def = _device_by_name(graph, "nmos")
+    assert device_def.ports == []
     module_graph = next(iter(graph.modules.values()))
     assert module_graph.port_order == ["A", "B", "CTRL", "VDD"]
 
@@ -221,9 +233,11 @@ def test_build_patterned_graph_missing_unqualified_ref_emits_ir011() -> None:
         devices={},
     )
 
-    _, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+    graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
 
     assert any(diag.code == "IR-011" for diag in diagnostics)
+    module_graph = next(iter(graph.modules.values()))
+    assert module_graph.ports == []
 
 
 def test_build_patterned_graph_ambiguous_unqualified_ref_emits_ir011() -> None:
@@ -359,6 +373,9 @@ def test_build_patterned_graph_resolves_imported_refs(tmp_path: Path, monkeypatc
     graph, diagnostics = build_patterned_graph_from_import_graph(import_graph)
 
     assert diagnostics == []
+    device_def = _device_by_name(graph, "nmos")
+    assert device_def.file_id == str(lib_file.absolute())
+    assert device_def.ports == []
     exprs = graph.registries.pattern_expressions
     assert exprs is not None
     expr_ids_by_raw = {expr.raw: expr_id for expr_id, expr in exprs.items()}

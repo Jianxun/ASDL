@@ -139,15 +139,6 @@ class AtomizedModuleGraph:
         if port_order is not None:
             self.ports = list(port_order)
 
-    @property
-    def port_order(self) -> list[str]:
-        """Backward-compatible alias for ports."""
-        return self.ports
-
-    @port_order.setter
-    def port_order(self, value: Optional[list[str]]) -> None:
-        self.ports = list(value) if value else []
-
 
 @dataclass
 class AtomizedProgramGraph:
@@ -160,6 +151,23 @@ class AtomizedProgramGraph:
 
     modules: Dict[AtomizedModuleId, AtomizedModuleGraph] = field(default_factory=dict)
     devices: Dict[AtomizedDeviceId, AtomizedDeviceDef] = field(default_factory=dict)
+
+
+def _atomized_module_port_order(module: AtomizedModuleGraph) -> list[str]:
+    """Backward-compatible alias for AtomizedModuleGraph ports."""
+    return module.ports
+
+
+def _set_atomized_module_port_order(
+    module: AtomizedModuleGraph, value: Optional[list[str]]
+) -> None:
+    module.ports = list(value) if value else []
+
+
+AtomizedModuleGraph.port_order = property(
+    _atomized_module_port_order,
+    _set_atomized_module_port_order,
+)
 
 
 __all__ = [
