@@ -27,16 +27,16 @@
 - Added device fixtures and assertions for ports/devices in dump tests.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/206
 
 ## Verification
 - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_dump.py -v
 
 ## Status request (Done / Blocked / In Progress)
-- In Progress
+- Ready for review
 
 ## Blockers / Questions
 - None yet.
 
 ## Next steps
-- Open PR and update tasks_state to ready_for_review after push.
+- Await reviewer feedback.
