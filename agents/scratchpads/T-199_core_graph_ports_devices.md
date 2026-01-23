@@ -11,20 +11,26 @@
 - agents/context/project_status.md
 
 # Plan
-- Inspect core graph/atomized graph dataclasses and builders for port/device shapes.
-- Update dataclasses for ports/device definitions with required fields and defaults.
-- Update builder APIs to accept devices/ports with backward compatibility.
-- Adjust exports/init and any dependent code minimally.
-- Run verify command and record results.
+- [x] Inspect core graph/atomized graph dataclasses and builders for port/device shapes.
+- [x] Update dataclasses for ports/device definitions with required fields and defaults.
+- [x] Update builder APIs to accept devices/ports with backward compatibility.
+- [x] Adjust exports/init and any dependent code minimally.
+- [x] Run verify command and record results.
 
 # Progress log
 - 2026-01-23: Initialized scratchpad.
+- 2026-01-23: Added device definitions and ports lists to core graphs with port_order compatibility.
+- 2026-01-23: Added device/ports support to graph builder and updated core exports.
 
 # Patch summary
+- Added DeviceDef/AtomizedDeviceDef dataclasses, device registries, and canonical ports lists for modules.
+- Added builder support for devices and ports with backward-compatible port_order alias.
+- Exported new device types in core __init__.
 
 # PR URL
 
 # Verification
+- `venv/bin/python -m py_compile src/asdl/core/graph.py src/asdl/core/atomized_graph.py src/asdl/core/graph_builder.py src/asdl/core/__init__.py`
 
 # Status request (Done / Blocked / In Progress)
 
