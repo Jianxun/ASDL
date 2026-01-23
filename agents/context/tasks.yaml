@@ -22,4 +22,44 @@ current_sprint:
     links:
       spec: docs/specs_refactor/spec_refactor_atomized_graph.md
       scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md
-backlog: []
+backlog:
+  - id: T-203
+    title: Registry plumbing for AtomizedGraph -> IFIR metadata
+    owner: Executor
+    dod: >
+      Extend core registries + PatternedGraph builder to record device backend
+      templates and per-expression pattern kinds. AST -> PatternedGraph lowering
+      registers backend templates and caches pattern expressions by (kind,
+      expression) while recording kind by expr_id. Update builder unit tests to
+      assert new registry fields are populated.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_builder.py -v
+    files:
+      - src/asdl/core/registries.py
+      - src/asdl/core/graph_builder.py
+      - src/asdl/lowering/ast_to_patterned_graph.py
+      - src/asdl/lowering/ast_to_patterned_graph_expressions.py
+      - tests/unit_tests/core/test_patterned_graph_builder.py
+    links:
+      scratchpad: agents/scratchpads/T-203_registry_atomized_ifir.md
+  - id: T-204
+    title: AtomizedGraph -> IFIR lowering pass
+    owner: Executor
+    depends_on:
+      - T-203
+    dod: >
+      Implement AtomizedGraph -> IFIR lowering under
+      src/asdl/lowering/atomized_graph_to_ifir.py. The pass builds IFIR design,
+      modules, nets, instances, and devices using registry-backed pattern
+      expression tables, pattern_origin reconstruction, and backend templates.
+      Emit diagnostics for missing/invalid registry data and unresolved refs.
+      Add unit tests for a happy path conversion and missing-registry failure
+      diagnostics.
+    verify:
+      - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v
+    files:
+      - src/asdl/lowering/atomized_graph_to_ifir.py
+      - src/asdl/lowering/__init__.py
+      - tests/unit_tests/lowering/test_atomized_graph_to_ifir.py
+    links:
+      scratchpad: agents/scratchpads/T-204_atomized_graph_to_ifir.md
