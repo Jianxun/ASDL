@@ -43,3 +43,9 @@
 
 # Next steps
 - Await review feedback.
+- 2026-01-23 23:34 — Review intake: confirmed PR targets main, scratchpad/status updates present; set T-212 to review_in_progress; next step run required tests and review code.
+- 2026-01-23 23:35 — Ran `./venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_verify.py -v` (pass); next step complete scope/DoD review.
+- 2026-01-23 23:35 — Scope/DoD check: changes limited to NetlistIR verifier, tests, and diagnostic codes; scope matches task DoD; next step post review decision.
+- 2026-01-23 23:36 — Review decision: clean; set T-212 to review_clean; next step post PR comment and begin merge/closeout.
+- 2026-01-23 23:36 — Posted PR review comment ([Reviewer]: clean) with test results; next step merge and close out.
+- 2026-01-23 23:35 — Set T-212 status to done (merged=true) in tasks_state; next step commit/push and merge PR.
