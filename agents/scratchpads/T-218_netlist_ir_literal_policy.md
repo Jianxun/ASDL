@@ -27,6 +27,7 @@
 - 2026-01-24 01:05 — Ran `venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_verify.py -v`; all tests passed.
 - 2026-01-24 01:06 — Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/222.
 - 2026-01-24 01:06 — Set T-218 status to ready_for_review with PR #222; ran lint_tasks_state.py.
+- 2026-01-24 01:06 — Commit 8305b2d: update task status + scratchpad with PR/verification details.
 
 ## Patch summary
 - Added parameterized verifier tests covering leading `$` in each NetlistIR name field.
