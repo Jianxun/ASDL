@@ -51,3 +51,7 @@
 - 2026-01-23 22:42 — Opened PR https://github.com/Jianxun/ASDL/pull/217; next step update tasks_state to ready_for_review.
 - 2026-01-23 22:42 — Set T-210 to ready_for_review in tasks_state and ran lint_tasks_state.py; next step commit/push updates.
 - 2026-01-23 22:43 — Committed scratchpad/status updates (ad4c9f7); next step push branch updates.
+- 2026-01-23 22:46 — Review intake for PR 217; verified base=main and set T-210 to review_in_progress; next step run required checks.
+- 2026-01-23 22:47 — Ran `./venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_model.py -v`; passed; next step scope/DoD review.
+- 2026-01-23 22:48 — Scope/DoD review complete; NetlistIR model and test align with spec; next step finalize review decision.
+- 2026-01-23 22:49 — Review decision: clean; posted PR comment; next step merge and closeout.
