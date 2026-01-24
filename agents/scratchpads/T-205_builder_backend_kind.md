@@ -35,3 +35,4 @@ PatternedGraphBuilder should expose registries for device backend templates and 
 
 # Progress log
 - 2026-01-23 19:47 — Task intake, read context/contract/tasks, created scratchpad, set T-205 in_progress, created feature branch; next: update tests for new registries.
+- 2026-01-23 19:47 — Commit 55ef858 chore: start T-205 (scratchpad + status).
