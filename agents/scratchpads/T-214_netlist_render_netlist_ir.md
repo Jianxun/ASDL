@@ -1,31 +1,49 @@
-# T-214: Netlist renderer consumes NetlistIR
+# T-214: Refactor netlist renderer to consume NetlistIR
 
-## Objective
-Refactor netlist rendering to accept `NetlistDesign` dataclasses directly,
-use NetlistIR index helper for lookups, and preserve emission parity.
+## Task summary (DoD + verify)
+- Update netlist rendering to accept NetlistIR dataclasses instead of xDSL IFIR ops.
+- Use NetlistIR index helper for module/device lookup and `(ref_file_id, ref)` resolution.
+- Preserve template rendering semantics, deterministic ordering, parameter/variable merge, and placeholder validation behavior.
+- Add render tests that exercise NetlistIR inputs and parity with existing outputs.
+- Verify: `venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v`
 
-## Key requirements (from task card)
-- Accept NetlistIR dataclasses instead of xDSL IFIR ops.
-- Use NetlistIR index helper for `(ref_file_id, ref)` resolution.
-- Preserve deterministic ordering and template/params/variables behavior.
-- Add tests covering NetlistIR render parity.
+## Read (paths)
+- `agents/roles/executor.md`
+- `agents/context/lessons.md`
+- `agents/context/contract.md`
+- `agents/context/tasks.yaml`
+- `agents/context/tasks_state.yaml`
+- `agents/context/project_status.md`
+- `agents/scratchpads/T-214_netlist_render_netlist_ir.md`
 
-## Implementation notes
-- Replace xDSL op traversal with iteration over `NetlistDesign.modules`.
-- Use `NetlistIRIndex` from `emit/netlist/ir_utils.py` for symbol lookup.
-- Ensure connection ordering mirrors existing `_ordered_conns` logic:
-  - If ref is a module: use module `ports` list.
-  - If ref is a device: use device `ports` list.
-- Keep `templates.py` placeholder validation logic untouched.
-- Merge params/variables using existing `params.py` helpers (strings in NetlistIR).
+## Plan
+- Inspect existing netlist rendering + ir_utils helpers to identify xDSL IFIR dependencies.
+- Add/adjust NetlistIR render tests to lock expected output behavior.
+- Refactor renderer to use NetlistIR dataclasses and NetlistIRIndex lookups.
+- Update related helpers (templates/params) only if needed to keep parity.
+- Run targeted tests and capture results.
 
-## Tests
-- Add/adjust tests in `tests/unit_tests/netlist/test_netlist_render_netlist_ir.py`
-  to render a NetlistIR design and compare output to expected fixture strings.
+## Progress log
+- 2026-01-24 09:55 — Task intake; read executor role + context files; confirmed T-214 ready and depends on T-213 (done); next step update task state to in_progress.
+- 2026-01-24 10:00 — Set `T-214` status to in_progress and ran `scripts/lint_tasks_state.py` (OK); next step create feature branch.
+- 2026-01-24 10:02 — Created branch `feature/T-214-netlist-render-netlist-ir`; next step inspect netlist renderer + tests.
+- 2026-01-24 10:15 — Added NetlistIR render tests for device params/pattern ports and ref_file_id module resolution; ran pytest (2 failing as expected); next step refactor renderer to accept NetlistIR.
 
-## Files
-- `src/asdl/emit/netlist/render.py`
-- `src/asdl/emit/netlist/ir_utils.py`
-- `src/asdl/emit/netlist/templates.py`
-- `src/asdl/emit/netlist/params.py`
-- `tests/unit_tests/netlist/test_netlist_render_netlist_ir.py`
+## Patch summary
+- (pending)
+
+## PR URL
+- (pending)
+
+## Verification
+- (pending)
+
+## Status request
+- In progress.
+
+## Blockers / Questions
+- None.
+
+## Next steps
+- Review current netlist renderer and NetlistIR helpers.
+- Draft tests covering NetlistIR render inputs and expected output.
