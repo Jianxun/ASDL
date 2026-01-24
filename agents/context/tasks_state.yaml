@@ -16,9 +16,9 @@ T-205:
   pr: 211
   merged: true
 T-206:
-  status: review_clean
+  status: done
   pr: 212
-  merged: false
+  merged: true
 T-207:
   status: ready
   pr: null
