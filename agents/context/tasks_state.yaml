@@ -24,9 +24,9 @@ T-207:
   pr: 213
   merged: true
 T-208:
-  status: ready_for_review
+  status: done
   pr: 215
-  merged: false
+  merged: true
 T-209:
   status: ready
   pr: null

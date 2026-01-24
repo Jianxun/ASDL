@@ -34,6 +34,12 @@
 - 2026-01-24 10:23 — Pushed branch updates to origin.
 - 2026-01-24 10:24 — Set T-208 status to ready_for_review; ran ./venv/bin/python scripts/lint_tasks_state.py.
 - 2026-01-24 10:26 — Posted PR update comment https://github.com/Jianxun/ASDL/pull/215#issuecomment-3793466461.
+- 2026-01-23 21:14 — Re-review intake: confirmed PR 215 targets main; set status to review_in_progress; next step rerun required tests and re-review diffs.
+- 2026-01-23 21:15 — Ran ./venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v; all tests passed; next step review diff for scope/logic.
+- 2026-01-23 21:19 — Scope/logic review complete; changes align with DoD and pattern origin mapping now uses segment/atom indices; next step post review decision and update task status.
+- 2026-01-23 21:19 — Posted PR review comment (https://github.com/Jianxun/ASDL/pull/215#issuecomment-3793503689); decision: review_clean; next step set status to review_clean and proceed to merge/closeout.
+- 2026-01-23 21:19 — Set T-208 status to review_clean; ran ./venv/bin/python scripts/lint_tasks_state.py; next step mark done and merge PR.
+- 2026-01-23 21:20 — Set T-208 status to done (merged true); ran ./venv/bin/python scripts/lint_tasks_state.py; next step commit reviewer updates and merge PR.
 
 # Patch summary
 - Added registry propagation to AtomizedProgramGraph for downstream metadata access.
