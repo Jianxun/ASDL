@@ -46,6 +46,7 @@ class _PatternAtom:
 
     literal: str
     segment_index: int
+    atom_index: int
     base_name: str
     pattern_parts: list[PatternPart]
 
@@ -57,7 +58,7 @@ class _PatternOriginResolver:
         self._expr_registry = registries.pattern_expressions
         self._expr_kinds = registries.pattern_expr_kinds
         self._pattern_origins = registries.pattern_origins
-        self._atoms_cache: Dict[str, Dict[str, _PatternAtom]] = {}
+        self._atoms_cache: Dict[str, List[List[_PatternAtom]]] = {}
 
     def resolve(
         self,
@@ -86,23 +87,28 @@ class _PatternOriginResolver:
         origin = self._pattern_origins.get(entity_id)
         if origin is None:
             return None
-        expr_id = origin[0]
+        expr_id, segment_index, atom_index = origin
         expr = self._expr_registry.get(expr_id)
         if expr is None:
             return None
         if self._expr_kinds.get(expr_id) != expected_kind:
             return None
-        atoms = self._atoms_cache.get(expr_id)
-        if atoms is None:
-            atoms = _index_pattern_atoms(expr)
-            self._atoms_cache[expr_id] = atoms
-        atom = atoms.get(literal)
-        if atom is None:
+        atoms_by_segment = self._atoms_cache.get(expr_id)
+        if atoms_by_segment is None:
+            atoms_by_segment = _index_pattern_atoms(expr)
+            self._atoms_cache[expr_id] = atoms_by_segment
+        if segment_index < 0 or segment_index >= len(atoms_by_segment):
+            return None
+        segment_atoms = atoms_by_segment[segment_index]
+        if atom_index < 0 or atom_index >= len(segment_atoms):
+            return None
+        atom = segment_atoms[atom_index]
+        if atom.literal != literal:
             return None
         return encode_pattern_origin(
             PatternOrigin(
                 expression_id=expr_id,
-                segment_index=atom.segment_index,
+                segment_index=segment_index,
                 base_name=atom.base_name,
                 pattern_parts=atom.pattern_parts,
             )
@@ -143,12 +149,14 @@ class _PatternOriginResolver:
         return encode_pattern_expression_table(entries)
 
 
-def _index_pattern_atoms(expr: PatternExpr) -> Dict[str, _PatternAtom]:
-    """Index expanded atoms by literal value."""
-    atoms: Dict[str, _PatternAtom] = {}
+def _index_pattern_atoms(expr: PatternExpr) -> List[List[_PatternAtom]]:
+    """Index expanded atoms by segment and atom index."""
+    atoms_by_segment: List[List[_PatternAtom]] = []
     for atom in _expand_pattern_atoms(expr):
-        atoms.setdefault(atom.literal, atom)
-    return atoms
+        while atom.segment_index >= len(atoms_by_segment):
+            atoms_by_segment.append([])
+        atoms_by_segment[atom.segment_index].append(atom)
+    return atoms_by_segment
 
 
 def _expand_pattern_atoms(expr: PatternExpr) -> List[_PatternAtom]:
@@ -178,10 +186,11 @@ def _expand_pattern_atoms(expr: PatternExpr) -> List[_PatternAtom]:
             _PatternAtom(
                 literal=literal,
                 segment_index=segment_index,
+                atom_index=atom_index,
                 base_name=base_name,
                 pattern_parts=parts,
             )
-            for literal, parts in current
+            for atom_index, (literal, parts) in enumerate(current)
         )
     return atoms
 

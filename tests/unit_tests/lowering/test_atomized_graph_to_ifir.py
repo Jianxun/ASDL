@@ -44,7 +44,8 @@ def test_build_ifir_design_happy_path() -> None:
             "expr_inst": "inst",
         },
         pattern_origins={
-            "pn1": ("expr_net", 0, 0),
+            "pn_vin": ("expr_net", 0, 0),
+            "pn_vout": ("expr_net", 0, 1),
             "pi1": ("expr_inst", 0, 0),
         },
         device_backend_templates={
@@ -73,13 +74,13 @@ def test_build_ifir_design_happy_path() -> None:
             net_id="n1",
             name="VIN",
             endpoint_ids=["e1"],
-            patterned_net_id="pn1",
+            patterned_net_id="pn_vin",
         ),
         "n2": AtomizedNet(
             net_id="n2",
             name="VOUT",
             endpoint_ids=["e2"],
-            patterned_net_id="pn1",
+            patterned_net_id="pn_vout",
         ),
         "n3": AtomizedNet(net_id="n3", name="VSS", endpoint_ids=["e3"]),
     }
@@ -150,6 +151,66 @@ def test_build_ifir_design_happy_path() -> None:
     assert len(backends) == 1
     assert backends[0].name_attr.data == "sim.ngspice"
     assert backends[0].template.data == "M {ports} {model}"
+
+
+def test_pattern_origin_uses_segment_atom_index() -> None:
+    program = AtomizedProgramGraph()
+    net_expr, net_errors = parse_pattern_expr("X<1:1>;X<1>")
+    assert net_errors == []
+    assert net_expr is not None
+    program.registries = RegistrySet(
+        pattern_expressions={
+            "expr_net": net_expr,
+        },
+        pattern_expr_kinds={
+            "expr_net": "net",
+        },
+        pattern_origins={
+            "pn0": ("expr_net", 0, 0),
+            "pn1": ("expr_net", 1, 0),
+        },
+    )
+
+    module = AtomizedModuleGraph(
+        module_id="m1",
+        name="top",
+        file_id="design.asdl",
+    )
+    module.nets = {
+        "n1": AtomizedNet(
+            net_id="n1",
+            name="X1",
+            endpoint_ids=[],
+            patterned_net_id="pn0",
+        ),
+        "n2": AtomizedNet(
+            net_id="n2",
+            name="X1",
+            endpoint_ids=[],
+            patterned_net_id="pn1",
+        ),
+    }
+    program.modules["m1"] = module
+
+    design, diagnostics = build_ifir_design(program)
+
+    assert diagnostics == []
+    assert isinstance(design, DesignOp)
+    ifir_module = next(
+        op for op in design.body.block.ops if isinstance(op, ModuleOp)
+    )
+    nets = [op for op in ifir_module.body.block.ops if isinstance(op, NetOp)]
+    assert [net.name_attr.data for net in nets] == ["X1", "X1"]
+
+    first_origin = decode_pattern_origin(nets[0].pattern_origin)
+    assert first_origin.segment_index == 0
+    assert first_origin.base_name == "X"
+    assert first_origin.pattern_parts == [1]
+
+    second_origin = decode_pattern_origin(nets[1].pattern_origin)
+    assert second_origin.segment_index == 1
+    assert second_origin.base_name == "X"
+    assert second_origin.pattern_parts == ["1"]
 
 
 def test_build_ifir_design_missing_endpoint_sets_error() -> None:
