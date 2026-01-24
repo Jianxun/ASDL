@@ -37,6 +37,10 @@
 - 2026-01-23 20:36 — Ran `venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v`; next step update scratchpad and set ready_for_review.
 - 2026-01-23 20:36 — Set T-204 status to ready_for_review and linted tasks_state; next step push updates and respond to review.
 - 2026-01-23 20:36 — Posted PR comment https://github.com/Jianxun/ASDL/pull/214#issuecomment-3793370355; next step finalize report.
+- 2026-01-23 20:39 — Review re-intake for updated PR; set T-204 to review_in_progress and linted tasks_state; next step run required tests.
+- 2026-01-23 20:39 — Ran `venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v` for re-review; next step complete review findings.
+- 2026-01-23 20:39 — Scope check complete against DoD; no out-of-scope edits; next step post review decision.
+- 2026-01-23 20:39 — Review decision: review_clean; posted PR comment https://github.com/Jianxun/ASDL/pull/214#issuecomment-3793375744; next step merge and closeout.
 
 ## Patch summary
 - Added AtomizedGraph -> IFIR lowering scaffold with basic reference handling.
