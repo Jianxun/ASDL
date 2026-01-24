@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 
 from xdsl.dialects.builtin import DictionaryAttr, LocationAttr, StringAttr
 
@@ -14,10 +14,16 @@ from .diagnostics import (
 )
 
 
-def _dict_attr_to_strings(values: Optional[DictionaryAttr]) -> Dict[str, str]:
+def _dict_attr_to_strings(
+    values: Optional[DictionaryAttr | Mapping[str, object]]
+) -> Dict[str, str]:
     if values is None:
         return {}
-    return {key: _stringify_attr(value) for key, value in values.data.items()}
+    if isinstance(values, DictionaryAttr):
+        items = values.data.items()
+    else:
+        items = values.items()
+    return {key: _stringify_attr(value) for key, value in items}
 
 
 def _stringify_attr(value: object) -> str:

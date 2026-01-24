@@ -28,6 +28,9 @@
 - 2026-01-24 10:00 — Set `T-214` status to in_progress and ran `scripts/lint_tasks_state.py` (OK); next step create feature branch.
 - 2026-01-24 10:02 — Created branch `feature/T-214-netlist-render-netlist-ir`; next step inspect netlist renderer + tests.
 - 2026-01-24 10:15 — Added NetlistIR render tests for device params/pattern ports and ref_file_id module resolution; ran pytest (2 failing as expected); next step refactor renderer to accept NetlistIR.
+- 2026-01-24 10:17 — Committed test additions (cf7a8e8: “Add NetlistIR netlist render tests”); next step implement NetlistIR rendering.
+- 2026-01-24 10:45 — Implemented NetlistIR rendering path in netlist renderer (dispatcher, NetlistIR symbol resolution, pattern rendering, conns ordering) and updated params dict helper; tests now passing; next step commit changes.
+- 2026-01-24 10:47 — Ran `venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v` (pass); next step commit implementation.
 
 ## Patch summary
 - (pending)
