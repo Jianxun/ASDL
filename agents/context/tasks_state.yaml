@@ -24,7 +24,7 @@ T-207:
   pr: 213
   merged: true
 T-208:
-  status: ready_for_review
+  status: request_changes
   pr: 215
   merged: false
 T-209:
