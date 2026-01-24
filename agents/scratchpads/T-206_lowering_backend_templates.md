@@ -16,6 +16,12 @@
 - Update lowering tests to assert device backend templates registry entries.
 - Run verify command.
 
+# Todo
+- [x] Inspect lowering + registry plumbing.
+- [x] Register backend templates for device definitions (local/imported).
+- [x] Update lowering tests for backend template registries.
+- [x] Run verify command.
+
 # Understanding
 AST -> PatternedGraph lowering should collect backend template metadata from device definitions (local and imported) and register them in the PatternedGraph registries so downstream passes can access templates. Tests in patterned graph lowering should assert the registry includes expected template values.
 
@@ -29,19 +35,23 @@ AST -> PatternedGraph lowering should collect backend template metadata from dev
 - 2026-01-23 19:57 — Commit de89fdd feat: register device backend templates.
 - 2026-01-23 19:58 — Ran ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v (pass).
 - 2026-01-23 19:58 — Commit 16a7d9f docs: update T-206 scratchpad.
+- 2026-01-23 19:58 — Commit 83869a3 docs: log T-206 progress.
+- 2026-01-23 19:59 — Opened PR https://github.com/Jianxun/ASDL/pull/212.
+- 2026-01-23 20:00 — Set T-206 status to ready_for_review with PR 212; ran lint_tasks_state.py.
 
 # Patch summary
 - Registered device backend templates during AST -> PatternedGraph device lowering.
 - Added lowering tests asserting device backend template registries for local and imported devices.
 
 # PR URL
-
+https://github.com/Jianxun/ASDL/pull/212
 # Verification
 - ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 
 # Next steps
+- Await review.
