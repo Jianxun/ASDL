@@ -19,6 +19,10 @@
 
 ## Progress log
 - 2026-01-24 01:02 — Task intake and context review; created scratchpad; set T-218 in_progress; ran lint_tasks_state.py; created branch feature/T-218-netlist-ir-literal-policy; next step: review verifier/tests/specs for leading `$` policy gaps.
+- 2026-01-24 01:03 — Confirmed task scope: NetlistIR literal names must not carry leading `$`; align verifier text, specs, and tests across nets/ports/instances/refs/conn ports; next step: add tests.
+- 2026-01-24 01:03 — Commit cdc0759: start task state + scratchpad.
+- 2026-01-24 01:03 — Commit 0a2a0b6: add leading `$` literal-name tests for NetlistIR fields; next step: align verifier messaging and spec text.
+- 2026-01-24 01:04 — Updated NetlistIR verifier messages and spec/diagnostic text for no-leading-`$` policy; next step: commit changes and run verification.
 
 ## Patch summary
 - TBD

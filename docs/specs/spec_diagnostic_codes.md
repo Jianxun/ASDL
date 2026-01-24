@@ -76,7 +76,8 @@ meaning, source, and span expectations.
 - `IR-033` (error, source=`core`): AtomizedGraph endpoint uses an undefined port
   for the referenced module or device. Span: none.
 - `IR-050` (error, source=`emit`): NetlistIR name is not a literal (contains
-  pattern delimiters, leading `$` on nets, or empty). Span: none.
+  pattern delimiters, leading `$` in any NetlistIR name field, or empty). `$`
+  prefixes are syntax sugar stripped before NetlistIR. Span: none.
 - `IR-051` (error, source=`emit`): duplicate NetlistIR net name in module. Span:
   none.
 - `IR-052` (error, source=`emit`): duplicate NetlistIR instance name in module.

@@ -67,7 +67,7 @@ def _verify_literal_names(
                     INVALID_LITERAL_NAME,
                     (
                         f"Net name '{net.name}' in module '{module.name}' must be "
-                        "a literal name"
+                        "a literal name without a leading '$'"
                     ),
                 )
             )
@@ -78,7 +78,7 @@ def _verify_literal_names(
                     INVALID_LITERAL_NAME,
                     (
                         f"Port name '{port}' in module '{module.name}' must be "
-                        "a literal name"
+                        "a literal name without a leading '$'"
                     ),
                 )
             )
@@ -89,7 +89,8 @@ def _verify_literal_names(
                     INVALID_LITERAL_NAME,
                     (
                         f"Instance name '{instance.name}' in module "
-                        f"'{module.name}' must be a literal name"
+                        f"'{module.name}' must be a literal name without a "
+                        "leading '$'"
                     ),
                 )
             )
@@ -99,7 +100,8 @@ def _verify_literal_names(
                     INVALID_LITERAL_NAME,
                     (
                         f"Instance '{instance.name}' in module '{module.name}' "
-                        f"references non-literal symbol '{instance.ref}'"
+                        f"references symbol '{instance.ref}' which must be a "
+                        "literal name without a leading '$'"
                     ),
                 )
             )
@@ -110,7 +112,8 @@ def _verify_literal_names(
                         INVALID_LITERAL_NAME,
                         (
                             f"Instance '{instance.name}' in module '{module.name}' "
-                            f"uses non-literal port name '{conn.port}'"
+                            f"uses port name '{conn.port}' which must be a "
+                            "literal name without a leading '$'"
                         ),
                     )
                 )
