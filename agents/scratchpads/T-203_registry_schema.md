@@ -25,6 +25,10 @@
 - 2026-01-23 19:37 — Captured scratchpad progress (c6562e7); next step push branch and open PR.
 - 2026-01-23 19:38 — Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/210; next step set task status ready_for_review.
 - 2026-01-23 19:39 — Set T-203 status to ready_for_review and ran lint_tasks_state.py; next step finalize handoff.
+- 2026-01-24 09:10 — Review intake: PR targets main, set status to review_in_progress, ran lint_tasks_state.py; next step review diff and checks.
+- 2026-01-24 09:15 — Scope review complete against DoD; registry aliases and RegistrySet extensions align, dump/export updates acceptable; next step verify checks/logs.
+- 2026-01-24 09:16 — Checks review: no verify commands listed, tests not run; next step record review decision and comment on PR.
+- 2026-01-24 09:18 — Review clean decision posted to PR and status set to review_clean; next step merge and closeout.
 
 # Patch summary
 - Added registry aliases for device backend templates and expression kinds.
