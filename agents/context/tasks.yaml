@@ -32,13 +32,15 @@ current_sprint:
     links:
       scratchpad: agents/scratchpads/T-217_netlist_ir_origin_preserve.md
   - id: T-218
-    title: Align NetlistIR literal-name $ policy and diagnostics
+    title: Clarify NetlistIR no-leading-$ literal-name policy
     owner: Executor
     dod: >
-      Decide and implement the NetlistIR policy for leading `$` in names
-      (nets/ports/instances/refs), aligning verifier behavior, diagnostic text,
-      and tests. Update diagnostic/spec text if the policy changes and add unit
-      tests covering allowed/forbidden `$` cases.
+      Confirm NetlistIR literal names never include a leading `$` (nets, module
+      ports, instance names, instance ref symbols, and instance conn port names).
+      Align verifier behavior (no-leading-$ across all fields), diagnostic text,
+      and tests. Update diagnostic/spec text to state that `$` is syntax sugar
+      stripped before NetlistIR, and add unit tests that cover leading `$`
+      violations for each NetlistIR name field.
     verify:
       - venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_verify.py -v
     files:
@@ -53,10 +55,13 @@ backlog:
     title: Refactor netlist verification helpers to consume NetlistIR
     owner: Executor
     dod: >
-      Update netlist verification to accept NetlistIR instead of IFIR/xDSL ops,
-      reusing NetlistIR validators where applicable. Keep diagnostics parity
-      with existing emit verification. Add tests covering NetlistIR verification
-      in the emit path.
+      Update netlist verification to accept NetlistIR dataclasses as the primary
+      input, reusing `verify_netlist_ir(...)` for structural checks before
+      backend/template validation. Introduce a NetlistIR index helper (module/
+      device lookup by `(file_id, name)`) in emit utils and keep diagnostics
+      parity with the existing emit verification (missing backend, placeholders,
+      variable merge errors). Add tests that exercise NetlistIR verification
+      in the emit path without xDSL dependencies.
     verify:
       - venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py -v
     files:
@@ -72,13 +77,16 @@ backlog:
       - T-213
     dod: >
       Update netlist rendering to accept NetlistIR dataclasses instead of xDSL
-      IFIR ops. Preserve template rendering semantics, parameter/variable merge,
-      and placeholder validation behavior. Add render tests that exercise
-      NetlistIR inputs.
+      IFIR ops, using the NetlistIR index helper for module/device lookup and
+      `(ref_file_id, ref)` resolution. Preserve template rendering semantics,
+      deterministic ordering, parameter/variable merge, and placeholder
+      validation behavior. Add render tests that exercise NetlistIR inputs and
+      parity with existing outputs.
     verify:
       - venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
     files:
       - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/ir_utils.py
       - src/asdl/emit/netlist/templates.py
       - src/asdl/emit/netlist/params.py
       - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
