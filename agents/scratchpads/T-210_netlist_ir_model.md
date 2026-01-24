@@ -55,3 +55,5 @@
 - 2026-01-23 22:47 — Ran `./venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_model.py -v`; passed; next step scope/DoD review.
 - 2026-01-23 22:48 — Scope/DoD review complete; NetlistIR model and test align with spec; next step finalize review decision.
 - 2026-01-23 22:49 — Review decision: clean; posted PR comment; next step merge and closeout.
+- 2026-01-23 22:50 — Set T-210 status to done (merged=true) and prepared closeout commit; next step push and merge PR.
+- 2026-01-23 22:51 — Merged PR 217, deleted remote/local branch, and pruned refs; next step checkout main and pull.

@@ -32,9 +32,9 @@ T-209:
   pr: 216
   merged: true
 T-210:
-  status: review_clean
+  status: done
   pr: 217
-  merged: false
+  merged: true
 T-211:
   status: ready
   pr: null
