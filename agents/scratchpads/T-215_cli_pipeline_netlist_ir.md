@@ -32,3 +32,5 @@
 - 2026-01-24 02:25 — Task intake: reviewed contract/tasks/project status and created scratchpad; set T-215 to in_progress; next step inspect CLI/lowering entrypoints.
 - 2026-01-24 02:25 — Created feature branch feature/T-215-cli-netlist-ir; next step scan CLI pipeline for IFIR usage.
 - 2026-01-24 02:32 — Added NetlistIR pipeline helper and updated CLI netlist command to use it; files: src/asdl/lowering/__init__.py, src/asdl/cli/__init__.py; next step update specs.
+- 2026-01-24 02:32 — Commit cc53094: add NetlistIR pipeline helper and switch CLI netlist command; next step update specs.
+- 2026-01-24 02:33 — Updated compiler stack and netlist emission specs to reference NetlistIR; files: docs/specs/spec_compiler_stack.md, docs/specs/spec_netlist_emission.md; next step commit docs and run tests.
