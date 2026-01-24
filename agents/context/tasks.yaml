@@ -22,7 +22,117 @@ current_sprint:
     links:
       spec: docs/specs_refactor/spec_refactor_atomized_graph.md
       scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md
+  - id: T-210
+    title: Define NetlistIR dataclasses (emission-ready model)
+    owner: Executor
+    dod: >
+      Add a dataclass-based NetlistIR model representing design/module/net/
+      instance/device/backend nodes with literal names and optional pattern
+      provenance metadata. Use `ports` for module port ordering (consistent
+      with other refactor IRs) and include docstrings. Add a unit test covering
+      construction and ordering invariants.
+    verify:
+      - venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_model.py -v
+    files:
+      - src/asdl/emit/netlist_ir.py
+      - tests/unit_tests/emit/test_netlist_ir_model.py
+    links:
+      scratchpad: agents/scratchpads/T-210_netlist_ir_model.md
+  - id: T-211
+    title: AtomizedGraph -> NetlistIR lowering (happy path)
+    owner: Executor
+    depends_on:
+      - T-210
+    dod: >
+      Implement AtomizedGraph -> NetlistIR lowering with a happy-path
+      conversion that builds NetlistIR design/modules/nets/instances/devices.
+      Preserve pattern origins and backend templates when registries exist.
+      Export the entry point in lowering __init__ and add a unit test for the
+      happy-path conversion.
+    verify:
+      - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py -v
+    files:
+      - src/asdl/lowering/atomized_graph_to_netlist_ir.py
+      - src/asdl/lowering/__init__.py
+      - tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py
+    links:
+      scratchpad: agents/scratchpads/T-211_atomized_to_netlist_ir.md
+  - id: T-212
+    title: NetlistIR stateless verification + diagnostic catalog updates
+    owner: Executor
+    depends_on:
+      - T-210
+    dod: >
+      Port IFIR verification rules to NetlistIR as stateless validators (literal
+      names, unique nets/instances, conn targets, ports list, and pattern-origin
+      table consistency). Add diagnostics entries for NetlistIR validation and
+      unit tests for at least one failure per rule group.
+    verify:
+      - venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_verify.py -v
+    files:
+      - src/asdl/emit/verify_netlist_ir.py
+      - tests/unit_tests/emit/test_netlist_ir_verify.py
+      - docs/specs/spec_diagnostic_codes.md
+    links:
+      scratchpad: agents/scratchpads/T-212_netlist_ir_verify.md
 backlog:
+  - id: T-213
+    title: Refactor netlist verification helpers to consume NetlistIR
+    owner: Executor
+    depends_on:
+      - T-212
+    dod: >
+      Update netlist verification to accept NetlistIR instead of IFIR/xDSL ops,
+      reusing NetlistIR validators where applicable. Keep diagnostics parity
+      with existing emit verification. Add tests covering NetlistIR verification
+      in the emit path.
+    verify:
+      - venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py -v
+    files:
+      - src/asdl/emit/netlist/verify.py
+      - src/asdl/emit/netlist/ir_utils.py
+      - tests/unit_tests/emit/test_netlist_emit_verify.py
+    links:
+      scratchpad: agents/scratchpads/T-213_netlist_emit_verify_netlist_ir.md
+  - id: T-214
+    title: Refactor netlist renderer to consume NetlistIR
+    owner: Executor
+    depends_on:
+      - T-213
+    dod: >
+      Update netlist rendering to accept NetlistIR dataclasses instead of xDSL
+      IFIR ops. Preserve template rendering semantics, parameter/variable merge,
+      and placeholder validation behavior. Add render tests that exercise
+      NetlistIR inputs.
+    verify:
+      - venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
+    files:
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/templates.py
+      - src/asdl/emit/netlist/params.py
+      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
+    links:
+      scratchpad: agents/scratchpads/T-214_netlist_render_netlist_ir.md
+  - id: T-215
+    title: Switch CLI/pipeline to NetlistIR and retire IFIR usage
+    owner: Executor
+    depends_on:
+      - T-211
+      - T-214
+    dod: >
+      Update CLI and pipeline entrypoints to build NetlistIR and emit from it,
+      removing IFIR/xDSL dependencies in the refactor path. Keep legacy flags
+      (if any) isolated. Update specs that describe the compiler stack and
+      netlist emission inputs to reference NetlistIR.
+    verify:
+      - venv/bin/pytest tests/unit_tests/cli -v
+    files:
+      - src/asdl/cli/__init__.py
+      - src/asdl/lowering/__init__.py
+      - docs/specs/spec_compiler_stack.md
+      - docs/specs/spec_netlist_emission.md
+    links:
+      scratchpad: agents/scratchpads/T-215_cli_pipeline_netlist_ir.md
   - id: T-203
     title: Registry schema for backend templates and pattern kinds
     owner: Executor

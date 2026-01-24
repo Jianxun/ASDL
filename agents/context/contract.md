@@ -1,10 +1,10 @@
 # Contract
 
 ## Project overview
-ASDL (Analog Structured Description Language) is a Python framework for analog circuit design: parse YAML ASDL, elaborate/validate, and emit SPICE/netlist artifacts. The MVP refactor uses a Pydantic AST with ruamel-based parsing and xDSL dialects for GraphIR/IFIR (NFIR is an optional authoring/roundtrip projection); ngspice emission is the initial backend. The MVP pipeline (AST -> GraphIR -> IFIR -> emit) supersedes older main spec staging and is reconciled in `docs/specs/`.
+ASDL (Analog Structured Description Language) is a Python framework for analog circuit design: parse YAML ASDL, elaborate/validate, and emit SPICE/netlist artifacts. The refactor pipeline uses a Pydantic AST with ruamel-based parsing, a dataclass PatternedGraph core, an AtomizedGraph derived view, and a dataclass NetlistIR emission model. ngspice emission is the initial backend. Legacy xDSL GraphIR/IFIR remain for reference during migration but are being retired from the refactor path.
 
 ## System boundaries / components
-- Active refactor surface under `src/asdl/ast/`, `src/asdl/core/`, `src/asdl/ir/`, and `src/asdl/lowering/`; other pipeline modules are archived under `legacy/src/asdl/`.
+- Active refactor surface under `src/asdl/ast/`, `src/asdl/core/`, `src/asdl/emit/`, and `src/asdl/lowering/`; legacy xDSL dialects live under `src/asdl/ir/` until retirement. Other pipeline modules are archived under `legacy/src/asdl/`.
 - xDSL refactor work tracked via `agents/context` and `agents/scratchpads/` (e.g., `T-030_ast_parser_mvp.md`).
 - Docs under `docs/`; MVP specs under `docs/specs_mvp/`; full specs under `docs/specs/`.
 - Examples under `examples/`; archived tests under `legacy/tests/`.
@@ -28,15 +28,16 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Pattern definitions may be strings or `{expr, tag}` objects; `axis_id` derives from `tag` when present, otherwise the pattern name. Tags/axis_id are module-local and drive tagged-axis broadcast binding diagnostics.
 - Diagnostic schema is centralized (code, severity, message, primary span, labels, notes, help, fix-its, source); locations use file + line/col spans; all pipeline stages emit diagnostics via this contract.
 - Deprecated: AST->NFIR converter returns `(DesignOp | None, diagnostics)`; invalid instance or endpoint tokens emit `IR-001`/`IR-002` with `Severity.ERROR` and return `None`. Retained for legacy/roundtrip use only.
-- CLI exposes `ir-dump` to emit canonical GraphIR/IFIR textual IR (`--ir graphir|ifir`), with deterministic output that preserves region order and attribute insertion order.
+- Legacy CLI exposes `ir-dump` to emit GraphIR/IFIR textual IR (`--ir graphir|ifir`) for reference during migration; the refactor pipeline will provide NetlistIR/PatternedGraph dumps for debugging with deterministic output and stable ordering.
 - PatternedGraph serialization is exposed via `asdl.core.dump_patterned_graph` / `patterned_graph_to_jsonable`, producing stable JSON with modules, registries, and spans encoded using the diagnostics span JSON shape.
 - CLI adds `patterned-graph-dump` to emit PatternedGraph JSON for refactor inspection/visualization workflows.
 - PatternedGraph -> AtomizedGraph conversion produces a core, fully-atomized dataclass graph (nets, instances, endpoints) for stateless verification and emission adapters; verifiers must be pure functions that return diagnostics without mutating inputs.
+- AtomizedGraph -> NetlistIR conversion produces the emission-ready dataclass representation; NetlistIR verifiers are pure functions that return diagnostics without mutating inputs.
 
 ## Invariants
-- xDSL is the single source of semantic truth; pydantic is a shape/type gate only.
-- GraphIR is the canonical semantic core; IFIR is the emission projection; NFIR is optional and used only for AST projection; AST->NFIR and NFIR->IFIR converters are deprecated.
-- Preserve declared port/pin ordering end-to-end (AST -> NFIR -> IFIR -> emit); deterministic outputs.
+- The dataclass core is the single source of semantic truth; pydantic is a shape/type gate only.
+- PatternedGraph is the canonical semantic core; AtomizedGraph is a derived view; NetlistIR is the emission projection; legacy xDSL GraphIR/IFIR are out of the refactor path.
+- Preserve declared port/pin ordering end-to-end (AST -> PatternedGraph -> AtomizedGraph -> NetlistIR -> emit); deterministic outputs.
 - Lowering must not crash on bad designs; verifiers/passes emit diagnostics instead.
 - No user-facing errors via raw exceptions; emit diagnostics through the shared diagnostic core.
 - Converters MUST NOT silently drop endpoints, connections, or nets; any missing references must emit diagnostics.
@@ -87,11 +88,13 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - ADR-0021 (Proposed): Comment-based docstrings for ASDL docs via YAML comment blocks, inline comments, and section bundles.
 - ADR-0022: Net name expressions must not use splice delimiters; split net entries per segment (refactor-only until canonical reconciliation).
 - ADR-0023: Core graphs include device definitions; modules/devices use `ports` lists (never None); backend templates stay outside core graphs.
+- ADR-0024: Replace IFIR with NetlistIR dataclass model; remove xDSL from the refactor pipeline.
 
+- 2026-01-24: ADR-0024 -- Replace IFIR with NetlistIR dataclass model; remove xDSL from the refactor pipeline (supersedes ADR-0014).
 - 2026-01-23: ADR-0023 -- Core graphs include device definitions; modules/devices use `ports` lists (never None); backend templates stay outside core graphs.
 - 2026-01-21: PatternedGraph construction now uses a core builder API; AST lowering lives under `src/asdl/lowering/` instead of `asdl.core`.
 
-- 2026-01-16: ADR-0014 -- GraphIR is the canonical semantic core with stable IDs; GraphIR defines program/module/device/net/instance/endpoint ops and module port_order; IFIR is a projection and NFIR is optional.
+- 2026-01-16: ADR-0014 -- GraphIR is the canonical semantic core with stable IDs; GraphIR defines program/module/device/net/instance/endpoint ops and module port_order; IFIR is a projection and NFIR is optional. (Superseded 2026-01-24, ADR-0024)
 - 2026-01-17: ADR-0015 -- GraphIR stores only atomized names; pattern provenance is attached to ops via typed pattern_origin pointing to a module attrs expression table; endpoint expressions expand as a whole then split on `.`.
 - 2026-01-18: ADR-0016 -- Introduce module/device/backend `variables`, rename `params` to `parameters`, and allow `{var}` substitution in instance params with recursion forbidden.
 - 2026-01-18: ADR-0017 -- Unify pattern group delimiters: enums and numeric ranges use `<...>` with `|` or `:`; ranges emit integer pattern parts and enums emit strings.
