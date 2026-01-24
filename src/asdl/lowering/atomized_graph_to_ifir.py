@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from xdsl.dialects.builtin import DictionaryAttr, StringAttr
 
@@ -14,13 +15,175 @@ from asdl.core.atomized_graph import (
     AtomizedNet,
     AtomizedProgramGraph,
 )
+from asdl.core.registries import PatternExpr, PatternExprKind, RegistrySet
 from asdl.diagnostics import Diagnostic, Severity, format_code
-from asdl.ir.ifir import ConnAttr, DesignOp, DeviceOp, InstanceOp, ModuleOp, NetOp
+from asdl.ir.ifir import (
+    BackendOp,
+    ConnAttr,
+    DesignOp,
+    DeviceOp,
+    InstanceOp,
+    ModuleOp,
+    NetOp,
+)
+from asdl.ir.patterns.expr_table import (
+    PatternExpressionEntry,
+    encode_pattern_expression_table,
+)
+from asdl.ir.patterns.origin import PatternOrigin, encode_pattern_origin
+from asdl.ir.patterns.parts import PatternPart
+from asdl.patterns_refactor.parser import PatternGroup, PatternLiteral
 
 NO_SPAN_NOTE = "No source span available."
 
 UNKNOWN_ATOMIZED_REFERENCE = format_code("IR", 40)
 UNKNOWN_ATOMIZED_ENDPOINT = format_code("IR", 41)
+
+
+@dataclass(frozen=True)
+class _PatternAtom:
+    """Expanded atom metadata for pattern origin reconstruction."""
+
+    literal: str
+    segment_index: int
+    base_name: str
+    pattern_parts: list[PatternPart]
+
+
+class _PatternOriginResolver:
+    """Resolve pattern origin metadata from AtomizedGraph registries."""
+
+    def __init__(self, registries: RegistrySet) -> None:
+        self._expr_registry = registries.pattern_expressions
+        self._expr_kinds = registries.pattern_expr_kinds
+        self._pattern_origins = registries.pattern_origins
+        self._atoms_cache: Dict[str, Dict[str, _PatternAtom]] = {}
+
+    def resolve(
+        self,
+        *,
+        entity_id: Optional[str],
+        literal: str,
+        expected_kind: PatternExprKind,
+    ) -> Optional[object]:
+        """Resolve a GraphPatternOriginAttr for an atomized literal.
+
+        Args:
+            entity_id: PatternedGraph entity identifier.
+            literal: Atomized literal name.
+            expected_kind: Expected pattern expression kind.
+
+        Returns:
+            Encoded GraphPatternOriginAttr or None when missing data.
+        """
+        if (
+            entity_id is None
+            or self._expr_registry is None
+            or self._expr_kinds is None
+            or self._pattern_origins is None
+        ):
+            return None
+        origin = self._pattern_origins.get(entity_id)
+        if origin is None:
+            return None
+        expr_id = origin[0]
+        expr = self._expr_registry.get(expr_id)
+        if expr is None:
+            return None
+        if self._expr_kinds.get(expr_id) != expected_kind:
+            return None
+        atoms = self._atoms_cache.get(expr_id)
+        if atoms is None:
+            atoms = _index_pattern_atoms(expr)
+            self._atoms_cache[expr_id] = atoms
+        atom = atoms.get(literal)
+        if atom is None:
+            return None
+        return encode_pattern_origin(
+            PatternOrigin(
+                expression_id=expr_id,
+                segment_index=atom.segment_index,
+                base_name=atom.base_name,
+                pattern_parts=atom.pattern_parts,
+            )
+        )
+
+    def collect_expr_ids(self, entity_ids: Iterable[str]) -> set[str]:
+        """Collect expression ids referenced by entity ids."""
+        if self._pattern_origins is None:
+            return set()
+        expr_ids: set[str] = set()
+        for entity_id in entity_ids:
+            origin = self._pattern_origins.get(entity_id)
+            if origin is not None:
+                expr_ids.add(origin[0])
+        return expr_ids
+
+    def build_pattern_expression_table(
+        self, expr_ids: Iterable[str]
+    ) -> Optional[DictionaryAttr]:
+        """Build a module-local pattern expression table when possible."""
+        if self._expr_registry is None or self._expr_kinds is None:
+            return None
+        entries: Dict[str, PatternExpressionEntry] = {}
+        for expr_id in expr_ids:
+            expr = self._expr_registry.get(expr_id)
+            if expr is None:
+                continue
+            kind = self._expr_kinds.get(expr_id)
+            if kind is None:
+                continue
+            entries[expr_id] = PatternExpressionEntry(
+                expression=expr.raw,
+                kind=kind,
+                span=expr.span,
+            )
+        if not entries:
+            return None
+        return encode_pattern_expression_table(entries)
+
+
+def _index_pattern_atoms(expr: PatternExpr) -> Dict[str, _PatternAtom]:
+    """Index expanded atoms by literal value."""
+    atoms: Dict[str, _PatternAtom] = {}
+    for atom in _expand_pattern_atoms(expr):
+        atoms.setdefault(atom.literal, atom)
+    return atoms
+
+
+def _expand_pattern_atoms(expr: PatternExpr) -> List[_PatternAtom]:
+    """Expand a PatternExpr into atoms annotated with pattern parts."""
+    atoms: List[_PatternAtom] = []
+    for segment_index, segment in enumerate(expr.segments):
+        base_name = "".join(
+            token.text
+            for token in segment.tokens
+            if isinstance(token, PatternLiteral)
+        )
+        current: List[Tuple[str, list[PatternPart]]] = [("", [])]
+        for token in segment.tokens:
+            if isinstance(token, PatternLiteral):
+                current = [
+                    (value + token.text, parts) for value, parts in current
+                ]
+                continue
+            if isinstance(token, PatternGroup):
+                expanded: List[Tuple[str, list[PatternPart]]] = []
+                for value, parts in current:
+                    for label in token.labels:
+                        expanded.append((value + str(label), [*parts, label]))
+                current = expanded
+                continue
+        atoms.extend(
+            _PatternAtom(
+                literal=literal,
+                segment_index=segment_index,
+                base_name=base_name,
+                pattern_parts=parts,
+            )
+            for literal, parts in current
+        )
+    return atoms
 
 
 def build_ifir_design(
@@ -54,13 +217,21 @@ def build_ifir_design(
     elif len(program.modules) == 1:
         top_module = next(iter(program.modules.values()))
 
+    pattern_resolver = _PatternOriginResolver(program.registries)
+
     module_ops: List[ModuleOp] = []
     for module in program.modules.values():
-        module_op, module_error = _convert_module(module, program, diagnostics)
+        module_op, module_error = _convert_module(
+            module, program, diagnostics, pattern_resolver
+        )
         module_ops.append(module_op)
         had_error = had_error or module_error
 
-    device_ops = [_convert_device(device) for device in program.devices.values()]
+    backend_templates = program.registries.device_backend_templates
+    device_ops = [
+        _convert_device(device, backend_templates)
+        for device in program.devices.values()
+    ]
 
     top_name = top_module.name if top_module is not None else None
     entry_file_id = top_module.file_id if top_module is not None else None
@@ -78,6 +249,7 @@ def _convert_module(
     module: AtomizedModuleGraph,
     program: AtomizedProgramGraph,
     diagnostics: List[Diagnostic],
+    pattern_resolver: _PatternOriginResolver,
 ) -> Tuple[ModuleOp, bool]:
     """Convert an atomized module into an IFIR module op."""
     had_error = False
@@ -87,7 +259,12 @@ def _convert_module(
     net_ops: List[NetOp] = []
 
     for net in module.nets.values():
-        net_ops.append(NetOp(name=net.name))
+        pattern_origin = pattern_resolver.resolve(
+            entity_id=net.patterned_net_id,
+            literal=net.name,
+            expected_kind="net",
+        )
+        net_ops.append(NetOp(name=net.name, pattern_origin=pattern_origin))
         endpoints, endpoint_error = _collect_net_endpoints(
             module, net, diagnostics
         )
@@ -119,6 +296,11 @@ def _convert_module(
         had_error = had_error or ref_error
         if ref_name is None:
             continue
+        pattern_origin = pattern_resolver.resolve(
+            entity_id=instance.patterned_inst_id,
+            literal=instance.name,
+            expected_kind="inst",
+        )
         inst_ops.append(
             InstanceOp(
                 name=instance.name,
@@ -126,8 +308,22 @@ def _convert_module(
                 ref_file_id=ref_file_id,
                 params=_to_string_dict_attr(instance.param_values),
                 conns=conn_map.get(inst_id, []),
+                pattern_origin=pattern_origin,
             )
         )
+
+    expr_ids = pattern_resolver.collect_expr_ids(
+        [
+            entity_id
+            for entity_id in (
+                [net.patterned_net_id for net in module.nets.values()]
+                + [inst.patterned_inst_id for inst in module.instances.values()]
+                + [endpoint.patterned_endpoint_id for endpoint in module.endpoints.values()]
+            )
+            if entity_id is not None
+        ]
+    )
+    pattern_expression_table = pattern_resolver.build_pattern_expression_table(expr_ids)
 
     return (
         ModuleOp(
@@ -135,6 +331,7 @@ def _convert_module(
             port_order=module.ports or [],
             region=[*net_ops, *inst_ops],
             file_id=module.file_id,
+            pattern_expression_table=pattern_expression_table,
         ),
         had_error,
     )
@@ -166,15 +363,28 @@ def _collect_net_endpoints(
     return endpoints, had_error
 
 
-def _convert_device(device: AtomizedDeviceDef) -> DeviceOp:
+def _convert_device(
+    device: AtomizedDeviceDef,
+    backend_templates: Optional[Dict[str, Dict[str, str]]],
+) -> DeviceOp:
     """Convert an atomized device definition into an IFIR device op."""
+    backends: List[BackendOp] = []
+    templates = backend_templates.get(device.device_id) if backend_templates else None
+    if templates:
+        for backend_name, template in templates.items():
+            backends.append(
+                BackendOp(
+                    name=backend_name,
+                    template=template,
+                )
+            )
     return DeviceOp(
         name=device.name,
         ports=device.ports or [],
         file_id=device.file_id,
         params=_to_string_dict_attr(device.parameters),
         variables=_to_string_dict_attr(device.variables),
-        region=[],
+        region=backends,
     )
 
 

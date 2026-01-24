@@ -10,9 +10,12 @@ from asdl.core.atomized_graph import (
     AtomizedNet,
     AtomizedProgramGraph,
 )
+from asdl.core.registries import RegistrySet
 from asdl.diagnostics import format_code
-from asdl.ir.ifir import DesignOp, DeviceOp, InstanceOp, ModuleOp, NetOp
+from asdl.ir.ifir import BackendOp, DesignOp, DeviceOp, InstanceOp, ModuleOp, NetOp
+from asdl.ir.patterns.origin import decode_pattern_origin
 from asdl.lowering import build_ifir_design
+from asdl.patterns_refactor.parser import parse_pattern_expr
 
 
 def test_build_ifir_design_happy_path() -> None:
@@ -23,6 +26,30 @@ def test_build_ifir_design_happy_path() -> None:
         file_id="design.asdl",
         ports=["D", "G", "S"],
         parameters={"W": 1},
+    )
+
+    net_expr, net_errors = parse_pattern_expr("V<IN|OUT>")
+    inst_expr, inst_errors = parse_pattern_expr("M<1:1>")
+    assert net_errors == []
+    assert inst_errors == []
+    assert net_expr is not None
+    assert inst_expr is not None
+    program.registries = RegistrySet(
+        pattern_expressions={
+            "expr_net": net_expr,
+            "expr_inst": inst_expr,
+        },
+        pattern_expr_kinds={
+            "expr_net": "net",
+            "expr_inst": "inst",
+        },
+        pattern_origins={
+            "pn1": ("expr_net", 0, 0),
+            "pi1": ("expr_inst", 0, 0),
+        },
+        device_backend_templates={
+            "d1": {"sim.ngspice": "M {ports} {model}"},
+        },
     )
 
     module = AtomizedModuleGraph(
@@ -42,8 +69,18 @@ def test_build_ifir_design_happy_path() -> None:
         )
     }
     module.nets = {
-        "n1": AtomizedNet(net_id="n1", name="VIN", endpoint_ids=["e1"]),
-        "n2": AtomizedNet(net_id="n2", name="VOUT", endpoint_ids=["e2"]),
+        "n1": AtomizedNet(
+            net_id="n1",
+            name="VIN",
+            endpoint_ids=["e1"],
+            patterned_net_id="pn1",
+        ),
+        "n2": AtomizedNet(
+            net_id="n2",
+            name="VOUT",
+            endpoint_ids=["e2"],
+            patterned_net_id="pn1",
+        ),
         "n3": AtomizedNet(net_id="n3", name="VSS", endpoint_ids=["e3"]),
     }
     module.endpoints = {
@@ -57,6 +94,7 @@ def test_build_ifir_design_happy_path() -> None:
             endpoint_id="e3", net_id="n3", inst_id="i1", port="S"
         ),
     }
+    module.instances["i1"].patterned_inst_id = "pi1"
     program.modules["m1"] = module
 
     design, diagnostics = build_ifir_design(program)
@@ -73,15 +111,31 @@ def test_build_ifir_design_happy_path() -> None:
     )
     assert ifir_module.sym_name.data == "top"
     assert [item.data for item in ifir_module.port_order.data] == ["VIN", "VOUT"]
+    assert ifir_module.pattern_expression_table is not None
+    assert "expr_net" in ifir_module.pattern_expression_table.data
+    assert "expr_inst" in ifir_module.pattern_expression_table.data
 
     nets = [op for op in ifir_module.body.block.ops if isinstance(op, NetOp)]
     assert [net.name_attr.data for net in nets] == ["VIN", "VOUT", "VSS"]
+    net_by_name = {net.name_attr.data: net for net in nets}
+    vin_origin = decode_pattern_origin(net_by_name["VIN"].pattern_origin)
+    assert vin_origin.expression_id == "expr_net"
+    assert vin_origin.base_name == "V"
+    assert vin_origin.pattern_parts == ["IN"]
+    vout_origin = decode_pattern_origin(net_by_name["VOUT"].pattern_origin)
+    assert vout_origin.expression_id == "expr_net"
+    assert vout_origin.base_name == "V"
+    assert vout_origin.pattern_parts == ["OUT"]
 
     inst = next(op for op in ifir_module.body.block.ops if isinstance(op, InstanceOp))
     conns = [(conn.port.data, conn.net.data) for conn in inst.conns.data]
     assert conns == [("G", "VIN"), ("D", "VOUT"), ("S", "VSS")]
     assert inst.params is not None
     assert inst.params.data["m"].data == "2"
+    inst_origin = decode_pattern_origin(inst.pattern_origin)
+    assert inst_origin.expression_id == "expr_inst"
+    assert inst_origin.base_name == "M"
+    assert inst_origin.pattern_parts == [1]
 
     ifir_device = next(
         op for op in design.body.block.ops if isinstance(op, DeviceOp)
@@ -90,6 +144,12 @@ def test_build_ifir_design_happy_path() -> None:
     assert [port.data for port in ifir_device.ports.data] == ["D", "G", "S"]
     assert ifir_device.params is not None
     assert ifir_device.params.data["W"].data == "1"
+    backends = [
+        op for op in ifir_device.body.block.ops if isinstance(op, BackendOp)
+    ]
+    assert len(backends) == 1
+    assert backends[0].name_attr.data == "sim.ngspice"
+    assert backends[0].template.data == "M {ports} {model}"
 
 
 def test_build_ifir_design_missing_endpoint_sets_error() -> None:
