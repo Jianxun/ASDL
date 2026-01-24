@@ -26,6 +26,8 @@
 - 2026-01-24 00:12 — Added lowering test for pattern_origin kind mismatch preservation; updated `tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py`; next step adjust lowering to keep origins.
 - 2026-01-24 00:22 — Updated NetlistIR lowering pattern origin resolver to keep origins on kind mismatches/missing kinds; updated `src/asdl/lowering/atomized_graph_to_netlist_ir.py`; next step run tests.
 - 2026-01-24 00:30 — Ran lowering unit tests (2 passed) for NetlistIR lowering; updated scratchpad verification; next step prep closeout.
+- 2026-01-24 00:36 — Opened PR https://github.com/Jianxun/ASDL/pull/221; next step update task status to ready_for_review.
+- 2026-01-24 00:38 — Set T-217 status to ready_for_review (PR #221) and linted tasks_state; next step handoff to reviewer.
 
 # Patch summary
 
@@ -33,13 +35,16 @@
 - Added lowering test coverage for kind mismatch origin preservation in `tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py`.
 
 # PR URL
+https://github.com/Jianxun/ASDL/pull/221
 
 # Verification
  - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py -v
    - Result: PASS
 
 # Status request (Done / Blocked / In Progress)
+Ready for review.
 
 # Blockers / Questions
 
 # Next steps
+- Reviewer to validate NetlistIR lowering behavior and test coverage.
