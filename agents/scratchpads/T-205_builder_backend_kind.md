@@ -50,3 +50,8 @@ https://github.com/Jianxun/ASDL/pull/211
 
 # Next steps
 - Await review.
+- 2026-01-23 19:51 — Review intake, confirmed PR base and scratchpad/verify logs; next: run required checks and inspect code changes.
+- 2026-01-23 19:51 — Set T-205 status to review_in_progress; next: run verification and complete review.
+- 2026-01-23 19:51 — Ran verify command (pytest test_patterned_graph_builder.py); all tests passed; next: complete scope/code review.
+- 2026-01-23 19:51 — Scope/code review complete vs DoD and files list; no issues found; next: post review decision.
+- 2026-01-23 19:52 — Posted PR review comment (review clean) and set T-205 status to review_clean; next: merge and close out.
