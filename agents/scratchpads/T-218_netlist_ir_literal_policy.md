@@ -28,6 +28,11 @@
 - 2026-01-24 01:06 — Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/222.
 - 2026-01-24 01:06 — Set T-218 status to ready_for_review with PR #222; ran lint_tasks_state.py.
 - 2026-01-24 01:06 — Commit 8305b2d: update task status + scratchpad with PR/verification details.
+- 2026-01-24 01:10 — Review intake: set T-218 status to review_in_progress; next step confirm PR base, scope, and verification logs.
+- 2026-01-24 01:11 — Confirmed PR #222 targets main; scratchpad and verification logs present; next step review scope and code changes.
+- 2026-01-24 01:12 — Verified required pytest command via scratchpad log (not rerun); next step complete scope review against DoD.
+- 2026-01-24 01:13 — Scope review complete: changes align with T-218 DoD, including verifier messaging, specs, and tests; next step finalize review decision.
+- 2026-01-24 01:14 — Review decision: clean; posted PR comment with verification note; set status to review_clean; next step merge and closeout.
 
 ## Patch summary
 - Added parameterized verifier tests covering leading `$` in each NetlistIR name field.
