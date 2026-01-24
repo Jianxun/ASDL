@@ -50,7 +50,6 @@ current_sprint:
       - docs/specs/spec_netlist_ir.md
     links:
       scratchpad: agents/scratchpads/T-218_netlist_ir_literal_policy.md
-backlog:
   - id: T-213
     title: Refactor netlist verification helpers to consume NetlistIR
     owner: Executor
@@ -111,3 +110,4 @@ backlog:
       - docs/specs/spec_netlist_emission.md
     links:
       scratchpad: agents/scratchpads/T-215_cli_pipeline_netlist_ir.md
+backlog: []
