@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import InitVar, dataclass, field
 from typing import Dict, Literal, Optional, TypeAlias
 
-from .registries import GraphId
+from .registries import GraphId, RegistrySet
 
 AtomizedModuleId: TypeAlias = GraphId
 AtomizedDeviceId: TypeAlias = GraphId
@@ -147,10 +147,12 @@ class AtomizedProgramGraph:
     Attributes:
         modules: Module graphs keyed by module ID.
         devices: Device definitions keyed by device ID.
+        registries: Optional registry metadata carried from PatternedGraph.
     """
 
     modules: Dict[AtomizedModuleId, AtomizedModuleGraph] = field(default_factory=dict)
     devices: Dict[AtomizedDeviceId, AtomizedDeviceDef] = field(default_factory=dict)
+    registries: RegistrySet = field(default_factory=RegistrySet)
 
 
 def _atomized_module_port_order(module: AtomizedModuleGraph) -> list[str]:
