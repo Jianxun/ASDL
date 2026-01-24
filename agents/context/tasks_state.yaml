@@ -8,9 +8,9 @@ T-203:
   pr: 210
   merged: true
 T-204:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 214
+  merged: true
 T-205:
   status: done
   pr: 211
