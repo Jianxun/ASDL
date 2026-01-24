@@ -7,6 +7,7 @@ from typing import Dict, List, Mapping, Optional, Sequence
 from asdl.ast import ModuleDecl, PatternDecl
 from asdl.ast.location import Locatable
 from asdl.core.graph_builder import PatternedGraphBuilder
+from asdl.core.registries import PatternExprKind
 from asdl.diagnostics import Diagnostic, Severity
 from asdl.patterns_refactor.parser import (
     NamedPattern,
@@ -39,8 +40,9 @@ def _collect_named_patterns(module: ModuleDecl) -> Dict[str, NamedPattern]:
 def _register_expression(
     expression: str,
     *,
+    kind: PatternExprKind,
     builder: PatternedGraphBuilder,
-    expr_cache: Dict[str, str],
+    expr_cache: Dict[tuple[PatternExprKind, str], str],
     named_patterns: Mapping[str, NamedPattern],
     loc: Optional[Locatable],
     diagnostics: List[Diagnostic],
@@ -52,8 +54,9 @@ def _register_expression(
 
     Args:
         expression: Raw expression string to parse.
+        kind: Semantic kind for the expression.
         builder: PatternedGraph builder instance.
-        expr_cache: Module-local cache of raw expressions to IDs.
+        expr_cache: Module-local cache keyed by (kind, expression) to IDs.
         named_patterns: Named pattern definitions for parsing.
         loc: Optional source location for spans.
         diagnostics: Diagnostic collection to append to.
@@ -64,7 +67,8 @@ def _register_expression(
     Returns:
         Expression ID or None on parse failure.
     """
-    cached = expr_cache.get(expression)
+    cache_key = (kind, expression)
+    cached = expr_cache.get(cache_key)
     if cached is not None:
         return cached
 
@@ -105,7 +109,8 @@ def _register_expression(
         return None
 
     expr_id = builder.add_expression(parsed)
-    expr_cache[expression] = expr_id
+    builder.register_pattern_expr_kind(expr_id, kind)
+    expr_cache[cache_key] = expr_id
     return expr_id
 
 
