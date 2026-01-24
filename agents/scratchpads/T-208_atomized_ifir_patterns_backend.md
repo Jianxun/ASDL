@@ -27,11 +27,16 @@
 - 2026-01-23 21:04 — Ran ./venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v; all tests passed; next step scope/logic review.
 - 2026-01-23 21:06 — Scope/logic review: pattern origin resolution ignores registry atom indices, risking wrong segment_index/pattern_parts on duplicate literals; decision request_changes after PR comment.
 - 2026-01-23 21:07 — Posted PR review comment requesting changes; set T-208 status to request_changes; ran lint_tasks_state.py.
+- 2026-01-24 10:15 — Updated pattern origin resolver to use segment/atom indices and added splice-duplicate test; files: src/asdl/lowering/atomized_graph_to_ifir.py, tests/unit_tests/lowering/test_atomized_graph_to_ifir.py; next step rerun tests.
+- 2026-01-24 10:17 — Ran ./venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v; all tests passed.
+- 2026-01-24 10:19 — Committed changes dd0be19; next step update task state, push, and respond on PR.
+- 2026-01-24 10:21 — Set T-208 status to in_progress; ran ./venv/bin/python scripts/lint_tasks_state.py.
 
 # Patch summary
 - Added registry propagation to AtomizedProgramGraph for downstream metadata access.
 - Rebuilt IFIR lowering to attach pattern origins, pattern expression tables, and device backend templates.
 - Expanded AtomizedGraph->IFIR happy-path test coverage for pattern origins and backend templates.
+- Updated pattern origin lookup to honor segment/atom indices and added splice-duplicate coverage.
 
 # PR URL
 https://github.com/Jianxun/ASDL/pull/215

@@ -24,7 +24,7 @@ T-207:
   pr: 213
   merged: true
 T-208:
-  status: request_changes
+  status: in_progress
   pr: 215
   merged: false
 T-209:
