@@ -26,6 +26,10 @@
 - 2026-01-23 20:28 — Commit 5a11e19: update T-204 scratchpad progress; next step finalize closeout details.
 - 2026-01-23 20:30 — Commit fad3766: update T-204 scratchpad summary; next step open PR and set ready_for_review.
 - 2026-01-23 20:30 — Opened PR https://github.com/Jianxun/ASDL/pull/214; next step update task state and lint.
+- 2026-01-23 20:32 — Review intake, confirmed scope and PR metadata; next step set review_in_progress and run required checks.
+- 2026-01-23 20:33 — Set T-204 status to review_in_progress; next step run required tests.
+- 2026-01-23 20:34 — Ran `venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v`; next step complete review and post findings.
+- 2026-01-23 20:36 — Review decision: request_changes due to missing-endpoint errors not failing lowering; posted PR comment; next step await updates.
 - 2026-01-23 20:30 — Set T-204 ready_for_review and linted tasks_state.yaml; next step finalize response.
 
 ## Patch summary
