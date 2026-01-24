@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from asdl.emit.netlist_ir import (
     NetlistBackend,
     NetlistConn,
@@ -34,6 +36,76 @@ def test_verify_netlist_ir_reports_invalid_literal_names() -> None:
         nets=[NetlistNet(name="N<A>")],
     )
 
+    diagnostics = verify_netlist_ir(_design(module))
+
+    assert any(diag.code == INVALID_LITERAL_NAME for diag in diagnostics)
+
+
+@pytest.mark.parametrize(
+    "module",
+    [
+        NetlistModule(
+            name="top",
+            file_id="design.asdl",
+            nets=[NetlistNet(name="$N0")],
+        ),
+        NetlistModule(
+            name="top",
+            file_id="design.asdl",
+            ports=["$P0"],
+            nets=[NetlistNet(name="P0")],
+        ),
+        NetlistModule(
+            name="top",
+            file_id="design.asdl",
+            nets=[NetlistNet(name="N0")],
+            instances=[
+                NetlistInstance(
+                    name="$U0",
+                    ref="cell",
+                    ref_file_id="design.asdl",
+                    conns=[NetlistConn(port="P", net="N0")],
+                )
+            ],
+        ),
+        NetlistModule(
+            name="top",
+            file_id="design.asdl",
+            nets=[NetlistNet(name="N0")],
+            instances=[
+                NetlistInstance(
+                    name="U0",
+                    ref="$cell",
+                    ref_file_id="design.asdl",
+                    conns=[NetlistConn(port="P", net="N0")],
+                )
+            ],
+        ),
+        NetlistModule(
+            name="top",
+            file_id="design.asdl",
+            nets=[NetlistNet(name="N0")],
+            instances=[
+                NetlistInstance(
+                    name="U0",
+                    ref="cell",
+                    ref_file_id="design.asdl",
+                    conns=[NetlistConn(port="$P", net="N0")],
+                )
+            ],
+        ),
+    ],
+    ids=[
+        "net-name",
+        "module-port",
+        "instance-name",
+        "instance-ref",
+        "conn-port",
+    ],
+)
+def test_verify_netlist_ir_reports_leading_dollar_names(
+    module: NetlistModule,
+) -> None:
     diagnostics = verify_netlist_ir(_design(module))
 
     assert any(diag.code == INVALID_LITERAL_NAME for diag in diagnostics)
