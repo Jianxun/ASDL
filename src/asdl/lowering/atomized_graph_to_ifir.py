@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from xdsl.dialects.builtin import DictionaryAttr, StringAttr
 
@@ -88,7 +88,11 @@ def _convert_module(
 
     for net in module.nets.values():
         net_ops.append(NetOp(name=net.name))
-        for endpoint in _iter_net_endpoints(module, net, diagnostics):
+        endpoints, endpoint_error = _collect_net_endpoints(
+            module, net, diagnostics
+        )
+        had_error = had_error or endpoint_error
+        for endpoint in endpoints:
             conns = conn_map.get(endpoint.inst_id)
             if conns is None:
                 diagnostics.append(
@@ -136,12 +140,14 @@ def _convert_module(
     )
 
 
-def _iter_net_endpoints(
+def _collect_net_endpoints(
     module: AtomizedModuleGraph,
     net: AtomizedNet,
     diagnostics: List[Diagnostic],
-) -> Iterable[AtomizedEndpoint]:
-    """Yield endpoints for a net, emitting diagnostics for missing entries."""
+) -> Tuple[List[AtomizedEndpoint], bool]:
+    """Collect endpoints for a net, emitting diagnostics for missing entries."""
+    had_error = False
+    endpoints: List[AtomizedEndpoint] = []
     for endpoint_id in net.endpoint_ids:
         endpoint = module.endpoints.get(endpoint_id)
         if endpoint is None:
@@ -154,8 +160,10 @@ def _iter_net_endpoints(
                     ),
                 )
             )
+            had_error = True
             continue
-        yield endpoint
+        endpoints.append(endpoint)
+    return endpoints, had_error
 
 
 def _convert_device(device: AtomizedDeviceDef) -> DeviceOp:
