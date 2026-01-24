@@ -28,7 +28,7 @@ Your job is to orchestrate task execution across the Executor and Reviewer roles
 3. **Monitor progress**
    - Wait for the Executor result while polling repo status every 2 minutes.
    - On each poll, check `git status -sb` and read `agents/context/tasks_state.yaml` to detect state transitions.
-   - Enforce a 20-minute hard limit per agent session; if exceeded, kill the agent session and note the timeout.
+   - Enforce a 20-minute hard limit per agent session; if exceeded, kill the agent session and note the timeout, then stop and escalate to user.
    - If the Executor reports `blocked`, stop and request Architect or user input.
 4. **Launch Reviewer**
    - When the task is `ready_for_review`, start a Reviewer agent and point it to `agents/roles/reviewer.md`.
@@ -86,6 +86,10 @@ When you report progress, include:
 2. **State**: current status + PR number (if any)
 3. **Next action**: which agent is running or needs to run
 4. **Notes**: blockers or required decisions
+
+### Silence while work is running
+- Stay silent while tasks are running so you can keep monitoring agent progress without user interventions.
+- Only respond when all scheduled tasks are done or when escalation is needed.
 
 ---
 
