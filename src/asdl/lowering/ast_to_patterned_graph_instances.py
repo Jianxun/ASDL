@@ -8,6 +8,7 @@ from typing import Dict, List, Mapping, Optional, Set, Tuple
 from asdl.ast import ModuleDecl
 from asdl.ast.location import Locatable
 from asdl.core.graph_builder import PatternedGraphBuilder
+from asdl.core.registries import PatternExprKind
 from asdl.diagnostics import Diagnostic
 from asdl.imports import NameEnv, ProgramDB
 from asdl.patterns_refactor.parser import NamedPattern
@@ -32,7 +33,7 @@ def _lower_instances(
     program_db: Optional[ProgramDB] = None,
     module_ids_by_file: Optional[Mapping[Path, Mapping[str, str]]] = None,
     device_ids_by_file: Optional[Mapping[Path, Mapping[str, str]]] = None,
-    expr_cache: Dict[str, str],
+    expr_cache: Dict[tuple[PatternExprKind, str], str],
     named_patterns: Mapping[str, NamedPattern],
     diagnostics: List[Diagnostic],
     builder: PatternedGraphBuilder,
@@ -64,6 +65,7 @@ def _lower_instances(
         inst_expr_loc = module._instance_expr_loc.get(inst_name)
         inst_expr_id = _register_expression(
             inst_name,
+            kind="inst",
             builder=builder,
             expr_cache=expr_cache,
             named_patterns=named_patterns,
@@ -110,6 +112,7 @@ def _lower_instances(
             for param_name, param_expr in params.items():
                 param_expr_id = _register_expression(
                     param_expr,
+                    kind="param",
                     builder=builder,
                     expr_cache=expr_cache,
                     named_patterns=named_patterns,

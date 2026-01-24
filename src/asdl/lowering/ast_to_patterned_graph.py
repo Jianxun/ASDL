@@ -8,6 +8,7 @@ from typing import Dict, List, Mapping, Optional, Set
 from asdl.ast import AsdlDocument, ModuleDecl
 from asdl.core.graph import ProgramGraph
 from asdl.core.graph_builder import PatternedGraphBuilder
+from asdl.core.registries import PatternExprKind
 from asdl.diagnostics import Diagnostic
 from asdl.imports import ImportGraph, NameEnv, ProgramDB
 
@@ -209,7 +210,7 @@ def _lower_module(
         diagnostics: Diagnostics list to append to.
         builder: PatternedGraph builder instance.
     """
-    expr_cache: Dict[str, str] = {}
+    expr_cache: Dict[tuple[PatternExprKind, str], str] = {}
     named_patterns = _collect_named_patterns(module)
 
     instance_refs = _lower_instances(
@@ -247,6 +248,7 @@ def _lower_module(
                 net_name, is_port = _split_net_token(net_token)
                 net_expr_id = _register_expression(
                     net_name,
+                    kind="net",
                     builder=builder,
                     expr_cache=expr_cache,
                     named_patterns=named_patterns,

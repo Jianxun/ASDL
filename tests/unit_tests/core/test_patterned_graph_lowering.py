@@ -109,6 +109,72 @@ def test_build_patterned_graph_with_groups_and_patterns() -> None:
     assert spans[net_id].file == "design.asdl"
 
 
+def test_build_patterned_graph_expr_cache_and_kinds() -> None:
+    module = ModuleDecl.model_construct(
+        instances={
+            "A": "nmos W=<0|1>",
+            "B": "nmos W=<0|1>",
+        },
+        nets={"$A": ["A.D", "B.D", "A.D"]},
+    )
+    device = DeviceDecl(
+        ports=["D", "G"],
+        parameters=None,
+        variables=None,
+        backends={"sim.ngspice": DeviceBackendDecl(template="M")},
+    )
+    document = AsdlDocument.model_construct(
+        modules={"top": module},
+        devices={"nmos": device},
+        top="top",
+    )
+
+    graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert diagnostics == []
+    exprs = graph.registries.pattern_expressions
+    kinds = graph.registries.pattern_expr_kinds
+    assert exprs is not None
+    assert kinds is not None
+
+    module_graph = next(iter(graph.modules.values()))
+    net_id = next(iter(module_graph.nets))
+    net_expr_id = module_graph.nets[net_id].name_expr_id
+    assert exprs[net_expr_id].raw == "A"
+    assert kinds[net_expr_id] == "net"
+
+    inst_a = next(
+        inst
+        for inst in module_graph.instances.values()
+        if exprs[inst.name_expr_id].raw == "A"
+    )
+    inst_b = next(
+        inst
+        for inst in module_graph.instances.values()
+        if exprs[inst.name_expr_id].raw == "B"
+    )
+    assert inst_a.name_expr_id != net_expr_id
+    assert kinds[inst_a.name_expr_id] == "inst"
+
+    assert inst_a.param_expr_ids is not None
+    assert inst_b.param_expr_ids is not None
+    param_expr_id_a = inst_a.param_expr_ids["W"]
+    param_expr_id_b = inst_b.param_expr_ids["W"]
+    assert param_expr_id_a == param_expr_id_b
+    assert kinds[param_expr_id_a] == "param"
+
+    endpoint_expr_ids = [
+        module_graph.endpoints[endpoint_id].port_expr_id
+        for endpoint_id in module_graph.nets[net_id].endpoint_ids
+    ]
+    a_d_expr_ids = [
+        expr_id for expr_id in endpoint_expr_ids if exprs[expr_id].raw == "A.D"
+    ]
+    assert len(a_d_expr_ids) == 2
+    assert len(set(a_d_expr_ids)) == 1
+    assert kinds[a_d_expr_ids[0]] == "endpoint"
+
+
 def test_build_patterned_graph_port_order_appends_default_ports() -> None:
     module = ModuleDecl.model_construct(
         instances={"U1": "nmos"},

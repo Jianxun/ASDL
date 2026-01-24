@@ -7,7 +7,7 @@ from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 from asdl.ast import ModuleDecl
 from asdl.ast.location import Locatable
 from asdl.core.graph_builder import PatternedGraphBuilder
-from asdl.core.registries import GroupSlice
+from asdl.core.registries import GroupSlice, PatternExprKind
 from asdl.diagnostics import Diagnostic
 from asdl.patterns_refactor.parser import NamedPattern
 
@@ -21,7 +21,7 @@ def _lower_nets(
     module: ModuleDecl,
     *,
     module_id: str,
-    expr_cache: Dict[str, str],
+    expr_cache: Dict[tuple[PatternExprKind, str], str],
     named_patterns: Mapping[str, NamedPattern],
     diagnostics: List[Diagnostic],
     builder: PatternedGraphBuilder,
@@ -47,6 +47,7 @@ def _lower_nets(
         net_name, is_port = _split_net_token(net_token)
         net_expr_id = _register_expression(
             net_name,
+            kind="net",
             builder=builder,
             expr_cache=expr_cache,
             named_patterns=named_patterns,
@@ -87,6 +88,7 @@ def _lower_nets(
                 continue
             endpoint_expr_id = _register_expression(
                 endpoint_expr,
+                kind="endpoint",
                 builder=builder,
                 expr_cache=expr_cache,
                 named_patterns=named_patterns,
