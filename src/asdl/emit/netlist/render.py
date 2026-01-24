@@ -9,11 +9,21 @@ from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 from asdl.diagnostics import Diagnostic, Severity
 from asdl.diagnostics.collector import DiagnosticCollector
 from asdl.emit.backend_config import BackendConfig
+from asdl.emit.netlist_ir import (
+    NetlistBackend,
+    NetlistDesign,
+    NetlistDevice,
+    NetlistInstance,
+    NetlistModule,
+    PatternExpressionTable as NetlistPatternExpressionTable,
+    PatternOrigin as NetlistPatternOrigin,
+)
 from asdl.ir.ifir import DeviceOp, InstanceOp, ModuleOp, NetOp
 from asdl.ir.patterns.expr_table import (
     PatternExpressionTable,
     decode_pattern_expression_table,
 )
+from asdl.ir.patterns.origin import PatternOrigin as GraphPatternOrigin
 from asdl.ir.patterns.origin import render_pattern_origin
 
 from .diagnostics import (
@@ -27,7 +37,13 @@ from .diagnostics import (
     _diagnostic,
     _emit_diagnostic,
 )
-from .ir_utils import _collect_design_ops, _select_backend, _select_symbol
+from .ir_utils import (
+    _build_netlist_ir_index,
+    _collect_design_ops,
+    _select_backend,
+    _select_netlist_ir_symbol,
+    _select_symbol,
+)
 from .params import _dict_attr_to_strings, _merge_params, _merge_variables
 from .templates import (
     _escape_braced_env_vars,
@@ -44,6 +60,12 @@ class _SymbolMaps:
     module_emitted_names: Dict[Tuple[str, Optional[str]], str]
     devices_by_name: Dict[str, List[DeviceOp]]
     device_index: Dict[Tuple[str, Optional[str]], DeviceOp]
+
+
+@dataclass(frozen=True)
+class _NetlistIRSymbolMaps:
+    index: "NetlistIRIndex"
+    module_emitted_names: Dict[Tuple[Optional[str], str], str]
 
 
 _ENV_VAR_PATTERN = re.compile(r"\$(\w+|\{[^}]+\})")
@@ -82,6 +104,14 @@ def _case_insensitive_match(
     return match
 
 def _emit_design(
+    design: "DesignOp | NetlistDesign", options: "EmitOptions"
+) -> Tuple[Optional[str], List[Diagnostic]]:
+    if isinstance(design, NetlistDesign):
+        return _emit_netlist_ir_design(design, options)
+    return _emit_ifir_design(design, options)
+
+
+def _emit_ifir_design(
     design: "DesignOp", options: "EmitOptions"
 ) -> Tuple[Optional[str], List[Diagnostic]]:
     diagnostics: List[Diagnostic] = []
@@ -201,6 +231,424 @@ def _emit_design(
         return None, diagnostics
     return "\n".join(lines), diagnostics
 
+
+def _emit_netlist_ir_design(
+    design: NetlistDesign, options: "EmitOptions"
+) -> Tuple[Optional[str], List[Diagnostic]]:
+    """Render a NetlistIR design into a netlist string."""
+    diagnostics: List[Diagnostic] = []
+    collector = DiagnosticCollector()
+
+    entry_file_id = design.entry_file_id
+    if design.top is None and len(design.modules) == 1 and entry_file_id is not None:
+        if design.modules[0].file_id != entry_file_id:
+            collector.emit(
+                _diagnostic(
+                    MISSING_TOP,
+                    "Top module is required when entry file has no local modules",
+                    Severity.ERROR,
+                )
+            )
+            diagnostics.extend(collector.to_list())
+            return None, diagnostics
+
+    index = _build_netlist_ir_index(design, collector)
+    diagnostics.extend(collector.to_list())
+    if index is None:
+        return None, diagnostics
+
+    top_module = _select_netlist_ir_symbol(
+        index.modules_by_name,
+        index.modules_by_key,
+        index.top_name,
+        entry_file_id,
+    )
+    if top_module is None:
+        diagnostics.append(
+            _diagnostic(
+                MISSING_TOP,
+                f"Top module '{index.top_name}' is not defined in entry file",
+                Severity.ERROR,
+            )
+        )
+        return None, diagnostics
+
+    module_emitted_names = _build_module_emitted_names_ir(
+        design.modules, index.modules_by_name
+    )
+    top_emitted_name = _module_emitted_name_ir(top_module, module_emitted_names)
+
+    lines: List[str] = []
+    had_error = False
+
+    emit_context = _emit_timestamp_context(options.emit_timestamp)
+    header_context = {
+        "backend": options.backend_name,
+        "top": top_emitted_name,
+        "top_sym_name": index.top_name,
+        "file_id": _entry_file_id_value_ir(entry_file_id, top_module),
+    }
+    header_context.update(emit_context)
+    header, header_error = _render_system_device(
+        "__netlist_header__",
+        options.backend_config,
+        header_context,
+        diagnostics,
+    )
+    if header:
+        lines.append(header)
+    had_error = had_error or header_error
+
+    symbol_maps = _NetlistIRSymbolMaps(
+        index=index, module_emitted_names=module_emitted_names
+    )
+    for module in design.modules:
+        module_lines, module_error = _emit_netlist_ir_module(
+            module,
+            symbol_maps,
+            is_top=module is top_module,
+            options=options,
+            diagnostics=diagnostics,
+        )
+        lines.extend(module_lines)
+        had_error = had_error or module_error
+
+    footer_context = {
+        "backend": options.backend_name,
+        "top": top_emitted_name,
+        "top_sym_name": index.top_name,
+        "file_id": _entry_file_id_value_ir(entry_file_id, top_module),
+    }
+    footer_context.update(emit_context)
+    footer, footer_error = _render_system_device(
+        "__netlist_footer__",
+        options.backend_config,
+        footer_context,
+        diagnostics,
+    )
+    if footer:
+        lines.append(footer)
+    had_error = had_error or footer_error
+
+    if had_error:
+        return None, diagnostics
+    return "\n".join(lines), diagnostics
+
+
+def _emit_netlist_ir_module(
+    module: NetlistModule,
+    symbols: _NetlistIRSymbolMaps,
+    *,
+    is_top: bool,
+    options: "EmitOptions",
+    diagnostics: List[Diagnostic],
+) -> Tuple[List[str], bool]:
+    """Render a NetlistIR module definition."""
+    lines: List[str] = []
+    had_error = False
+
+    pattern_table = module.pattern_expression_table
+    pattern_rendering = options.backend_config.pattern_rendering
+    net_name_map = _build_net_name_map_ir(module, pattern_table, pattern_rendering)
+    ports = [net_name_map.get(port, port) for port in module.ports]
+
+    module_name = _module_emitted_name_ir(module, symbols.module_emitted_names)
+    if not (is_top and not options.top_as_subckt):
+        header_context = {
+            "name": module_name,
+            "sym_name": module.name,
+            "ports": " ".join(ports),
+            "file_id": module.file_id or "",
+        }
+        header, header_error = _render_system_device(
+            "__subckt_header__",
+            options.backend_config,
+            header_context,
+            diagnostics,
+        )
+        if header:
+            lines.append(header)
+        had_error = had_error or header_error
+
+    for instance in module.instances:
+        line, inst_error = _emit_netlist_ir_instance(
+            instance,
+            symbols,
+            options=options,
+            diagnostics=diagnostics,
+            net_name_map=net_name_map,
+            pattern_table=pattern_table,
+        )
+        if line is not None:
+            lines.append(line)
+        had_error = had_error or inst_error
+
+    if not (is_top and not options.top_as_subckt):
+        footer_context = {
+            "name": module_name,
+            "sym_name": module.name,
+            "file_id": module.file_id or "",
+        }
+        footer, footer_error = _render_system_device(
+            "__subckt_footer__",
+            options.backend_config,
+            footer_context,
+            diagnostics,
+        )
+        if footer:
+            lines.append(footer)
+        had_error = had_error or footer_error
+
+    return lines, had_error
+
+
+def _emit_netlist_ir_instance(
+    instance: NetlistInstance,
+    symbols: _NetlistIRSymbolMaps,
+    *,
+    options: "EmitOptions",
+    diagnostics: List[Diagnostic],
+    net_name_map: Optional[Mapping[str, str]] = None,
+    pattern_table: Optional[NetlistPatternExpressionTable] = None,
+) -> Tuple[Optional[str], bool]:
+    """Render a NetlistIR instance line."""
+    instance_name = _render_pattern_name_ir(
+        instance.name,
+        instance.pattern_origin,
+        pattern_table,
+        "inst",
+        options.backend_config.pattern_rendering,
+    )
+    ref_name = instance.ref
+    ref_file_id = instance.ref_file_id
+    module = _select_netlist_ir_symbol(
+        symbols.index.modules_by_name,
+        symbols.index.modules_by_key,
+        ref_name,
+        ref_file_id,
+    )
+    if module is not None:
+        conns, had_error = _ordered_conns_netlist_ir(
+            instance,
+            module.ports,
+            diagnostics,
+            net_name_map=net_name_map,
+        )
+        if had_error:
+            return None, True
+
+        ref_name = _module_emitted_name_ir(module, symbols.module_emitted_names)
+        call_context = {
+            "name": instance_name,
+            "ports": " ".join(conns),
+            "ref": ref_name,
+            "sym_name": module.name,
+            "file_id": module.file_id or "",
+        }
+        return _render_system_device(
+            "__subckt_call__",
+            options.backend_config,
+            call_context,
+            diagnostics,
+        )
+
+    device = _select_netlist_ir_symbol(
+        symbols.index.devices_by_name,
+        symbols.index.devices_by_key,
+        ref_name,
+        ref_file_id,
+    )
+    if device is None:
+        diagnostics.append(
+            _diagnostic(
+                UNKNOWN_REFERENCE,
+                f"Instance '{instance.name}' references unknown symbol '{ref_name}'",
+                Severity.ERROR,
+                None,
+                help=(
+                    "Check that the symbol is defined or imported; use `ns.symbol` "
+                    "for imported definitions."
+                ),
+            )
+        )
+        return None, True
+
+    backend = _select_netlist_backend(device, options.backend_name)
+    if backend is None:
+        diagnostics.append(
+            _diagnostic(
+                MISSING_BACKEND,
+                f"Device '{ref_name}' has no backend '{options.backend_name}'",
+                Severity.ERROR,
+                None,
+            )
+        )
+        return None, True
+
+    conns, had_error = _ordered_conns_netlist_ir(
+        instance,
+        device.ports,
+        diagnostics,
+        net_name_map=net_name_map,
+    )
+    if had_error:
+        return None, True
+    ports_str = " ".join(conns)
+
+    device_params = _dict_attr_to_strings(device.params)
+    backend_params = _dict_attr_to_strings(backend.params)
+    inst_params = _dict_attr_to_strings(instance.params)
+    props = _dict_attr_to_strings(backend.props)
+    merged_params, params_str, param_diags = _merge_params(
+        device_params,
+        backend_params,
+        inst_params,
+        instance_name=instance.name,
+        device_name=ref_name,
+        loc=None,
+    )
+    diagnostics.extend(param_diags)
+
+    device_vars = _dict_attr_to_strings(device.variables)
+    backend_vars = _dict_attr_to_strings(backend.variables)
+    merged_vars, variable_diags = _merge_variables(
+        device_vars,
+        backend_vars,
+        device_param_keys=device_params.keys(),
+        backend_param_keys=backend_params.keys(),
+        backend_prop_keys=props.keys(),
+        instance_params=inst_params,
+        instance_name=instance.name,
+        device_name=ref_name,
+        device_loc=None,
+        backend_loc=None,
+        instance_loc=None,
+    )
+    diagnostics.extend(variable_diags)
+    if any(
+        diag.severity in (Severity.ERROR, Severity.FATAL) for diag in variable_diags
+    ):
+        return None, True
+
+    template = backend.template
+    escaped_template, env_vars = _escape_braced_env_vars(template)
+    placeholders = _validate_template(template, ref_name, diagnostics, loc=None)
+    if placeholders is None:
+        return None, True
+
+    props.setdefault("params", params_str)
+    template_values = {
+        "name": instance_name,
+        "ports": ports_str,
+    }
+    template_values.update(merged_params)
+    template_values.update(merged_vars)
+    template_values.update(props)
+    try:
+        rendered = escaped_template.format_map(template_values)
+    except KeyError as exc:
+        diagnostics.append(
+            _diagnostic(
+                UNKNOWN_REFERENCE,
+                (
+                    f"Backend template for '{ref_name}' references unknown placeholder "
+                    f"'{exc.args[0]}'"
+                ),
+                Severity.ERROR,
+                None,
+            )
+        )
+        return None, True
+    except ValueError as exc:
+        diagnostics.append(
+            _diagnostic(
+                MALFORMED_TEMPLATE,
+                f"Backend template for '{ref_name}' is malformed: {exc}",
+                Severity.ERROR,
+                None,
+            )
+        )
+        return None, True
+
+    rendered = _restore_braced_env_vars(rendered, env_vars)
+
+    should_collapse = False
+    if "ports" in placeholders and not ports_str:
+        should_collapse = True
+    if "params" in placeholders and not params_str:
+        should_collapse = True
+    if should_collapse:
+        rendered = _collapse_whitespace(rendered)
+    rendered, unresolved = _expand_env_vars(rendered)
+    if unresolved is not None:
+        unresolved_list = ", ".join(unresolved)
+        diagnostics.append(
+            _diagnostic(
+                UNRESOLVED_ENV_VAR,
+                (
+                    f"Backend template for '{ref_name}' contains unresolved "
+                    f"environment variables: {unresolved_list}"
+                ),
+                Severity.ERROR,
+                None,
+            )
+        )
+        return None, True
+    return rendered, False
+
+
+def _select_netlist_backend(
+    device: NetlistDevice, backend_name: str
+) -> Optional[NetlistBackend]:
+    """Select a NetlistIR backend definition by name."""
+    for backend in device.backends:
+        if backend.name == backend_name:
+            return backend
+    return None
+
+
+def _render_pattern_name_ir(
+    literal_name: str,
+    origin: Optional[NetlistPatternOrigin],
+    pattern_table: Optional[NetlistPatternExpressionTable],
+    expected_kind: str,
+    pattern_rendering: str,
+) -> str:
+    """Render a NetlistIR pattern-origin name when metadata is valid."""
+    if origin is None or pattern_table is None:
+        return literal_name
+    entry = pattern_table.get(origin.expression_id)
+    if entry is None or entry.kind != expected_kind:
+        return literal_name
+    try:
+        graph_origin = GraphPatternOrigin(
+            expression_id=origin.expression_id,
+            segment_index=origin.segment_index,
+            base_name=origin.base_name,
+            pattern_parts=list(origin.pattern_parts),
+        )
+        return render_pattern_origin(graph_origin, pattern_rendering=pattern_rendering)
+    except (TypeError, ValueError):
+        return literal_name
+
+
+def _build_net_name_map_ir(
+    module: NetlistModule,
+    pattern_table: Optional[NetlistPatternExpressionTable],
+    pattern_rendering: str,
+) -> Dict[str, str]:
+    """Build a mapping of literal net names to rendered display names."""
+    name_map: Dict[str, str] = {}
+    for net in module.nets:
+        literal = net.name
+        name_map[literal] = _render_pattern_name_ir(
+            literal,
+            net.pattern_origin,
+            pattern_table,
+            "net",
+            pattern_rendering,
+        )
+    return name_map
 
 def _decode_pattern_table(module: ModuleOp) -> Optional[PatternExpressionTable]:
     """Decode the pattern expression table for a module, if available.
@@ -571,6 +1019,14 @@ def _entry_file_id_value(entry_file_id: Optional[str], top_module: ModuleOp) -> 
     return module_file_id or ""
 
 
+def _entry_file_id_value_ir(
+    entry_file_id: Optional[str], top_module: NetlistModule
+) -> str:
+    if entry_file_id is not None:
+        return entry_file_id
+    return top_module.file_id or ""
+
+
 def _module_file_id(module: ModuleOp) -> Optional[str]:
     return module.file_id.data if module.file_id is not None else None
 
@@ -589,6 +1045,10 @@ def _module_key(module: ModuleOp) -> Tuple[str, Optional[str]]:
 
 def _device_key(device: DeviceOp) -> Tuple[str, Optional[str]]:
     return device.sym_name.data, _device_file_id(device)
+
+
+def _module_key_ir(module: NetlistModule) -> Tuple[Optional[str], str]:
+    return module.file_id, module.name
 
 
 def _build_module_index(
@@ -638,6 +1098,31 @@ def _module_emitted_name(
     module: ModuleOp, emitted_names: Dict[Tuple[str, Optional[str]], str]
 ) -> str:
     return emitted_names.get(_module_key(module), module.sym_name.data)
+
+
+def _build_module_emitted_names_ir(
+    modules: List[NetlistModule],
+    modules_by_name: Dict[str, List[NetlistModule]],
+) -> Dict[Tuple[Optional[str], str], str]:
+    duplicate_names = {
+        name for name, module_list in modules_by_name.items() if len(module_list) > 1
+    }
+    emitted_names: Dict[Tuple[Optional[str], str], str] = {}
+    for module in modules:
+        name = module.name
+        file_id = module.file_id
+        if name in duplicate_names and file_id is not None:
+            emitted = f"{name}__{_hash_file_id(file_id)}"
+        else:
+            emitted = name
+        emitted_names[_module_key_ir(module)] = emitted
+    return emitted_names
+
+
+def _module_emitted_name_ir(
+    module: NetlistModule, emitted_names: Dict[Tuple[Optional[str], str], str]
+) -> str:
+    return emitted_names.get(_module_key_ir(module), module.name)
 
 
 def _ordered_conns(
@@ -699,6 +1184,84 @@ def _ordered_conns(
                 ),
                 Severity.ERROR,
                 instance.src,
+                notes=notes or None,
+                help="Update endpoint names to match the device/module port list.",
+            ),
+        )
+        had_error = True
+
+    if had_error:
+        return [], True
+
+    rendered = []
+    for port in port_list:
+        net_name = conn_map[port]
+        if net_name_map is not None:
+            net_name = net_name_map.get(net_name, net_name)
+        rendered.append(net_name)
+    return rendered, False
+
+
+def _ordered_conns_netlist_ir(
+    instance: NetlistInstance,
+    port_order: Iterable[str],
+    diagnostics: DiagnosticCollector | List[Diagnostic],
+    *,
+    net_name_map: Optional[Mapping[str, str]] = None,
+) -> Tuple[List[str], bool]:
+    """Order NetlistIR conns by port list while validating port usage."""
+    port_list = list(port_order)
+    conn_map = {conn.port: conn.net for conn in instance.conns}
+    had_error = False
+
+    missing_ports = [port for port in port_list if port not in conn_map]
+    if missing_ports:
+        missing_str = ", ".join(missing_ports)
+        _emit_diagnostic(
+            diagnostics,
+            _diagnostic(
+                MISSING_CONN,
+                (
+                    f"Instance '{instance.name}' is missing conns for ports: "
+                    f"{missing_str}"
+                ),
+                Severity.ERROR,
+                None,
+            ),
+        )
+        had_error = True
+
+    port_set = set(port_list)
+    unknown_ports = [port for port in conn_map if port not in port_set]
+    if unknown_ports:
+        unknown_str = ", ".join(unknown_ports)
+        notes: List[str] = []
+        preview, truncated = _preview_names(port_list, _MAX_PORT_PREVIEW)
+        if preview:
+            notes.append(f"Valid ports are: {', '.join(preview)}")
+            if truncated:
+                notes.append("See the symbol definition for the full port list.")
+        for port in unknown_ports:
+            case_match = _case_insensitive_match(
+                port,
+                port_list,
+                max_scan=_MAX_PORT_MATCH_SCAN,
+            )
+            if case_match:
+                notes.append(
+                    f"Port names are case-sensitive; did you mean '{case_match}'?"
+                )
+                break
+        _emit_diagnostic(
+            diagnostics,
+            _diagnostic(
+                UNKNOWN_CONN_PORT,
+                (
+                    f"Instance '{instance.name}' has conns for unknown ports: "
+                    f"{unknown_str}"
+                ),
+                Severity.ERROR,
+                None,
                 notes=notes or None,
                 help="Update endpoint names to match the device/module port list.",
             ),
