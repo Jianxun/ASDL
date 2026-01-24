@@ -38,6 +38,7 @@ AST -> PatternedGraph lowering should collect backend template metadata from dev
 - 2026-01-23 19:58 — Commit 83869a3 docs: log T-206 progress.
 - 2026-01-23 19:59 — Opened PR https://github.com/Jianxun/ASDL/pull/212.
 - 2026-01-23 20:00 — Set T-206 status to ready_for_review with PR 212; ran lint_tasks_state.py.
+- 2026-01-23 20:00 — Commit f89017b chore: finalize T-206 status.
 
 # Patch summary
 - Registered device backend templates during AST -> PatternedGraph device lowering.
