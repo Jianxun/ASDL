@@ -4,8 +4,8 @@ T-213:
   pr: 223
   merged: true
 T-214:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 224
   merged: false
 T-215:
   status: ready
