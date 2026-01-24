@@ -20,8 +20,8 @@ T-206:
   pr: 212
   merged: true
 T-207:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 213
   merged: false
 T-208:
   status: ready

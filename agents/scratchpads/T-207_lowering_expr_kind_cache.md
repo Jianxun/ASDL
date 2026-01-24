@@ -35,19 +35,25 @@ Pattern expression IDs should be reused only when the expression string and sema
 - 2026-01-23 20:10 — Updated expression registration to cache by (kind, expr) and record expr kinds; files touched: src/asdl/lowering/ast_to_patterned_graph_expressions.py, src/asdl/lowering/ast_to_patterned_graph_instances.py, src/asdl/lowering/ast_to_patterned_graph_nets.py, src/asdl/lowering/ast_to_patterned_graph.py.
 - 2026-01-23 20:10 — Commit 64e0509 feat: cache expressions by kind.
 - 2026-01-23 20:10 — Ran ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v (pass).
+- 2026-01-23 20:11 — Commit cee9e1b docs: update T-207 scratchpad.
+- 2026-01-23 20:11 — Pushed branch feature/T-207-lowering-expr-kind-cache.
+- 2026-01-23 20:11 — Opened PR https://github.com/Jianxun/ASDL/pull/213.
 
 # Patch summary
 - Added lowering tests to assert expr cache reuse and expr kind mapping.
 - Cached expressions by (kind, expression) and registered expr kinds during lowering.
 
 # PR URL
+https://github.com/Jianxun/ASDL/pull/213
 
 # Verification
 - ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 
 # Next steps
+- Await review.
+- 2026-01-23 20:12 — Set T-207 status to ready_for_review with PR 213; ran lint_tasks_state.py.
