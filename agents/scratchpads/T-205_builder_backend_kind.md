@@ -30,6 +30,7 @@ PatternedGraphBuilder should expose registries for device backend templates and 
 - 2026-01-23 19:49 — Opened PR https://github.com/Jianxun/ASDL/pull/211.
 - 2026-01-23 19:50 — Commit 4d10136 chore: finalize T-205 status.
 - 2026-01-23 19:50 — Set T-205 status to ready_for_review with PR 211.
+- 2026-01-23 19:50 — Commit 78a2132 docs: fix T-205 scratchpad log.
 
 # Patch summary
 - Added PatternedGraphBuilder registries for expr kinds and device backend templates and wired them into RegistrySet.
@@ -48,3 +49,5 @@ https://github.com/Jianxun/ASDL/pull/211
 
 # Next steps
 - Await review.
+- 2026-01-23 19:51 — Review intake, confirmed PR base and scratchpad/verify logs; next: run required checks and inspect code changes.
+- 2026-01-23 19:51 — Set T-205 status to review_in_progress; next: run verification and complete review.
