@@ -54,3 +54,9 @@
 
 ## Next steps
 - Await review feedback.
+- 2026-01-24 12:20 — Review intake; set T-214 status to review_in_progress and linted task state; next step verify PR base/scope and run checks.
+- 2026-01-24 12:24 — Scope review complete: changes align with T-214 DoD and files list; no out-of-scope spec/doc edits; next step verify test logs and code review.
+- 2026-01-24 12:27 — Test/log verification complete: using scratchpad log for pytest netlist render NetlistIR (not rerun); next step finalize review decision.
+- 2026-01-24 12:32 — Set T-214 status to review_clean and linted task state; next step post PR review comment and begin merge/closeout.
+- 2026-01-24 12:35 — Posted PR comment with review results; approval via GitHub review blocked (author self-review), proceeding with merge/closeout.
+- 2026-01-24 12:38 — Set T-214 status to done (merged=true) and linted task state; next step commit status updates and merge PR.
