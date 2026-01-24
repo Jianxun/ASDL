@@ -41,3 +41,5 @@ Pattern expression IDs should be reused only when the expression string and sema
 - 2026-01-23 20:07 — Task intake, read context/contract/tasks, created scratchpad; next: set task status to in_progress, create branch.
 - 2026-01-23 20:07 — Set T-207 status to in_progress, ran lint_tasks_state.py; next: create feature branch and commit kickoff changes.
 - 2026-01-23 20:07 — Created branch feature/T-207-lowering-expr-kind-cache; next: commit kickoff changes and inspect lowering/tests.
+- 2026-01-23 20:07 — Commit 602ed50 chore: start T-207.
+- 2026-01-23 20:09 — Added tests for expr cache reuse and kind mapping; files touched: tests/unit_tests/core/test_patterned_graph_lowering.py.
