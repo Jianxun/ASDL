@@ -44,3 +44,8 @@
 # Next steps
 - Await review feedback.
 - 2026-01-23 21:25 — Commit 40f4235: record PR URL and set task status ready_for_review; files: agents/scratchpads/T-209_atomized_ifir_diagnostics.md, agents/context/tasks_state.yaml.
+- 2026-01-23 21:35 — Review intake: confirmed PR targets main and scratchpad/logs present; next step set review status and run checks.
+- 2026-01-23 21:35 — Set T-209 status to review_in_progress and linted tasks_state; next step run required pytest.
+- 2026-01-23 21:36 — Ran ./venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v; all tests passed; next step complete scope review.
+- 2026-01-23 21:36 — Scope review complete: changes align with T-209 DoD and links.spec expectations; no out-of-scope edits; next step finalize review decision.
+- 2026-01-23 21:36 — Review decision: clean; posted PR comment with test results; set status to review_clean; next step merge and closeout.
