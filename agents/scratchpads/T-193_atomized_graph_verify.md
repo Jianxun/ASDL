@@ -17,7 +17,7 @@
 - [x] Review existing AtomizedGraph verifier implementation + diagnostics docs.
 - [x] Identify gaps vs DoD and adjust code/tests/docs if needed.
 - [x] Run unit tests for atomized graph verification.
-- [ ] Update scratchpad/task state and open PR.
+- [x] Update scratchpad/task state and open PR.
 
 ## Progress log
 - 2026-01-23 18:55 — Task intake; read context/specs + current AtomizedGraph verifier code; confirmed existing implementation appears aligned with DoD; next step update task state + branch.
@@ -26,24 +26,27 @@
 - 2026-01-23 18:58 — Commit ec2a208 "Chore: start T-193 execution" (tasks_state + scratchpad); next step run unit tests.
 - 2026-01-23 18:59 — Ran `venv/bin/pytest tests/unit_tests/core/test_atomized_graph_verify.py -v` (pass); next step update scratchpad/task state + open PR.
 - 2026-01-23 19:00 — Commit cf976ee "Docs: log T-193 verification run" (scratchpad update); next step update task state + open PR.
+- 2026-01-23 19:01 — Commit aab1033 "Docs: log T-193 commit" (scratchpad update); next step update task state + open PR.
+- 2026-01-23 19:02 — Opened PR #209; next step update tasks_state + lint.
+- 2026-01-23 19:03 — Set T-193 to ready_for_review with PR #209; ran lint_tasks_state; next step finalize scratchpad updates.
 
 ## Open questions
 - None yet.
 
 ## Patch summary
-- In progress.
+- Updated task tracking (tasks_state + scratchpad) for T-193 execution and verification.
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/core/test_atomized_graph_verify.py -v`
 
 ## PR URL
-- Pending.
+- https://github.com/Jianxun/ASDL/pull/209
 
 ## Status request
-- in_progress
+- ready_for_review
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Confirm no gaps, run unit tests, update task state + open PR.
+- Await review.
