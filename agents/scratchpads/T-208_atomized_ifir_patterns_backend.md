@@ -21,6 +21,8 @@
 - 2026-01-24 00:10 — Added registries field to AtomizedProgramGraph and propagated PatternedGraph registries into atomized build; files: src/asdl/core/atomized_graph.py, src/asdl/lowering/patterned_graph_to_atomized.py; commit 8fb58b1; next step update AtomizedGraph->IFIR lowering + tests for pattern origins/backend templates.
 - 2026-01-24 00:24 — Added pattern origin reconstruction, pattern expression table generation, and backend template emission in AtomizedGraph->IFIR; updated happy-path test to assert pattern origins and backend backend templates; files: src/asdl/lowering/atomized_graph_to_ifir.py, tests/unit_tests/lowering/test_atomized_graph_to_ifir.py; commit 8d65177; next step run targeted tests.
 - 2026-01-24 00:26 — Ran ./venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v; all tests passed.
+- 2026-01-24 00:32 — Opened PR https://github.com/Jianxun/ASDL/pull/215; next step update task state and finalize scratchpad.
+- 2026-01-24 00:33 — Set T-208 status to ready_for_review with PR 215; ran lint_tasks_state.py clean; committed scratchpad/status updates.
 
 # Patch summary
 - Added registry propagation to AtomizedProgramGraph for downstream metadata access.
