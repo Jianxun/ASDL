@@ -53,7 +53,7 @@ class _PatternOriginResolver:
         self,
         entity_id: Optional[str],
         literal: str,
-        expected_kind: PatternExprKind,
+        _expected_kind: PatternExprKind,
     ) -> Optional[PatternOrigin]:
         """Resolve a NetlistIR PatternOrigin for an atomized literal."""
         if entity_id is None:
@@ -67,11 +67,7 @@ class _PatternOriginResolver:
         expr = self._expr_registry.get(expr_id)
         if expr is None:
             return None
-        if self._expr_kinds is None:
-            return None
-        expr_kind = self._expr_kinds.get(expr_id)
-        if expr_kind != expected_kind:
-            return None
+        # Intentionally skip kind checks so the verifier can report mismatches.
         atoms_by_segment = self._atoms_cache.get(expr_id)
         if atoms_by_segment is None:
             atoms_by_segment = _index_pattern_atoms(expr)

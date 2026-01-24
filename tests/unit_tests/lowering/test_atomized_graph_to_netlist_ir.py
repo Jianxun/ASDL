@@ -142,3 +142,43 @@ def test_build_netlist_ir_design_happy_path() -> None:
     assert device.params == {"W": "1"}
     assert device.backends[0].name == "sim.ngspice"
     assert device.backends[0].template == "M {ports} {model}"
+
+
+def test_build_netlist_ir_design_preserves_origin_on_kind_mismatch() -> None:
+    program = AtomizedProgramGraph()
+    net_expr, net_errors = parse_pattern_expr("V<IN|OUT>")
+    assert net_errors == []
+    assert net_expr is not None
+
+    program.registries = RegistrySet(
+        pattern_expressions={"expr_net": net_expr},
+        pattern_expr_kinds={"expr_net": "inst"},
+        pattern_origins={"pn_vin": ("expr_net", 0, 0)},
+    )
+
+    module = AtomizedModuleGraph(
+        module_id="m1",
+        name="top",
+        file_id="design.asdl",
+        ports=["VIN"],
+    )
+    module.nets = {
+        "n1": AtomizedNet(
+            net_id="n1",
+            name="VIN",
+            endpoint_ids=[],
+            patterned_net_id="pn_vin",
+        )
+    }
+    program.modules["m1"] = module
+
+    design = build_netlist_ir_design(program)
+
+    netlist_module = design.modules[0]
+    assert netlist_module.pattern_expression_table is not None
+    assert netlist_module.pattern_expression_table["expr_net"].kind == "inst"
+    origin = netlist_module.nets[0].pattern_origin
+    assert origin is not None
+    assert origin.expression_id == "expr_net"
+    assert origin.base_name == "V"
+    assert origin.pattern_parts == ["IN"]
