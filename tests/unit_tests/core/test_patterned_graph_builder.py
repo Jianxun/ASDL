@@ -47,8 +47,10 @@ def test_builder_empty_registries_are_none() -> None:
     graph = builder.build()
 
     assert graph.registries.pattern_expressions is None
+    assert graph.registries.pattern_expr_kinds is None
     assert graph.registries.pattern_origins is None
     assert graph.registries.param_pattern_origins is None
+    assert graph.registries.device_backend_templates is None
     assert graph.registries.source_spans is None
     assert graph.registries.schematic_hints is None
     assert graph.registries.annotations is None
@@ -60,7 +62,12 @@ def test_builder_builds_graph_with_registries() -> None:
 
     expr = _expr("NET")
     expr_id = builder.add_expression(expr)
+    builder.register_pattern_expr_kind(expr_id, "net")
     net_id = builder.add_net(module.module_id, expr_id)
+    device = builder.add_device("nmos", "file.asdl", ports=["d", "g", "s"])
+    builder.register_device_backend_templates(
+        device.device_id, {"sim.ngspice": "M{inst} {ports} {model}"}
+    )
     inst_id = builder.add_instance(
         module.module_id,
         expr_id,
@@ -81,7 +88,11 @@ def test_builder_builds_graph_with_registries() -> None:
     assert module_graph.port_order == ["NET"]
     assert module_graph.nets[net_id].endpoint_ids == [endpoint_id]
     assert graph.registries.pattern_expressions == {expr_id: expr}
+    assert graph.registries.pattern_expr_kinds == {expr_id: "net"}
     assert graph.registries.pattern_origins == {net_id: (expr_id, 0, 0)}
     assert graph.registries.param_pattern_origins == {(inst_id, "w"): (expr_id, 0)}
+    assert graph.registries.device_backend_templates == {
+        device.device_id: {"sim.ngspice": "M{inst} {ports} {model}"}
+    }
     assert graph.registries.schematic_hints is not None
     assert graph.registries.schematic_hints.net_groups[net_id][0].count == 1

@@ -17,11 +17,14 @@ from .graph import (
 )
 from .registries import (
     AnnotationIndex,
+    DeviceBackendTemplateIndex,
     ExprId,
     GraphId,
     GroupSlice,
     ParamPatternOriginIndex,
     PatternExpr,
+    PatternExprKind,
+    PatternExprKindIndex,
     PatternExpressionRegistry,
     PatternOriginIndex,
     RegistrySet,
@@ -61,8 +64,10 @@ class PatternedGraphBuilder:
         self._modules: Dict[str, ModuleGraph] = {}
         self._devices: Dict[str, DeviceDef] = {}
         self._pattern_expressions: PatternExpressionRegistry = {}
+        self._pattern_expr_kinds: PatternExprKindIndex = {}
         self._pattern_origins: PatternOriginIndex = {}
         self._param_pattern_origins: ParamPatternOriginIndex = {}
+        self._device_backend_templates: DeviceBackendTemplateIndex = {}
         self._source_spans: SourceSpanIndex = {}
         self._net_groups: Dict[GraphId, list[GroupSlice]] = {}
         self._annotations: AnnotationIndex = {}
@@ -216,6 +221,29 @@ class PatternedGraphBuilder:
         self._pattern_expressions[expr_id] = expression
         return expr_id
 
+    def register_pattern_expr_kind(self, expr_id: ExprId, kind: PatternExprKind) -> None:
+        """Record the semantic kind for a pattern expression.
+
+        Args:
+            expr_id: Expression identifier.
+            kind: Pattern expression kind label.
+        """
+        self._pattern_expr_kinds[expr_id] = kind
+
+    def register_device_backend_templates(
+        self, device_id: GraphId, templates: Dict[str, str]
+    ) -> None:
+        """Record backend template strings for a device.
+
+        Args:
+            device_id: Device identifier.
+            templates: Mapping of backend name to template string.
+        """
+        if not templates:
+            return
+        backend_map = self._device_backend_templates.setdefault(device_id, {})
+        backend_map.update(templates)
+
     def register_pattern_origin(
         self,
         entity_id: GraphId,
@@ -299,8 +327,10 @@ class PatternedGraphBuilder:
         """
         registries = RegistrySet(
             pattern_expressions=self._pattern_expressions or None,
+            pattern_expr_kinds=self._pattern_expr_kinds or None,
             pattern_origins=self._pattern_origins or None,
             param_pattern_origins=self._param_pattern_origins or None,
+            device_backend_templates=self._device_backend_templates or None,
             source_spans=self._source_spans or None,
             schematic_hints=(
                 SchematicHints(net_groups=self._net_groups) if self._net_groups else None
