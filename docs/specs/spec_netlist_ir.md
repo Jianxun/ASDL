@@ -11,7 +11,9 @@ normalized input to backend netlist emission and verification.
 - Multi-file designs are supported; symbol identity is `(file_id, name)`.
 - Named-only connections (no positional conns).
 - Explicit net objects are declared per module.
-- Pattern tokens are expanded before NetlistIR; NetlistIR names are literal.
+- Pattern tokens are expanded before NetlistIR; NetlistIR names are literal and
+  never include a leading `$` (the `$` prefix is syntax sugar stripped during
+  lowering).
 - Optional structured `pattern_origin` metadata preserves provenance; modules
   may carry a `pattern_expression_table` keyed by expression IDs.
 - Backend templates are attached to devices for emission (system devices remain
@@ -179,7 +181,9 @@ without mutating inputs. Verification should be gated by prior stages when
 appropriate (e.g., only run if AtomizedGraph verification is clean).
 
 Required checks (v0):
-- All net and instance names are literal; pattern delimiters are forbidden.
+- All NetlistIR name fields (nets, module ports, instance names, instance refs,
+  and conn port names) are literal and must not include a leading `$`; pattern
+  delimiters are forbidden.
 - Net names are unique within a module.
 - Instance names are unique within a module.
 - Each instance's conns list has unique `port` names.
