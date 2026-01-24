@@ -87,6 +87,8 @@ meaning, source, and span expectations.
   or references missing nets. Span: none.
 - `IR-055` (error, source=`emit`): NetlistIR pattern_origin metadata references
   a missing pattern expression entry or mismatched kind. Span: none.
+- `IR-056` (error, source=`emit`): NetlistIR device backends list contains
+  duplicate backend names. Span: none.
 
 ### LINT (source: `ir`)
 - `LINT-002` (warning): default binding overridden by explicit net binding.

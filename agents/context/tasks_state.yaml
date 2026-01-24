@@ -12,9 +12,9 @@ T-215:
   pr: null
   merged: false
 T-216:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 220
+  merged: true
 T-217:
   status: ready
   pr: null

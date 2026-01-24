@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from asdl.emit.netlist_ir import (
+    NetlistBackend,
     NetlistConn,
     NetlistDesign,
+    NetlistDevice,
     NetlistInstance,
     NetlistModule,
     NetlistNet,
@@ -10,6 +12,7 @@ from asdl.emit.netlist_ir import (
     PatternOrigin,
 )
 from asdl.emit.verify_netlist_ir import (
+    DUPLICATE_BACKEND_NAME,
     DUPLICATE_INSTANCE_NAME,
     DUPLICATE_NET_NAME,
     INVALID_LITERAL_NAME,
@@ -63,6 +66,21 @@ def test_verify_netlist_ir_reports_duplicate_instance_names() -> None:
     diagnostics = verify_netlist_ir(_design(module))
 
     assert any(diag.code == DUPLICATE_INSTANCE_NAME for diag in diagnostics)
+
+
+def test_verify_netlist_ir_reports_duplicate_backend_names() -> None:
+    device = NetlistDevice(
+        name="cell",
+        file_id="design.asdl",
+        backends=[
+            NetlistBackend(name="sim.ngspice", template="X {ports} {name}"),
+            NetlistBackend(name="sim.ngspice", template="Y {ports} {name}"),
+        ],
+    )
+
+    diagnostics = verify_netlist_ir(NetlistDesign(devices=[device]))
+
+    assert any(diag.code == DUPLICATE_BACKEND_NAME for diag in diagnostics)
 
 
 def test_verify_netlist_ir_reports_unknown_conn_target() -> None:

@@ -8,6 +8,7 @@ from typing import Iterable
 from asdl.diagnostics import Diagnostic, DiagnosticCollector, Severity, format_code
 from asdl.emit.netlist_ir import (
     NetlistDesign,
+    NetlistDevice,
     NetlistInstance,
     NetlistModule,
     PatternExpressionEntry,
@@ -23,6 +24,7 @@ DUPLICATE_INSTANCE_NAME = format_code("IR", 52)
 UNKNOWN_CONN_TARGET = format_code("IR", 53)
 INVALID_PORT_LIST = format_code("IR", 54)
 INVALID_PATTERN_ORIGIN = format_code("IR", 55)
+DUPLICATE_BACKEND_NAME = format_code("IR", 56)
 
 
 def verify_netlist_ir(design: NetlistDesign) -> list[Diagnostic]:
@@ -35,6 +37,8 @@ def verify_netlist_ir(design: NetlistDesign) -> list[Diagnostic]:
         Diagnostics emitted during verification.
     """
     diagnostics = DiagnosticCollector()
+    for device in design.devices:
+        _verify_unique_backend_names(device, diagnostics)
     for module in design.modules:
         net_names = _collect_names(net.name for net in module.nets)
         _verify_literal_names(module, diagnostics)
@@ -153,6 +157,29 @@ def _verify_unique_instance_names(
                 (
                     f"Instance name '{name}' appears {count} times in module "
                     f"'{module.name}'."
+                ),
+            )
+        )
+
+
+def _verify_unique_backend_names(
+    device: NetlistDevice,
+    diagnostics: DiagnosticCollector,
+) -> None:
+    """Emit diagnostics for duplicate backend names within a device.
+
+    Args:
+        device: Device to inspect.
+        diagnostics: Diagnostic collector to append to.
+    """
+    duplicates = _find_duplicates(backend.name for backend in device.backends)
+    for name, count in duplicates.items():
+        diagnostics.emit(
+            _diagnostic(
+                DUPLICATE_BACKEND_NAME,
+                (
+                    f"Backend name '{name}' appears {count} times in device "
+                    f"'{device.name}'."
                 ),
             )
         )
@@ -363,6 +390,7 @@ def _diagnostic(code: str, message: str) -> Diagnostic:
 
 __all__ = [
     "DUPLICATE_INSTANCE_NAME",
+    "DUPLICATE_BACKEND_NAME",
     "DUPLICATE_NET_NAME",
     "INVALID_LITERAL_NAME",
     "INVALID_PATTERN_ORIGIN",
