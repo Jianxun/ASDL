@@ -23,21 +23,27 @@
 - 2026-01-24 01:03 — Commit cdc0759: start task state + scratchpad.
 - 2026-01-24 01:03 — Commit 0a2a0b6: add leading `$` literal-name tests for NetlistIR fields; next step: align verifier messaging and spec text.
 - 2026-01-24 01:04 — Updated NetlistIR verifier messages and spec/diagnostic text for no-leading-`$` policy; next step: commit changes and run verification.
+- 2026-01-24 01:04 — Commit f436cb4: align verifier literal-name messaging and update NetlistIR/spec diagnostic text.
+- 2026-01-24 01:05 — Ran `venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_verify.py -v`; all tests passed.
+- 2026-01-24 01:06 — Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/222.
+- 2026-01-24 01:06 — Set T-218 status to ready_for_review with PR #222; ran lint_tasks_state.py.
 
 ## Patch summary
-- TBD
+- Added parameterized verifier tests covering leading `$` in each NetlistIR name field.
+- Updated NetlistIR verifier messaging to call out no-leading-`$` literal names.
+- Clarified NetlistIR/spec diagnostic text to note `$` is stripped before NetlistIR.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/222
 
 ## Verification
-- TBD
+- `venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_verify.py -v`
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Review NetlistIR verifier/tests/specs and implement leading `$` coverage.
+- Open PR, update task status to ready_for_review, and record the PR URL.
