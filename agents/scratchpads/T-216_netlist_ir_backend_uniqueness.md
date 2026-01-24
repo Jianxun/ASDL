@@ -44,3 +44,7 @@
 # Next steps
 - Await review feedback.
 - 2026-01-24 10:00 — Set T-216 status to review_in_progress; next step start PR review and checks.
+- 2026-01-24 10:05 — Review intake complete: PR #220 targets main, includes task ID/scratchpad/verify logs; next step scope check.
+- 2026-01-24 10:07 — Scope check done: changes limited to verifier + diagnostics catalog + unit test per DoD; next step verify logs/tests.
+- 2026-01-24 10:08 — Verification check: relied on provided pytest log in scratchpad (not rerun); next step finalize review decision.
+- 2026-01-24 10:10 — Review decision: clean; posted PR comment and moving to review_clean status.
