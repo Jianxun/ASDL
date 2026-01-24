@@ -32,7 +32,7 @@ T-209:
   pr: 216
   merged: true
 T-210:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-211:
