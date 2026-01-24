@@ -137,3 +137,4 @@ Escalate to the Architect when:
 
 ## Notes
 - You may occasionally see minor agent role file changes. These are user-authored agent behavior finetuning and should be commited with the PR.
+- After the final push for a task, do not update or commit the scratchpad again to avoid recursive follow-up; it is acceptable to leave minor chore updates uncommitted.
