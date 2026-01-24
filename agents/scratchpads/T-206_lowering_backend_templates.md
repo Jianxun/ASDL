@@ -23,12 +23,20 @@ AST -> PatternedGraph lowering should collect backend template metadata from dev
 - 2026-01-23 19:56 — Task intake, read context/contract/tasks, created scratchpad; next: set task status in_progress, create branch, inspect lowering + tests.
 - 2026-01-23 19:56 — Set T-206 status to in_progress, ran lint_tasks_state; next: create feature branch and commit kickoff changes.
 - 2026-01-23 19:56 — Created branch feature/T-206-lowering-backend-templates; next: commit kickoff changes and inspect lowering + tests.
+- 2026-01-23 19:56 — Commit 5caa415 chore: start T-206.
+- 2026-01-23 19:57 — Updated lowering tests to assert device backend templates registry entries; files touched: tests/unit_tests/core/test_patterned_graph_lowering.py.
+- 2026-01-23 19:57 — Registered backend templates during device lowering; files touched: src/asdl/lowering/ast_to_patterned_graph.py.
+- 2026-01-23 19:57 — Commit de89fdd feat: register device backend templates.
+- 2026-01-23 19:58 — Ran ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v (pass).
 
 # Patch summary
+- Registered device backend templates during AST -> PatternedGraph device lowering.
+- Added lowering tests asserting device backend template registries for local and imported devices.
 
 # PR URL
 
 # Verification
+- ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
 
 # Status request (Done / Blocked / In Progress)
 - In Progress
