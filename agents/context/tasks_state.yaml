@@ -20,6 +20,6 @@ T-217:
   pr: 221
   merged: true
 T-218:
-  status: review_clean
+  status: done
   pr: 222
-  merged: false
+  merged: true

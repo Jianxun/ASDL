@@ -33,6 +33,7 @@
 - 2026-01-24 01:12 — Verified required pytest command via scratchpad log (not rerun); next step complete scope review against DoD.
 - 2026-01-24 01:13 — Scope review complete: changes align with T-218 DoD, including verifier messaging, specs, and tests; next step finalize review decision.
 - 2026-01-24 01:14 — Review decision: clean; posted PR comment with verification note; set status to review_clean; next step merge and closeout.
+- 2026-01-24 01:16 — Merge prep: set T-218 status to done (merged true) for closeout; next step run lint, push, then merge PR and clean branches.
 
 ## Patch summary
 - Added parameterized verifier tests covering leading `$` in each NetlistIR name field.
