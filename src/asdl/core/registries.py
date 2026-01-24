@@ -10,6 +10,7 @@ from asdl.diagnostics import SourceSpan
 GraphId: TypeAlias = str
 ExprId: TypeAlias = str
 AxisId: TypeAlias = str
+PatternExprKind: TypeAlias = Literal["net", "inst", "endpoint", "param"]
 
 
 class PatternExpr(Protocol):
@@ -52,6 +53,8 @@ SourceSpanIndex: TypeAlias = Dict[GraphId, SourceSpan]
 AnnotationIndex: TypeAlias = Dict[GraphId, Dict[str, object]]
 PatternOriginIndex: TypeAlias = Dict[GraphId, tuple[ExprId, int, int]]
 ParamPatternOriginIndex: TypeAlias = Dict[tuple[GraphId, str], tuple[ExprId, int]]
+PatternExprKindIndex: TypeAlias = Dict[ExprId, PatternExprKind]
+DeviceBackendTemplateIndex: TypeAlias = Dict[GraphId, Dict[str, str]]
 
 
 @dataclass(frozen=True)
@@ -88,16 +91,20 @@ class RegistrySet:
 
     Attributes:
         pattern_expressions: Optional registry of parsed pattern expressions.
+        pattern_expr_kinds: Optional registry of expression kinds by expr ID.
         pattern_origins: Optional registry of pattern origin tuples by entity ID.
         param_pattern_origins: Optional registry of instance param origins.
+        device_backend_templates: Optional registry of backend templates by device ID.
         source_spans: Optional registry of source spans per entity ID.
         schematic_hints: Optional schematic-only metadata.
         annotations: Optional registry of annotations by entity ID.
     """
 
     pattern_expressions: Optional[PatternExpressionRegistry] = None
+    pattern_expr_kinds: Optional[PatternExprKindIndex] = None
     pattern_origins: Optional[PatternOriginIndex] = None
     param_pattern_origins: Optional[ParamPatternOriginIndex] = None
+    device_backend_templates: Optional[DeviceBackendTemplateIndex] = None
     source_spans: Optional[SourceSpanIndex] = None
     schematic_hints: Optional[SchematicHints] = None
     annotations: Optional[AnnotationIndex] = None
@@ -111,9 +118,12 @@ __all__ = [
     "AxisSpec",
     "PatternSegment",
     "PatternExpr",
+    "PatternExprKind",
     "PatternExpressionRegistry",
+    "PatternExprKindIndex",
     "PatternOriginIndex",
     "ParamPatternOriginIndex",
+    "DeviceBackendTemplateIndex",
     "RegistrySet",
     "SchematicHints",
     "SourceSpanIndex",
