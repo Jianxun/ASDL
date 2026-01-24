@@ -58,3 +58,9 @@ https://github.com/Jianxun/ASDL/pull/213
 
 # Next steps
 - Await review.
+- 2026-01-23 20:16 — Review intake: confirmed PR #213 targets main; set status to review_in_progress and ran lint_tasks_state.py; next: run required tests and review diffs.
+- 2026-01-23 20:16 — Verified required tests: ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v (pass); next: complete scope and code review.
+- 2026-01-23 20:17 — Scope/code review complete; changes match DoD and tests cover expr cache reuse + kind mapping; next: post review decision and update task status.
+- 2026-01-23 20:17 — Posted PR review comment approving changes; decision: review_clean; next: update task status and proceed to merge/closeout.
+- 2026-01-23 20:17 — Set T-207 status to review_clean and ran lint_tasks_state.py; next: update task to done as part of closeout and merge PR.
+- 2026-01-23 20:17 — Set T-207 status to done (merged true) and ran lint_tasks_state.py; next: commit reviewer updates and merge PR.
