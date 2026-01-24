@@ -43,3 +43,4 @@
 
 # Next steps
 - Await review feedback.
+- 2026-01-23 21:25 — Commit 40f4235: record PR URL and set task status ready_for_review; files: agents/scratchpads/T-209_atomized_ifir_diagnostics.md, agents/context/tasks_state.yaml.
