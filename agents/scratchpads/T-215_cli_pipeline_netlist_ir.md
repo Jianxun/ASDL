@@ -25,6 +25,11 @@
 - 2026-01-24 02:34 — Verification: venv/bin/pytest tests/unit_tests/cli -v (pass).
 - 2026-01-24 02:36 — PR created: https://github.com/Jianxun/ASDL/pull/225; next step update task state.
 - 2026-01-24 02:37 — Set T-215 status to ready_for_review (PR 225) and ran scripts/lint_tasks_state.py.
+- 2026-01-24 02:39 — Review intake: PR targets main, scratchpad/verify info present, no links.spec in repo; next step set review_in_progress and run checks.
+- 2026-01-24 02:39 — Set T-215 status to review_in_progress and ran scripts/lint_tasks_state.py; next step run CLI unit tests.
+- 2026-01-24 02:40 — Verification: ./venv/bin/pytest tests/unit_tests/cli -v (pass); next step scope and code review.
+- 2026-01-24 02:41 — Scope check vs DoD complete (CLI netlist pipeline now NetlistIR + docs updated; legacy flags isolated); next step finalize review decision.
+- 2026-01-24 02:42 — Review decision: clean; posted PR comment; set T-215 status to review_clean; next step merge and closeout.
 
 # Patch summary
 - Added NetlistIR pipeline helper and switched CLI netlist to use it.
