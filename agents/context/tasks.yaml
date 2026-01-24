@@ -24,37 +24,80 @@ current_sprint:
       scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md
 backlog:
   - id: T-203
-    title: Registry plumbing for AtomizedGraph -> IFIR metadata
+    title: Registry schema for backend templates and pattern kinds
     owner: Executor
     dod: >
-      Extend core registries + PatternedGraph builder to record device backend
-      templates and per-expression pattern kinds. AST -> PatternedGraph lowering
-      registers backend templates and caches pattern expressions by (kind,
-      expression) while recording kind by expr_id. Update builder unit tests to
-      assert new registry fields are populated.
+      Add registry type aliases for device backend templates and per-expression
+      pattern kinds. Extend RegistrySet with optional fields for these indexes
+      and update exports to keep core registries consistent.
+    verify: []
+    files:
+      - src/asdl/core/registries.py
+    links:
+      scratchpad: agents/scratchpads/T-203_registry_schema.md
+  - id: T-205
+    title: PatternedGraphBuilder records backend templates + pattern kinds
+    owner: Executor
+    depends_on:
+      - T-203
+    dod: >
+      Extend PatternedGraphBuilder to register device backend templates and
+      expression-kind mappings, wiring them into RegistrySet. Update builder
+      unit tests to assert new registries are populated and remain None when
+      empty.
     verify:
       - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_builder.py -v
     files:
-      - src/asdl/core/registries.py
       - src/asdl/core/graph_builder.py
-      - src/asdl/lowering/ast_to_patterned_graph.py
-      - src/asdl/lowering/ast_to_patterned_graph_expressions.py
+      - src/asdl/core/registries.py
       - tests/unit_tests/core/test_patterned_graph_builder.py
     links:
-      scratchpad: agents/scratchpads/T-203_registry_atomized_ifir.md
+      scratchpad: agents/scratchpads/T-205_builder_backend_kind.md
+  - id: T-206
+    title: AST lowering registers device backend templates
+    owner: Executor
+    depends_on:
+      - T-205
+    dod: >
+      Update AST -> PatternedGraph lowering to register device backend templates
+      for each device definition (including imported devices). Add/adjust
+      lowering tests to assert templates are present in registries.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
+    files:
+      - src/asdl/lowering/ast_to_patterned_graph.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+    links:
+      scratchpad: agents/scratchpads/T-206_lowering_backend_templates.md
+  - id: T-207
+    title: AST lowering caches pattern expressions and records expr kinds
+    owner: Executor
+    depends_on:
+      - T-205
+    dod: >
+      Implement pattern expression caching keyed by (kind, expression) during
+      AST -> PatternedGraph lowering so repeated expressions reuse expr_id.
+      Record expr_id -> kind in the registries and add tests covering cache
+      reuse and kind mapping.
+    verify:
+      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
+    files:
+      - src/asdl/lowering/ast_to_patterned_graph.py
+      - src/asdl/lowering/ast_to_patterned_graph_expressions.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+    links:
+      scratchpad: agents/scratchpads/T-207_lowering_expr_kind_cache.md
   - id: T-204
-    title: AtomizedGraph -> IFIR lowering pass
+    title: AtomizedGraph -> IFIR lowering scaffold and happy path
     owner: Executor
     depends_on:
       - T-203
     dod: >
       Implement AtomizedGraph -> IFIR lowering under
-      src/asdl/lowering/atomized_graph_to_ifir.py. The pass builds IFIR design,
-      modules, nets, instances, and devices using registry-backed pattern
-      expression tables, pattern_origin reconstruction, and backend templates.
-      Emit diagnostics for missing/invalid registry data and unresolved refs.
-      Add unit tests for a happy path conversion and missing-registry failure
-      diagnostics.
+      src/asdl/lowering/atomized_graph_to_ifir.py with a happy-path conversion
+      that builds IFIR design, modules, nets, instances, and devices. Export the
+      entry point in lowering __init__ and add a unit test for the happy-path
+      conversion.
     verify:
       - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v
     files:
@@ -62,4 +105,40 @@ backlog:
       - src/asdl/lowering/__init__.py
       - tests/unit_tests/lowering/test_atomized_graph_to_ifir.py
     links:
-      scratchpad: agents/scratchpads/T-204_atomized_graph_to_ifir.md
+      scratchpad: agents/scratchpads/T-204_atomized_graph_to_ifir_scaffold.md
+  - id: T-208
+    title: AtomizedGraph -> IFIR pattern origins + backend templates
+    owner: Executor
+    depends_on:
+      - T-204
+      - T-206
+      - T-207
+    dod: >
+      Use registry-backed pattern expression tables and expr-kind mappings to
+      reconstruct IFIR pattern_origin attrs for nets, instances, and devices.
+      Attach backend template metadata for devices and extend happy-path tests
+      to assert pattern origins and backend templates round-trip.
+    verify:
+      - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v
+    files:
+      - src/asdl/lowering/atomized_graph_to_ifir.py
+      - tests/unit_tests/lowering/test_atomized_graph_to_ifir.py
+    links:
+      scratchpad: agents/scratchpads/T-208_atomized_ifir_patterns_backend.md
+  - id: T-209
+    title: AtomizedGraph -> IFIR diagnostics for missing registry data
+    owner: Executor
+    depends_on:
+      - T-208
+    dod: >
+      Emit diagnostics for missing/invalid registry data (missing pattern table
+      entries, missing expr kind, missing backend template) and unresolved refs.
+      Add unit tests covering at least one missing-registry and one unresolved
+      reference failure.
+    verify:
+      - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v
+    files:
+      - src/asdl/lowering/atomized_graph_to_ifir.py
+      - tests/unit_tests/lowering/test_atomized_graph_to_ifir.py
+    links:
+      scratchpad: agents/scratchpads/T-209_atomized_ifir_diagnostics.md
