@@ -31,16 +31,24 @@
 - 2026-01-23 20:34 — Ran `venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v`; next step complete review and post findings.
 - 2026-01-23 20:36 — Review decision: request_changes due to missing-endpoint errors not failing lowering; posted PR comment; next step await updates.
 - 2026-01-23 20:30 — Set T-204 ready_for_review and linted tasks_state.yaml; next step finalize response.
+- 2026-01-23 20:36 — Review follow-up started; set T-204 to in_progress and linted tasks_state; next step fix missing-endpoint error propagation.
+- 2026-01-23 20:36 — Fixed missing endpoint error handling in AtomizedGraph -> IFIR lowering; commit 3a3eec7; next step add coverage for missing endpoint.
+- 2026-01-23 20:36 — Added missing-endpoint lowering test; commit 3f68356; next step run verify and update closeout.
+- 2026-01-23 20:36 — Ran `venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v`; next step update scratchpad and set ready_for_review.
+- 2026-01-23 20:36 — Set T-204 status to ready_for_review and linted tasks_state; next step push updates and respond to review.
 
 ## Patch summary
 - Added AtomizedGraph -> IFIR lowering scaffold with basic reference handling.
 - Exported new lowering entry point in `src/asdl/lowering/__init__.py`.
 - Added happy-path unit test for AtomizedGraph -> IFIR conversion.
+- Marked missing endpoint diagnostics as errors during IFIR lowering.
+- Added missing endpoint unit test to ensure lowering returns None on error.
 
 ## PR URL
 - https://github.com/Jianxun/ASDL/pull/214
 
 ## Verification
+- `venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v`
 - `venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v`
 
 ## Status request
@@ -50,4 +58,4 @@
 - None yet.
 
 ## Next steps
-- Implement conversion scaffolding and happy-path test.
+- Await reviewer confirmation after follow-up changes.
