@@ -17,8 +17,10 @@ from .graph import (
 )
 from .registries import (
     AxisSpec,
+    DeviceBackendTemplateIndex,
     GroupSlice,
     PatternExpr,
+    PatternExprKindIndex,
     PatternOriginIndex,
     RegistrySet,
     SchematicHints,
@@ -234,6 +236,45 @@ def _source_spans_to_dict(source_spans: Optional[SourceSpanIndex]) -> Optional[d
     }
 
 
+def _pattern_expr_kinds_to_dict(
+    kinds: Optional[PatternExprKindIndex],
+) -> Optional[dict]:
+    """Convert expression kinds to a JSON-ready dict.
+
+    Args:
+        kinds: Expression kind registry or None.
+
+    Returns:
+        Mapping payload for the registry, or None.
+    """
+    if kinds is None:
+        return None
+    return {expr_id: kinds[expr_id] for expr_id in sorted(kinds.keys())}
+
+
+def _device_backend_templates_to_dict(
+    templates: Optional[DeviceBackendTemplateIndex],
+) -> Optional[dict]:
+    """Convert backend templates into a JSON-ready dict.
+
+    Args:
+        templates: Backend template registry or None.
+
+    Returns:
+        Mapping payload for the registry, or None.
+    """
+    if templates is None:
+        return None
+    payload: dict[str, dict[str, str]] = {}
+    for device_id in sorted(templates.keys()):
+        backend_map = templates[device_id]
+        payload[device_id] = {
+            backend_name: backend_map[backend_name]
+            for backend_name in sorted(backend_map.keys())
+        }
+    return payload
+
+
 def _registry_set_to_dict(registries: RegistrySet) -> dict:
     """Convert registry data to a JSON-ready dict.
 
@@ -257,9 +298,15 @@ def _registry_set_to_dict(registries: RegistrySet) -> dict:
         }
     return {
         "pattern_expressions": pattern_expressions,
+        "pattern_expr_kinds": _pattern_expr_kinds_to_dict(
+            registries.pattern_expr_kinds
+        ),
         "pattern_origins": _pattern_origins_to_dict(registries.pattern_origins),
         "param_pattern_origins": _param_pattern_origins_to_list(
             registries.param_pattern_origins
+        ),
+        "device_backend_templates": _device_backend_templates_to_dict(
+            registries.device_backend_templates
         ),
         "source_spans": _source_spans_to_dict(registries.source_spans),
         "schematic_hints": _schematic_hints_to_dict(registries.schematic_hints),
