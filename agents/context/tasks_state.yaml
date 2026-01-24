@@ -36,8 +36,8 @@ T-210:
   pr: 217
   merged: true
 T-211:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 218
   merged: false
 T-212:
   status: ready
