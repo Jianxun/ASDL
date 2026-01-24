@@ -153,6 +153,10 @@ def _lower_devices(
             parameters=device.parameters,
             variables=device.variables,
         )
+        builder.register_device_backend_templates(
+            device_def.device_id,
+            {backend: decl.template for backend, decl in device.backends.items()},
+        )
         device_ids[name] = device_def.device_id
         _register_span(builder, device_def.device_id, getattr(device, "_loc", None))
     return device_ids

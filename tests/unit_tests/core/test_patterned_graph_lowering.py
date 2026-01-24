@@ -68,6 +68,9 @@ def test_build_patterned_graph_with_groups_and_patterns() -> None:
     device_def = _device_by_name(graph, "nmos")
     assert device_def.ports == ["D", "G", "S"]
     assert device_def.file_id == "design.asdl"
+    backend_templates = graph.registries.device_backend_templates
+    assert backend_templates is not None
+    assert backend_templates[device_def.device_id] == {"sim.ngspice": "M"}
     module_graph = next(iter(graph.modules.values()))
     assert module_graph.port_order == ["BUS<@cols>"]
 
@@ -376,6 +379,9 @@ def test_build_patterned_graph_resolves_imported_refs(tmp_path: Path, monkeypatc
     device_def = _device_by_name(graph, "nmos")
     assert device_def.file_id == str(lib_file.absolute())
     assert device_def.ports == []
+    backend_templates = graph.registries.device_backend_templates
+    assert backend_templates is not None
+    assert backend_templates[device_def.device_id] == {"sim.ngspice": "M"}
     exprs = graph.registries.pattern_expressions
     assert exprs is not None
     expr_ids_by_raw = {expr.raw: expr_id for expr_id, expr in exprs.items()}
