@@ -48,3 +48,4 @@
 - 2026-01-24 10:07 — Scope check done: changes limited to verifier + diagnostics catalog + unit test per DoD; next step verify logs/tests.
 - 2026-01-24 10:08 — Verification check: relied on provided pytest log in scratchpad (not rerun); next step finalize review decision.
 - 2026-01-24 10:10 — Review decision: clean; posted PR comment and moving to review_clean status.
+- 2026-01-24 10:12 — Set T-216 status to done/merged true ahead of merge; next step commit and push status update.
