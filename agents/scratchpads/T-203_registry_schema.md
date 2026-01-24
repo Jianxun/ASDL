@@ -22,6 +22,9 @@
 - 2026-01-23 19:34 — Updated registry schema aliases and RegistrySet fields; refreshed core exports and patterned graph dump serialization; files touched: src/asdl/core/registries.py, src/asdl/core/__init__.py, src/asdl/core/dump.py; next step commit changes.
 - 2026-01-23 19:35 — Committed registry schema updates (29dfc39); next step record verification and continue closeout.
 - 2026-01-23 19:36 — Logged patch summary and verification notes (04289b8); next step prepare PR and status update.
+- 2026-01-23 19:37 — Captured scratchpad progress (c6562e7); next step push branch and open PR.
+- 2026-01-23 19:38 — Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/210; next step set task status ready_for_review.
+- 2026-01-23 19:39 — Set T-203 status to ready_for_review and ran lint_tasks_state.py; next step finalize handoff.
 
 # Patch summary
 - Added registry aliases for device backend templates and expression kinds.
@@ -29,12 +32,15 @@
 - Included new registries in PatternedGraph JSON serialization.
 
 # PR URL
+- https://github.com/Jianxun/ASDL/pull/210
 
 # Verification
 - Not run (no verify command listed).
 
 # Status request (Done / Blocked / In Progress)
+- Ready for review.
 
 # Blockers / Questions
 
 # Next steps
+- Await review feedback.
