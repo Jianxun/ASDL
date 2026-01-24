@@ -12,7 +12,7 @@ T-215:
   pr: null
   merged: false
 T-216:
-  status: ready_for_review
+  status: review_in_progress
   pr: 220
   merged: false
 T-217:
