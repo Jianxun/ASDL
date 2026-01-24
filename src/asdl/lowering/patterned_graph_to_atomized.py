@@ -38,7 +38,7 @@ def build_atomized_graph(
         Tuple of (atomized program graph, diagnostics).
     """
     diagnostics: list[Diagnostic] = []
-    atomized = AtomizedProgramGraph()
+    atomized = AtomizedProgramGraph(registries=graph.registries)
     for device_id, device in graph.devices.items():
         atomized.devices[device_id] = AtomizedDeviceDef(
             device_id=device.device_id,
