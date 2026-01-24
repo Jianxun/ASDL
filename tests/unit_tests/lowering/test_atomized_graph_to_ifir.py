@@ -10,6 +10,7 @@ from asdl.core.atomized_graph import (
     AtomizedNet,
     AtomizedProgramGraph,
 )
+from asdl.diagnostics import format_code
 from asdl.ir.ifir import DesignOp, DeviceOp, InstanceOp, ModuleOp, NetOp
 from asdl.lowering import build_ifir_design
 
@@ -89,3 +90,40 @@ def test_build_ifir_design_happy_path() -> None:
     assert [port.data for port in ifir_device.ports.data] == ["D", "G", "S"]
     assert ifir_device.params is not None
     assert ifir_device.params.data["W"].data == "1"
+
+
+def test_build_ifir_design_missing_endpoint_sets_error() -> None:
+    program = AtomizedProgramGraph()
+    program.devices["d1"] = AtomizedDeviceDef(
+        device_id="d1",
+        name="nfet",
+        file_id="design.asdl",
+        ports=["D", "G", "S"],
+    )
+
+    module = AtomizedModuleGraph(
+        module_id="m1",
+        name="top",
+        file_id="design.asdl",
+    )
+    module.instances = {
+        "i1": AtomizedInstance(
+            inst_id="i1",
+            name="M1",
+            ref_kind="device",
+            ref_id="d1",
+            ref_raw="nfet",
+        )
+    }
+    module.nets = {
+        "n1": AtomizedNet(net_id="n1", name="VIN", endpoint_ids=["e-missing"])
+    }
+    module.endpoints = {}
+    program.modules["m1"] = module
+
+    design, diagnostics = build_ifir_design(program)
+
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == format_code("IR", 41)
+    assert "missing endpoint" in diagnostics[0].message
