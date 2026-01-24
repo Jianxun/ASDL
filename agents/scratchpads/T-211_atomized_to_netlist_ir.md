@@ -40,3 +40,8 @@ https://github.com/Jianxun/ASDL/pull/218
 
 # Next steps
 - Await review.
+- 2026-01-23 23:02 — Review intake: PR targets main, scratchpad/logs present; next step: run required checks and inspect changes.
+- 2026-01-23 23:02 — Ran pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py -v (passed); next step: complete code/DoD review.
+- 2026-01-23 23:02 — Scope/code review complete; changes align with DoD and no issues found; next step: post PR review comment and set review_clean.
+- 2026-01-23 23:02 — Posted PR review comment (clean) and proceeding to set review_clean/merge/closeout.
+- 2026-01-23 23:03 — Updated T-211 status to review_in_progress, review_clean, then done (merged true) with lint passes; next step: commit review updates and merge PR.
