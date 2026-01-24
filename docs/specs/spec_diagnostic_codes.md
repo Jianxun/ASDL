@@ -75,6 +75,18 @@ meaning, source, and span expectations.
   net or instance. Span: none.
 - `IR-033` (error, source=`core`): AtomizedGraph endpoint uses an undefined port
   for the referenced module or device. Span: none.
+- `IR-050` (error, source=`emit`): NetlistIR name is not a literal (contains
+  pattern delimiters, leading `$` on nets, or empty). Span: none.
+- `IR-051` (error, source=`emit`): duplicate NetlistIR net name in module. Span:
+  none.
+- `IR-052` (error, source=`emit`): duplicate NetlistIR instance name in module.
+  Span: none.
+- `IR-053` (error, source=`emit`): NetlistIR connection targets an unknown net
+  or duplicates a port binding. Span: none.
+- `IR-054` (error, source=`emit`): NetlistIR module ports list has duplicates
+  or references missing nets. Span: none.
+- `IR-055` (error, source=`emit`): NetlistIR pattern_origin metadata references
+  a missing pattern expression entry or mismatched kind. Span: none.
 
 ### LINT (source: `ir`)
 - `LINT-002` (warning): default binding overridden by explicit net binding.

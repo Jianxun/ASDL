@@ -40,9 +40,9 @@ T-211:
   pr: 218
   merged: true
 T-212:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 219
+  merged: true
 T-213:
   status: backlog
   pr: null
