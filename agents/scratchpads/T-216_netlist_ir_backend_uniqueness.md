@@ -18,6 +18,11 @@
 # Progress log
 - 2026-01-24 09:10 — Task intake: reviewed DoD and context; understanding: add NetlistIR verifier rule for per-device backend name uniqueness with IR-056 constant + catalog entry + test; next step set task in_progress and create branch.
 - 2026-01-24 09:12 — Set T-216 status to in_progress, ran tasks_state lint, created feature branch; next step add failing unit test for duplicate backend names.
+- 2026-01-24 09:14 — Committed task setup (19901be); files: agents/context/tasks_state.yaml, agents/scratchpads/T-216_netlist_ir_backend_uniqueness.md; next step add failing unit test.
+- 2026-01-24 09:18 — Added unit test covering duplicate NetlistIR backend names; files: tests/unit_tests/emit/test_netlist_ir_verify.py; next step commit test.
+- 2026-01-24 09:19 — Committed unit test (7c725ac); next step implement verifier rule, add IR-056 diagnostic entry + constant.
+- 2026-01-24 09:26 — Implemented backend-name uniqueness verification and IR-056 catalog entry; files: src/asdl/emit/verify_netlist_ir.py, docs/specs/spec_diagnostic_codes.md; next step commit changes.
+- 2026-01-24 09:27 — Committed verifier + diagnostics update (04c26c6); next step update scratchpad and run tests.
 
 # Patch summary
 
