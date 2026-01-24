@@ -90,7 +90,7 @@ class NetlistInstance:
     name: str
     ref: str
     ref_file_id: str
-    params: Optional[Dict[str, str]]
+    params: Optional[Dict[str, str]] = None
     conns: List[NetlistConn] = field(default_factory=list)
     pattern_origin: Optional[PatternOrigin] = None
 
@@ -109,9 +109,9 @@ class NetlistBackend:
 
     name: str
     template: str
-    params: Optional[Dict[str, str]]
-    variables: Optional[Dict[str, str]]
-    props: Optional[Dict[str, str]]
+    params: Optional[Dict[str, str]] = None
+    variables: Optional[Dict[str, str]] = None
+    props: Optional[Dict[str, str]] = None
 
 
 @dataclass(frozen=True)

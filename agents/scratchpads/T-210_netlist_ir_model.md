@@ -44,3 +44,5 @@
 - 2026-01-23 22:39 — Added NetlistIR model test coverage draft; created `tests/unit_tests/emit/test_netlist_ir_model.py`; next step implement NetlistIR dataclasses.
 - 2026-01-23 22:39 — Implemented NetlistIR dataclasses per spec in `src/asdl/emit/netlist_ir.py`; next step run pytest and update scratchpad/checklist.
 - 2026-01-23 22:39 — Ran `./venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_model.py -v`; 1 passed; next step commit changes.
+- 2026-01-23 22:40 — Committed NetlistIR model + tests (db1bee9); next step finalize scratchpad and PR.
+- 2026-01-23 22:40 — Normalized optional defaults in NetlistIR dataclasses; reran pytest `tests/unit_tests/emit/test_netlist_ir_model.py`; passed; next step commit updates.
