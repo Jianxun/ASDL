@@ -21,6 +21,7 @@
 - 2026-01-23 19:29 — Task intake and context review; created scratchpad and set T-203 to in_progress; next step inspect registry schema.
 - 2026-01-23 19:34 — Updated registry schema aliases and RegistrySet fields; refreshed core exports and patterned graph dump serialization; files touched: src/asdl/core/registries.py, src/asdl/core/__init__.py, src/asdl/core/dump.py; next step commit changes.
 - 2026-01-23 19:35 — Committed registry schema updates (29dfc39); next step record verification and continue closeout.
+- 2026-01-23 19:36 — Logged patch summary and verification notes (04289b8); next step prepare PR and status update.
 
 # Patch summary
 - Added registry aliases for device backend templates and expression kinds.
