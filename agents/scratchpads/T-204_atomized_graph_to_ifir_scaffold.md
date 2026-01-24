@@ -22,6 +22,7 @@
 - 2026-01-23 20:27 — Set T-204 to in_progress, created lowering scaffold and IFIR conversion, wired export; next step add tests and verify.
 - 2026-01-23 20:27 — Commit 7d64472: add AtomizedGraph -> IFIR lowering scaffold; next step add happy-path test.
 - 2026-01-23 20:28 — Added happy-path IFIR lowering test and ran pytest; next step commit test + update scratchpad.
+- 2026-01-23 20:28 — Commit 38e61cc: add happy-path AtomizedGraph -> IFIR test; next step update scratchpad summary and close out.
 
 ## Patch summary
 - Pending.
