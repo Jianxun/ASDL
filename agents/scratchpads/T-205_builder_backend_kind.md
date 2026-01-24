@@ -46,3 +46,5 @@ https://github.com/Jianxun/ASDL/pull/211
 
 # Next steps
 - Await review.
+- 2026-01-23 19:50 — Commit 4d10136 chore: finalize T-205 status.
+- 2026-01-23 19:50 — Set T-205 status to ready_for_review with PR 211.
