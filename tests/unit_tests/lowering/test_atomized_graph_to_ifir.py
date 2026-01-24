@@ -221,6 +221,11 @@ def test_build_ifir_design_missing_endpoint_sets_error() -> None:
         file_id="design.asdl",
         ports=["D", "G", "S"],
     )
+    program.registries = RegistrySet(
+        device_backend_templates={
+            "d1": {"sim.ngspice": "M {ports} {model}"},
+        }
+    )
 
     module = AtomizedModuleGraph(
         module_id="m1",
@@ -248,3 +253,61 @@ def test_build_ifir_design_missing_endpoint_sets_error() -> None:
     assert len(diagnostics) == 1
     assert diagnostics[0].code == format_code("IR", 41)
     assert "missing endpoint" in diagnostics[0].message
+
+
+def test_build_ifir_design_missing_pattern_registry_sets_error() -> None:
+    program = AtomizedProgramGraph()
+    program.registries = RegistrySet(
+        pattern_expressions={},
+        pattern_expr_kinds={"expr_missing": "net"},
+        pattern_origins={"pn1": ("expr_missing", 0, 0)},
+    )
+
+    module = AtomizedModuleGraph(
+        module_id="m1",
+        name="top",
+        file_id="design.asdl",
+    )
+    module.nets = {
+        "n1": AtomizedNet(
+            net_id="n1",
+            name="VIN",
+            endpoint_ids=[],
+            patterned_net_id="pn1",
+        )
+    }
+    program.modules["m1"] = module
+
+    design, diagnostics = build_ifir_design(program)
+
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == format_code("IR", 42)
+    assert "Missing pattern expression" in diagnostics[0].message
+
+
+def test_build_ifir_design_unresolved_reference_sets_error() -> None:
+    program = AtomizedProgramGraph()
+
+    module = AtomizedModuleGraph(
+        module_id="m1",
+        name="top",
+        file_id="design.asdl",
+    )
+    module.instances = {
+        "i1": AtomizedInstance(
+            inst_id="i1",
+            name="M1",
+            ref_kind="device",
+            ref_id="d-missing",
+            ref_raw="nfet",
+        )
+    }
+    program.modules["m1"] = module
+
+    design, diagnostics = build_ifir_design(program)
+
+    assert design is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == format_code("IR", 40)
+    assert "unknown device id" in diagnostics[0].message
