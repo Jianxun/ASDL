@@ -38,6 +38,8 @@ Pattern expression IDs should be reused only when the expression string and sema
 - 2026-01-23 20:11 — Commit cee9e1b docs: update T-207 scratchpad.
 - 2026-01-23 20:11 — Pushed branch feature/T-207-lowering-expr-kind-cache.
 - 2026-01-23 20:11 — Opened PR https://github.com/Jianxun/ASDL/pull/213.
+- 2026-01-23 20:12 — Commit dfea940 chore: finalize T-207 status.
+- 2026-01-23 20:12 — Set T-207 status to ready_for_review with PR 213; ran lint_tasks_state.py.
 
 # Patch summary
 - Added lowering tests to assert expr cache reuse and expr kind mapping.
@@ -56,4 +58,3 @@ https://github.com/Jianxun/ASDL/pull/213
 
 # Next steps
 - Await review.
-- 2026-01-23 20:12 — Set T-207 status to ready_for_review with PR 213; ran lint_tasks_state.py.
