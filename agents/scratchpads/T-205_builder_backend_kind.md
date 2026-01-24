@@ -50,4 +50,3 @@ https://github.com/Jianxun/ASDL/pull/211
 
 # Next steps
 - Await review.
-- 2026-01-23 19:52 — Posted PR review comment (review clean) and set T-205 status to review_clean; next: merge and close out.
