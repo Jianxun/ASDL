@@ -1,72 +1,13 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-193
-    title: Add stateless verifiers for AtomizedGraph
+  - id: T-216
+    title: NetlistIR verifier backend uniqueness rule
     owner: Executor
     dod: >
-      Add pure verification helpers for the atomized core graph that validate
-      unique net/instance names, endpoint references, and endpoint ports against
-      module/device ports lists in the atomized program. Verifier diagnostics
-      must use distinct codes from PatternedGraph atomization, and verifier
-      execution should be gated at the caller level so it only runs when
-      atomization produced no error diagnostics. Define diagnostic codes used by
-      the verifiers and add unit tests.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_atomized_graph_verify.py -v
-    files:
-      - src/asdl/core/verify_atomized_graph.py
-      - src/asdl/core/atomized_graph.py
-      - tests/unit_tests/core/test_atomized_graph_verify.py
-      - docs/specs/spec_diagnostic_codes.md
-    links:
-      spec: docs/specs_refactor/spec_refactor_atomized_graph.md
-      scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md
-  - id: T-210
-    title: Define NetlistIR dataclasses (emission-ready model)
-    owner: Executor
-    dod: >
-      Add a dataclass-based NetlistIR model representing design/module/net/
-      instance/device/backend nodes with literal names and optional pattern
-      provenance metadata. Use `ports` for module port ordering (consistent
-      with other refactor IRs) and include docstrings. Add a unit test covering
-      construction and ordering invariants.
-    verify:
-      - venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_model.py -v
-    files:
-      - src/asdl/emit/netlist_ir.py
-      - tests/unit_tests/emit/test_netlist_ir_model.py
-    links:
-      scratchpad: agents/scratchpads/T-210_netlist_ir_model.md
-  - id: T-211
-    title: AtomizedGraph -> NetlistIR lowering (happy path)
-    owner: Executor
-    depends_on:
-      - T-210
-    dod: >
-      Implement AtomizedGraph -> NetlistIR lowering with a happy-path
-      conversion that builds NetlistIR design/modules/nets/instances/devices.
-      Preserve pattern origins and backend templates when registries exist.
-      Export the entry point in lowering __init__ and add a unit test for the
-      happy-path conversion.
-    verify:
-      - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py -v
-    files:
-      - src/asdl/lowering/atomized_graph_to_netlist_ir.py
-      - src/asdl/lowering/__init__.py
-      - tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py
-    links:
-      scratchpad: agents/scratchpads/T-211_atomized_to_netlist_ir.md
-  - id: T-212
-    title: NetlistIR stateless verification + diagnostic catalog updates
-    owner: Executor
-    depends_on:
-      - T-210
-    dod: >
-      Port IFIR verification rules to NetlistIR as stateless validators (literal
-      names, unique nets/instances, conn targets, ports list, and pattern-origin
-      table consistency). Add diagnostics entries for NetlistIR validation and
-      unit tests for at least one failure per rule group.
+      Enforce backend-name uniqueness per device in NetlistIR verification.
+      Add a new diagnostic code (IR-056) to the catalog and expose a verifier
+      constant. Add a unit test that reports duplicate backend names.
     verify:
       - venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_verify.py -v
     files:
@@ -74,13 +15,43 @@ current_sprint:
       - tests/unit_tests/emit/test_netlist_ir_verify.py
       - docs/specs/spec_diagnostic_codes.md
     links:
-      scratchpad: agents/scratchpads/T-212_netlist_ir_verify.md
+      scratchpad: agents/scratchpads/T-216_netlist_ir_backend_uniqueness.md
+  - id: T-217
+    title: Preserve NetlistIR pattern_origin on kind mismatches
+    owner: Executor
+    dod: >
+      Update AtomizedGraph -> NetlistIR lowering to preserve pattern_origin
+      metadata even when pattern expression kinds are missing or mismatched, so
+      NetlistIR verification can surface invalid origins. Add a lowering unit
+      test that demonstrates pattern_origin survives a kind mismatch.
+    verify:
+      - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py -v
+    files:
+      - src/asdl/lowering/atomized_graph_to_netlist_ir.py
+      - tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py
+    links:
+      scratchpad: agents/scratchpads/T-217_netlist_ir_origin_preserve.md
+  - id: T-218
+    title: Align NetlistIR literal-name $ policy and diagnostics
+    owner: Executor
+    dod: >
+      Decide and implement the NetlistIR policy for leading `$` in names
+      (nets/ports/instances/refs), aligning verifier behavior, diagnostic text,
+      and tests. Update diagnostic/spec text if the policy changes and add unit
+      tests covering allowed/forbidden `$` cases.
+    verify:
+      - venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_verify.py -v
+    files:
+      - src/asdl/emit/verify_netlist_ir.py
+      - tests/unit_tests/emit/test_netlist_ir_verify.py
+      - docs/specs/spec_diagnostic_codes.md
+      - docs/specs/spec_netlist_ir.md
+    links:
+      scratchpad: agents/scratchpads/T-218_netlist_ir_literal_policy.md
 backlog:
   - id: T-213
     title: Refactor netlist verification helpers to consume NetlistIR
     owner: Executor
-    depends_on:
-      - T-212
     dod: >
       Update netlist verification to accept NetlistIR instead of IFIR/xDSL ops,
       reusing NetlistIR validators where applicable. Keep diagnostics parity
@@ -117,7 +88,6 @@ backlog:
     title: Switch CLI/pipeline to NetlistIR and retire IFIR usage
     owner: Executor
     depends_on:
-      - T-211
       - T-214
     dod: >
       Update CLI and pipeline entrypoints to build NetlistIR and emit from it,
@@ -133,122 +103,3 @@ backlog:
       - docs/specs/spec_netlist_emission.md
     links:
       scratchpad: agents/scratchpads/T-215_cli_pipeline_netlist_ir.md
-  - id: T-203
-    title: Registry schema for backend templates and pattern kinds
-    owner: Executor
-    dod: >
-      Add registry type aliases for device backend templates and per-expression
-      pattern kinds. Extend RegistrySet with optional fields for these indexes
-      and update exports to keep core registries consistent.
-    verify: []
-    files:
-      - src/asdl/core/registries.py
-    links:
-      scratchpad: agents/scratchpads/T-203_registry_schema.md
-  - id: T-205
-    title: PatternedGraphBuilder records backend templates + pattern kinds
-    owner: Executor
-    depends_on:
-      - T-203
-    dod: >
-      Extend PatternedGraphBuilder to register device backend templates and
-      expression-kind mappings, wiring them into RegistrySet. Update builder
-      unit tests to assert new registries are populated and remain None when
-      empty.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_builder.py -v
-    files:
-      - src/asdl/core/graph_builder.py
-      - src/asdl/core/registries.py
-      - tests/unit_tests/core/test_patterned_graph_builder.py
-    links:
-      scratchpad: agents/scratchpads/T-205_builder_backend_kind.md
-  - id: T-206
-    title: AST lowering registers device backend templates
-    owner: Executor
-    depends_on:
-      - T-205
-    dod: >
-      Update AST -> PatternedGraph lowering to register device backend templates
-      for each device definition (including imported devices). Add/adjust
-      lowering tests to assert templates are present in registries.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
-    files:
-      - src/asdl/lowering/ast_to_patterned_graph.py
-      - tests/unit_tests/core/test_patterned_graph_lowering.py
-    links:
-      scratchpad: agents/scratchpads/T-206_lowering_backend_templates.md
-  - id: T-207
-    title: AST lowering caches pattern expressions and records expr kinds
-    owner: Executor
-    depends_on:
-      - T-205
-    dod: >
-      Implement pattern expression caching keyed by (kind, expression) during
-      AST -> PatternedGraph lowering so repeated expressions reuse expr_id.
-      Record expr_id -> kind in the registries and add tests covering cache
-      reuse and kind mapping.
-    verify:
-      - venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v
-    files:
-      - src/asdl/lowering/ast_to_patterned_graph.py
-      - src/asdl/lowering/ast_to_patterned_graph_expressions.py
-      - tests/unit_tests/core/test_patterned_graph_lowering.py
-    links:
-      scratchpad: agents/scratchpads/T-207_lowering_expr_kind_cache.md
-  - id: T-204
-    title: AtomizedGraph -> IFIR lowering scaffold and happy path
-    owner: Executor
-    depends_on:
-      - T-203
-    dod: >
-      Implement AtomizedGraph -> IFIR lowering under
-      src/asdl/lowering/atomized_graph_to_ifir.py with a happy-path conversion
-      that builds IFIR design, modules, nets, instances, and devices. Export the
-      entry point in lowering __init__ and add a unit test for the happy-path
-      conversion.
-    verify:
-      - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v
-    files:
-      - src/asdl/lowering/atomized_graph_to_ifir.py
-      - src/asdl/lowering/__init__.py
-      - tests/unit_tests/lowering/test_atomized_graph_to_ifir.py
-    links:
-      scratchpad: agents/scratchpads/T-204_atomized_graph_to_ifir_scaffold.md
-  - id: T-208
-    title: AtomizedGraph -> IFIR pattern origins + backend templates
-    owner: Executor
-    depends_on:
-      - T-204
-      - T-206
-      - T-207
-    dod: >
-      Use registry-backed pattern expression tables and expr-kind mappings to
-      reconstruct IFIR pattern_origin attrs for nets, instances, and devices.
-      Attach backend template metadata for devices and extend happy-path tests
-      to assert pattern origins and backend templates round-trip.
-    verify:
-      - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v
-    files:
-      - src/asdl/lowering/atomized_graph_to_ifir.py
-      - tests/unit_tests/lowering/test_atomized_graph_to_ifir.py
-    links:
-      scratchpad: agents/scratchpads/T-208_atomized_ifir_patterns_backend.md
-  - id: T-209
-    title: AtomizedGraph -> IFIR diagnostics for missing registry data
-    owner: Executor
-    depends_on:
-      - T-208
-    dod: >
-      Emit diagnostics for missing/invalid registry data (missing pattern table
-      entries, missing expr kind, missing backend template) and unresolved refs.
-      Add unit tests covering at least one missing-registry and one unresolved
-      reference failure.
-    verify:
-      - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v
-    files:
-      - src/asdl/lowering/atomized_graph_to_ifir.py
-      - tests/unit_tests/lowering/test_atomized_graph_to_ifir.py
-    links:
-      scratchpad: agents/scratchpads/T-209_atomized_ifir_diagnostics.md

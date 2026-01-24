@@ -1,48 +1,4 @@
 schema_version: 2
-T-193:
-  status: done
-  pr: 209
-  merged: true
-T-203:
-  status: done
-  pr: 210
-  merged: true
-T-204:
-  status: done
-  pr: 214
-  merged: true
-T-205:
-  status: done
-  pr: 211
-  merged: true
-T-206:
-  status: done
-  pr: 212
-  merged: true
-T-207:
-  status: done
-  pr: 213
-  merged: true
-T-208:
-  status: done
-  pr: 215
-  merged: true
-T-209:
-  status: done
-  pr: 216
-  merged: true
-T-210:
-  status: done
-  pr: 217
-  merged: true
-T-211:
-  status: done
-  pr: 218
-  merged: true
-T-212:
-  status: done
-  pr: 219
-  merged: true
 T-213:
   status: backlog
   pr: null
@@ -53,5 +9,17 @@ T-214:
   merged: false
 T-215:
   status: backlog
+  pr: null
+  merged: false
+T-216:
+  status: ready
+  pr: null
+  merged: false
+T-217:
+  status: ready
+  pr: null
+  merged: false
+T-218:
+  status: ready
   pr: null
   merged: false

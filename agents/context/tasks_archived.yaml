@@ -1,7 +1,17 @@
 schema_version: 1
 
 archive:
-  - T-203: {completed_on: 2026-01-23, owner: Executor, pr: 203}
+  - T-212: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-212_netlist_ir_verify.md, pr: 219}
+  - T-211: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-211_atomized_to_netlist_ir.md, pr: 218}
+  - T-210: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-210_netlist_ir_model.md, pr: 217}
+  - T-209: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-209_atomized_ifir_diagnostics.md, pr: 216}
+  - T-208: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-208_atomized_ifir_patterns_backend.md, pr: 215}
+  - T-207: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-207_lowering_expr_kind_cache.md, pr: 213}
+  - T-206: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-206_lowering_backend_templates.md, pr: 212}
+  - T-205: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-205_builder_backend_kind.md, pr: 211}
+  - T-204: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-204_atomized_graph_to_ifir_scaffold.md, pr: 214}
+  - T-203: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-203_registry_schema.md, pr: 210}
+  - T-193: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-193_atomized_graph_verify.md, pr: 209}
   - T-189: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-189_patterned_graph_dump.md, pr: 199}
   - T-190: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-190_cli_patterned_graph_dump.md, pr: 200}
   - T-191: {completed_on: 2026-01-23, owner: Executor, scratchpad: agents/scratchpads/T-191_atomized_graph_model.md, pr: 201}
