@@ -23,15 +23,18 @@
 - 2026-01-23 20:27 — Commit 7d64472: add AtomizedGraph -> IFIR lowering scaffold; next step add happy-path test.
 - 2026-01-23 20:28 — Added happy-path IFIR lowering test and ran pytest; next step commit test + update scratchpad.
 - 2026-01-23 20:28 — Commit 38e61cc: add happy-path AtomizedGraph -> IFIR test; next step update scratchpad summary and close out.
+- 2026-01-23 20:28 — Commit 5a11e19: update T-204 scratchpad progress; next step finalize closeout details.
 
 ## Patch summary
-- Pending.
+- Added AtomizedGraph -> IFIR lowering scaffold with basic reference handling.
+- Exported new lowering entry point in `src/asdl/lowering/__init__.py`.
+- Added happy-path unit test for AtomizedGraph -> IFIR conversion.
 
 ## PR URL
 - Pending.
 
 ## Verification
-- Pending.
+- `venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_ifir.py -v`
 
 ## Status request
 - In progress.
