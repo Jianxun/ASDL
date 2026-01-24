@@ -1,35 +1,63 @@
 # T-213: Netlist verification consumes NetlistIR
 
-## Objective
-Refactor netlist emission verification to take `NetlistDesign` dataclasses as
-the primary input, reuse `verify_netlist_ir(...)` for structural checks, and
-preserve backend/template validation semantics without relying on xDSL ops.
+## Task summary (DoD + verify)
+- Update netlist verification to accept NetlistIR dataclasses as the primary
+  input, reusing `verify_netlist_ir(...)` for structural checks before
+  backend/template validation.
+- Introduce a NetlistIR index helper (module/device lookup by `(file_id, name)`)
+  in emit utils and keep diagnostics parity with the existing emit verification
+  (missing backend, placeholders, variable merge errors).
+- Add tests that exercise NetlistIR verification in the emit path without xDSL
+  dependencies.
+- Verify: `venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py -v`
 
-## Key requirements (from task card)
-- Accept NetlistIR dataclasses in `emit/netlist/verify.py`.
-- Reuse `verify_netlist_ir(...)` for structural rules.
-- Add NetlistIR index helper for `(file_id, name)` lookups in `ir_utils.py`.
-- Preserve diagnostics parity for missing backend, placeholder validation, and
-  variable merge errors.
-- Tests for NetlistIR verification in emit path without xDSL dependencies.
-
-## Implementation notes
-- Introduce a `NetlistIRIndex` helper in `emit/netlist/ir_utils.py`:
-  - `modules_by_key: dict[tuple[str | None, str], NetlistModule]`
-  - `devices_by_key: dict[tuple[str | None, str], NetlistDevice]`
-  - `top_name` resolution for `NetlistDesign`.
-- Port `VerifyNetlistPass`-style logic into a pure function operating on
-  NetlistIR (`verify_netlist_emit_netlist_ir(...)` or similar).
-- Call `verify_netlist_ir(...)` first, then run backend-specific checks.
-- Keep diagnostic codes/messages aligned with existing emit verifier.
-
-## Tests
-- Add a new unit test in `tests/unit_tests/emit/test_netlist_emit_verify.py`
-  that builds a minimal `NetlistDesign` with a device backend and verifies
-  diagnostics parity (e.g., missing backend or unknown placeholder).
-- Ensure tests do not import xDSL.
-
-## Files
+## Read (paths)
+- `agents/roles/executor.md`
+- `agents/context/lessons.md`
+- `agents/context/contract.md`
+- `agents/context/tasks.yaml`
+- `agents/context/tasks_state.yaml`
+- `agents/context/project_status.md`
 - `src/asdl/emit/netlist/verify.py`
 - `src/asdl/emit/netlist/ir_utils.py`
 - `tests/unit_tests/emit/test_netlist_emit_verify.py`
+
+## Plan
+- Inspect current emit/netlist verify helpers and NetlistIR verifier usage.
+- Add NetlistIR index helper in `ir_utils.py` (module/device lookups, top name).
+- Refactor emit verifier to accept NetlistIR, call `verify_netlist_ir(...)`, then
+  run backend/template checks with parity diagnostics.
+- Add/adjust tests that exercise NetlistIR verification without xDSL.
+- Run verify command.
+
+## Todo
+- Add NetlistIR emit verification tests (TDD).
+- Implement NetlistIR index + emit verifier refactor.
+- Run emit verifier tests.
+
+## Progress log
+- 2026-01-24 00:00 — Task intake complete; read task context + executor role; set T-213 to in_progress; created feature branch `feature/T-213-netlist-emit-verify-netlist-ir`; next step inspect current netlist emit verifier.
+- 2026-01-24 00:27 — Added NetlistIR emit verification tests; new file `tests/unit_tests/emit/test_netlist_emit_verify.py`; ran pytest (failed due to IFIR-only verifier); commit 0f59653; next step refactor verifier to accept NetlistIR.
+- 2026-01-24 00:50 — Implemented NetlistIR index + emit verification path in `src/asdl/emit/netlist/ir_utils.py` and `src/asdl/emit/netlist/verify.py`; commit a08c227; next step rerun tests.
+- 2026-01-24 00:52 — Verified `venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py -v` passes; next step finish closeout updates.
+- 2026-01-24 00:58 — Opened PR https://github.com/Jianxun/ASDL/pull/223; next step update task status to ready_for_review.
+- 2026-01-24 00:59 — Set T-213 status to ready_for_review with PR 223; next step run tasks_state lint and push updates.
+
+## Patch summary
+- Added NetlistIR emit verifier tests covering structural checks, missing backend, placeholder validation, and variable merge errors.
+- Added NetlistIR symbol index helpers and NetlistIR verification path that reuses `verify_netlist_ir` before backend/template checks.
+
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/223
+
+## Verification
+- `venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py -v`
+
+## Status request
+- Ready for review.
+
+## Blockers / Questions
+- None yet.
+
+## Next steps
+- Inspect current emit verifier + NetlistIR helpers.

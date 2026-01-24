@@ -1,7 +1,7 @@
 schema_version: 2
 T-213:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 223
   merged: false
 T-214:
   status: ready
