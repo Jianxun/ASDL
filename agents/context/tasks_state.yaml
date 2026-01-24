@@ -8,8 +8,8 @@ T-203:
   pr: 210
   merged: true
 T-204:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 214
   merged: false
 T-205:
   status: done
