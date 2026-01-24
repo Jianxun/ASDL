@@ -26,19 +26,23 @@ PatternedGraphBuilder should expose registries for device backend templates and 
 - 2026-01-23 19:48 — Implemented PatternedGraphBuilder registries for expr kinds and backend templates; files touched: src/asdl/core/graph_builder.py.
 - 2026-01-23 19:48 — Commit 8f312a7 feat: track backend templates and expr kinds in builder.
 - 2026-01-23 19:48 — Ran ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_builder.py -v (pass).
+- 2026-01-23 19:49 — Commit e9715ea docs: update T-205 scratchpad.
+- 2026-01-23 19:49 — Opened PR https://github.com/Jianxun/ASDL/pull/211.
 
 # Patch summary
 - Added PatternedGraphBuilder registries for expr kinds and device backend templates and wired them into RegistrySet.
 - Extended builder unit tests to cover new registries and empty-registry None behavior.
 
 # PR URL
+https://github.com/Jianxun/ASDL/pull/211
 
 # Verification
 - ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_builder.py -v
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 # Blockers / Questions
 
 # Next steps
+- Await review.
