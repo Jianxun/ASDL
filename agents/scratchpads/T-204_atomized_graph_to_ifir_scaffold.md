@@ -15,11 +15,13 @@
 ## Plan
 - [x] Define AtomizedGraph -> IFIR conversion API and diagnostics.
 - [x] Implement happy-path lowering to IFIR ops and wire into lowering `__init__`.
-- [ ] Add happy-path unit test and run verify.
+- [x] Add happy-path unit test and run verify.
 
 ## Progress log
 - 2026-01-23 20:23 — Task intake, read context, created scratchpad; next step set task status in progress and implement lowering.
 - 2026-01-23 20:27 — Set T-204 to in_progress, created lowering scaffold and IFIR conversion, wired export; next step add tests and verify.
+- 2026-01-23 20:27 — Commit 7d64472: add AtomizedGraph -> IFIR lowering scaffold; next step add happy-path test.
+- 2026-01-23 20:28 — Added happy-path IFIR lowering test and ran pytest; next step commit test + update scratchpad.
 
 ## Patch summary
 - Pending.
