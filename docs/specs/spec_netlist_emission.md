@@ -1,8 +1,9 @@
 # Spec - Netlist Emission v0
 
 ## Purpose
-Define v0 emission rules from ASDL_IFIR into backend-selected netlists. IFIR is
-projected from GraphIR and already reflects canonical connectivity.
+Define v0 emission rules from ASDL_NETLIST_IR into backend-selected netlists.
+NetlistIR is lowered from the atomized semantic core and already reflects
+canonical connectivity.
 
 ---
 
@@ -13,11 +14,12 @@ projected from GraphIR and already reflects canonical connectivity.
 - Device parameters are merged and rendered as `k=v` tokens.
 - Device variables are merged and exposed as `{var}` placeholders.
 - Output extension is determined by backend config (`extension`).
-- Input IFIR is projected from GraphIR after pattern expansion; emission
-  performs no pattern expansion or connectivity rewriting. The emitter may use
-  structured pattern provenance (`pattern_origin` + `pattern_expression_table`)
-  for presentation formatting. Module variable substitution occurs earlier; IFIR
-  carries substituted instance parameter values.
+- Input NetlistIR is lowered from AtomizedGraph after pattern expansion;
+  emission performs no pattern expansion or connectivity rewriting. The emitter
+  may use structured pattern provenance (`pattern_origin` +
+  `pattern_expression_table`) for presentation formatting. Module variable
+  substitution occurs earlier; NetlistIR carries substituted instance parameter
+  values.
 
 ---
 
@@ -39,12 +41,12 @@ projected from GraphIR and already reflects canonical connectivity.
 - If instance references a **module**: order nets by the referenced module's
   `port_order`.
 - If instance references a **device**: order nets by the device's `ports`.
-- Conns are named-only; no positional conns exist in IFIR.
+- Conns are named-only; no positional conns exist in NetlistIR.
 
 ---
 
 ## Pattern provenance rendering
-- IFIR net/instance names are atomized literals that define identity and
+- NetlistIR net/instance names are atomized literals that define identity and
   connectivity.
 - If a net or instance carries `pattern_origin` and the module provides a
   `pattern_expression_table`, the emitter may format the displayed name using
@@ -52,7 +54,7 @@ projected from GraphIR and already reflects canonical connectivity.
   rendering policy).
 - Formatting is presentation-only; the emitter must not merge multiple atoms
   back into a single pattern expression or introduce new expansion semantics.
-- If provenance metadata is missing or invalid, fall back to the literal IFIR
+- If provenance metadata is missing or invalid, fall back to the literal NetlistIR
   name (verification should already report invalid provenance).
 
 ---
@@ -78,7 +80,7 @@ projected from GraphIR and already reflects canonical connectivity.
 - Overriding a key does not change its position.
 
 ### Value representation
-- All param values are raw strings in IFIR.
+- All param values are raw strings in NetlistIR.
 - Boolean values are stringified as `1`/`0` during AST -> NFIR conversion.
 
 ### Emission

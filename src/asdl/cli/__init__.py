@@ -291,7 +291,7 @@ def netlist(
 
     try:
         from asdl.emit.netlist import emit_netlist, load_backend
-        from asdl.ir.pipeline import run_mvp_pipeline
+        from asdl.lowering import run_netlist_ir_pipeline
     except Exception as exc:  # pragma: no cover - defensive: missing optional deps
         diagnostics.append(
             _diagnostic(
@@ -302,7 +302,7 @@ def netlist(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    design, pipeline_diags = run_mvp_pipeline(
+    design, pipeline_diags = run_netlist_ir_pipeline(
         entry_file=input_file,
         lib_roots=lib_roots,
         verify=verify,
