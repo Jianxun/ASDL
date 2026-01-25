@@ -5,7 +5,7 @@ ASDL is a Python-first framework for describing analog circuits as structured YA
 ## MVP status highlights
 - Pydantic v2 AST models with ruamel-based parsing that preserve `nets` order, pattern tokens, and diagnostic spans.
 - PatternedGraph core plus AtomizedGraph + NetlistIR dataclasses; conversions preserve ordering and emit diagnostics instead of raising exceptions.
-- Pattern tooling: raw tokens survive through AST/NFIR/IFIR, a standalone expansion engine, binding verification, and an elaboration pass that produces concrete names before emission.
+- Pattern tooling: raw tokens survive through the refactor pipeline, a standalone expansion engine, binding verification, and an elaboration pass that produces concrete names before emission.
 - ngspice emitter driven by `config/backends.yaml`; five required system devices (header/footer, subckt call, netlist header/footer) isolate backend syntax from the IR.
 - CLI `asdlc` orchestrates parsing, lowering, and emission; `--backend` selects outputs (default `sim.ngspice`), and schema generation/testing helpers ensure regressions are caught.
 - Specs and documentation: MVP specs live under `docs/specs_mvp/` while the canonical `docs/specs/` set is being reconciled with the current stack.
@@ -56,4 +56,4 @@ ASDL is a Python-first framework for describing analog circuits as structured YA
 - Use `docs/specs_mvp/` for MVP behaviour expectations; only reconcile with `docs/specs/` once major refactors land.
 - Preserve diagnostics and deterministic ordering across AST → PatternedGraph → AtomizedGraph → NetlistIR; converters should never drop references or raise unsanctioned exceptions.
 
-Happy hacking—and keep the pipeline faithful to AST → NFIR → IFIR → emit.
+Happy hacking—and keep the pipeline faithful to AST → PatternedGraph → AtomizedGraph → NetlistIR → emit.
