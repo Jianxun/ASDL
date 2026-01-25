@@ -31,8 +31,7 @@ Your job is to orchestrate task execution across the Executor and Reviewer roles
    - Enforce a 20-minute hard limit per agent session; if exceeded, kill the agent session and note the timeout, then stop and escalate to user.
    - If the Executor reports `blocked`, stop and request Architect or user input.
    - Do not spawn any new agent until the current agent has explicitly reported task completion, even if task state changes indicate completion.
-   - When the current agent explicitly completes its task, send a concise Slack message using `scripts/send_message.sh` with the format `[<agent role>] <task ID>: <task state> — <operations performed>`; put `<task state>` in backticks and omit bookkeeping (e.g., files read).
-   - If you kill an agent or escalate a task, send a concise Slack message using `scripts/send_message.sh` describing the action and reason, starting with `[Coordinator] <task id>`.
+   - When the Executor completes its session (e.g., status transitions to `ready_for_review` or `blocked`), send an iMessage notification via `scripts/send_imessage.sh` using the format `[<agent role>] <task ID>: (<task state>) — <operations performed>`; omit bookkeeping (e.g., files read).
 4. **Launch Reviewer**
    - When the task is `ready_for_review` and the Executor has explicitly completed its task, start a Reviewer agent and point it to `agents/roles/reviewer.md`.
    - Provide the PR URL/number and repo path.
@@ -41,6 +40,7 @@ Your job is to orchestrate task execution across the Executor and Reviewer roles
    - **Clean**: Reviewer merges, updates `tasks_state.yaml` to `done`, runs the linter, and closes the task.
    - **Request changes**: re-launch Executor with the review findings and PR link.
    - **Escalation**: notify the Architect and stop further action until resolved.
+   - When the Reviewer completes its session (e.g., status transitions to `review_clean`, `request_changes`, `escalation_needed`, or `done`), send an iMessage notification via `scripts/send_imessage.sh` using the format `[<agent role>] <task ID>: (<task state>) — <operations performed>`; omit bookkeeping (e.g., files read).
 6. **Close the loop**
    - Confirm the task status in `agents/context/tasks_state.yaml` matches the outcome.
    - Summarize the cycle for the user (task ID, PR, status, next step).

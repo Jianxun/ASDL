@@ -62,3 +62,5 @@ examples/libs/_archive/
 legacy/
 
 #examples/scratch/
+
+.env
