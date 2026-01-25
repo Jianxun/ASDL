@@ -1,10 +1,10 @@
 # ASDL (Analog Structured Description Language)
 
-ASDL is a Python-first framework for describing analog circuits as structured YAML, elaborating them into an xDSL-based IR stack, validating constraints, and emitting deterministic ngspice netlists from configurable backend templates. The current MVP focuses on a clean pipeline that walks from AST → NFIR → IFIR → emit, so every downstream pass can rely on lexemes, diagnostics, and order-preserving nets that originated in the source files.
+ASDL is a Python-first framework for describing analog circuits as structured YAML, elaborating them into PatternedGraph/NetlistIR models, validating constraints, and emitting deterministic ngspice netlists from configurable backend templates. The current MVP focuses on a clean pipeline that walks from AST → PatternedGraph → AtomizedGraph → NetlistIR → emit, so every downstream pass can rely on lexemes, diagnostics, and order-preserving nets that originated in the source files.
 
 ## MVP status highlights
 - Pydantic v2 AST models with ruamel-based parsing that preserve `nets` order, pattern tokens, and diagnostic spans.
-- NFIR (net-first IR) and IFIR dialects modeled with xDSL; conversions retain pattern metadata (`expansion_len`) and emit diagnostics instead of raising exceptions.
+- PatternedGraph core plus AtomizedGraph + NetlistIR dataclasses; conversions preserve ordering and emit diagnostics instead of raising exceptions.
 - Pattern tooling: raw tokens survive through AST/NFIR/IFIR, a standalone expansion engine, binding verification, and an elaboration pass that produces concrete names before emission.
 - ngspice emitter driven by `config/backends.yaml`; five required system devices (header/footer, subckt call, netlist header/footer) isolate backend syntax from the IR.
 - CLI `asdlc` orchestrates parsing, lowering, and emission; `--backend` selects outputs (default `sim.ngspice`), and schema generation/testing helpers ensure regressions are caught.
@@ -36,7 +36,7 @@ ASDL is a Python-first framework for describing analog circuits as structured YA
    pip install --upgrade pip
    pip install -e ".[dev]"
    ```
-   The xDSL toolchain is optional; install it alongside dev deps with `pip install -e ".[dev,xdsl]"` when you need xDSL-specific tooling or passes.
+   The legacy xDSL pipeline has been decommissioned and is no longer supported.
 5. Ensure the backend config is reachable (default `config/backends.yaml`). Override it with `ASDL_BACKEND_CONFIG=/path/to/backends.yaml` when needed (tests use temporary overrides).
 6. Run `asdlc --help` to verify the CLI entry point and inspect available commands (`parse`, `emit`, `schema`, etc.).
 
@@ -54,6 +54,6 @@ ASDL is a Python-first framework for describing analog circuits as structured YA
 ## Notes
 - Keep active development aligned with the Architect-managed tasks (`agents/context/tasks.yaml`), contract, and project status files under `agents/context/`.
 - Use `docs/specs_mvp/` for MVP behaviour expectations; only reconcile with `docs/specs/` once major refactors land.
-- Preserve diagnostics and deterministic ordering across AST → NFIR → IFIR; converters should never drop references or raise unsanctioned exceptions.
+- Preserve diagnostics and deterministic ordering across AST → PatternedGraph → AtomizedGraph → NetlistIR; converters should never drop references or raise unsanctioned exceptions.
 
 Happy hacking—and keep the pipeline faithful to AST → NFIR → IFIR → emit.
