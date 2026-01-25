@@ -26,6 +26,9 @@
 - 2026-01-25 00:07 — Recorded scratchpad progress and task status; committed 07da9b9 ("Track T-219 progress"); next step open PR.
 - 2026-01-25 00:08 — Pushed branch `feature/T-219-netlist-no-ifir` and opened PR https://github.com/Jianxun/ASDL/pull/227; next step update task state and scratchpad closeout.
 - 2026-01-25 00:09 — Set T-219 status to ready_for_review (PR 227) and ran lint; next step finalize scratchpad and push updates.
+- 2026-01-25 00:35 — Review intake: verified PR targets main and includes required logs; set status to review_in_progress and ran lint; next step complete review checks.
+- 2026-01-25 00:38 — Review checks: relied on PR test logs (not rerun); scope check found remaining IFIR/GraphIR emit_netlist call sites in tests; next step request changes.
+- 2026-01-25 00:38 — Posted PR comment requesting changes; set status to request_changes and ran lint; next step await updates.
 
 ## Patch summary
 - Removed IFIR/xDSL verification dispatch in `src/asdl/emit/netlist/verify.py` and pruned IFIR helpers from `src/asdl/emit/netlist/ir_utils.py`.
