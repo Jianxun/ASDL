@@ -12,7 +12,7 @@ T-221:
   pr: 232
   merged: true
 T-222:
-  status: request_changes
+  status: ready_for_review
   pr: 234
   merged: false
 T-223:
