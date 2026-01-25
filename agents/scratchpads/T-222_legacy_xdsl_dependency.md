@@ -35,8 +35,7 @@
 # PR URL
 https://github.com/Jianxun/ASDL/pull/234
 # Verification
-- `venv/bin/pytest tests/unit_tests/cli -v`
-- Not rerun for follow-up changes (docs-only + optional import guards).
+- `./venv/bin/pytest tests/unit_tests/cli -v`
 
 # Status request (Done / Blocked / In Progress)
 - Ready for review
@@ -52,3 +51,7 @@ https://github.com/Jianxun/ASDL/pull/234
 - 2026-01-25 02:04 — Set T-222 to review_in_progress and linted task state; next step: review changes for DoD/scope and verify evidence.
 - 2026-01-25 02:07 — Review checks: relied on PR test logs (not rerun); scope matches DoD, but netlist emit helpers still hard-import xdsl in `templates.py`/`params.py`, which breaks runtime without xdsl; next step request changes.
 - 2026-01-25 02:07 — Posted PR comment requesting changes; set T-222 status to request_changes and ran task state lint; next step await updates.
+- 2026-01-25 02:12 — Review resumed: set T-222 to review_in_progress and linted task state; next step run required CLI tests and review scope/changes.
+- 2026-01-25 02:12 — Ran `./venv/bin/pytest tests/unit_tests/cli -v` (pass); next step finish scope review and decide.
+- 2026-01-25 02:12 — Scope review complete: changes align with T-222 DoD; no links.spec present; next step record decision.
+- 2026-01-25 02:12 — Review decision: clean; posted PR comment; set T-222 to review_clean; next step merge and closeout.
