@@ -17,6 +17,8 @@ from .graph import (
 )
 from .registries import (
     AxisSpec,
+    DeviceBackendIndex,
+    DeviceBackendInfo,
     DeviceBackendTemplateIndex,
     GroupSlice,
     PatternExpr,
@@ -275,6 +277,39 @@ def _device_backend_templates_to_dict(
     return payload
 
 
+def _device_backends_to_dict(
+    backends: Optional[DeviceBackendIndex],
+) -> Optional[dict]:
+    """Convert backend metadata into a JSON-ready dict.
+
+    Args:
+        backends: Backend registry or None.
+
+    Returns:
+        Mapping payload for the registry, or None.
+    """
+    if backends is None:
+        return None
+    payload: dict[str, dict[str, dict[str, object]]] = {}
+    for device_id in sorted(backends.keys()):
+        backend_map = backends[device_id]
+        payload[device_id] = {
+            backend_name: _device_backend_info_to_dict(backend_map[backend_name])
+            for backend_name in sorted(backend_map.keys())
+        }
+    return payload
+
+
+def _device_backend_info_to_dict(info: DeviceBackendInfo) -> dict[str, object]:
+    """Convert a backend info entry into a JSON-ready dict."""
+    return {
+        "template": info.template,
+        "parameters": info.parameters,
+        "variables": info.variables,
+        "props": info.props,
+    }
+
+
 def _registry_set_to_dict(registries: RegistrySet) -> dict:
     """Convert registry data to a JSON-ready dict.
 
@@ -305,6 +340,7 @@ def _registry_set_to_dict(registries: RegistrySet) -> dict:
         "param_pattern_origins": _param_pattern_origins_to_list(
             registries.param_pattern_origins
         ),
+        "device_backends": _device_backends_to_dict(registries.device_backends),
         "device_backend_templates": _device_backend_templates_to_dict(
             registries.device_backend_templates
         ),

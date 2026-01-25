@@ -58,6 +58,26 @@ DeviceBackendTemplateIndex: TypeAlias = Dict[GraphId, Dict[str, str]]
 
 
 @dataclass(frozen=True)
+class DeviceBackendInfo:
+    """Device backend metadata for emission templates.
+
+    Attributes:
+        template: Backend template string.
+        parameters: Optional backend parameter defaults.
+        variables: Optional backend variable defaults.
+        props: Optional backend properties for template rendering.
+    """
+
+    template: str
+    parameters: Optional[Dict[str, object]] = None
+    variables: Optional[Dict[str, object]] = None
+    props: Optional[Dict[str, object]] = None
+
+
+DeviceBackendIndex: TypeAlias = Dict[GraphId, Dict[str, DeviceBackendInfo]]
+
+
+@dataclass(frozen=True)
 class GroupSlice:
     """Describe a contiguous endpoint group for schematic layouts.
 
@@ -94,6 +114,7 @@ class RegistrySet:
         pattern_expr_kinds: Optional registry of expression kinds by expr ID.
         pattern_origins: Optional registry of pattern origin tuples by entity ID.
         param_pattern_origins: Optional registry of instance param origins.
+        device_backends: Optional registry of backend metadata by device ID.
         device_backend_templates: Optional registry of backend templates by device ID.
         source_spans: Optional registry of source spans per entity ID.
         schematic_hints: Optional schematic-only metadata.
@@ -104,6 +125,7 @@ class RegistrySet:
     pattern_expr_kinds: Optional[PatternExprKindIndex] = None
     pattern_origins: Optional[PatternOriginIndex] = None
     param_pattern_origins: Optional[ParamPatternOriginIndex] = None
+    device_backends: Optional[DeviceBackendIndex] = None
     device_backend_templates: Optional[DeviceBackendTemplateIndex] = None
     source_spans: Optional[SourceSpanIndex] = None
     schematic_hints: Optional[SchematicHints] = None
@@ -124,6 +146,8 @@ __all__ = [
     "PatternOriginIndex",
     "ParamPatternOriginIndex",
     "DeviceBackendTemplateIndex",
+    "DeviceBackendInfo",
+    "DeviceBackendIndex",
     "RegistrySet",
     "SchematicHints",
     "SourceSpanIndex",

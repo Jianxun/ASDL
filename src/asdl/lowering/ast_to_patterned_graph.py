@@ -8,7 +8,7 @@ from typing import Dict, List, Mapping, Optional, Set
 from asdl.ast import AsdlDocument, ModuleDecl
 from asdl.core.graph import ProgramGraph
 from asdl.core.graph_builder import PatternedGraphBuilder
-from asdl.core.registries import PatternExprKind
+from asdl.core.registries import DeviceBackendInfo, PatternExprKind
 from asdl.diagnostics import Diagnostic
 from asdl.imports import ImportGraph, NameEnv, ProgramDB
 
@@ -154,10 +154,16 @@ def _lower_devices(
             parameters=device.parameters,
             variables=device.variables,
         )
-        builder.register_device_backend_templates(
-            device_def.device_id,
-            {backend: decl.template for backend, decl in device.backends.items()},
-        )
+        backend_defs = {
+            backend: DeviceBackendInfo(
+                template=decl.template,
+                parameters=decl.parameters,
+                variables=decl.variables,
+                props=decl.model_extra or None,
+            )
+            for backend, decl in device.backends.items()
+        }
+        builder.register_device_backends(device_def.device_id, backend_defs)
         device_ids[name] = device_def.device_id
         _register_span(builder, device_def.device_id, getattr(device, "_loc", None))
     return device_ids

@@ -6,7 +6,7 @@ from asdl.core.atomized_graph import (
     AtomizedNet,
     AtomizedProgramGraph,
 )
-from asdl.core.registries import RegistrySet
+from asdl.core.registries import DeviceBackendInfo, RegistrySet
 from asdl.emit.netlist_ir import NetlistDesign
 from asdl.lowering import build_netlist_ir_design
 from asdl.patterns_refactor.parser import parse_pattern_expr
@@ -142,6 +142,46 @@ def test_build_netlist_ir_design_happy_path() -> None:
     assert device.params == {"W": "1"}
     assert device.backends[0].name == "sim.ngspice"
     assert device.backends[0].template == "M {ports} {model}"
+
+
+def test_build_netlist_ir_design_includes_backend_metadata() -> None:
+    program = AtomizedProgramGraph()
+    program.devices["d1"] = AtomizedDeviceDef(
+        device_id="d1",
+        name="nfet",
+        file_id="design.asdl",
+        ports=["D", "G", "S", "B"],
+        parameters={"L": 1},
+        variables={"temp": 25},
+    )
+    program.modules["m1"] = AtomizedModuleGraph(
+        module_id="m1",
+        name="top",
+        file_id="design.asdl",
+        ports=[],
+    )
+    program.registries = RegistrySet(
+        device_backends={
+            "d1": {
+                "lvs.klayout": DeviceBackendInfo(
+                    template="M{name} {ports} {model} L={L} temp={temp}",
+                    parameters={"L": 0.5},
+                    variables={"temp": 27},
+                    props={"model": "nfet_03v3"},
+                )
+            }
+        }
+    )
+
+    design = build_netlist_ir_design(program)
+
+    device = design.devices[0]
+    backend = device.backends[0]
+    assert backend.name == "lvs.klayout"
+    assert backend.template == "M{name} {ports} {model} L={L} temp={temp}"
+    assert backend.params == {"L": "0.5"}
+    assert backend.variables == {"temp": "27"}
+    assert backend.props == {"model": "nfet_03v3"}
 
 
 def test_build_netlist_ir_design_preserves_origin_on_kind_mismatch() -> None:
