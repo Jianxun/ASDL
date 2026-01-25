@@ -8,8 +8,8 @@ T-220:
   pr: 228
   merged: true
 T-221:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 232
   merged: false
 T-222:
   status: ready
