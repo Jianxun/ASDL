@@ -32,6 +32,7 @@
 - 2026-01-25 02:14 — Posted review comment on PR 232 marking review_clean; next step update task status and merge/closeout.
 - 2026-01-25 02:14 — Set T-221 review_clean and linted tasks_state; next step merge PR and complete closeout.
 - 2026-01-25 02:15 — Set T-221 done (merged true) and linted tasks_state; next step commit review updates and merge PR.
+- 2026-01-25 02:16 — Committed and pushed review status updates (90b6af7); next step merge PR 232 and clean up branches.
 
 # Patch summary
 - Moved xDSL IR implementation and related lowering + tests into `legacy/src/asdl/ir`, `legacy/src/asdl/lowering`, and `legacy/tests/unit_tests`.
