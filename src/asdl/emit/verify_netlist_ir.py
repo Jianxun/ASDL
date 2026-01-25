@@ -14,7 +14,6 @@ from asdl.emit.netlist_ir import (
     PatternExpressionEntry,
     PatternOrigin,
 )
-from asdl.ir.patterns.tokenize import _has_pattern_delimiters
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -369,6 +368,18 @@ def _is_literal_name(name: str, *, allow_leading_dollar: bool) -> bool:
     if not allow_leading_dollar and name.startswith("$"):
         return False
     return True
+
+
+def _has_pattern_delimiters(expression: str) -> bool:
+    """Report whether the expression includes pattern delimiter characters.
+
+    Args:
+        expression: Pattern expression to inspect.
+
+    Returns:
+        True if the expression contains a pattern delimiter.
+    """
+    return any(char in "<>[];" for char in expression)
 
 
 def _diagnostic(code: str, message: str) -> Diagnostic:

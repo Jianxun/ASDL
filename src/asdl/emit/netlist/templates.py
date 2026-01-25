@@ -9,7 +9,6 @@ from xdsl.dialects.builtin import LocationAttr
 from asdl.diagnostics import Diagnostic, Severity
 from asdl.diagnostics.collector import DiagnosticCollector
 from asdl.emit.backend_config import BackendConfig, REQUIRED_SYSTEM_DEVICES
-from asdl.ir.ifir import BackendOp, DeviceOp
 
 from .diagnostics import (
     MALFORMED_TEMPLATE,
@@ -18,7 +17,6 @@ from .diagnostics import (
     _diagnostic,
     _emit_diagnostic,
 )
-from .params import _dict_attr_to_strings
 
 SYSTEM_DEVICE_REQUIRED_PLACEHOLDERS: Dict[str, set[str]] = {
     "__subckt_header__": {"name"},
@@ -160,27 +158,3 @@ def _validate_system_device_templates(
                 )
             )
 
-
-def _allowed_backend_placeholders(device: DeviceOp, backend: BackendOp) -> set[str]:
-    """Return allowed template placeholders for a backend device template.
-
-    Args:
-        device: Device definition providing params/variables.
-        backend: Backend definition providing params/variables/props.
-
-    Returns:
-        Set of allowed placeholder names.
-    """
-    device_params = _dict_attr_to_strings(device.params)
-    backend_params = _dict_attr_to_strings(backend.params)
-    device_vars = _dict_attr_to_strings(device.variables)
-    backend_vars = _dict_attr_to_strings(backend.variables)
-    props = _dict_attr_to_strings(backend.props)
-
-    allowed = {"name", "ports", "params"}
-    allowed.update(device_params.keys())
-    allowed.update(backend_params.keys())
-    allowed.update(device_vars.keys())
-    allowed.update(backend_vars.keys())
-    allowed.update(props.keys())
-    return allowed

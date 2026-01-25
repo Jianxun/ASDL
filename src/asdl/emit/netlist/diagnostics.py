@@ -3,16 +3,17 @@ from __future__ import annotations
 from typing import Iterable
 
 try:
-    from xdsl.dialects.builtin import LocationAttr
+    from xdsl.dialects.builtin import FileLineColLoc, LocationAttr
 except ModuleNotFoundError:
+    FileLineColLoc = None
+
     class LocationAttr:
         """Fallback xdsl LocationAttr when xdsl is unavailable."""
 
         pass
 
-from asdl.diagnostics import Diagnostic, Severity, format_code
+from asdl.diagnostics import Diagnostic, Severity, SourcePos, SourceSpan, format_code
 from asdl.diagnostics.collector import DiagnosticCollector
-from asdl.ir.location import location_attr_to_span
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -49,7 +50,7 @@ def _diagnostic(
     notes: list[str] | None = None,
     help: str | None = None,
 ) -> Diagnostic:
-    span = location_attr_to_span(loc)
+    span = _location_attr_to_span(loc)
     resolved_notes = notes
     if span is None:
         if resolved_notes is None:
@@ -65,6 +66,26 @@ def _diagnostic(
         help=help,
         source="emit",
     )
+
+
+def _location_attr_to_span(loc: LocationAttr | None) -> SourceSpan | None:
+    """Convert an xdsl LocationAttr into a diagnostics SourceSpan when possible.
+
+    Args:
+        loc: Optional xdsl location attribute.
+
+    Returns:
+        SourceSpan if the location is a FileLineColLoc; otherwise None.
+    """
+    if loc is None:
+        return None
+    if FileLineColLoc is not None and isinstance(loc, FileLineColLoc):
+        return SourceSpan(
+            file=loc.filename.data,
+            start=SourcePos(loc.line.data, loc.column.data),
+            end=SourcePos(loc.line.data, loc.column.data),
+        )
+    return None
 
 
 def _has_error_diagnostics(diagnostics: Iterable[Diagnostic]) -> bool:
