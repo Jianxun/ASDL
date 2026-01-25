@@ -22,15 +22,21 @@
 - 2026-01-25 02:00 — Commit 266dd06: removed xdsl from `pyproject.toml` and `requirements.txt`; next step: adjust README guidance.
 - 2026-01-25 02:00 — Commit 060f9f5: updated README pipeline and install guidance to reflect decommissioned xDSL and NetlistIR pipeline; next step: run verification.
 - 2026-01-25 02:00 — Verified `venv/bin/pytest tests/unit_tests/cli -v` (pass); next step: prep patch summary and PR.
+- 2026-01-25 02:10 — Review follow-up started; set T-222 to in_progress and linted task state; next step: guard netlist helpers against missing xdsl imports.
+- 2026-01-25 02:11 — Guarded netlist templates/params xdsl imports with fallback types; committed 345f619; next step: align README pipeline wording.
+- 2026-01-25 02:11 — Updated README pipeline wording to PatternedGraph → AtomizedGraph → NetlistIR; committed f71f28f; next step: update task state and lint.
+- 2026-01-25 02:12 — Set T-222 to ready_for_review and linted task state; committed 06e0443; next step: post reviewer response.
 
 # Patch summary
 - Removed xdsl from runtime dependency lists (`pyproject.toml`, `requirements.txt`).
 - Updated README pipeline description and install guidance to reflect NetlistIR and decommissioned xDSL tooling.
+- Guarded netlist template/param helpers with xdsl fallback types so runtime works without xdsl.
 
 # PR URL
 https://github.com/Jianxun/ASDL/pull/234
 # Verification
 - `venv/bin/pytest tests/unit_tests/cli -v`
+- Not rerun for follow-up changes (docs-only + optional import guards).
 
 # Status request (Done / Blocked / In Progress)
 - Ready for review
