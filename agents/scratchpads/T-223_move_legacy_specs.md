@@ -32,6 +32,7 @@
 - 2026-01-25 01:25 — Updated codebase map and docs to reference new legacy spec paths; next step verify.
 - 2026-01-25 01:25 — Commit c7401c1 (docs: repoint xdsl spec references).
 - 2026-01-25 01:26 — Ran `./venv/bin/pytest tests/unit_tests/cli -v`; 10 passed.
+- 2026-01-25 01:27 — Commit a386b84 (chore: update T-223 scratchpad).
 ## Patch summary
 
 ## PR URL
