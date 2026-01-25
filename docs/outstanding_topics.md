@@ -14,11 +14,11 @@ specs in `docs/specs/` and `docs/specs_mvp/` as observed in the codebase.
   - `docs/specs_mvp/spec_pipeline_mvp.md`
   - `docs/specs_mvp/spec_cli_mvp.md`
   - `docs/specs/spec_ast.md`
-  - `docs/specs/spec_asdl_nfir.md`
-  - `docs/specs/spec_asdl_ifir.md`
+  - `docs/legacy/spec_asdl_nfir.md`
+  - `docs/legacy/spec_asdl_ifir.md`
   - `docs/specs/spec_asdl_import.md`
   - `docs/specs/spec_asdl_pattern_expansion.md`
-  - `docs/specs/spec_compiler_stack.md`
+  - `docs/legacy/spec_compiler_stack.md`
   - `docs/specs/spec_diagnostics.md`
   - `docs/specs/spec_asdl_cir.md` (superseded)
   - `docs/specs/spec_asdl_nlir.md` (superseded)
@@ -88,8 +88,8 @@ specs in `docs/specs/` and `docs/specs_mvp/` as observed in the codebase.
 
 ### NFIR / IFIR (pattern-preserving specs)
 - Pattern-related metadata fields (expansion lengths, `port_len`) and
-  verification rules from `docs/specs/spec_asdl_nfir.md` and
-  `docs/specs/spec_asdl_ifir.md` are not implemented in the dialects.
+  verification rules from `docs/legacy/spec_asdl_nfir.md` and
+  `docs/legacy/spec_asdl_ifir.md` are not implemented in the dialects.
 - Equivalence checks based on expanded tokens are incomplete (there is a
   pattern-length check in NFIR->IFIR conversion, but not the full equivalence
   and verification contract).
