@@ -38,6 +38,7 @@
 - 2026-01-25 01:28 — Ran `./venv/bin/python scripts/lint_tasks_state.py`; OK.
 - 2026-01-25 01:28 — Commit 3db9461 (chore: mark T-223 ready for review).
 - 2026-01-25 01:29 — Pushed branch updates to origin.
+- 2026-01-25 01:32 — Review intake; confirmed PR targets main and verification log present; set status to review_in_progress; next step review diff/scope.
 ## Patch summary
 - Moved GraphIR/IFIR/NFIR and pipeline specs into `docs/legacy/`.
 - Added legacy README and corrected internal doc links.
