@@ -1,113 +1,92 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-216
-    title: NetlistIR verifier backend uniqueness rule
+  - id: T-219
+    title: Remove IFIR support from netlist emitter (NetlistIR-only)
     owner: Executor
     dod: >
-      Enforce backend-name uniqueness per device in NetlistIR verification.
-      Add a new diagnostic code (IR-056) to the catalog and expose a verifier
-      constant. Add a unit test that reports duplicate backend names.
+      Netlist verification/rendering consumes NetlistIR only: remove IFIR/xDSL
+      types from netlist verification and rendering helpers, delete legacy IFIR
+      dispatch paths, and ensure NetlistIR diagnostics remain unchanged. Update
+      NetlistIR emitter tests to run without xdsl.
     verify:
-      - venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_verify.py -v
-    files:
-      - src/asdl/emit/verify_netlist_ir.py
-      - tests/unit_tests/emit/test_netlist_ir_verify.py
-      - docs/specs/spec_diagnostic_codes.md
-    links:
-      scratchpad: agents/scratchpads/T-216_netlist_ir_backend_uniqueness.md
-  - id: T-217
-    title: Preserve NetlistIR pattern_origin on kind mismatches
-    owner: Executor
-    dod: >
-      Update AtomizedGraph -> NetlistIR lowering to preserve pattern_origin
-      metadata even when pattern expression kinds are missing or mismatched, so
-      NetlistIR verification can surface invalid origins. Add a lowering unit
-      test that demonstrates pattern_origin survives a kind mismatch.
-    verify:
-      - venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py -v
-    files:
-      - src/asdl/lowering/atomized_graph_to_netlist_ir.py
-      - tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py
-    links:
-      scratchpad: agents/scratchpads/T-217_netlist_ir_origin_preserve.md
-  - id: T-218
-    title: Clarify NetlistIR no-leading-$ literal-name policy
-    owner: Executor
-    dod: >
-      Confirm NetlistIR literal names never include a leading `$` (nets, module
-      ports, instance names, instance ref symbols, and instance conn port names).
-      Align verifier behavior (no-leading-$ across all fields), diagnostic text,
-      and tests. Update diagnostic/spec text to state that `$` is syntax sugar
-      stripped before NetlistIR, and add unit tests that cover leading `$`
-      violations for each NetlistIR name field.
-    verify:
-      - venv/bin/pytest tests/unit_tests/emit/test_netlist_ir_verify.py -v
-    files:
-      - src/asdl/emit/verify_netlist_ir.py
-      - tests/unit_tests/emit/test_netlist_ir_verify.py
-      - docs/specs/spec_diagnostic_codes.md
-      - docs/specs/spec_netlist_ir.md
-    links:
-      scratchpad: agents/scratchpads/T-218_netlist_ir_literal_policy.md
-  - id: T-213
-    title: Refactor netlist verification helpers to consume NetlistIR
-    owner: Executor
-    dod: >
-      Update netlist verification to accept NetlistIR dataclasses as the primary
-      input, reusing `verify_netlist_ir(...)` for structural checks before
-      backend/template validation. Introduce a NetlistIR index helper (module/
-      device lookup by `(file_id, name)`) in emit utils and keep diagnostics
-      parity with the existing emit verification (missing backend, placeholders,
-      variable merge errors). Add tests that exercise NetlistIR verification
-      in the emit path without xDSL dependencies.
-    verify:
-      - venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py -v
+      - venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
     files:
       - src/asdl/emit/netlist/verify.py
-      - src/asdl/emit/netlist/ir_utils.py
-      - tests/unit_tests/emit/test_netlist_emit_verify.py
-    links:
-      scratchpad: agents/scratchpads/T-213_netlist_emit_verify_netlist_ir.md
-  - id: T-214
-    title: Refactor netlist renderer to consume NetlistIR
-    owner: Executor
-    depends_on:
-      - T-213
-    dod: >
-      Update netlist rendering to accept NetlistIR dataclasses instead of xDSL
-      IFIR ops, using the NetlistIR index helper for module/device lookup and
-      `(ref_file_id, ref)` resolution. Preserve template rendering semantics,
-      deterministic ordering, parameter/variable merge, and placeholder
-      validation behavior. Add render tests that exercise NetlistIR inputs and
-      parity with existing outputs.
-    verify:
-      - venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
-    files:
       - src/asdl/emit/netlist/render.py
       - src/asdl/emit/netlist/ir_utils.py
-      - src/asdl/emit/netlist/templates.py
-      - src/asdl/emit/netlist/params.py
+      - tests/unit_tests/emit/test_netlist_emit_verify.py
       - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
     links:
-      scratchpad: agents/scratchpads/T-214_netlist_render_netlist_ir.md
-  - id: T-215
-    title: Switch CLI/pipeline to NetlistIR and retire IFIR usage
+      scratchpad: agents/scratchpads/T-219_netlist_emit_no_ifir.md
+  - id: T-220
+    title: Retire CLI ir-dump and legacy xDSL entrypoints
     owner: Executor
-    depends_on:
-      - T-214
     dod: >
-      Update CLI and pipeline entrypoints to build NetlistIR and emit from it,
-      removing IFIR/xDSL dependencies in the refactor path. Keep legacy flags
-      (if any) isolated. Update specs that describe the compiler stack and
-      netlist emission inputs to reference NetlistIR.
+      Remove the CLI `ir-dump` command and xDSL pipeline imports from the CLI
+      surface. Update CLI docs/tests to reflect only PatternedGraph + NetlistIR
+      flows, and ensure CLI netlist tests run without xdsl installed.
     verify:
       - venv/bin/pytest tests/unit_tests/cli -v
     files:
       - src/asdl/cli/__init__.py
-      - src/asdl/lowering/__init__.py
-      - docs/specs/spec_compiler_stack.md
-      - docs/specs/spec_netlist_emission.md
+      - tests/unit_tests/cli/test_ir_dump.py
+      - tests/unit_tests/cli/test_netlist.py
+      - docs/specs/spec_cli.md
     links:
-      scratchpad: agents/scratchpads/T-215_cli_pipeline_netlist_ir.md
+      scratchpad: agents/scratchpads/T-220_cli_remove_ir_dump.md
+  - id: T-223
+    title: Move legacy xDSL specs under docs/legacy
+    owner: Executor
+    dod: >
+      Relocate legacy GraphIR/IFIR/NFIR specs and xDSL-era pipeline docs from
+      `docs/specs/` into `docs/legacy/`, add a brief README in `docs/legacy/`
+      describing decommissioned status, and update any in-repo references to
+      point to the new paths.
+    verify:
+      - venv/bin/pytest tests/unit_tests/cli -v
+    files:
+      - docs/specs
+      - docs/legacy
+      - agents/context/codebase_map.md
+      - docs/specs/spec_compiler_stack.md
+      - docs/specs/spec_pipeline.md
+    links:
+      scratchpad: agents/scratchpads/T-223_move_legacy_specs.md
+  - id: T-221
+    title: Quarantine xDSL IR code/tests under legacy
+    owner: Executor
+    depends_on:
+      - T-220
+    dod: >
+      Move the xDSL IR implementation and tests out of the active tree
+      (`src/asdl/ir`, `tests/unit_tests/ir`, and any xdsl-only netlist tests)
+      into `legacy/`, and update the codebase map to point to their legacy
+      location. Active imports must not reference the moved modules.
+    verify:
+      - venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/cli -v
+    files:
+      - src/asdl/ir
+      - tests/unit_tests/ir
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+      - agents/context/codebase_map.md
+    links:
+      scratchpad: agents/scratchpads/T-221_legacy_xdsl_quarantine.md
+  - id: T-222
+    title: Remove xdsl dependency from default installs
+    owner: Executor
+    depends_on:
+      - T-221
+    dod: >
+      Remove xdsl from runtime requirements and eliminate xdsl extras, then
+      update README install guidance to note that the legacy pipeline has been
+      decommissioned and is no longer supported.
+    verify:
+      - venv/bin/pytest tests/unit_tests/cli -v
+    files:
+      - pyproject.toml
+      - requirements.txt
+      - README.md
+    links:
+      scratchpad: agents/scratchpads/T-222_legacy_xdsl_dependency.md
 backlog: []

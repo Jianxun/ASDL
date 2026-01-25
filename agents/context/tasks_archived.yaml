@@ -1,6 +1,12 @@
 schema_version: 1
 
 archive:
+  - T-218: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-218_netlist_ir_literal_policy.md, pr: 222}
+  - T-217: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-217_netlist_ir_origin_preserve.md, pr: 221}
+  - T-216: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-216_netlist_ir_backend_uniqueness.md, pr: 220}
+  - T-215: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-215_cli_pipeline_netlist_ir.md, pr: 225}
+  - T-214: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-214_netlist_render_netlist_ir.md, pr: 224}
+  - T-213: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-213_netlist_emit_verify_netlist_ir.md, pr: 223}
   - T-212: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-212_netlist_ir_verify.md, pr: 219}
   - T-211: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-211_atomized_to_netlist_ir.md, pr: 218}
   - T-210: {completed_on: 2026-01-24, owner: Executor, scratchpad: agents/scratchpads/T-210_netlist_ir_model.md, pr: 217}

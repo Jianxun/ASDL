@@ -4,9 +4,9 @@ Brief context record for the Architect; reconcile from task status and reviews.
 
 ## Current state
 - MVP specs live under `docs/specs_mvp/` for AST/NFIR/IFIR/emission; full specs remain under `docs/specs/`.
-- Legacy pipeline is AST -> GraphIR (xDSL) -> IFIR -> emit; NFIR remains optional for AST projection.
-- Refactor specs drafted under `docs/specs_refactor/` (PatternedGraph core, pattern service, migration plan); legacy pipeline remains default.
-- Refactor Phase 1 tasks (PatternedGraph core, pattern service, query/index, and AST lowering) are complete.
+- Netlist emission runs end-to-end through the refactor pipeline (PatternedGraph -> AtomizedGraph -> NetlistIR -> netlist emitter); CLI uses NetlistIR.
+- Legacy xDSL GraphIR/IFIR pipeline is slated for hard decommission; CLI `ir-dump` and xDSL IR code will be removed from the active tree.
+- Refactor specs remain under `docs/specs_refactor/` (PatternedGraph core, pattern service, migration plan).
 - Import resolver exists under `src/asdl/imports/` but is not yet wired into the core lowering path.
 - Netlist emission is backend-config driven; placeholder disambiguation (`{file_id}`, `{sym_name}`, `{top_sym_name}`) is still pending.
 - ADR-0022 forbids spliced net names; refactor specs updated and implementation queued (T-188).
@@ -25,12 +25,12 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - `venv/bin/python -m py_compile src/asdl/emit/netlist/*.py`
 
 ## Next steps (1-3)
-1. Align PatternedGraph port order with instance_defaults rules (T-185).
-2. Align PatternedGraph lowering diagnostics to existing IR codes (T-186).
-3. Add ProgramDB-backed reference resolution for PatternedGraph lowering (T-187).
+1. Remove IFIR paths from netlist emission and verification (T-219).
+2. Retire CLI `ir-dump` and legacy xDSL entrypoints (T-220).
+3. Move legacy xDSL specs to `docs/legacy/` and quarantine IR code/deps (T-223/T-221/T-222).
 
 ## Risks / unknowns
 - Coordinating pattern expansion semantics across legacy and refactor pipelines is currently the highest ambiguity.
-- IFIR and emission semantics are new; tests will drive final API shape.
+- Hard decommissioning xDSL may affect any downstream users relying on `ir-dump` or GraphIR/IFIR APIs.
 - Backend-specific emission rules beyond ngspice remain undefined.
 - Import-aware compilation is partially implemented but not yet exercised end-to-end in CLI or pipeline tests.
