@@ -55,3 +55,6 @@ https://github.com/Jianxun/ASDL/pull/227
 
 ## Next steps
 - Await reviewer feedback.
+- 2026-01-25 00:55 — Review start: set T-219 to review_in_progress and ran tasks_state lint; next step inspect PR diff and verify scope/tests.
+- 2026-01-25 01:00 — Review checks: relied on PR test logs (not rerun); scope aligned with DoD but found netlist diagnostics/location still hard-import xdsl, so tests won’t run without xdsl; next step request changes on PR.
+- 2026-01-25 01:00 — Posted PR comment with blocker (xdsl hard-imports in netlist diagnostics/location); set T-219 to request_changes and ran tasks_state lint; next step await updates.
