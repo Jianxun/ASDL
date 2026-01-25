@@ -1,7 +1,7 @@
 # Codebase Map
 
 ## Directories
-- `src/asdl/`: active refactor code (`ast/`, `diagnostics/`, `ir/`, `cli/`, `emit/`, `imports/`, `lowering/`).
+- `src/asdl/`: active refactor code (`ast/`, `core/`, `diagnostics/`, `cli/`, `emit/`, `imports/`, `lowering/`, `patterns_refactor/`).
 - `legacy/`: archived code and tests for reference only.
 - `legacy/tests/`: archived pytest suites and fixtures.
 - `docs/`: design docs (parser, elaborator, diagnostic system, CLI, schema, logging, xDSL plans, etc.).
@@ -28,17 +28,17 @@
 ## Quick Reference: AST
 - `src/asdl/ast/schema.py`: JSON/text schema generator helpers for CLI/scripts.
 
-## Quick Reference: GraphIR
-- `src/asdl/ir/graphir/attrs.py`: GraphIR attrs and coercion helpers.
-- `src/asdl/ir/graphir/ops_program.py`: GraphIR program op.
-- `src/asdl/ir/graphir/ops_module.py`: GraphIR module/device ops and port order helpers.
-- `src/asdl/ir/graphir/ops_graph.py`: GraphIR net/instance/endpoint ops.
-- `src/asdl/ir/graphir/dialect.py`: dialect registry and exports.
-- `src/asdl/ir/converters/graphir_to_ast.py`: GraphIR -> AST normalized projection (rebundling lives in projection).
+## Quick Reference: Legacy GraphIR
+- `legacy/src/asdl/ir/graphir/attrs.py`: GraphIR attrs and coercion helpers.
+- `legacy/src/asdl/ir/graphir/ops_program.py`: GraphIR program op.
+- `legacy/src/asdl/ir/graphir/ops_module.py`: GraphIR module/device ops and port order helpers.
+- `legacy/src/asdl/ir/graphir/ops_graph.py`: GraphIR net/instance/endpoint ops.
+- `legacy/src/asdl/ir/graphir/dialect.py`: dialect registry and exports.
+- `legacy/src/asdl/ir/converters/graphir_to_ast.py`: GraphIR -> AST normalized projection (rebundling lives in projection).
 
-## Quick Reference: IR Pattern Passes
-- `src/asdl/ir/patterns/atomization.py`: IFIR pattern atomization pass + rebundling helpers.
-- `src/asdl/ir/patterns/elaboration.py`: IFIR pattern elaboration pass for emission.
+## Quick Reference: Legacy IR Pattern Passes
+- `legacy/src/asdl/ir/patterns/atomization.py`: IFIR pattern atomization pass + rebundling helpers.
+- `legacy/src/asdl/ir/patterns/elaboration.py`: IFIR pattern elaboration pass for emission.
 
 ## Quick Reference: Emission Subsystem
 - `src/asdl/emit/netlist/`: netlist emitter package (API, verification, rendering, templates, params, IR helpers, diagnostics)
