@@ -2,8 +2,6 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("xdsl")
-
 from click.testing import CliRunner
 
 from asdl.cli import cli
@@ -238,6 +236,7 @@ def test_cli_help() -> None:
     output = result.output
     assert "Commands:" in output
     assert "netlist" in output
+    assert "ir-dump" not in output
     assert "schema" in output
     assert "Generate a netlist from ASDL." in output
     assert "Generate ASDL schema artifacts." in output
