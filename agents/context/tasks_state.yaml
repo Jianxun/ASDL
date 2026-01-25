@@ -1,6 +1,6 @@
 schema_version: 2
 T-219:
-  status: request_changes
+  status: ready_for_review
   pr: 227
   merged: false
 T-220:

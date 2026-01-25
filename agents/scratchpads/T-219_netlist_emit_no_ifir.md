@@ -33,16 +33,23 @@
 - 2026-01-25 00:55 — Updated e2e and netlist emitter tests to use NetlistIR-only pipeline/helpers; next step run targeted tests and commit fixes.
 - 2026-01-25 01:01 — Ran pytest on e2e/netlist emitter; fixed NetlistIR pattern-origin/span expectations; reran tests (28 passed); next step commit changes and update PR.
 - 2026-01-25 01:08 — Set T-219 status to ready_for_review and ran tasks_state lint; next step push commits and notify reviewer.
+- 2026-01-25 01:20 — Set T-219 status to in_progress and ran tasks_state lint; next step guard optional xdsl imports for netlist diagnostics/location.
+- 2026-01-25 01:25 — Guarded optional xdsl imports in netlist diagnostics/location; committed 887af6c ("Guard optional xdsl imports in netlist diagnostics"); next step rerun netlist emit verification.
+- 2026-01-25 01:27 — Ran `venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v`; all tests passed; next step update scratchpad/task status and notify reviewer.
+- 2026-01-25 01:30 — Set T-219 status to ready_for_review and ran tasks_state lint; next step push updates and notify reviewer.
 
 ## Patch summary
 - Removed IFIR/xDSL verification dispatch in `src/asdl/emit/netlist/verify.py` and pruned IFIR helpers from `src/asdl/emit/netlist/ir_utils.py`.
 - Removed IFIR render paths in `src/asdl/emit/netlist/render.py`, added NetlistIR-only pattern rendering helpers, and narrowed netlist emit API/exports to NetlistIR.
 - Updated e2e and netlist emitter tests to use NetlistIR-only pipeline/shims and adjusted pattern-origin/span expectations for NetlistIR diagnostics.
+- Guarded optional xdsl imports in netlist diagnostics/location to allow tests to run without xdsl installed.
 
 ## PR URL
 https://github.com/Jianxun/ASDL/pull/227
 
 ## Verification
+- `venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v`
+  - Result: 6 passed
 - `venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v`
   - Result: 6 passed
 - `venv/bin/pytest tests/unit_tests/e2e/test_pipeline_mvp.py tests/unit_tests/netlist/test_netlist_emitter.py -v`
