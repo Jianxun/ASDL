@@ -1,5 +1,4 @@
 # Lessons
 
 ## Pending additions
-- None yet. Add new lessons learned during migration to the multi-agent context system.
-
+- Always pull `main` before committing directly to it to avoid diverged history.
