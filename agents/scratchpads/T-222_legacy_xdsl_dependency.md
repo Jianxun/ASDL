@@ -55,3 +55,5 @@ https://github.com/Jianxun/ASDL/pull/234
 - 2026-01-25 02:12 — Ran `./venv/bin/pytest tests/unit_tests/cli -v` (pass); next step finish scope review and decide.
 - 2026-01-25 02:12 — Scope review complete: changes align with T-222 DoD; no links.spec present; next step record decision.
 - 2026-01-25 02:12 — Review decision: clean; posted PR comment; set T-222 to review_clean; next step merge and closeout.
+- 2026-01-25 02:14 — Merged PR 234 and deleted remote feature branch; switched to main and pruned refs; next step mark task done.
+- 2026-01-25 02:14 — Set T-222 status to done with merged=true and linted task state; next step finalize closeout.
