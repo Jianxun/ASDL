@@ -25,6 +25,13 @@
 - 2026-01-25 01:50 — Opened PR https://github.com/Jianxun/ASDL/pull/232; next step update tasks_state to ready_for_review and push scratchpad/state updates.
 - 2026-01-25 01:50 — Set T-221 ready_for_review with PR 232 and linted tasks_state; next step commit scratchpad/state updates and push.
 - 2026-01-25 01:50 — Committed scratchpad/status updates (1d041b5); next step push branch updates.
+- 2026-01-25 02:05 — Review intake: confirmed PR targets main via origin/main diff; AGENTS.md not found in repo root; next step set review_in_progress and start checks.
+- 2026-01-25 02:06 — Set T-221 review_in_progress and linted tasks_state; next step verify required logs and begin scope/code review.
+- 2026-01-25 02:08 — Verified required pytest logs recorded in scratchpad (not rerun); next step scope/code review.
+- 2026-01-25 02:12 — Scope/code review completed with no issues found; next step post PR comment and mark review_clean.
+- 2026-01-25 02:14 — Posted review comment on PR 232 marking review_clean; next step update task status and merge/closeout.
+- 2026-01-25 02:14 — Set T-221 review_clean and linted tasks_state; next step merge PR and complete closeout.
+- 2026-01-25 02:15 — Set T-221 done (merged true) and linted tasks_state; next step commit review updates and merge PR.
 
 # Patch summary
 - Moved xDSL IR implementation and related lowering + tests into `legacy/src/asdl/ir`, `legacy/src/asdl/lowering`, and `legacy/tests/unit_tests`.
