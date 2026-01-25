@@ -4,7 +4,7 @@ T-219:
   pr: 227
   merged: true
 T-220:
-  status: ready_for_review
+  status: review_in_progress
   pr: 228
   merged: false
 T-221:
