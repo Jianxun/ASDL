@@ -4,9 +4,9 @@ T-219:
   pr: 227
   merged: true
 T-220:
-  status: review_clean
+  status: done
   pr: 228
-  merged: false
+  merged: true
 T-221:
   status: ready
   pr: null
