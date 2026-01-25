@@ -9,9 +9,7 @@ import yaml
 
 from asdl.diagnostics import Diagnostic, Severity
 from asdl.emit.backend_config import BackendConfig, load_backend_config
-from asdl.ir import convert_graphir_to_ifir
-from asdl.ir.graphir import ProgramOp as GraphProgramOp
-from asdl.ir.ifir import DesignOp
+from asdl.emit.netlist_ir import NetlistDesign
 
 from .diagnostics import MISSING_BACKEND, _diagnostic, _has_error_diagnostics
 from .render import _emit_design
@@ -45,7 +43,7 @@ def load_backend(
 
 
 def emit_netlist(
-    design: DesignOp | GraphProgramOp,
+    design: NetlistDesign,
     *,
     backend_name: str = "sim.ngspice",
     top_as_subckt: bool = False,
@@ -61,12 +59,6 @@ def emit_netlist(
         )
         diagnostics.extend(backend_diags)
         if backend_config is None:
-            return None, diagnostics
-
-    if isinstance(design, GraphProgramOp):
-        design, graphir_diags = convert_graphir_to_ifir(design)
-        diagnostics.extend(graphir_diags)
-        if design is None:
             return None, diagnostics
 
     verify_diags = _run_netlist_verification(
