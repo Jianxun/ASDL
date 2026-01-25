@@ -65,3 +65,8 @@ https://github.com/Jianxun/ASDL/pull/227
 - 2026-01-25 00:55 — Review start: set T-219 to review_in_progress and ran tasks_state lint; next step inspect PR diff and verify scope/tests.
 - 2026-01-25 01:00 — Review checks: relied on PR test logs (not rerun); scope aligned with DoD but found netlist diagnostics/location still hard-import xdsl, so tests won’t run without xdsl; next step request changes on PR.
 - 2026-01-25 01:00 — Posted PR comment with blocker (xdsl hard-imports in netlist diagnostics/location); set T-219 to request_changes and ran tasks_state lint; next step await updates.
+- 2026-01-25 01:07 — Review intake: confirmed PR targets main and includes scratchpad + verify logs; set T-219 to review_in_progress and ran tasks_state lint; next step inspect diff and scope.
+- 2026-01-25 01:09 — Review checks: relied on PR test logs (not rerun); scope matches DoD and netlist emit/render updates look consistent; next step finalize review decision.
+- 2026-01-25 01:09 — Review decision: posted PR comment marking review clean; next step set status to review_clean and merge/closeout.
+- 2026-01-25 01:09 — Set T-219 to review_clean and ran tasks_state lint; next step mark done and merge PR.
+- 2026-01-25 01:09 — Set T-219 to done (merged true) and ran tasks_state lint; next step commit updates and merge/cleanup.
