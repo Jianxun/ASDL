@@ -2,7 +2,24 @@ from __future__ import annotations
 
 from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 
-from xdsl.dialects.builtin import DictionaryAttr, LocationAttr, StringAttr
+try:
+    from xdsl.dialects.builtin import DictionaryAttr, LocationAttr, StringAttr
+except ModuleNotFoundError:
+
+    class DictionaryAttr:
+        """Fallback xdsl DictionaryAttr when xdsl is unavailable."""
+
+        pass
+
+    class LocationAttr:
+        """Fallback xdsl LocationAttr when xdsl is unavailable."""
+
+        pass
+
+    class StringAttr:
+        """Fallback xdsl StringAttr when xdsl is unavailable."""
+
+        pass
 
 from asdl.diagnostics import Diagnostic, Severity
 

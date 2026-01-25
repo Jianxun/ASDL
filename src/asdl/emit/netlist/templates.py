@@ -4,7 +4,14 @@ import re
 import string
 from typing import Dict, Optional
 
-from xdsl.dialects.builtin import LocationAttr
+try:
+    from xdsl.dialects.builtin import LocationAttr
+except ModuleNotFoundError:
+
+    class LocationAttr:
+        """Fallback xdsl LocationAttr when xdsl is unavailable."""
+
+        pass
 
 from asdl.diagnostics import Diagnostic, Severity
 from asdl.diagnostics.collector import DiagnosticCollector
@@ -157,4 +164,3 @@ def _validate_system_device_templates(
                     Severity.ERROR,
                 )
             )
-
