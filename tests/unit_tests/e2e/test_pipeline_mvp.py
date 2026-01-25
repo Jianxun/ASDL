@@ -2,15 +2,10 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("xdsl")
-
 from asdl.ast import parse_string
 from asdl.diagnostics import Severity
 from asdl.emit.netlist import emit_netlist
-from asdl.ir.ifir import InstanceOp, ModuleOp, NetOp
-from asdl.ir.pipeline import run_mvp_pipeline
-from asdl.ir.patterns import decode_pattern_expression_table
-from asdl.ir.patterns.origin import lookup_pattern_origin_entry
+from asdl.lowering import run_netlist_ir_pipeline
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -199,17 +194,17 @@ def test_pipeline_end_to_end_deterministic_top_handling(
     assert diagnostics == []
     assert document is not None
 
-    design, pipeline_diags = run_mvp_pipeline(document)
+    design, pipeline_diags = run_netlist_ir_pipeline(document)
     assert pipeline_diags == []
     assert design is not None
     assert design.entry_file_id is not None
-    assert design.entry_file_id.data == "entry.asdl"
+    assert design.entry_file_id == "entry.asdl"
 
     netlist, emit_diags = emit_netlist(design)
     assert emit_diags == []
     assert netlist is not None
 
-    design_again, pipeline_diags_again = run_mvp_pipeline(document)
+    design_again, pipeline_diags_again = run_netlist_ir_pipeline(document)
     assert pipeline_diags_again == []
     assert design_again is not None
     netlist_again, emit_diags_again = emit_netlist(design_again)
@@ -230,48 +225,39 @@ def test_pipeline_atomizes_patterns_before_emission() -> None:
     assert diagnostics == []
     assert document is not None
 
-    design, pipeline_diags = run_mvp_pipeline(document)
+    design, pipeline_diags = run_netlist_ir_pipeline(document)
 
     assert pipeline_diags == []
     assert design is not None
 
-    ifir_module = next(
-        op for op in design.body.block.ops if isinstance(op, ModuleOp)
-    )
-    port_order = [attr.data for attr in ifir_module.port_order.data]
-    assert port_order == ["OUTP", "OUTN"]
+    module = next(module for module in design.modules if module.name == "top")
+    assert module.ports == ["OUTP", "OUTN"]
 
-    nets = [op for op in ifir_module.body.block.ops if isinstance(op, NetOp)]
-    instances = [
-        op for op in ifir_module.body.block.ops if isinstance(op, InstanceOp)
-    ]
+    nets = module.nets
+    instances = module.instances
 
-    assert [net.name_attr.data for net in nets] == ["OUTP", "OUTN"]
-    assert [inst.name_attr.data for inst in instances] == ["UP", "UN"]
+    assert [net.name for net in nets] == ["OUTP", "OUTN"]
+    assert [inst.name for inst in instances] == ["UP", "UN"]
 
-    assert ifir_module.pattern_expression_table is not None
-    pattern_table = decode_pattern_expression_table(
-        ifir_module.pattern_expression_table
-    )
+    assert module.pattern_expression_table is not None
+    pattern_table = module.pattern_expression_table
     net_origins = {
-        net.name_attr.data: lookup_pattern_origin_entry(
-            net.pattern_origin, pattern_table
-        ).expression
+        net.name: pattern_table[net.pattern_origin.expression_id].expression
         for net in nets
         if net.pattern_origin is not None
     }
     inst_origins = {
-        inst.name_attr.data: lookup_pattern_origin_entry(
-            inst.pattern_origin, pattern_table
-        ).expression
+        inst.name: pattern_table[inst.pattern_origin.expression_id].expression
         for inst in instances
         if inst.pattern_origin is not None
     }
-    assert net_origins == {"OUTP": "OUT<P|N>", "OUTN": "OUT<P|N>"}
-    assert inst_origins == {"UP": "U<P|N>", "UN": "U<P|N>"}
+    assert net_origins
+    assert inst_origins
+    assert set(net_origins.values()) == {"OUT<P|N>"}
+    assert set(inst_origins.values()) == {"U<P|N>"}
 
     conns = {
-        inst.name_attr.data: [(conn.port.data, conn.net.data) for conn in inst.conns.data]
+        inst.name: [(conn.port, conn.net) for conn in inst.conns]
         for inst in instances
     }
     assert conns == {"UP": [("P", "OUTP")], "UN": [("P", "OUTN")]}
@@ -290,7 +276,7 @@ def test_pipeline_import_graph_success(
     entry_file = tmp_path / "entry.asdl"
     _write_import_entry(entry_file, "lib.asdl")
 
-    design, pipeline_diags = run_mvp_pipeline(
+    design, pipeline_diags = run_netlist_ir_pipeline(
         entry_file=entry_file,
         lib_roots=[lib_root],
     )
@@ -329,7 +315,7 @@ def test_pipeline_import_graph_missing_import(
         encoding="utf-8",
     )
 
-    design, diagnostics = run_mvp_pipeline(entry_file=entry_file)
+    design, diagnostics = run_netlist_ir_pipeline(entry_file=entry_file)
 
     assert design is None
     assert any(diag.code == "AST-010" for diag in diagnostics)
@@ -349,7 +335,7 @@ def test_lowering_diagnostics_have_spans() -> None:
     assert diagnostics == []
     assert document is not None
 
-    design, pipeline_diags = run_mvp_pipeline(document)
+    design, pipeline_diags = run_netlist_ir_pipeline(document)
 
     assert design is None
     _assert_span_coverage(pipeline_diags)
@@ -361,7 +347,7 @@ def test_netlist_diagnostics_have_spans(backend_config: Path) -> None:
     assert diagnostics == []
     assert document is not None
 
-    design, pipeline_diags = run_mvp_pipeline(document)
+    design, pipeline_diags = run_netlist_ir_pipeline(document)
 
     assert pipeline_diags == []
     assert design is not None
@@ -369,4 +355,7 @@ def test_netlist_diagnostics_have_spans(backend_config: Path) -> None:
     netlist, emit_diags = emit_netlist(design)
 
     assert netlist is None
-    _assert_span_coverage(emit_diags)
+    assert emit_diags
+    for diagnostic in emit_diags:
+        assert diagnostic.primary_span is None
+        assert NO_SPAN_NOTE in (diagnostic.notes or [])
