@@ -24,6 +24,7 @@
 - 2026-01-25 01:48 — Verified required pytest targets (emit/netlist/cli) succeeded; next step update scratchpad verification section and prep PR.
 - 2026-01-25 01:50 — Opened PR https://github.com/Jianxun/ASDL/pull/232; next step update tasks_state to ready_for_review and push scratchpad/state updates.
 - 2026-01-25 01:50 — Set T-221 ready_for_review with PR 232 and linted tasks_state; next step commit scratchpad/state updates and push.
+- 2026-01-25 01:50 — Committed scratchpad/status updates (1d041b5); next step push branch updates.
 
 # Patch summary
 - Moved xDSL IR implementation and related lowering + tests into `legacy/src/asdl/ir`, `legacy/src/asdl/lowering`, and `legacy/tests/unit_tests`.
