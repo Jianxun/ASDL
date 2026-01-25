@@ -293,19 +293,36 @@ def _convert_device(
 ) -> NetlistDevice:
     """Convert an atomized device definition into a NetlistIR device."""
     backends: List[NetlistBackend] = []
-    templates = (
-        registries.device_backend_templates.get(device.device_id)
-        if registries.device_backend_templates
+    backend_defs = (
+        registries.device_backends.get(device.device_id)
+        if registries.device_backends
         else None
     )
-    if templates:
-        for backend_name, template in templates.items():
+    if backend_defs:
+        for backend_name, backend_def in backend_defs.items():
             backends.append(
                 NetlistBackend(
                     name=backend_name,
-                    template=template,
+                    template=backend_def.template,
+                    params=_to_string_dict(backend_def.parameters),
+                    variables=_to_string_dict(backend_def.variables),
+                    props=_to_string_dict(backend_def.props),
                 )
             )
+    else:
+        templates = (
+            registries.device_backend_templates.get(device.device_id)
+            if registries.device_backend_templates
+            else None
+        )
+        if templates:
+            for backend_name, template in templates.items():
+                backends.append(
+                    NetlistBackend(
+                        name=backend_name,
+                        template=template,
+                    )
+                )
     return NetlistDevice(
         name=device.name,
         file_id=device.file_id,

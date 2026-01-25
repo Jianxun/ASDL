@@ -17,6 +17,8 @@ from .graph import (
 )
 from .registries import (
     AnnotationIndex,
+    DeviceBackendIndex,
+    DeviceBackendInfo,
     DeviceBackendTemplateIndex,
     ExprId,
     GraphId,
@@ -67,6 +69,7 @@ class PatternedGraphBuilder:
         self._pattern_expr_kinds: PatternExprKindIndex = {}
         self._pattern_origins: PatternOriginIndex = {}
         self._param_pattern_origins: ParamPatternOriginIndex = {}
+        self._device_backends: DeviceBackendIndex = {}
         self._device_backend_templates: DeviceBackendTemplateIndex = {}
         self._source_spans: SourceSpanIndex = {}
         self._net_groups: Dict[GraphId, list[GroupSlice]] = {}
@@ -244,6 +247,24 @@ class PatternedGraphBuilder:
         backend_map = self._device_backend_templates.setdefault(device_id, {})
         backend_map.update(templates)
 
+    def register_device_backends(
+        self, device_id: GraphId, backends: Dict[str, DeviceBackendInfo]
+    ) -> None:
+        """Record backend metadata for a device.
+
+        Args:
+            device_id: Device identifier.
+            backends: Mapping of backend name to backend metadata.
+        """
+        if not backends:
+            return
+        backend_map = self._device_backends.setdefault(device_id, {})
+        backend_map.update(backends)
+        template_map = {
+            backend_name: info.template for backend_name, info in backends.items()
+        }
+        self.register_device_backend_templates(device_id, template_map)
+
     def register_pattern_origin(
         self,
         entity_id: GraphId,
@@ -330,6 +351,7 @@ class PatternedGraphBuilder:
             pattern_expr_kinds=self._pattern_expr_kinds or None,
             pattern_origins=self._pattern_origins or None,
             param_pattern_origins=self._param_pattern_origins or None,
+            device_backends=self._device_backends or None,
             device_backend_templates=self._device_backend_templates or None,
             source_spans=self._source_spans or None,
             schematic_hints=(

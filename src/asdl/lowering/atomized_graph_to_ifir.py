@@ -15,7 +15,12 @@ from asdl.core.atomized_graph import (
     AtomizedNet,
     AtomizedProgramGraph,
 )
-from asdl.core.registries import PatternExpr, PatternExprKind, RegistrySet
+from asdl.core.registries import (
+    DeviceBackendIndex,
+    PatternExpr,
+    PatternExprKind,
+    RegistrySet,
+)
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.ir.ifir import (
     BackendOp,
@@ -425,11 +430,12 @@ def build_ifir_design(
         module_ops.append(module_op)
         had_error = had_error or module_error
 
+    backend_defs = program.registries.device_backends
     backend_templates = program.registries.device_backend_templates
     device_ops: List[DeviceOp] = []
     for device in program.devices.values():
         device_op, device_error = _convert_device(
-            device, backend_templates, diagnostics
+            device, backend_defs, backend_templates, diagnostics
         )
         device_ops.append(device_op)
         had_error = had_error or device_error
@@ -579,6 +585,7 @@ def _collect_net_endpoints(
 
 def _convert_device(
     device: AtomizedDeviceDef,
+    backend_defs: Optional[DeviceBackendIndex],
     backend_templates: Optional[Dict[str, Dict[str, str]]],
     diagnostics: List[Diagnostic],
 ) -> Tuple[DeviceOp, bool]:
@@ -590,7 +597,19 @@ def _convert_device(
     had_error = False
     backends: List[BackendOp] = []
     templates = backend_templates.get(device.device_id) if backend_templates else None
-    if templates:
+    backend_info = backend_defs.get(device.device_id) if backend_defs else None
+    if backend_info:
+        for backend_name, backend_def in backend_info.items():
+            backends.append(
+                BackendOp(
+                    name=backend_name,
+                    template=backend_def.template,
+                    params=_to_string_dict_attr(backend_def.parameters),
+                    variables=_to_string_dict_attr(backend_def.variables),
+                    props=_to_string_dict_attr(backend_def.props),
+                )
+            )
+    elif templates:
         for backend_name, template in templates.items():
             backends.append(
                 BackendOp(
