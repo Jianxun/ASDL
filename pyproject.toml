@@ -19,8 +19,7 @@ dependencies = [
     "pydantic",
     "ruamel.yaml",
     "PySpice",
-    "matplotlib",
-    "xdsl>=0.54.0"
+    "matplotlib"
 ]
 
 [project.scripts]
