@@ -16,6 +16,6 @@ T-222:
   pr: null
   merged: false
 T-223:
-  status: review_clean
+  status: done
   pr: 230
-  merged: false
+  merged: true
