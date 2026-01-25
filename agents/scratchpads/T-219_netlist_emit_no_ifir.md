@@ -23,21 +23,25 @@
 - 2026-01-25 00:05 — Removed IFIR verification helpers + xdsl dependencies in netlist verify/index utilities; committed 94f5053 ("Remove IFIR verification helpers"); next step update renderer/API.
 - 2026-01-25 00:06 — Dropped IFIR render paths, added NetlistIR pattern rendering helper, updated netlist exports/API; committed 1f1623d ("Drop IFIR render paths from netlist emitter"); next step run verify tests.
 - 2026-01-25 00:07 — Ran `venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v`; all tests passed; next step update scratchpad summary and prep PR.
+- 2026-01-25 00:07 — Recorded scratchpad progress and task status; committed 07da9b9 ("Track T-219 progress"); next step open PR.
+- 2026-01-25 00:08 — Pushed branch `feature/T-219-netlist-no-ifir` and opened PR https://github.com/Jianxun/ASDL/pull/227; next step update task state and scratchpad closeout.
+- 2026-01-25 00:09 — Set T-219 status to ready_for_review (PR 227) and ran lint; next step finalize scratchpad and push updates.
 
 ## Patch summary
+- Removed IFIR/xDSL verification dispatch in `src/asdl/emit/netlist/verify.py` and pruned IFIR helpers from `src/asdl/emit/netlist/ir_utils.py`.
+- Removed IFIR render paths in `src/asdl/emit/netlist/render.py`, added NetlistIR-only pattern rendering helpers, and narrowed netlist emit API/exports to NetlistIR.
 
 ## PR URL
+https://github.com/Jianxun/ASDL/pull/227
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v`
   - Result: 6 passed
 
 ## Status request
-- In Progress
+- Ready for review
 
 ## Blockers / Questions
 
 ## Next steps
-- Run verify tests for NetlistIR emit/verify.
-- Update scratchpad with verification results and patch summary.
-- Push branch and open PR when ready.
+- Await reviewer feedback.
