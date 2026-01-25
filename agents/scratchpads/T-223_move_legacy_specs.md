@@ -41,6 +41,8 @@
 - 2026-01-25 01:32 — Review intake; confirmed PR targets main and verification log present; set status to review_in_progress; next step review diff/scope.
 - 2026-01-25 01:33 — Scope review complete; changes match DoD (legacy spec moves + README + ref updates); remaining old-path refs only in scratchpads/tasks.yaml (tasks.yaml locked); proceed to review decision.
 - 2026-01-25 01:33 — Posted review-clean PR comment; set status to review_clean; next step merge/closeout.
+- 2026-01-25 01:35 — Merged PR #230; updated task status to done with merged=true; next step branch cleanup and prune.
+- 2026-01-25 01:35 — Deleted merged feature branch (local/remote) and pruned remotes; next step commit closeout status.
 ## Patch summary
 - Moved GraphIR/IFIR/NFIR and pipeline specs into `docs/legacy/`.
 - Added legacy README and corrected internal doc links.
