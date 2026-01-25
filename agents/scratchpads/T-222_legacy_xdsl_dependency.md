@@ -42,3 +42,7 @@ https://github.com/Jianxun/ASDL/pull/234
 - Await review.
 - 2026-01-25 02:01 — Opened PR https://github.com/Jianxun/ASDL/pull/234; next step: update task state and finalize closeout.
 - 2026-01-25 02:01 — Set T-222 to ready_for_review with PR 234; next step: run tasks state lint and push final updates.
+- 2026-01-25 02:04 — Review intake: PR 234 compares cleanly against `main`, scratchpad and verify logs present; next step: set status to review_in_progress and begin scope review.
+- 2026-01-25 02:04 — Set T-222 to review_in_progress and linted task state; next step: review changes for DoD/scope and verify evidence.
+- 2026-01-25 02:07 — Review checks: relied on PR test logs (not rerun); scope matches DoD, but netlist emit helpers still hard-import xdsl in `templates.py`/`params.py`, which breaks runtime without xdsl; next step request changes.
+- 2026-01-25 02:07 — Posted PR comment requesting changes; set T-222 status to request_changes and ran task state lint; next step await updates.
