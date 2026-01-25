@@ -191,4 +191,4 @@ If the internal decomposition approach is approved:
 - ADR-0014: GraphIR Canonical Core
 - ADR-0015: GraphIR Pattern Metadata
 - ADR-0020: Tagged Pattern Axes Broadcast
-- `docs/specs/spec_asdl_graphir.md`: GraphIR specification
+- `docs/legacy/spec_asdl_graphir.md`: GraphIR specification
