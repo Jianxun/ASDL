@@ -1,0 +1,92 @@
+symbol_name: chip_top.sym
+margins:
+  top: 100
+  left: 100
+  right: 100
+  bottom: 100
+pins:
+  top:
+    - NMOS_CM_ARRAY_IREF: {dir: inout}
+    - NMOS_CM_ARRAY_IOUT_1X: {dir: inout}
+    - NMOS_CM_ARRAY_IOUT_2X: {dir: inout}
+    - NMOS_CM_ARRAY_IOUT_4X: {dir: inout}
+    - NMOS_CM_ARRAY_IOUT_8X: {dir: inout}
+    - NMOS_CM_ARRAY_IOUT_16X: {dir: inout}
+    - BUS1: {dir: inout}
+    - BUS2: {dir: inout}
+    - BUS3: {dir: inout}
+    - BUS4: {dir: inout}
+    - BUS5: {dir: inout}
+    - PMOS_CM_ARRAY_IOUT_16X: {dir: inout}
+    - PMOS_CM_ARRAY_IOUT_8X: {dir: inout}
+    - PMOS_CM_ARRAY_IOUT_4X: {dir: inout}
+    - PMOS_CM_ARRAY_IOUT_2X: {dir: inout}
+    - PMOS_CM_ARRAY_IOUT_1X: {dir: inout}
+    - PMOS_CM_ARRAY_IREF: {dir: inout}
+
+  left:
+    - VSSd: {dir: inout}
+    - NMOS_OTA_INP: {dir: inout}
+    - NMOS_OTA_INN: {dir: inout}
+    - NMOS_OTA_OUT: {dir: inout}
+    - NMOS_CM_IREF: {dir: inout}
+    - NMOS_CM_IOUT: {dir: inout}
+    - NMOS_DP_1X_A_D: {dir: inout}
+    - NMOS_DP_1X_A_G: {dir: inout}
+    - NMOS_DP_1X_A_S: {dir: inout}
+    - NMOS_DP_1X_B_S: {dir: inout}
+    - NMOS_DP_1X_B_G: {dir: inout}
+    - NMOS_DP_1X_B_D: {dir: inout}
+    - NMOS_DP_4X_A_D: {dir: inout}
+    - NMOS_DP_4X_A_G: {dir: inout}
+    - NMOS_DP_4X_A_S: {dir: inout}
+    - NMOS_DP_4X_B_S: {dir: inout}
+    - NMOS_DP_4X_B_G: {dir: inout}
+    - NMOS_DP_4X_B_D: {dir: inout}
+    - NMOS_CS_4X_A_D: {dir: inout}
+    - null
+    #- VSSd: {dir: inout}
+
+  right:
+    - null
+    #- VSSd: {dir: inout}
+    - PMOS_OTA_INP: {dir: inout}
+    - PMOS_OTA_INN: {dir: inout}
+    - PMOS_OTA_OUT: {dir: inout}
+    - PMOS_CM_IREF: {dir: inout}
+    - PMOS_CM_IOUT: {dir: inout}
+    - PMOS_DP_1X_A_D: {dir: inout}
+    - PMOS_DP_1X_A_G: {dir: inout}
+    - PMOS_DP_1X_A_S: {dir: inout}
+    - PMOS_DP_1X_B_S: {dir: inout}
+    - PMOS_DP_1X_B_G: {dir: inout}
+    - PMOS_DP_1X_B_D: {dir: inout}
+    - PMOS_DP_4X_A_D: {dir: inout}
+    - PMOS_DP_4X_A_G: {dir: inout}
+    - PMOS_DP_4X_A_S: {dir: inout}
+    - PMOS_DP_4X_B_S: {dir: inout}
+    - PMOS_DP_4X_B_G: {dir: inout}
+    - PMOS_DP_4X_B_D: {dir: inout}
+    - PMOS_CS_4X_A_D: {dir: inout}
+    - null
+    #- VSSd: {dir: inout}
+
+  bottom:
+    - NMOS_CS_4X_A_G: {dir: inout}
+    - NMOS_CS_4X_B_D: {dir: inout}
+    - NMOS_CS_4X_B_G: {dir: inout}
+    - INV_16X_A_INN: {dir: inout}
+    - INV_16X_A_OUT: {dir: inout}
+    - INV_16X_A_INP: {dir: inout}
+    - CLK: {dir: in}
+    - DATA: {dir: in}
+    - VDDd: {dir: inout}
+    - null
+    #- VDDd: {dir: inout}
+    - EN: {dir: in}
+    - INV_16X_B_INP: {dir: inout}
+    - INV_16X_B_OUT: {dir: inout}
+    - INV_16X_B_INN: {dir: inout}
+    - PMOS_CS_4X_B_G: {dir: inout}
+    - PMOS_CS_4X_B_D: {dir: inout}
+    - PMOS_CS_4X_A_G: {dir: inout}
