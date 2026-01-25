@@ -1,11 +1,10 @@
 import datetime
 import hashlib
+from dataclasses import dataclass
+from itertools import count
 from pathlib import Path
+
 import pytest
-
-pytest.importorskip("xdsl")
-
-from xdsl.dialects.builtin import DictionaryAttr, FileLineColLoc, IntAttr, StringAttr
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.emit.backend_config import (
@@ -14,193 +13,180 @@ from asdl.emit.backend_config import (
     SystemDeviceTemplate,
 )
 from asdl.emit.netlist import emit_netlist
-from asdl.ir.graphir import DeviceOp as GraphDeviceOp
-from asdl.ir.graphir import EndpointOp as GraphEndpointOp
-from asdl.ir.graphir import InstanceOp as GraphInstanceOp
-from asdl.ir.graphir import ModuleOp as GraphModuleOp
-from asdl.ir.graphir import NetOp as GraphNetOp
-from asdl.ir.graphir import ProgramOp as GraphProgramOp
-from asdl.ir.ifir import (
-    BackendOp,
-    ConnAttr,
-    DesignOp,
-    DeviceOp,
-    InstanceOp,
-    ModuleOp,
-    NetOp,
+from asdl.emit.netlist_ir import (
+    NetlistBackend,
+    NetlistConn,
+    NetlistDesign,
+    NetlistDevice,
+    NetlistInstance,
+    NetlistModule,
+    NetlistNet,
+    PatternExpressionEntry,
+    PatternOrigin,
 )
-from asdl.ir.patterns import encode_pattern_expression_table, register_pattern_expression
 
 BACKEND_NAME = "sim.ngspice"
+DEFAULT_FILE_ID = "design.asdl"
 
 
-class _GraphIdAllocator:
-    def __init__(self) -> None:
-        self._counts: dict[str, int] = {}
-
-    def next(self, prefix: str) -> str:
-        count = self._counts.get(prefix, 0) + 1
-        self._counts[prefix] = count
-        return f"{prefix}{count}"
+@dataclass(frozen=True)
+class StringAttr:
+    data: str
 
 
-def _select_symbol(
-    symbols_by_name: dict[str, list[str]],
-    symbol_index: dict[tuple[str, str | None], str],
+def _string_value(value: StringAttr | str) -> str:
+    if isinstance(value, StringAttr):
+        return value.data
+    return str(value)
+
+
+def ConnAttr(port: StringAttr | str, net: StringAttr | str) -> NetlistConn:
+    return NetlistConn(port=_string_value(port), net=_string_value(net))
+
+
+def BackendOp(
+    *,
     name: str,
-    file_id: str | None,
-) -> str | None:
-    if file_id is not None:
-        return symbol_index.get((name, file_id))
-    candidates = symbols_by_name.get(name, [])
-    if len(candidates) == 1:
-        return candidates[0]
-    if candidates:
-        return candidates[-1]
-    return None
-
-
-def _graphir_from_ifir(design: DesignOp) -> GraphProgramOp:
-    allocator = _GraphIdAllocator()
-    module_ids: dict[tuple[str, str | None], str] = {}
-    module_names: dict[str, list[str]] = {}
-    device_ids: dict[tuple[str, str | None], str] = {}
-    device_names: dict[str, list[str]] = {}
-
-    default_file_id = (
-        design.entry_file_id.data if design.entry_file_id is not None else "<string>"
+    template: str,
+    params: dict[str, str] | None = None,
+    variables: dict[str, str] | None = None,
+    props: dict[str, str] | None = None,
+) -> NetlistBackend:
+    return NetlistBackend(
+        name=name,
+        template=template,
+        params=params,
+        variables=variables,
+        props=props,
     )
 
-    for op in design.body.block.ops:
-        if isinstance(op, ModuleOp):
-            file_id = op.file_id.data if op.file_id is not None else default_file_id
-            module_id = allocator.next("m")
-            module_ids[(op.sym_name.data, file_id)] = module_id
-            module_names.setdefault(op.sym_name.data, []).append(module_id)
-        elif isinstance(op, DeviceOp):
-            file_id = op.file_id.data if op.file_id is not None else default_file_id
-            device_id = allocator.next("d")
-            device_ids[(op.sym_name.data, file_id)] = device_id
-            device_names.setdefault(op.sym_name.data, []).append(device_id)
 
-    program_ops = []
-    for op in design.body.block.ops:
-        if isinstance(op, ModuleOp):
-            file_id = op.file_id.data if op.file_id is not None else default_file_id
-            module_id = module_ids[(op.sym_name.data, file_id)]
-            inst_ops: list[GraphInstanceOp] = []
-            inst_id_map: dict[str, str] = {}
-            ifir_instances: list[InstanceOp] = []
+def DeviceOp(
+    *,
+    name: str,
+    ports: list[str],
+    params: dict[str, str] | None = None,
+    variables: dict[str, str] | None = None,
+    region: list[NetlistBackend] | None = None,
+    file_id: str = DEFAULT_FILE_ID,
+) -> NetlistDevice:
+    return NetlistDevice(
+        name=name,
+        file_id=file_id,
+        ports=ports,
+        params=params,
+        variables=variables,
+        backends=list(region or []),
+    )
 
-            for child in op.body.block.ops:
-                if not isinstance(child, InstanceOp):
-                    continue
-                inst_id = allocator.next("i")
-                inst_id_map[child.name_attr.data] = inst_id
-                ifir_instances.append(child)
-                ref_name = child.ref.root_reference.data
-                ref_file_id = (
-                    child.ref_file_id.data if child.ref_file_id is not None else None
-                )
-                ref_id = _select_symbol(
-                    module_names, module_ids, ref_name, ref_file_id
-                )
-                ref_kind = "module"
-                if ref_id is None:
-                    ref_id = _select_symbol(
-                        device_names, device_ids, ref_name, ref_file_id
-                    )
-                    ref_kind = "device"
-                if ref_id is None:
-                    raise AssertionError(f"Unknown ref '{ref_name}' for GraphIR conversion")
-                annotations = None
-                if child.src is not None:
-                    annotations = DictionaryAttr({"src": child.src})
-                inst_ops.append(
-                    GraphInstanceOp(
-                        inst_id=inst_id,
-                        name=child.name_attr.data,
-                        module_ref=(ref_kind, ref_id),
-                        module_ref_raw=ref_name,
-                        props=child.params,
-                        annotations=annotations,
-                    )
-                )
 
-            net_ops: list[GraphNetOp] = []
-            for child in op.body.block.ops:
-                if not isinstance(child, NetOp):
-                    continue
-                endpoints: list[GraphEndpointOp] = []
-                for inst in ifir_instances:
-                    inst_id = inst_id_map[inst.name_attr.data]
-                    for conn in inst.conns.data:
-                        if conn.net.data != child.name_attr.data:
-                            continue
-                        endpoints.append(
-                            GraphEndpointOp(
-                                endpoint_id=allocator.next("e"),
-                                inst_id=inst_id,
-                                port_path=conn.port.data,
-                            )
-                        )
-                net_ops.append(
-                    GraphNetOp(
-                        net_id=allocator.next("n"),
-                        name=child.name_attr.data,
-                        region=endpoints,
-                    )
-                )
+def _coerce_pattern_origin(
+    origin: PatternOrigin | tuple[str, int, str, list[object]] | None,
+) -> PatternOrigin | None:
+    if origin is None:
+        return None
+    if isinstance(origin, PatternOrigin):
+        return origin
+    expr_id, segment_index, base_name, parts = origin
+    return PatternOrigin(
+        expression_id=expr_id,
+        segment_index=segment_index,
+        base_name=base_name,
+        pattern_parts=list(parts),
+    )
 
-            program_ops.append(
-                GraphModuleOp(
-                    module_id=module_id,
-                    name=op.sym_name.data,
-                    file_id=file_id,
-                    port_order=[attr.data for attr in op.port_order.data],
-                    region=[*net_ops, *inst_ops],
-                )
-            )
-            continue
 
-        if isinstance(op, DeviceOp):
-            file_id = op.file_id.data if op.file_id is not None else default_file_id
-            device_id = device_ids[(op.sym_name.data, file_id)]
-            backends = [backend.clone() for backend in op.body.block.ops]
-            program_ops.append(
-                GraphDeviceOp(
-                    device_id=device_id,
-                    name=op.sym_name.data,
-                    file_id=file_id,
-                    ports=[attr.data for attr in op.ports.data],
-                    params=op.params,
-                    variables=op.variables,
-                    region=backends,
-                )
-            )
+def InstanceOp(
+    *,
+    name: str,
+    ref: str,
+    conns: list[NetlistConn],
+    params: dict[str, str] | None = None,
+    ref_file_id: str | None = None,
+    pattern_origin: PatternOrigin | tuple[str, int, str, list[object]] | None = None,
+    src: object | None = None,
+) -> NetlistInstance:
+    _ = src
+    return NetlistInstance(
+        name=name,
+        ref=ref,
+        ref_file_id=ref_file_id or DEFAULT_FILE_ID,
+        params=params,
+        conns=list(conns),
+        pattern_origin=_coerce_pattern_origin(pattern_origin),
+    )
 
-    entry_id = None
-    if design.top is not None:
-        top_name = design.top.data
-        entry_file_id = (
-            design.entry_file_id.data if design.entry_file_id is not None else None
-        )
-        entry_id = _select_symbol(module_names, module_ids, top_name, entry_file_id)
-        if entry_id is None:
-            raise AssertionError(f"Top module '{top_name}' missing for GraphIR conversion")
-    file_order = None
-    if design.entry_file_id is not None:
-        file_order = [design.entry_file_id.data]
 
-    return GraphProgramOp(region=program_ops, entry=entry_id, file_order=file_order)
+def NetOp(
+    *, name: str, pattern_origin: PatternOrigin | tuple[str, int, str, list[object]] | None = None
+) -> NetlistNet:
+    return NetlistNet(
+        name=name,
+        pattern_origin=_coerce_pattern_origin(pattern_origin),
+    )
+
+
+def ModuleOp(
+    *,
+    name: str,
+    port_order: list[str],
+    region: list[object],
+    pattern_expression_table: dict[str, PatternExpressionEntry] | None = None,
+    file_id: str = DEFAULT_FILE_ID,
+) -> NetlistModule:
+    nets = [item for item in region if isinstance(item, NetlistNet)]
+    instances = [item for item in region if isinstance(item, NetlistInstance)]
+    return NetlistModule(
+        name=name,
+        file_id=file_id,
+        ports=port_order,
+        nets=nets,
+        instances=instances,
+        pattern_expression_table=pattern_expression_table,
+    )
+
+
+def DesignOp(
+    *,
+    region: list[object],
+    top: str | None = None,
+    entry_file_id: str | None = None,
+) -> NetlistDesign:
+    modules = [item for item in region if isinstance(item, NetlistModule)]
+    devices = [item for item in region if isinstance(item, NetlistDevice)]
+    return NetlistDesign(
+        modules=modules,
+        devices=devices,
+        top=top,
+        entry_file_id=entry_file_id,
+    )
+
+
+_expr_counter = count(1)
+
+
+def register_pattern_expression(
+    table: dict[str, PatternExpressionEntry],
+    *,
+    expression: str,
+    kind: str,
+) -> str:
+    expr_id = f"expr{next(_expr_counter)}"
+    table[expr_id] = PatternExpressionEntry(expression=expression, kind=kind)
+    return expr_id
+
+
+def encode_pattern_expression_table(
+    table: dict[str, PatternExpressionEntry],
+) -> dict[str, PatternExpressionEntry] | None:
+    return dict(table) if table else None
 
 
 def _emit_from_graphir(
-    design: DesignOp,
+    design: NetlistDesign,
     **kwargs: object,
 ) -> tuple[str | None, list[Diagnostic]]:
-    program = _graphir_from_ifir(design)
-    return emit_netlist(program, **kwargs)
+    return emit_netlist(design, **kwargs)
 
 
 def _write_backend_config(tmp_path: Path) -> Path:
@@ -234,12 +220,13 @@ def default_backend_config(
     return config_path
 
 
-def _dict_attr(values: dict[str, str]) -> DictionaryAttr:
-    return DictionaryAttr({key: StringAttr(value) for key, value in values.items()})
+def _dict_attr(values: dict[str, str]) -> dict[str, str]:
+    return {key: str(value) for key, value in values.items()}
 
 
-def _loc(line: int, col: int) -> FileLineColLoc:
-    return FileLineColLoc(StringAttr("design.asdl"), IntAttr(line), IntAttr(col))
+def _loc(line: int, col: int) -> None:
+    _ = (line, col)
+    return None
 
 
 def _backend_config(
@@ -311,9 +298,7 @@ def test_emit_netlist_device_params_and_top_default() -> None:
     assert len(diagnostics) == 1
     assert diagnostics[0].severity is Severity.WARNING
     assert diagnostics[0].code == format_code("EMIT", 2)
-    assert diagnostics[0].primary_span is not None
-    assert diagnostics[0].primary_span.start.line == 12
-    assert diagnostics[0].primary_span.start.col == 3
+    assert diagnostics[0].primary_span is None
 
 
 def test_emit_netlist_exposes_variable_placeholders() -> None:

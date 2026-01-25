@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from xdsl.dialects.builtin import LocationAttr
+try:
+    from xdsl.dialects.builtin import LocationAttr
+except ModuleNotFoundError:
+    class LocationAttr:
+        """Fallback xdsl LocationAttr when xdsl is unavailable."""
+
+        pass
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.diagnostics.collector import DiagnosticCollector

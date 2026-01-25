@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from typing import Optional
 
-from xdsl.dialects.builtin import FileLineColLoc, LocationAttr
+try:
+    from xdsl.dialects.builtin import FileLineColLoc, LocationAttr
+except ModuleNotFoundError:
+    FileLineColLoc = None
+
+    class LocationAttr:
+        """Fallback xdsl LocationAttr when xdsl is unavailable."""
+
+        pass
 
 from asdl.diagnostics import SourcePos, SourceSpan
 
@@ -10,7 +18,7 @@ from asdl.diagnostics import SourcePos, SourceSpan
 def location_attr_to_span(loc: LocationAttr | None) -> Optional[SourceSpan]:
     if loc is None:
         return None
-    if isinstance(loc, FileLineColLoc):
+    if FileLineColLoc is not None and isinstance(loc, FileLineColLoc):
         return SourceSpan(
             file=loc.filename.data,
             start=SourcePos(loc.line.data, loc.column.data),
