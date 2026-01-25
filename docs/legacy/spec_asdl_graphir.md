@@ -250,7 +250,7 @@ region order to define endpoint order. Reverse indices are derived.
 
 ### 6.1 Dialect Schema
 
-See `docs/specs/spec_asdl_graphir_schema.md` for the full dialect schema.
+See `docs/legacy/spec_asdl_graphir_schema.md` for the full dialect schema.
 
 ## 7. Pattern Provenance
 

@@ -22,7 +22,7 @@ Legacy (debug-only):
 ## Pipeline (canonical)
 Tier-1 YAML → ASDL_A → import resolution (ProgramDB + NameEnv) → ASDL_PG →
 pattern atomization (metadata + atoms) → ASDL_AG → NetlistIR lowering →
-backend emission. See `docs/specs/spec_pipeline.md` for entrypoint and pass
+backend emission. See `docs/legacy/spec_pipeline.md` for entrypoint and pass
 ordering.
 
 ---
