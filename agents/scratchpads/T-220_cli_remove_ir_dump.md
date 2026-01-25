@@ -33,6 +33,7 @@
 - 2026-01-25 00:34 — Commit 63fa781 "Update CLI spec for NetlistIR pipeline"; aligned spec wording with refactor pipeline.
 - 2026-01-25 00:38 — Opened PR https://github.com/Jianxun/ASDL/pull/228; next step update task status and scratchpad.
 - 2026-01-25 00:40 — Set T-220 status to ready_for_review (PR 228) and ran `scripts/lint_tasks_state.py`.
+- 2026-01-25 00:41 — Commit 777b5c0 "Update T-220 scratchpad and status"; recorded PR link and task status.
 
 ## Patch summary
 - Removed `ir-dump` CLI command and related tests; CLI help now asserts the command is absent.
