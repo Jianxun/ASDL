@@ -1,4 +1,4 @@
-"""PatternedGraph JSON serialization helpers."""
+"""PatternedGraph and AtomizedGraph JSON serialization helpers."""
 
 from __future__ import annotations
 
@@ -7,6 +7,15 @@ from typing import Optional
 
 from asdl.diagnostics import SourcePos, SourceSpan
 
+from .atomized_graph import (
+    AtomizedDeviceDef,
+    AtomizedEndpoint,
+    AtomizedInstance,
+    AtomizedModuleGraph,
+    AtomizedNet,
+    AtomizedPatternOrigin,
+    AtomizedProgramGraph,
+)
 from .graph import (
     DeviceDef,
     EndpointBundle,
@@ -190,6 +199,28 @@ def _pattern_origins_to_dict(pattern_origins: Optional[PatternOriginIndex]) -> O
             "token_index": pattern_origins[entity_id][2],
         }
         for entity_id in sorted(pattern_origins.keys())
+    }
+
+
+def _atomized_pattern_origin_to_dict(
+    origin: Optional[AtomizedPatternOrigin],
+) -> Optional[dict]:
+    """Convert an atomized pattern origin into a JSON-ready dict.
+
+    Args:
+        origin: Atomized pattern origin or None.
+
+    Returns:
+        Mapping payload for the origin, or None.
+    """
+    if origin is None:
+        return None
+    return {
+        "expression_id": origin.expression_id,
+        "segment_index": origin.segment_index,
+        "atom_index": origin.atom_index,
+        "base_name": origin.base_name,
+        "pattern_parts": list(origin.pattern_parts),
     }
 
 
@@ -436,6 +467,100 @@ def _module_graph_to_dict(module: ModuleGraph) -> dict:
     }
 
 
+def _atomized_net_to_dict(net: AtomizedNet) -> dict:
+    """Convert an atomized net into a JSON-ready dict.
+
+    Args:
+        net: Atomized net to serialize.
+
+    Returns:
+        Mapping payload for the atomized net.
+    """
+    return {
+        "net_id": net.net_id,
+        "name": net.name,
+        "endpoint_ids": list(net.endpoint_ids),
+        "pattern_origin": _atomized_pattern_origin_to_dict(net.pattern_origin),
+        "patterned_net_id": net.patterned_net_id,
+        "attrs": net.attrs,
+    }
+
+
+def _atomized_instance_to_dict(instance: AtomizedInstance) -> dict:
+    """Convert an atomized instance into a JSON-ready dict.
+
+    Args:
+        instance: Atomized instance to serialize.
+
+    Returns:
+        Mapping payload for the atomized instance.
+    """
+    return {
+        "inst_id": instance.inst_id,
+        "name": instance.name,
+        "ref_kind": instance.ref_kind,
+        "ref_id": instance.ref_id,
+        "ref_raw": instance.ref_raw,
+        "param_values": instance.param_values,
+        "pattern_origin": _atomized_pattern_origin_to_dict(instance.pattern_origin),
+        "patterned_inst_id": instance.patterned_inst_id,
+        "attrs": instance.attrs,
+    }
+
+
+def _atomized_endpoint_to_dict(endpoint: AtomizedEndpoint) -> dict:
+    """Convert an atomized endpoint into a JSON-ready dict.
+
+    Args:
+        endpoint: Atomized endpoint to serialize.
+
+    Returns:
+        Mapping payload for the atomized endpoint.
+    """
+    return {
+        "endpoint_id": endpoint.endpoint_id,
+        "net_id": endpoint.net_id,
+        "inst_id": endpoint.inst_id,
+        "port": endpoint.port,
+        "pattern_origin": _atomized_pattern_origin_to_dict(endpoint.pattern_origin),
+        "patterned_endpoint_id": endpoint.patterned_endpoint_id,
+        "attrs": endpoint.attrs,
+    }
+
+
+def _atomized_module_graph_to_dict(module: AtomizedModuleGraph) -> dict:
+    """Convert an atomized module graph into a JSON-ready dict.
+
+    Args:
+        module: Atomized module graph to serialize.
+
+    Returns:
+        Mapping payload for the atomized module graph.
+    """
+    nets = [
+        _atomized_net_to_dict(module.nets[net_id])
+        for net_id in sorted(module.nets.keys())
+    ]
+    instances = [
+        _atomized_instance_to_dict(module.instances[inst_id])
+        for inst_id in sorted(module.instances.keys())
+    ]
+    endpoints = [
+        _atomized_endpoint_to_dict(module.endpoints[endpoint_id])
+        for endpoint_id in sorted(module.endpoints.keys())
+    ]
+    return {
+        "module_id": module.module_id,
+        "name": module.name,
+        "file_id": module.file_id,
+        "ports": list(module.ports),
+        "nets": nets,
+        "instances": instances,
+        "endpoints": endpoints,
+        "patterned_module_id": module.patterned_module_id,
+    }
+
+
 def _device_def_to_dict(device: DeviceDef) -> dict:
     """Convert a device definition into a JSON-ready dict.
 
@@ -444,6 +569,26 @@ def _device_def_to_dict(device: DeviceDef) -> dict:
 
     Returns:
         Mapping payload for the device definition.
+    """
+    return {
+        "device_id": device.device_id,
+        "name": device.name,
+        "file_id": device.file_id,
+        "ports": list(device.ports),
+        "parameters": device.parameters,
+        "variables": device.variables,
+        "attrs": device.attrs,
+    }
+
+
+def _atomized_device_def_to_dict(device: AtomizedDeviceDef) -> dict:
+    """Convert an atomized device definition into a JSON-ready dict.
+
+    Args:
+        device: Atomized device definition to serialize.
+
+    Returns:
+        Mapping payload for the atomized device definition.
     """
     return {
         "device_id": device.device_id,
@@ -480,6 +625,30 @@ def patterned_graph_to_jsonable(graph: ProgramGraph) -> dict:
     }
 
 
+def atomized_graph_to_jsonable(graph: AtomizedProgramGraph) -> dict:
+    """Convert an AtomizedGraph into a JSON-serializable payload.
+
+    Args:
+        graph: Atomized program graph to serialize.
+
+    Returns:
+        JSON-ready mapping containing modules and registries.
+    """
+    modules = [
+        _atomized_module_graph_to_dict(graph.modules[module_id])
+        for module_id in sorted(graph.modules.keys())
+    ]
+    devices = [
+        _atomized_device_def_to_dict(graph.devices[device_id])
+        for device_id in sorted(graph.devices.keys())
+    ]
+    return {
+        "modules": modules,
+        "devices": devices,
+        "registries": _registry_set_to_dict(graph.registries),
+    }
+
+
 def dump_patterned_graph(graph: ProgramGraph, *, indent: int = 2) -> str:
     """Render a deterministic JSON dump of a PatternedGraph.
 
@@ -493,4 +662,22 @@ def dump_patterned_graph(graph: ProgramGraph, *, indent: int = 2) -> str:
     return json.dumps(patterned_graph_to_jsonable(graph), indent=indent, sort_keys=True)
 
 
-__all__ = ["dump_patterned_graph", "patterned_graph_to_jsonable"]
+def dump_atomized_graph(graph: AtomizedProgramGraph, *, indent: int = 2) -> str:
+    """Render a deterministic JSON dump of an AtomizedGraph.
+
+    Args:
+        graph: Atomized program graph to serialize.
+        indent: JSON indentation level.
+
+    Returns:
+        Deterministic JSON string for the graph.
+    """
+    return json.dumps(atomized_graph_to_jsonable(graph), indent=indent, sort_keys=True)
+
+
+__all__ = [
+    "atomized_graph_to_jsonable",
+    "dump_atomized_graph",
+    "dump_patterned_graph",
+    "patterned_graph_to_jsonable",
+]

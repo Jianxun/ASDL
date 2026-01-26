@@ -4,16 +4,17 @@ from __future__ import annotations
 
 from typing import Iterable, Optional
 
+from asdl.core.atomized_graph import AtomizedPatternOrigin, PatternPart
 from asdl.core.registries import PatternExpressionRegistry
 from asdl.diagnostics import Diagnostic, SourceSpan
 from asdl.patterns_refactor import (
     BindingPlan,
+    DEFAULT_MAX_ATOMS,
     PatternError,
     PatternExpr,
     PatternGroup,
     PatternLiteral,
     bind_patterns,
-    expand_endpoint,
     expand_pattern,
 )
 
@@ -105,6 +106,7 @@ def _expand_pattern(
 
     Args:
         expr: Pattern expression to expand.
+        expr_id: Pattern expression identifier for provenance.
         diagnostics: Diagnostic collection to append to.
         context: Context string for error messages.
         fallback_span: Fallback span when the error lacks location data.
@@ -125,14 +127,118 @@ def _expand_pattern(
     return atoms
 
 
-def _expand_endpoint(
+def _expand_pattern_atoms(
     expr: PatternExpr,
     *,
+    expr_id: str,
     diagnostics: list[Diagnostic],
     context: str,
     fallback_span: Optional[SourceSpan],
-) -> Optional[list[tuple[str, str]]]:
-    """Expand an endpoint expression to (inst, pin) atoms.
+    max_atoms: int = DEFAULT_MAX_ATOMS,
+) -> Optional[list[tuple[str, AtomizedPatternOrigin]]]:
+    """Expand a pattern expression into atoms with per-atom origin metadata.
+
+    Args:
+        expr: Pattern expression to expand.
+        expr_id: Pattern expression identifier for provenance.
+        diagnostics: Diagnostic collection to append to.
+        context: Context string for error messages.
+        fallback_span: Fallback span when the error lacks location data.
+        max_atoms: Maximum number of atoms to allow.
+
+    Returns:
+        List of (literal atom, origin) tuples or None on failure.
+    """
+    atoms: list[tuple[str, AtomizedPatternOrigin]] = []
+    for segment_index, segment in enumerate(expr.segments):
+        base_name = "".join(
+            token.text
+            for token in segment.tokens
+            if isinstance(token, PatternLiteral)
+        )
+        current: list[tuple[str, list[PatternPart]]] = [("", [])]
+        for token in segment.tokens:
+            if isinstance(token, PatternLiteral):
+                current = [
+                    (value + token.text, parts) for value, parts in current
+                ]
+                continue
+            if isinstance(token, PatternGroup):
+                expanded: list[tuple[str, list[PatternPart]]] = []
+                for value, parts in current:
+                    for label in token.labels:
+                        expanded.append((value + str(label), [*parts, label]))
+                current = expanded
+                if len(current) > max_atoms:
+                    diagnostics.extend(
+                        _pattern_error_diagnostics(
+                            [
+                                PatternError(
+                                    (
+                                        f"Pattern expression '{expr.raw}' exceeds "
+                                        f"{max_atoms} atoms."
+                                    ),
+                                    expr.span,
+                                )
+                            ],
+                            context=context,
+                            fallback_span=fallback_span,
+                        )
+                    )
+                    return None
+                continue
+            diagnostics.extend(
+                _pattern_error_diagnostics(
+                    [
+                        PatternError(
+                            f"Unhandled token in pattern expression '{expr.raw}'.",
+                            expr.span,
+                        )
+                    ],
+                    context=context,
+                    fallback_span=fallback_span,
+                )
+            )
+            return None
+        if len(atoms) + len(current) > max_atoms:
+            diagnostics.extend(
+                _pattern_error_diagnostics(
+                    [
+                        PatternError(
+                            f"Pattern expression '{expr.raw}' exceeds {max_atoms} atoms.",
+                            expr.span,
+                        )
+                    ],
+                    context=context,
+                    fallback_span=fallback_span,
+                )
+            )
+            return None
+        atoms.extend(
+            (
+                literal,
+                AtomizedPatternOrigin(
+                    expression_id=expr_id,
+                    segment_index=segment_index,
+                    atom_index=atom_index,
+                    base_name=base_name,
+                    pattern_parts=parts,
+                ),
+            )
+            for atom_index, (literal, parts) in enumerate(current)
+        )
+    return atoms
+
+
+def _expand_endpoint(
+    expr: PatternExpr,
+    *,
+    expr_id: str,
+    diagnostics: list[Diagnostic],
+    context: str,
+    fallback_span: Optional[SourceSpan],
+) -> Optional[list[tuple[str, str, AtomizedPatternOrigin]]]:
+    """Expand an endpoint expression to (inst, pin, origin) atoms.
 
     Args:
         expr: Pattern expression to expand.
@@ -141,19 +247,41 @@ def _expand_endpoint(
         fallback_span: Fallback span when the error lacks location data.
 
     Returns:
-        List of (instance, port) atoms or None on failure.
+        List of (instance, port, origin) atoms or None on failure.
     """
-    atoms, errors = expand_endpoint(expr)
+    atoms = _expand_pattern_atoms(
+        expr,
+        expr_id=expr_id,
+        diagnostics=diagnostics,
+        context=context,
+        fallback_span=fallback_span,
+    )
     if atoms is None:
-        diagnostics.extend(
-            _pattern_error_diagnostics(
-                errors,
-                context=context,
-                fallback_span=fallback_span,
-            )
-        )
         return None
-    return atoms
+
+    endpoints: list[tuple[str, str, AtomizedPatternOrigin]] = []
+    for literal, origin in atoms:
+        if literal.count(".") != 1:
+            diagnostics.extend(
+                _pattern_error_diagnostics(
+                    [
+                        PatternError(
+                            (
+                                f"Endpoint expression '{expr.raw}' expands to "
+                                f"invalid atom '{literal}'."
+                            ),
+                            expr.span,
+                        )
+                    ],
+                    context=context,
+                    fallback_span=fallback_span,
+                )
+            )
+            return None
+        inst, pin = literal.split(".", 1)
+        endpoints.append((inst, pin, origin))
+
+    return endpoints
 
 
 def _bind_patterns(

@@ -11,13 +11,20 @@ from .atomized_graph import (
     AtomizedModuleId,
     AtomizedNet,
     AtomizedNetId,
+    AtomizedPatternOrigin,
     AtomizedProgramGraph,
     PatternedEndpointId,
     PatternedInstId,
     PatternedModuleId,
     PatternedNetId,
+    PatternPart,
 )
-from .dump import dump_patterned_graph, patterned_graph_to_jsonable
+from .dump import (
+    atomized_graph_to_jsonable,
+    dump_atomized_graph,
+    dump_patterned_graph,
+    patterned_graph_to_jsonable,
+)
 from .graph_builder import PatternedGraphBuilder
 from .graph import (
     DeviceDef,
@@ -73,6 +80,7 @@ __all__ = [
     "AtomizedModuleId",
     "AtomizedNet",
     "AtomizedNetId",
+    "AtomizedPatternOrigin",
     "AtomizedProgramGraph",
     "AtomizedDeviceDef",
     "AtomizedDeviceId",
@@ -80,6 +88,7 @@ __all__ = [
     "AxisId",
     "AxisSpec",
     "DesignQuery",
+    "dump_atomized_graph",
     "dump_patterned_graph",
     "DeviceDef",
     "DeviceId",
@@ -107,11 +116,13 @@ __all__ = [
     "PatternOriginIndex",
     "PatternSegment",
     "PatternedGraphBuilder",
+    "atomized_graph_to_jsonable",
     "patterned_graph_to_jsonable",
     "PatternedEndpointId",
     "PatternedInstId",
     "PatternedModuleId",
     "PatternedNetId",
+    "PatternPart",
     "ProgramGraph",
     "query",
     "RegistrySet",

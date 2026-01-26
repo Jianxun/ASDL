@@ -17,6 +17,26 @@ PatternedModuleId: TypeAlias = GraphId
 PatternedNetId: TypeAlias = GraphId
 PatternedInstId: TypeAlias = GraphId
 PatternedEndpointId: TypeAlias = GraphId
+PatternPart: TypeAlias = str | int
+
+
+@dataclass(frozen=True)
+class AtomizedPatternOrigin:
+    """Pattern provenance metadata for atomized literals.
+
+    Attributes:
+        expression_id: Module-local pattern expression identifier.
+        segment_index: 0-based segment index for spliced expressions.
+        atom_index: 0-based atom index within the segment expansion.
+        base_name: Base name before pattern parts were appended.
+        pattern_parts: Ordered pattern parts appended to the base name.
+    """
+
+    expression_id: str
+    segment_index: int
+    atom_index: int
+    base_name: str
+    pattern_parts: list[PatternPart]
 
 
 @dataclass
@@ -27,6 +47,7 @@ class AtomizedNet:
         net_id: Stable net identifier.
         name: Resolved net name.
         endpoint_ids: Ordered endpoint IDs connected to this net.
+        pattern_origin: Optional pattern provenance metadata.
         patterned_net_id: Optional PatternedGraph net ID provenance.
         attrs: Optional attributes for tools or passes.
     """
@@ -34,6 +55,7 @@ class AtomizedNet:
     net_id: AtomizedNetId
     name: str
     endpoint_ids: list[AtomizedEndpointId]
+    pattern_origin: Optional[AtomizedPatternOrigin] = None
     patterned_net_id: Optional[PatternedNetId] = None
     attrs: Optional[Dict[str, object]] = None
 
@@ -49,6 +71,7 @@ class AtomizedInstance:
         ref_id: Referenced module or device ID.
         ref_raw: Raw reference token.
         param_values: Optional mapping of parameter names to resolved values.
+        pattern_origin: Optional pattern provenance metadata.
         patterned_inst_id: Optional PatternedGraph instance ID provenance.
         attrs: Optional attributes for tools or passes.
     """
@@ -59,6 +82,7 @@ class AtomizedInstance:
     ref_id: GraphId
     ref_raw: str
     param_values: Optional[Dict[str, object]] = None
+    pattern_origin: Optional[AtomizedPatternOrigin] = None
     patterned_inst_id: Optional[PatternedInstId] = None
     attrs: Optional[Dict[str, object]] = None
 
@@ -72,6 +96,7 @@ class AtomizedEndpoint:
         net_id: Owning net identifier.
         inst_id: Target instance identifier.
         port: Resolved port/pin name on the instance.
+        pattern_origin: Optional pattern provenance metadata.
         patterned_endpoint_id: Optional PatternedGraph endpoint ID provenance.
         attrs: Optional attributes for tools or passes.
     """
@@ -80,6 +105,7 @@ class AtomizedEndpoint:
     net_id: AtomizedNetId
     inst_id: AtomizedInstId
     port: str
+    pattern_origin: Optional[AtomizedPatternOrigin] = None
     patterned_endpoint_id: Optional[PatternedEndpointId] = None
     attrs: Optional[Dict[str, object]] = None
 
@@ -183,9 +209,11 @@ __all__ = [
     "AtomizedModuleId",
     "AtomizedNet",
     "AtomizedNetId",
+    "AtomizedPatternOrigin",
     "AtomizedProgramGraph",
     "PatternedEndpointId",
     "PatternedInstId",
     "PatternedModuleId",
     "PatternedNetId",
+    "PatternPart",
 ]

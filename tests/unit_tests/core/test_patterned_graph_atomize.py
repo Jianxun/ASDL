@@ -61,6 +61,60 @@ def test_patterned_graph_atomize_basic_expansion() -> None:
     }
 
 
+def test_patterned_graph_atomize_attaches_pattern_origins() -> None:
+    builder = PatternedGraphBuilder()
+    module = builder.add_module("top", "design.asdl")
+    net_expr_id = builder.add_expression(_parse_expr("NET<0:1>"))
+    inst_expr_id = builder.add_expression(_parse_expr("U<0:1>"))
+    endpoint_expr_id = builder.add_expression(_parse_expr("U<0:1>.D"))
+
+    net_id = builder.add_net(module.module_id, net_expr_id)
+    builder.add_instance(
+        module.module_id,
+        inst_expr_id,
+        ref_kind="device",
+        ref_id="dev1",
+        ref_raw="nmos",
+    )
+    builder.add_endpoint(module.module_id, net_id, endpoint_expr_id)
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    assert diagnostics == []
+    module_graph = next(iter(atomized.modules.values()))
+    nets_by_name = {net.name: net for net in module_graph.nets.values()}
+    insts_by_name = {inst.name: inst for inst in module_graph.instances.values()}
+    endpoints_by_inst = {
+        module_graph.instances[endpoint.inst_id].name: endpoint
+        for endpoint in module_graph.endpoints.values()
+    }
+
+    net0_origin = nets_by_name["NET0"].pattern_origin
+    assert net0_origin is not None
+    assert net0_origin.expression_id == net_expr_id
+    assert net0_origin.segment_index == 0
+    assert net0_origin.atom_index == 0
+    assert net0_origin.base_name == "NET"
+    assert net0_origin.pattern_parts == [0]
+
+    inst1_origin = insts_by_name["U1"].pattern_origin
+    assert inst1_origin is not None
+    assert inst1_origin.expression_id == inst_expr_id
+    assert inst1_origin.segment_index == 0
+    assert inst1_origin.atom_index == 1
+    assert inst1_origin.base_name == "U"
+    assert inst1_origin.pattern_parts == [1]
+
+    endpoint0_origin = endpoints_by_inst["U0"].pattern_origin
+    assert endpoint0_origin is not None
+    assert endpoint0_origin.expression_id == endpoint_expr_id
+    assert endpoint0_origin.segment_index == 0
+    assert endpoint0_origin.atom_index == 0
+    assert endpoint0_origin.base_name == "U.D"
+    assert endpoint0_origin.pattern_parts == [0]
+
+
 def test_patterned_graph_atomize_broadcast_binding() -> None:
     named_patterns = {
         "cols": NamedPattern(expr="<0|1>", tag="c"),
