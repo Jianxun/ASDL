@@ -1,92 +1,49 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-219
-    title: Remove IFIR support from netlist emitter (NetlistIR-only)
+  - id: T-226
+    title: AtomizedGraph per-atom pattern origins
     owner: Executor
     dod: >
-      Netlist verification/rendering consumes NetlistIR only: remove IFIR/xDSL
-      types from netlist verification and rendering helpers, delete legacy IFIR
-      dispatch paths, and ensure NetlistIR diagnostics remain unchanged. Update
-      NetlistIR emitter tests to run without xdsl.
+      Add an AtomizedPatternOrigin (or equivalent) dataclass in
+      `src/asdl/core/atomized_graph.py` with explicit
+      {expression_id, segment_index, atom_index, base_name, pattern_parts}.
+      Add optional `pattern_origin` fields to AtomizedNet/AtomizedInstance/AtomizedEndpoint.
+      Populate these fields during atomization by expanding patterns with
+      a helper that returns atoms + parts (reuse/relocate logic from
+      `_expand_pattern_atoms` in `atomized_graph_to_netlist_ir.py`).
+      Ensure atomized origins are attached per literal atom (not per patterned id).
+      Update `src/asdl/core/dump.py` to include atomized pattern origins in dumps.
     verify:
-      - venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
+      - venv/bin/pytest tests/unit_tests/netlist -v
+    links:
+      scratchpad: agents/scratchpads/T-226_atomized_pattern_origins.md
     files:
-      - src/asdl/emit/netlist/verify.py
+      - src/asdl/core/atomized_graph.py
+      - src/asdl/lowering/patterned_graph_to_atomized_nets.py
+      - src/asdl/lowering/patterned_graph_to_atomized_instances.py
+      - src/asdl/lowering/patterned_graph_to_atomized_patterns.py
+      - src/asdl/core/dump.py
+  - id: T-227
+    title: NetlistIR consumes atomized pattern origins
+    owner: Executor
+    depends_on:
+      - T-226
+    dod: >
+      Remove origin reconstruction in `src/asdl/lowering/atomized_graph_to_netlist_ir.py`
+      and instead copy Atomized* `pattern_origin` into NetlistIR nets/instances.
+      Delete/retire `_PatternOriginResolver` or reduce it to building the
+      pattern_expression_table from `expression_id` values found in atomized origins.
+      Keep NetlistIR `pattern_expression_table` wiring intact for verifier/rendering.
+      Update/extend emit tests to assert numeric pattern rendering now applies to all
+      atoms (e.g., BUS[25], BUS[24], pin[130], pin[129], sw_row[130], sw_row[129]).
+    verify:
+      - venv/bin/pytest tests/unit_tests/emit -v
+    links:
+      scratchpad: agents/scratchpads/T-227_netlist_ir_atomized_origins.md
+    files:
+      - src/asdl/lowering/atomized_graph_to_netlist_ir.py
       - src/asdl/emit/netlist/render.py
-      - src/asdl/emit/netlist/ir_utils.py
-      - tests/unit_tests/emit/test_netlist_emit_verify.py
-      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
-    links:
-      scratchpad: agents/scratchpads/T-219_netlist_emit_no_ifir.md
-  - id: T-220
-    title: Retire CLI ir-dump and legacy xDSL entrypoints
-    owner: Executor
-    dod: >
-      Remove the CLI `ir-dump` command and xDSL pipeline imports from the CLI
-      surface. Update CLI docs/tests to reflect only PatternedGraph + NetlistIR
-      flows, and ensure CLI netlist tests run without xdsl installed.
-    verify:
-      - venv/bin/pytest tests/unit_tests/cli -v
-    files:
-      - src/asdl/cli/__init__.py
-      - tests/unit_tests/cli/test_ir_dump.py
-      - tests/unit_tests/cli/test_netlist.py
-      - docs/specs/spec_cli.md
-    links:
-      scratchpad: agents/scratchpads/T-220_cli_remove_ir_dump.md
-  - id: T-223
-    title: Move legacy xDSL specs under docs/legacy
-    owner: Executor
-    dod: >
-      Relocate legacy GraphIR/IFIR/NFIR specs and xDSL-era pipeline docs from
-      `docs/specs/` into `docs/legacy/`, add a brief README in `docs/legacy/`
-      describing decommissioned status, and update any in-repo references to
-      point to the new paths.
-    verify:
-      - venv/bin/pytest tests/unit_tests/cli -v
-    files:
-      - docs/specs
-      - docs/legacy
-      - agents/context/codebase_map.md
-      - docs/specs/spec_compiler_stack.md
-      - docs/specs/spec_pipeline.md
-    links:
-      scratchpad: agents/scratchpads/T-223_move_legacy_specs.md
-  - id: T-221
-    title: Quarantine xDSL IR code/tests under legacy
-    owner: Executor
-    depends_on:
-      - T-220
-    dod: >
-      Move the xDSL IR implementation and tests out of the active tree
-      (`src/asdl/ir`, `tests/unit_tests/ir`, and any xdsl-only netlist tests)
-      into `legacy/`, and update the codebase map to point to their legacy
-      location. Active imports must not reference the moved modules.
-    verify:
-      - venv/bin/pytest tests/unit_tests/emit/test_netlist_emit_verify.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/cli -v
-    files:
-      - src/asdl/ir
-      - tests/unit_tests/ir
-      - tests/unit_tests/netlist/test_netlist_emitter.py
-      - agents/context/codebase_map.md
-    links:
-      scratchpad: agents/scratchpads/T-221_legacy_xdsl_quarantine.md
-  - id: T-222
-    title: Remove xdsl dependency from default installs
-    owner: Executor
-    depends_on:
-      - T-221
-    dod: >
-      Remove xdsl from runtime requirements and eliminate xdsl extras, then
-      update README install guidance to note that the legacy pipeline has been
-      decommissioned and is no longer supported.
-    verify:
-      - venv/bin/pytest tests/unit_tests/cli -v
-    files:
-      - pyproject.toml
-      - requirements.txt
-      - README.md
-    links:
-      scratchpad: agents/scratchpads/T-222_legacy_xdsl_dependency.md
+      - src/asdl/emit/verify_netlist_ir.py
+      - tests/unit_tests/emit/
 backlog: []

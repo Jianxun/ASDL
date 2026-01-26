@@ -90,11 +90,13 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - ADR-0023: Core graphs include device definitions; modules/devices use `ports` lists (never None); backend templates stay outside core graphs.
 - ADR-0024: Replace IFIR with NetlistIR dataclass model; remove xDSL from the refactor pipeline.
 - ADR-0025: Hard decommission xDSL pipeline (remove `ir-dump`, move legacy specs, drop dependency).
+- ADR-0026 (Proposed): Store pattern origins on AtomizedGraph entities to avoid reconstruction.
 
 - 2026-01-24: ADR-0024 -- Replace IFIR with NetlistIR dataclass model; remove xDSL from the refactor pipeline (supersedes ADR-0014).
 - 2026-01-23: ADR-0023 -- Core graphs include device definitions; modules/devices use `ports` lists (never None); backend templates stay outside core graphs.
 - 2026-01-21: PatternedGraph construction now uses a core builder API; AST lowering lives under `src/asdl/lowering/` instead of `asdl.core`.
 - 2026-01-25: ADR-0025 -- Hard decommission xDSL pipeline (remove `ir-dump`, move legacy specs, drop dependency).
+- 2026-01-26: ADR-0026 (Proposed) -- Store pattern origins on AtomizedGraph entities to avoid reconstruction.
 
 - 2026-01-16: ADR-0014 -- GraphIR is the canonical semantic core with stable IDs; GraphIR defines program/module/device/net/instance/endpoint ops and module port_order; IFIR is a projection and NFIR is optional. (Superseded 2026-01-24, ADR-0024)
 - 2026-01-17: ADR-0015 -- GraphIR stores only atomized names; pattern provenance is attached to ops via typed pattern_origin pointing to a module attrs expression table; endpoint expressions expand as a whole then split on `.`.

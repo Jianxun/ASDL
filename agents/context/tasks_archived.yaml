@@ -1,6 +1,11 @@
 schema_version: 1
 
 archive:
+  - T-223: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-223_move_legacy_specs.md, pr: 230}
+  - T-222: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-222_legacy_xdsl_dependency.md, pr: 234}
+  - T-221: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-221_legacy_xdsl_quarantine.md, pr: 232}
+  - T-220: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-220_cli_remove_ir_dump.md, pr: 228}
+  - T-219: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-219_netlist_emit_no_ifir.md, pr: 227}
   - T-218: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-218_netlist_ir_literal_policy.md, pr: 222}
   - T-217: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-217_netlist_ir_origin_preserve.md, pr: 221}
   - T-216: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-216_netlist_ir_backend_uniqueness.md, pr: 220}
