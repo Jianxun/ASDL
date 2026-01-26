@@ -1,21 +1,9 @@
 schema_version: 2
-T-219:
-  status: done
-  pr: 227
-  merged: true
-T-220:
-  status: done
-  pr: 228
-  merged: true
-T-221:
-  status: done
-  pr: 232
-  merged: true
-T-222:
-  status: done
-  pr: 234
-  merged: true
-T-223:
-  status: done
-  pr: 230
-  merged: true
+T-226:
+  status: ready
+  pr: null
+  merged: false
+T-227:
+  status: blocked
+  pr: null
+  merged: false
