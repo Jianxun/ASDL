@@ -57,3 +57,5 @@
 - 2026-01-26 03:35 — Scope/DoD review complete; changes align with discovery, interpolation, and path resolution requirements.
 - 2026-01-26 03:35 — Posted PR review comment; decision: review_clean.
 - 2026-01-26 03:35 — Updated T-232 status to review_clean.
+- 2026-01-26 03:37 — Merged PR #244 into main; proceeding with closeout status updates.
+- 2026-01-26 03:37 — Set T-232 status to done (merged true) for closeout.

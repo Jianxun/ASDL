@@ -1,8 +1,8 @@
 schema_version: 2
 T-232:
-  status: review_clean
+  status: done
   pr: 244
-  merged: false
+  merged: true
 T-233:
   status: ready
   pr: null
