@@ -20,16 +20,23 @@
   - Add/update tests and run verify.
 
 ## Progress log
-- 2026-01-26 00:00 — Task intake; read context files; next step set task in_progress and create branch.
+- 2026-01-25 20:52 — Task intake; read context files; next step set task in_progress and create branch.
+- 2026-01-25 20:53 — Set T-226 in_progress, ran lint_tasks_state, created feature branch; files: agents/context/tasks_state.yaml; next step implement atomized origins.
+- 2026-01-25 20:54 — Added AtomizedPatternOrigin, atomization origin expansion, atomized graph dump helpers, and origin coverage test; files: src/asdl/core/atomized_graph.py, src/asdl/lowering/patterned_graph_to_atomized_patterns.py, src/asdl/lowering/patterned_graph_to_atomized_instances.py, src/asdl/lowering/patterned_graph_to_atomized_nets.py, src/asdl/core/dump.py, src/asdl/core/__init__.py, tests/unit_tests/core/test_patterned_graph_atomize.py.
+- 2026-01-25 20:54 — Commit 0f8ce35 "Add atomized pattern origins to atomization".
+- 2026-01-25 20:55 — Verified netlist unit tests: `venv/bin/pytest tests/unit_tests/netlist -v` (pass).
 
 ## Patch summary
-- Pending.
+- Added AtomizedPatternOrigin and pattern_origin fields on AtomizedNet/Instance/Endpoint.
+- Expanded atomization to attach per-atom origins (nets, instances, endpoints) and added origin-aware expansion helper.
+- Added AtomizedGraph dump helpers to include pattern origins.
+- Added core test coverage for atomized pattern origin attachment.
 
 ## PR URL
 - Pending.
 
 ## Verification
-- Pending.
+- `venv/bin/pytest tests/unit_tests/netlist -v`
 
 ## Status request
 - In Progress.
@@ -38,7 +45,4 @@
 - None.
 
 ## Next steps
-- Update tasks_state to in_progress, branch, inspect atomized graph + atomization passes.
-- 2026-01-25 20:53 — Set T-226 in_progress, ran lint_tasks_state, created feature branch; files: agents/context/tasks_state.yaml; next step implement atomized origins.
-- 2026-01-25 20:54 — Added AtomizedPatternOrigin, atomization origin expansion, atomized graph dump helpers, and origin coverage test; files: src/asdl/core/atomized_graph.py, src/asdl/lowering/patterned_graph_to_atomized_patterns.py, src/asdl/lowering/patterned_graph_to_atomized_instances.py, src/asdl/lowering/patterned_graph_to_atomized_nets.py, src/asdl/core/dump.py, src/asdl/core/__init__.py, tests/unit_tests/core/test_patterned_graph_atomize.py.
-- 2026-01-25 20:54 — Commit 0f8ce35 "Add atomized pattern origins to atomization".
+- Open PR and update tasks_state to ready_for_review.
