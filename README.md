@@ -18,6 +18,47 @@ ASDL is a Python-first framework for describing analog circuits as structured YA
 - `agents/`: multi-agent coordination helpers (`context/`, `roles/`, `scratchpads/`).
 - `tests/unit_tests/`: pytest suites covering parser, AST, IR, emit, netlist, e2e, and CLI tooling.
 
+## Project config (.asdlrc)
+ASDL supports an optional project config file named `.asdlrc` (YAML). The CLI
+discovers it per entry file by walking parent directories from the entry file
+directory and stopping at the nearest ancestor that contains `.asdlrc`. Use
+`asdlc --config /path/to/.asdlrc` to override discovery.
+
+Example:
+```yaml
+schema_version: 1
+lib_roots:
+  - ./libs
+  - ${ASDLRC_DIR}/shared
+backend_config: ${ASDLRC_DIR}/config/backends.yaml
+env:
+  ASDL_LIB_PATH: ${ASDLRC_DIR}/pdk
+  PDK_ROOT: /opt/pdks/my_pdk
+```
+
+Schema + rules:
+- `schema_version`: required, must be `1`.
+- `lib_roots`: list of library roots (strings). Relative paths are resolved
+  against the `.asdlrc` directory after interpolation.
+- `backend_config`: optional backend config path (string). Resolved the same way
+  as `lib_roots`.
+- `env`: optional map of string keys/values. Values may reference `${VAR}`.
+
+Interpolation + resolution:
+- `${ASDLRC_DIR}` is always available and points to the `.asdlrc` directory.
+- `${VAR}` tokens expand using the process environment plus `.asdlrc` `env`
+  entries (without overriding existing environment keys).
+- Expansion runs repeatedly until stable (max 10 passes); unresolved tokens are
+  left as-is.
+- `~` is expanded and non-absolute paths are made absolute relative to the
+  `.asdlrc` directory. Empty path results are invalid.
+
+Precedence:
+- Environment: `.asdlrc` `env` only fills missing `os.environ` keys.
+- Library roots: `--lib` roots first, then `.asdlrc` `lib_roots`, then
+  `ASDL_LIB_PATH`.
+- Backend config: `ASDL_BACKEND_CONFIG` overrides `.asdlrc` `backend_config`.
+
 ## Development environment setup
 1. Install Python 3.10+ and ensure `python` points to the desired interpreter.
 2. Clone this repo and enter it:
