@@ -1,0 +1,38 @@
+# Task summary (DoD + verify)
+- DoD: Remove origin reconstruction in `src/asdl/lowering/atomized_graph_to_netlist_ir.py` and instead copy Atomized* `pattern_origin` into NetlistIR nets/instances. Delete/retire `_PatternOriginResolver` or reduce it to building the pattern_expression_table from `expression_id` values found in atomized origins. Keep NetlistIR `pattern_expression_table` wiring intact for verifier/rendering. Update/extend emit tests to assert numeric pattern rendering now applies to all atoms (e.g., BUS[25], BUS[24], pin[130], pin[129], sw_row[130], sw_row[129]).
+- Verify: `venv/bin/pytest tests/unit_tests/emit -v`
+
+# Read (paths)
+- agents/context/lessons.md
+- agents/context/contract.md
+- agents/context/tasks.yaml
+- agents/context/tasks_state.yaml
+- agents/context/project_status.md
+
+# Plan
+- Inspect atomized->netlist IR lowering and current pattern origin resolver logic.
+- Update NetlistIR construction to consume Atomized* pattern_origin and rebuild pattern_expression_table from atomized origins.
+- Update/extend emit tests for numeric pattern rendering across atoms.
+- Run verify command.
+
+Todo:
+- [x] Update lowering tests for atomized-origin data paths.
+- [x] Update atomized_graph_to_netlist_ir to copy origins + build pattern table from atomized origins.
+- [ ] Add emit test for numeric pattern rendering across all atoms.
+- [ ] Run `venv/bin/pytest tests/unit_tests/emit -v`.
+
+# Progress log
+
+- 2026-01-25 21:14 — Updated NetlistIR lowering to use atomized pattern origins and adjusted lowering tests; files: src/asdl/lowering/atomized_graph_to_netlist_ir.py, tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py; next step add emit test coverage.
+# Patch summary
+
+# PR URL
+
+# Verification
+
+# Status request (Done / Blocked / In Progress)
+
+# Blockers / Questions
+
+# Next steps
+- 2026-01-25 21:06 — Task intake; created scratchpad and set T-227 in_progress; next step review atomized->netlist lowering code.

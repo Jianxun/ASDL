@@ -4,6 +4,6 @@ T-226:
   pr: 236
   merged: true
 T-227:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
