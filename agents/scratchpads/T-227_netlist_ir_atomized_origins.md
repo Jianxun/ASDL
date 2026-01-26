@@ -23,21 +23,36 @@ Todo:
 
 # Progress log
 
-- 2026-01-25 21:14 — Updated NetlistIR lowering to use atomized pattern origins and adjusted lowering tests; files: src/asdl/lowering/atomized_graph_to_netlist_ir.py, tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py; next step add emit test coverage.
-# Patch summary
-
-# PR URL
-
-# Verification
-
-# Status request (Done / Blocked / In Progress)
-
-# Blockers / Questions
-
-# Next steps
 - 2026-01-25 21:06 — Task intake; created scratchpad and set T-227 in_progress; next step review atomized->netlist lowering code.
+- 2026-01-25 21:14 — Updated NetlistIR lowering to use atomized pattern origins and adjusted lowering tests; files: src/asdl/lowering/atomized_graph_to_netlist_ir.py, tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py; next step add emit test coverage.
 - 2026-01-25 21:15 — Committed NetlistIR lowering updates and atomized-origin test updates (3d11199); next step add emit test.
 - 2026-01-25 21:15 — Added emit test for numeric pattern rendering across all atoms; file: tests/unit_tests/emit/test_netlist_ir_atomized_origins.py; next step run emit test suite.
-- 2026-01-25 21:15 — Ran `venv/bin/pytest tests/unit_tests/emit -v`; result: 25 passed; next step finalize summary and PR.
 - 2026-01-25 21:15 — Committed emit test coverage for numeric pattern rendering (1cebb1b); next step run emit test suite.
+- 2026-01-25 21:15 — Ran `venv/bin/pytest tests/unit_tests/emit -v`; result: 25 passed; next step finalize summary and PR.
 - 2026-01-25 21:15 — Committed scratchpad progress update (3b384cc); next step prepare PR.
+- 2026-01-25 21:15 — Committed scratchpad commit log entry (e57766f); next step open PR.
+- 2026-01-25 21:18 — Opened PR https://github.com/Jianxun/ASDL/pull/237; next step update task state to ready_for_review.
+- 2026-01-25 21:22 — Review intake; confirmed PR targets main and scratchpad/verify logs present; next step set review_in_progress and inspect diffs.
+- 2026-01-25 21:22 — Set T-227 status to review_in_progress; ran lint_tasks_state.py; next step review code/tests against DoD.
+- 2026-01-25 21:22 — Completed scope/DoD check and diff review; no blockers found; next step post PR comment and set review_clean.
+
+# Patch summary
+- Removed pattern origin reconstruction in AtomizedGraph -> NetlistIR lowering; origins now flow from atomized entities and the pattern table is built from referenced expression ids.
+- Updated lowering tests to use AtomizedPatternOrigin instead of patterned ids.
+- Added emit test coverage for numeric pattern rendering across all atoms.
+
+# PR URL
+- https://github.com/Jianxun/ASDL/pull/237
+
+# Verification
+- `venv/bin/pytest tests/unit_tests/emit -v`
+
+# Status request (Done / Blocked / In Progress)
+- Done
+
+# Blockers / Questions
+- None.
+
+# Next steps
+- Await reviewer feedback.
+- 2026-01-25 21:19 — Updated tasks_state to ready_for_review (PR 237), ran lint_tasks_state.py, and committed state change (9c7de07); next step push branch.
