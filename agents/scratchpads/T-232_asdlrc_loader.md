@@ -26,15 +26,19 @@
 - 2026-01-26 03:27 — Added asdlrc config unit tests for discovery/interpolation/path resolution.
 - 2026-01-26 03:28 — Implemented asdlrc discovery + parsing utilities with interpolation and path resolution.
 - 2026-01-26 03:29 — Ran pytest for asdlrc tests (2 passed).
+- 2026-01-26 03:30 — Commit 12c9ac9: chore: start T-232 asdlrc loader.
+- 2026-01-26 03:31 — Commit acd973d: test: cover asdlrc discovery and expansion.
+- 2026-01-26 03:31 — Commit 6ec8042: feat: add .asdlrc discovery and parsing.
 
 ## Patch summary
-- TBD
+- Added .asdlrc config tests for discovery, interpolation, and path resolution.
+- Implemented .asdlrc discovery and parsing utilities with env interpolation and rc-relative path resolution.
 
 ## PR URL
 - TBD
 
 ## Verification
-- TBD
+- ./venv/bin/pytest tests/unit_tests/cli -k asdlrc
 
 ## Status request
 - In Progress
