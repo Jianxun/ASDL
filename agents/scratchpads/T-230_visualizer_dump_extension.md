@@ -20,9 +20,11 @@
 
 ## Progress log
 - 2026-01-26 00:52 — Task intake; read executor workflow + project context; set task status to in_progress; created feature branch; updated scratchpad; next step: update visualizer extension to call asdlc visualizer-dump.
+- 2026-01-26 00:53 — Committed task setup (`018f2e0` chore: start T-230); files: `agents/context/tasks_state.yaml`, `agents/scratchpads/T-230_visualizer_dump_extension.md`; next step: implement asdlc visualizer-dump integration in extension.
+- 2026-01-26 00:53 — Implemented asdlc visualizer-dump invocation with module list selection, JSON parsing, and friendly CLI errors; updated visualizer graph mapping; committed (`48da3fe` feat: run asdlc visualizer-dump in extension); files: `extensions/asdl-visualizer/src/extension.ts`; next step: run `npm run build` and record results.
 
 ## Patch summary
-- Pending.
+- Updated visualizer extension to run `asdlc visualizer-dump`, prompt for modules, parse minimal JSON, and surface CLI errors.
 
 ## PR URL
 - Pending.
