@@ -43,3 +43,7 @@
 
 ## Next steps
 - Update extension to invoke `asdlc visualizer-dump` and map JSON to webview payload.
+- 2026-01-26 00:58 — Review intake; fetched PR 241 and set status to review_in_progress; next step: inspect diff and verify checks/logs.
+- 2026-01-26 01:03 — Verified DoD/PR scope; found out-of-scope addition `scripts/check_unfinished_tasks.py`; next step: note blocker and request changes.
+- 2026-01-26 01:03 — Checked verification logs; `npm run build` recorded as failed (`tsc` missing); next step: include in review findings.
+- 2026-01-26 01:05 — Review decision: request_changes (scope + verification); updated task status to request_changes and ran lint.
