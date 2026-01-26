@@ -47,3 +47,9 @@
 - 2026-01-26 01:03 — Verified DoD/PR scope; found out-of-scope addition `scripts/check_unfinished_tasks.py`; next step: note blocker and request changes.
 - 2026-01-26 01:03 — Checked verification logs; `npm run build` recorded as failed (`tsc` missing); next step: include in review findings.
 - 2026-01-26 01:05 — Review decision: request_changes (scope + verification); updated task status to request_changes and ran lint.
+- 2026-01-26 01:21 — Review intake (redo); set task status to review_in_progress and ran lint_tasks_state; next step: inspect PR diff and verification.
+- 2026-01-26 01:23 — Scope review complete; asdlc visualizer-dump integration aligns with DoD; tooling script noted as approved; next step: run verify command.
+- 2026-01-26 01:24 — Ran `npm run build` (extensions/asdl-visualizer); failed due to missing TS deps (`vscode`, `@types/node`, `yaml`); next step: include in review decision.
+- 2026-01-26 01:25 — Installed extension deps (`npm ci`) to satisfy build requirements; next step: rerun build.
+- 2026-01-26 01:26 — Ran `npm run build` (extensions/asdl-visualizer); succeeded (Vite CJS API deprecation warning only); next step: finalize review decision.
+- 2026-01-26 01:27 — Review decision: review_clean; posted PR comment; updated task status to review_clean; next step: merge and closeout.
