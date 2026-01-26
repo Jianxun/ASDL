@@ -1,6 +1,10 @@
 schema_version: 1
 
 archive:
+  - T-231: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-231_visualizer_symbols.md, pr: 243}
+  - T-230: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-230_visualizer_dump_extension.md, pr: 241}
+  - T-229: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-229_visualizer_dump_cli.md, pr: 240}
+  - T-228: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-228_visualizer_refactor.md, pr: 242}
   - T-227: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-227_netlist_ir_atomized_origins.md, pr: 237}
   - T-226: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-226_atomized_pattern_origins.md, pr: 236}
   - T-223: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-223_move_legacy_specs.md, pr: 230}

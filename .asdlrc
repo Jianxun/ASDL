@@ -1,0 +1,12 @@
+# Example ASDL project config (not yet consumed by asdlc).
+schema_version: 1
+backend_config: ${ASDLRC_DIR}/config/backends.yaml
+lib_roots:
+  - ${ASDLRC_DIR}/examples/pdks/${PDK}/asdl
+  - ${ASDLRC_DIR}/libs
+env:
+  PDK: gf180mcu
+  PDK_PATH: ${ASDLRC_DIR}/examples/pdks/${PDK}
+  PDK_ASDL_PATH: ${PDK_PATH}/asdl
+  ASDL_DESIGN_LIBS_PATH: ${ASDLRC_DIR}/libs
+  ASDL_LIB_PATH: ${PDK_ASDL_PATH}:${ASDL_DESIGN_LIBS_PATH}
