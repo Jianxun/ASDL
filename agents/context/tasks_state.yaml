@@ -12,6 +12,6 @@ T-230:
   pr: 241
   merged: true
 T-231:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 243
+  merged: true

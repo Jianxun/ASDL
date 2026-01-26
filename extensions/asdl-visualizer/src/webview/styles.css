@@ -164,6 +164,14 @@ body {
   border: 1px solid #0f172a;
 }
 
+.reactflow .pin-handle {
+  background: var(--accent);
+}
+
+.reactflow .hub-handle {
+  background: #fbbf24;
+}
+
 .reactflow .react-flow__minimap {
   background: #0f172a;
 }

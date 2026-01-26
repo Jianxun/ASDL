@@ -3,7 +3,7 @@ import YAML from 'yaml'
 
 import { loadVisualizerDump, loadVisualizerModuleList, VisualizerDumpError } from './dumpRunner'
 import { buildMockLayout, readLayoutSidecar, writeLayoutSidecar } from './layout'
-import { buildGraphFromDump, buildMockGraph } from './symbols'
+import { buildGraphFromDump, buildMockGraph, loadSymbolLibrary } from './symbols'
 import type { LoadGraphPayload, VisualizerModule } from './types'
 import { resolveActiveAsdlUri } from './util'
 import { getWebviewHtml } from './webview'
@@ -85,7 +85,9 @@ async function loadGraphPayload(asdlUri: vscode.Uri): Promise<LoadGraphPayload> 
   const selectedModule = await promptForModule(moduleList.modules)
   const dumpResult = await loadVisualizerDump(asdlUri, selectedModule.name)
   diagnostics.push(...dumpResult.diagnostics)
-  const graph = buildGraphFromDump(dumpResult.dump, diagnostics)
+  const symbolLibrary = await loadSymbolLibrary(dumpResult.dump)
+  diagnostics.push(...symbolLibrary.diagnostics)
+  const graph = buildGraphFromDump(dumpResult.dump, diagnostics, symbolLibrary.symbols)
   const layout = await readLayoutSidecar(asdlUri, graph, dumpResult.dump.module.name)
   return { graph, layout, diagnostics }
 }

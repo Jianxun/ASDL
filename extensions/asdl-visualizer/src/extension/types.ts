@@ -41,6 +41,38 @@ export type VisualizerDump = {
   }
 }
 
+export type SymbolPins = {
+  top?: Array<string | null>
+  bottom?: Array<string | null>
+  left?: Array<string | null>
+  right?: Array<string | null>
+}
+
+export type SymbolPinOffsets = {
+  top?: Record<string, number>
+  bottom?: Record<string, number>
+  left?: Record<string, number>
+  right?: Record<string, number>
+}
+
+export type SymbolGlyph = {
+  src: string
+  viewbox?: string
+}
+
+export type SymbolDefinition = {
+  body: { w: number; h: number }
+  pins: SymbolPins
+  pin_offsets?: SymbolPinOffsets
+  glyph?: SymbolGlyph
+}
+
+export type SymbolSidecar = {
+  schema_version: number
+  modules: Record<string, SymbolDefinition>
+  devices?: Record<string, SymbolDefinition>
+}
+
 export type VisualizerModuleList = {
   schema_version: number
   modules: VisualizerModule[]
@@ -48,9 +80,15 @@ export type VisualizerModuleList = {
 
 export type GraphPayload = {
   moduleId: string
-  instances: Array<{ id: string; label: string; pins: string[] }>
+  instances: Array<{
+    id: string
+    label: string
+    pins: string[]
+    symbolKey: string
+  }>
   netHubs: Array<{ id: string; label: string }>
   edges: Array<{ id: string; from: string; to: string }>
+  symbols: Record<string, SymbolDefinition>
 }
 
 export type LayoutPayload = {
