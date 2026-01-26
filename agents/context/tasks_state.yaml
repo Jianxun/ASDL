@@ -12,6 +12,6 @@ T-230:
   pr: 241
   merged: true
 T-231:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 243
   merged: false

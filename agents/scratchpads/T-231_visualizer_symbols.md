@@ -24,16 +24,29 @@
 - Add/adjust tests if present; run `npm run build`.
 
 ## Progress log
+- 2026-01-26 01:52 — Task intake; confirmed T-231 ready -> set in_progress, created feature branch; next inspect visualizer extension/webview symbol/layout usage.
+- 2026-01-26 02:06 — Committed task setup (in_progress + expanded scratchpad); commit a18ac42; next implement symbol loader + graph updates.
+- 2026-01-26 02:06 — Implemented symbol sidecar loading + unified schema, wired into graph build; commit 3ed89f7; next update webview pin placement/anchors.
+- 2026-01-26 02:06 — Updated webview for pin placement + top-left instance anchors + hub handle; commit ba495f6; next run build/verify.
+- 2026-01-26 02:06 — Ran npm run build (extensions/asdl-visualizer); success with Vite CJS deprecation warning; next finalize scratchpad + status.
+- 2026-01-26 02:08 — Opened PR https://github.com/Jianxun/ASDL/pull/243; next update task status + finalize scratchpad.
 
 ## Patch summary
+- Load `.sym.yaml` sidecars by file_id, normalize unified symbol schema, validate pins, and attach symbol refs to graph payload.
+- Render instance pins via symbol-driven placement, move instance anchors to top-left grid coordinates, and adjust layout save logic.
+- Add hub handle id/placement and adjust webview styles for pin/hub handles.
 
 ## PR URL
-
+https://github.com/Jianxun/ASDL/pull/243
 ## Verification
+- `npm run build` (extensions/asdl-visualizer) — ok; Vite CJS Node API deprecation warning.
 
 ## Status request (Done / Blocked / In Progress)
+Done
 
 ## Blockers / Questions
+None.
 
 ## Next steps
-- 2026-01-26 01:52 — Task intake; confirmed T-231 ready -> set in_progress, created feature branch; next inspect visualizer extension/webview symbol/layout usage.
+- Await reviewer feedback.
+- 2026-01-26 02:08 — Set T-231 status to ready_for_review (PR 243) and ran lint_tasks_state.py; next push final updates.
