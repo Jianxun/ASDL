@@ -24,6 +24,8 @@ from .dump import (
     dump_atomized_graph,
     dump_patterned_graph,
     patterned_graph_to_jsonable,
+    visualizer_dump_to_jsonable,
+    visualizer_module_list_to_jsonable,
 )
 from .graph_builder import PatternedGraphBuilder
 from .graph import (
@@ -90,6 +92,8 @@ __all__ = [
     "DesignQuery",
     "dump_atomized_graph",
     "dump_patterned_graph",
+    "visualizer_dump_to_jsonable",
+    "visualizer_module_list_to_jsonable",
     "DeviceDef",
     "DeviceId",
     "DeviceBackendIndex",

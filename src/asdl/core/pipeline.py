@@ -13,7 +13,7 @@ from asdl.lowering.ast_to_patterned_graph import (
     build_patterned_graph_from_import_graph,
 )
 
-from .graph import ProgramGraph
+from .graph import ModuleGraph, ProgramGraph
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -73,6 +73,25 @@ def run_patterned_graph_pipeline(
     return graph, diagnostics
 
 
+def list_entry_modules(graph: ProgramGraph, entry_file: Path) -> list[ModuleGraph]:
+    """Return modules defined in the entry file.
+
+    Args:
+        graph: Program graph to query.
+        entry_file: Entry file path used for compilation.
+
+    Returns:
+        Sorted list of module graphs originating from the entry file.
+    """
+    entry_id = str(Path(entry_file).resolve())
+    modules = [
+        module
+        for module in graph.modules.values()
+        if module.file_id == entry_id
+    ]
+    return sorted(modules, key=lambda module: (module.name, module.module_id))
+
+
 def _has_error_diagnostics(diagnostics: Iterable[Diagnostic]) -> bool:
     return any(
         diagnostic.severity in (Severity.ERROR, Severity.FATAL)
@@ -91,4 +110,4 @@ def _diagnostic(code: str, message: str) -> Diagnostic:
     )
 
 
-__all__ = ["run_patterned_graph_pipeline"]
+__all__ = ["list_entry_modules", "run_patterned_graph_pipeline"]

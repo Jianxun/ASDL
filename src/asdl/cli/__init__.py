@@ -138,6 +138,132 @@ def patterned_graph_dump(
     _emit_diagnostics(diagnostics)
 
 
+@cli.command("visualizer-dump")
+@click.argument("input_file", type=click.Path(dir_okay=False, path_type=Path))
+@click.option(
+    "--module",
+    "module_name",
+    help="Module name to dump.",
+)
+@click.option(
+    "--list-modules",
+    is_flag=True,
+    default=False,
+    help="List entry-file modules and exit.",
+)
+@click.option(
+    "--compact",
+    is_flag=True,
+    default=False,
+    help="Emit compact JSON output.",
+)
+def visualizer_dump(
+    input_file: Path,
+    module_name: Optional[str],
+    list_modules: bool,
+    compact: bool,
+) -> None:
+    """Emit minimal JSON for the visualizer."""
+    diagnostics: List[Diagnostic] = []
+    try:
+        from asdl.core import (
+            visualizer_dump_to_jsonable,
+            visualizer_module_list_to_jsonable,
+        )
+        from asdl.core.pipeline import list_entry_modules, run_patterned_graph_pipeline
+    except Exception as exc:  # pragma: no cover - defensive: missing optional deps
+        diagnostics.append(
+            _diagnostic(
+                CLI_IMPORT_ERROR,
+                f"Failed to load visualizer dump dependencies: {exc}",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    if module_name and list_modules:
+        diagnostics.append(
+            _diagnostic(
+                CLI_SCHEMA_ERROR,
+                "Use either --module or --list-modules, not both.",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    graph, pipeline_diags = run_patterned_graph_pipeline(entry_file=input_file)
+    diagnostics.extend(pipeline_diags)
+    if graph is None or _has_error_diagnostics(diagnostics):
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    entry_modules = list_entry_modules(graph, input_file)
+    if list_modules:
+        if not entry_modules:
+            diagnostics.append(
+                _diagnostic(
+                    CLI_SCHEMA_ERROR,
+                    "Entry file contains no modules to list.",
+                )
+            )
+            _emit_diagnostics(diagnostics)
+            raise click.exceptions.Exit(1)
+        payload = visualizer_module_list_to_jsonable(entry_modules)
+    else:
+        if not entry_modules:
+            diagnostics.append(
+                _diagnostic(
+                    CLI_SCHEMA_ERROR,
+                    "Entry file contains no modules to dump.",
+                )
+            )
+            _emit_diagnostics(diagnostics)
+            raise click.exceptions.Exit(1)
+
+        selected_module = None
+        if module_name:
+            matches = [module for module in entry_modules if module.name == module_name]
+            if len(matches) == 1:
+                selected_module = matches[0]
+            elif not matches:
+                diagnostics.append(
+                    _diagnostic(
+                        CLI_SCHEMA_ERROR,
+                        f"Module '{module_name}' not found in entry file.",
+                    )
+                )
+            else:
+                diagnostics.append(
+                    _diagnostic(
+                        CLI_SCHEMA_ERROR,
+                        f"Multiple modules named '{module_name}' found in entry file.",
+                    )
+                )
+        else:
+            if len(entry_modules) == 1:
+                selected_module = entry_modules[0]
+            else:
+                diagnostics.append(
+                    _diagnostic(
+                        CLI_SCHEMA_ERROR,
+                        "Multiple modules found; use --module or --list-modules.",
+                    )
+                )
+
+        if selected_module is None or _has_error_diagnostics(diagnostics):
+            _emit_diagnostics(diagnostics)
+            raise click.exceptions.Exit(1)
+        payload = visualizer_dump_to_jsonable(graph, selected_module.module_id)
+
+    if compact:
+        output_text = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    else:
+        output_text = json.dumps(payload, sort_keys=True, indent=2)
+
+    click.echo(output_text, nl=False)
+    _emit_diagnostics(diagnostics)
+
+
 @cli.command("netlist")
 @click.argument("input_file", type=click.Path(dir_okay=False, path_type=Path))
 @click.option(

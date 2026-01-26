@@ -38,3 +38,5 @@
 - Update task status to in_progress, lint task state, and inspect CLI pipeline for existing dump patterns.
 - 2026-01-26 00:01 — Set T-229 status to in_progress and linted tasks_state; files touched: `agents/context/tasks_state.yaml`; next step inspect CLI pipeline and dump helpers.
 - 2026-01-26 00:05 — Added CLI tests for visualizer-dump list/modules and module output; files touched: `tests/unit_tests/cli/test_visualizer_dump.py`; next step implement CLI + dump helpers.
+- 2026-01-26 00:06 — Committed tests (f648983) "Add visualizer dump CLI tests"; next step implement visualizer dump serializer and CLI command.
+- 2026-01-26 00:15 — Implemented visualizer dump JSON helpers and entry-module filtering; files touched: `src/asdl/core/dump.py`, `src/asdl/core/__init__.py`, `src/asdl/core/pipeline.py`, `src/asdl/cli/__init__.py`; next step commit and run tests.
