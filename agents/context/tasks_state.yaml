@@ -8,9 +8,9 @@ T-229:
   pr: 240
   merged: true
 T-230:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 241
+  merged: true
 T-231:
   status: ready
   pr: null

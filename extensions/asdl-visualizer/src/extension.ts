@@ -1,8 +1,11 @@
 import * as vscode from 'vscode'
+import { execFile } from 'child_process'
 import path from 'path'
+import { promisify } from 'util'
 import YAML from 'yaml'
 
 const VIEW_TYPE = 'asdlVisualizer'
+const execFileAsync = promisify(execFile)
 
 export function activate(context: vscode.ExtensionContext) {
   const command = vscode.commands.registerCommand('asdl.openVisualizer', async () => {
@@ -27,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
     panel.webview.onDidReceiveMessage(async (message) => {
       if (message?.type === 'ready') {
         try {
-          const payload = await loadGraphPayload(asdlUri, context)
+          const payload = await loadGraphPayload(asdlUri)
           panel.webview.postMessage({ type: 'loadGraph', payload })
           panel.webview.postMessage({
             type: 'diagnostics',
@@ -35,17 +38,22 @@ export function activate(context: vscode.ExtensionContext) {
           })
         } catch (error) {
           const details = error instanceof Error ? error.message : String(error)
+          const diagnostics = error instanceof VisualizerDumpError ? error.diagnostics : []
+          const mergedDiagnostics =
+            diagnostics.length > 0
+              ? diagnostics
+              : [`Failed to load visualizer dump: ${details}`]
           panel.webview.postMessage({
             type: 'loadGraph',
             payload: {
               graph: buildMockGraph(),
               layout: buildMockLayout(),
-              diagnostics: [`Failed to load PatternedGraph: ${details}`]
+              diagnostics: mergedDiagnostics
             }
           })
           panel.webview.postMessage({
             type: 'diagnostics',
-            payload: { items: [`Failed to load PatternedGraph: ${details}`] }
+            payload: { items: mergedDiagnostics }
           })
           vscode.window.showErrorMessage(`ASDL visualizer load failed: ${details}`)
         }
@@ -83,39 +91,52 @@ function resolveActiveAsdlUri(): vscode.Uri | null {
   return uri
 }
 
-type PatternedGraphDump = {
-  modules?: Array<{
-    module_id: string
-    name: string
-    file_id: string
-    ports?: string[]
-    nets?: Array<{
-      net_id: string
-      name_expr_id: string
-      endpoint_ids?: string[]
-    }>
-    instances?: Array<{
-      inst_id: string
-      name_expr_id: string
-      ref_kind: 'module' | 'device'
-      ref_id: string
-      ref_raw?: string
-    }>
-    endpoints?: Array<{
-      endpoint_id: string
-      net_id: string
-      port_expr_id: string
-    }>
+type VisualizerModule = {
+  module_id: string
+  name: string
+  file_id: string
+  ports?: string[]
+}
+
+type VisualizerDevice = {
+  device_id: string
+  name: string
+  file_id: string
+  ports?: string[]
+}
+
+type VisualizerDump = {
+  schema_version: number
+  module: VisualizerModule
+  instances: Array<{
+    inst_id: string
+    name_expr_id: string
+    ref_kind: 'module' | 'device'
+    ref_id: string
+    ref_raw?: string
   }>
-  devices?: Array<{
-    device_id: string
-    name: string
-    file_id: string
-    ports?: string[]
+  nets: Array<{
+    net_id: string
+    name_expr_id: string
+    endpoint_ids?: string[]
+  }>
+  endpoints: Array<{
+    endpoint_id: string
+    net_id: string
+    port_expr_id: string
   }>
   registries?: {
-    pattern_expressions?: Record<string, { raw?: string }>
+    pattern_expressions?: Record<string, { raw?: string }> | null
   }
+  refs?: {
+    modules?: VisualizerModule[]
+    devices?: VisualizerDevice[]
+  }
+}
+
+type VisualizerModuleList = {
+  schema_version: number
+  modules: VisualizerModule[]
 }
 
 type GraphPayload = {
@@ -143,6 +164,16 @@ type LoadGraphPayload = {
   diagnostics: string[]
 }
 
+class VisualizerDumpError extends Error {
+  diagnostics: string[]
+
+  constructor(message: string, diagnostics: string[] = []) {
+    super(message)
+    this.name = 'VisualizerDumpError'
+    this.diagnostics = diagnostics
+  }
+}
+
 async function writeLayoutSidecar(asdlUri: vscode.Uri, layoutYaml: string) {
   const dir = path.dirname(asdlUri.fsPath)
   const base = path.basename(asdlUri.fsPath, '.asdl')
@@ -152,58 +183,16 @@ async function writeLayoutSidecar(asdlUri: vscode.Uri, layoutYaml: string) {
   await vscode.workspace.fs.writeFile(outUri, Buffer.from(payload, 'utf8'))
 }
 
-async function loadGraphPayload(
-  asdlUri: vscode.Uri,
-  context: vscode.ExtensionContext
-): Promise<LoadGraphPayload> {
+async function loadGraphPayload(asdlUri: vscode.Uri): Promise<LoadGraphPayload> {
   const diagnostics: string[] = []
-  const graphUri = await resolvePatternedGraphUri(asdlUri, context)
-  if (!graphUri) {
-    throw new Error('PatternedGraph JSON not selected.')
-  }
-  const dump = await readPatternedGraphDump(graphUri)
-  const moduleDump = await selectModuleDump(dump, asdlUri, diagnostics)
-  const graph = buildGraphFromDump(dump, moduleDump, diagnostics)
-  const layout = await readLayoutSidecar(asdlUri, graph, moduleDump.name)
+  const moduleList = await loadVisualizerModuleList(asdlUri)
+  diagnostics.push(...moduleList.diagnostics)
+  const selectedModule = await promptForModule(moduleList.modules)
+  const dumpResult = await loadVisualizerDump(asdlUri, selectedModule.name)
+  diagnostics.push(...dumpResult.diagnostics)
+  const graph = buildGraphFromDump(dumpResult.dump, diagnostics)
+  const layout = await readLayoutSidecar(asdlUri, graph, dumpResult.dump.module.name)
   return { graph, layout, diagnostics }
-}
-
-async function resolvePatternedGraphUri(
-  asdlUri: vscode.Uri,
-  context: vscode.ExtensionContext
-): Promise<vscode.Uri | null> {
-  const cacheKey = `asdlVisualizer.graphDump:${asdlUri.fsPath}`
-  const cachedPath = context.workspaceState.get<string>(cacheKey)
-  if (cachedPath && (await fileExists(vscode.Uri.file(cachedPath)))) {
-    return vscode.Uri.file(cachedPath)
-  }
-
-  const dir = path.dirname(asdlUri.fsPath)
-  const base = path.basename(asdlUri.fsPath, '.asdl')
-  const candidates = [
-    path.join(dir, `${base}.patterned.json`),
-    path.join(dir, `${base}.patterned-graph.json`),
-    path.join(dir, `${base}.patterned_graph.json`)
-  ]
-  for (const candidate of candidates) {
-    const uri = vscode.Uri.file(candidate)
-    if (await fileExists(uri)) {
-      await context.workspaceState.update(cacheKey, candidate)
-      return uri
-    }
-  }
-
-  const picked = await vscode.window.showOpenDialog({
-    canSelectMany: false,
-    openLabel: 'Select PatternedGraph JSON',
-    filters: { JSON: ['json'] },
-    defaultUri: vscode.Uri.file(dir)
-  })
-  if (!picked || picked.length === 0) {
-    return null
-  }
-  await context.workspaceState.update(cacheKey, picked[0].fsPath)
-  return picked[0]
 }
 
 async function fileExists(uri: vscode.Uri): Promise<boolean> {
@@ -215,58 +204,59 @@ async function fileExists(uri: vscode.Uri): Promise<boolean> {
   }
 }
 
-async function readPatternedGraphDump(uri: vscode.Uri): Promise<PatternedGraphDump> {
-  const raw = await vscode.workspace.fs.readFile(uri)
-  const text = Buffer.from(raw).toString('utf8')
-  return JSON.parse(text) as PatternedGraphDump
-}
-
-async function selectModuleDump(
-  dump: PatternedGraphDump,
-  asdlUri: vscode.Uri,
-  diagnostics: string[]
-): Promise<NonNullable<PatternedGraphDump['modules']>[number]> {
-  const modules = dump.modules ?? []
-  if (modules.length === 0) {
-    throw new Error('PatternedGraph dump contains no modules.')
-  }
-
-  const asdlPath = path.resolve(asdlUri.fsPath)
-  const basename = path.basename(asdlPath)
-  const matching = modules.filter((module) => {
-    if (!module.file_id) {
-      return false
-    }
-    if (module.file_id === asdlUri.fsPath) {
-      return true
-    }
-    try {
-      if (path.resolve(module.file_id) === asdlPath) {
-        return true
-      }
-    } catch {
-      // ignore path resolution errors
-    }
-    return path.basename(module.file_id) === basename
-  })
-
-  if (matching.length === 1) {
-    return matching[0]
-  }
-
-  const candidates = matching.length > 0 ? matching : modules
-  if (matching.length === 0) {
-    diagnostics.push(
-      'PatternedGraph dump does not match the active file; showing first module.'
+async function loadVisualizerModuleList(
+  asdlUri: vscode.Uri
+): Promise<{ modules: VisualizerModule[]; diagnostics: string[] }> {
+  const { stdout, stderr } = await runAsdlc(
+    ['visualizer-dump', asdlUri.fsPath, '--list-modules', '--compact'],
+    path.dirname(asdlUri.fsPath)
+  )
+  const diagnostics = parseDiagnostics(stderr)
+  let payload: VisualizerModuleList
+  try {
+    payload = JSON.parse(stdout) as VisualizerModuleList
+  } catch (error) {
+    throw new VisualizerDumpError(
+      'Failed to parse module list output from asdlc.',
+      diagnostics
     )
   }
+  return { modules: payload.modules ?? [], diagnostics }
+}
 
-  if (candidates.length === 1) {
-    return candidates[0]
+async function loadVisualizerDump(
+  asdlUri: vscode.Uri,
+  moduleName: string
+): Promise<{ dump: VisualizerDump; diagnostics: string[] }> {
+  const { stdout, stderr } = await runAsdlc(
+    ['visualizer-dump', asdlUri.fsPath, '--module', moduleName, '--compact'],
+    path.dirname(asdlUri.fsPath)
+  )
+  const diagnostics = parseDiagnostics(stderr)
+  let payload: VisualizerDump
+  try {
+    payload = JSON.parse(stdout) as VisualizerDump
+  } catch (error) {
+    throw new VisualizerDumpError(
+      'Failed to parse visualizer dump output from asdlc.',
+      diagnostics
+    )
+  }
+  return { dump: payload, diagnostics }
+}
+
+async function promptForModule(
+  modules: VisualizerModule[]
+): Promise<VisualizerModule> {
+  if (modules.length === 0) {
+    throw new VisualizerDumpError('No modules found in entry file.')
+  }
+  if (modules.length === 1) {
+    return modules[0]
   }
 
   const picked = await vscode.window.showQuickPick(
-    candidates.map((module) => ({
+    modules.map((module) => ({
       label: module.name,
       description: module.file_id,
       module
@@ -274,19 +264,22 @@ async function selectModuleDump(
     { placeHolder: 'Select ASDL module to visualize' }
   )
   if (!picked) {
-    return candidates[0]
+    return modules[0]
   }
   return picked.module
 }
 
 function buildGraphFromDump(
-  dump: PatternedGraphDump,
-  moduleDump: NonNullable<PatternedGraphDump['modules']>[number],
+  dump: VisualizerDump,
   diagnostics: string[]
 ): GraphPayload {
   const patternExpressions = dump.registries?.pattern_expressions ?? {}
-  const devices = new Map((dump.devices ?? []).map((device) => [device.device_id, device]))
-  const modules = new Map((dump.modules ?? []).map((module) => [module.module_id, module]))
+  const devices = new Map(
+    (dump.refs?.devices ?? []).map((device) => [device.device_id, device])
+  )
+  const modules = new Map(
+    (dump.refs?.modules ?? []).map((module) => [module.module_id, module])
+  )
 
   const resolveExprRaw = (exprId: string | undefined) => {
     if (!exprId) {
@@ -297,56 +290,88 @@ function buildGraphFromDump(
   }
 
   const instNameToId = new Map<string, string>()
-  const instances =
-    moduleDump.instances?.map((inst) => {
-      const label = resolveExprRaw(inst.name_expr_id) || inst.ref_raw || inst.inst_id
-      if (label) {
-        instNameToId.set(label, inst.inst_id)
-      }
-      const refTarget =
-        inst.ref_kind === 'device' ? devices.get(inst.ref_id) : modules.get(inst.ref_id)
-      const pins = refTarget?.ports ?? []
-      if (!refTarget) {
-        diagnostics.push(`Missing ${inst.ref_kind} reference for instance ${label}.`)
-      }
-      return {
-        id: inst.inst_id,
-        label,
-        pins
-      }
-    }) ?? []
+  const instances = dump.instances?.map((inst) => {
+    const label = resolveExprRaw(inst.name_expr_id) || inst.ref_raw || inst.inst_id
+    if (label) {
+      instNameToId.set(label, inst.inst_id)
+    }
+    const refTarget =
+      inst.ref_kind === 'device' ? devices.get(inst.ref_id) : modules.get(inst.ref_id)
+    const pins = refTarget?.ports ?? []
+    if (!refTarget) {
+      diagnostics.push(`Missing ${inst.ref_kind} reference for instance ${label}.`)
+    }
+    return {
+      id: inst.inst_id,
+      label,
+      pins
+    }
+  }) ?? []
 
-  const netHubs =
-    moduleDump.nets?.map((net) => ({
-      id: net.net_id,
-      label: resolveExprRaw(net.name_expr_id) || net.net_id
-    })) ?? []
+  const netHubs = dump.nets?.map((net) => ({
+    id: net.net_id,
+    label: resolveExprRaw(net.name_expr_id) || net.net_id
+  })) ?? []
 
-  const edges =
-    moduleDump.endpoints?.map((endpoint) => {
-      const portRaw = resolveExprRaw(endpoint.port_expr_id) || endpoint.port_expr_id
-      let from = portRaw
-      const splitIndex = portRaw.lastIndexOf('.')
-      if (splitIndex > 0 && splitIndex < portRaw.length - 1) {
-        const instName = portRaw.slice(0, splitIndex)
-        const pinName = portRaw.slice(splitIndex + 1)
-        const instId = instNameToId.get(instName)
-        if (instId) {
-          from = `${instId}.${pinName}`
-        }
+  const edges = dump.endpoints?.map((endpoint) => {
+    const portRaw = resolveExprRaw(endpoint.port_expr_id) || endpoint.port_expr_id
+    let from = portRaw
+    const splitIndex = portRaw.lastIndexOf('.')
+    if (splitIndex > 0 && splitIndex < portRaw.length - 1) {
+      const instName = portRaw.slice(0, splitIndex)
+      const pinName = portRaw.slice(splitIndex + 1)
+      const instId = instNameToId.get(instName)
+      if (instId) {
+        from = `${instId}.${pinName}`
       }
-      return {
-        id: endpoint.endpoint_id,
-        from,
-        to: endpoint.net_id
-      }
-    }) ?? []
+    }
+    return {
+      id: endpoint.endpoint_id,
+      from,
+      to: endpoint.net_id
+    }
+  }) ?? []
 
   return {
-    moduleId: moduleDump.name,
+    moduleId: dump.module.name,
     instances,
     netHubs,
     edges
+  }
+}
+
+function parseDiagnostics(stderr: string): string[] {
+  if (!stderr) {
+    return []
+  }
+  return stderr
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .filter((line) => line.length > 0)
+}
+
+async function runAsdlc(
+  args: string[],
+  cwd: string
+): Promise<{ stdout: string; stderr: string }> {
+  try {
+    const result = await execFileAsync('asdlc', args, {
+      cwd,
+      encoding: 'utf8',
+      maxBuffer: 10 * 1024 * 1024
+    })
+    return { stdout: result.stdout, stderr: result.stderr ?? '' }
+  } catch (error) {
+    const execError = error as NodeJS.ErrnoException & { stderr?: string }
+    if (execError.code === 'ENOENT') {
+      throw new VisualizerDumpError(
+        'The ASDL CLI (asdlc) is not available on PATH. Install ASDL or update your PATH.'
+      )
+    }
+    const stderr = typeof execError.stderr === 'string' ? execError.stderr : ''
+    const diagnostics = parseDiagnostics(stderr)
+    const detail = diagnostics[0] ?? execError.message ?? 'Unknown error.'
+    throw new VisualizerDumpError(`asdlc visualizer-dump failed: ${detail}`, diagnostics)
   }
 }
 
