@@ -8,7 +8,7 @@ T-229:
   pr: 240
   merged: true
 T-230:
-  status: request_changes
+  status: review_clean
   pr: 241
   merged: false
 T-231:
