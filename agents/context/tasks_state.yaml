@@ -4,9 +4,9 @@ T-232:
   pr: 244
   merged: true
 T-233:
-  status: review_clean
+  status: done
   pr: 246
-  merged: false
+  merged: true
 T-234:
   status: ready
   pr: null
