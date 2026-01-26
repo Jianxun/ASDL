@@ -4,7 +4,7 @@ T-232:
   pr: 244
   merged: true
 T-233:
-  status: ready_for_review
+  status: review_in_progress
   pr: 246
   merged: false
 T-234:
