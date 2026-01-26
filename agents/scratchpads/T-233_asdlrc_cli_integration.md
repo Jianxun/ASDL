@@ -19,7 +19,7 @@
 - [x] Add CLI integration tests for rc discovery, env merge, lib roots, and backend config precedence.
 - [x] Implement rc loading/merge helper and wire into netlist + visualizer-dump with `--config`.
 - [x] Run targeted pytest.
-- [ ] Update scratchpad and task state; open PR.
+- [x] Update scratchpad and task state; open PR.
 
 ## Progress log
 - 2026-01-26 12:02 — Task intake; scratchpad created; next step create feature branch and outline tests.
@@ -31,21 +31,26 @@
 - 2026-01-26 12:14 — Implemented rc loading/merging + --config wiring for netlist and visualizer-dump.
 - 2026-01-26 12:14 — Commit 3d35970: feat: wire asdlrc into asdlc commands.
 - 2026-01-26 12:15 — Ran ./venv/bin/pytest tests/unit_tests/cli -k asdlrc (passed).
+- 2026-01-26 12:16 — Commit 9a2dc8a: chore: update T-233 scratchpad.
+- 2026-01-26 12:17 — Pushed branch feature/T-233-asdlrc-cli.
+- 2026-01-26 12:18 — Opened PR https://github.com/Jianxun/ASDL/pull/246.
+- 2026-01-26 12:19 — Set T-233 status to ready_for_review; ran lint_tasks_state.py.
 
 ## Patch summary
 - Added integration tests covering rc discovery, env merge, lib roots, and backend config precedence.
 - Wired `--config` and rc-derived settings into `netlist` and `visualizer-dump` with env merge + backend config override rules.
 
 ## PR URL
+- https://github.com/Jianxun/ASDL/pull/246
 
 ## Verification
 - ./venv/bin/pytest tests/unit_tests/cli -k asdlrc
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - None
 
 ## Next steps
-- Open PR and update task state.
+- Await reviewer feedback.
