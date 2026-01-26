@@ -4,6 +4,6 @@ T-226:
   pr: 236
   merged: true
 T-227:
-  status: review_clean
+  status: done
   pr: 237
-  merged: false
+  merged: true
