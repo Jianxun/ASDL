@@ -8,6 +8,6 @@ T-233:
   pr: 246
   merged: true
 T-234:
-  status: ready_for_review
+  status: review_in_progress
   pr: 247
   merged: false
