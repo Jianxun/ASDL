@@ -53,3 +53,4 @@
 - 2026-01-26 01:25 — Installed extension deps (`npm ci`) to satisfy build requirements; next step: rerun build.
 - 2026-01-26 01:26 — Ran `npm run build` (extensions/asdl-visualizer); succeeded (Vite CJS API deprecation warning only); next step: finalize review decision.
 - 2026-01-26 01:27 — Review decision: review_clean; posted PR comment; updated task status to review_clean; next step: merge and closeout.
+- 2026-01-26 01:28 — Set task status to done (merged true) and ran lint_tasks_state; next step: push commit, merge PR, and cleanup branches.
