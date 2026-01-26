@@ -22,11 +22,13 @@
 - Verify build (or record why skipped).
 
 ## Todo
-- [ ] Split `extension.ts` into focused modules (commands, webview, layout, symbols, dump runner, util/types).
-- [ ] Rewire entrypoint and verify `npm run build`.
+- [x] Split `extension.ts` into focused modules (commands, webview, layout, symbols, dump runner, util/types).
+- [x] Run `npm run build`.
 
 ## Progress log
 - 2026-01-26 01:37 — Intake T-228; reviewed task context + extension entrypoint; set task status to in_progress; next step split extension.ts into modules.
+- 2026-01-26 01:42 — Split visualizer extension into module files + rewired entrypoint; created new `src/extension/` modules; commit ad2d561; next step run build + update scratchpad.
+- 2026-01-26 01:43 — Verified `npm run build` in `extensions/asdl-visualizer`; succeeded with Vite warning about CJS API; next step update scratchpad + prep PR.
 
 ## Patch summary
 - (pending)
@@ -35,7 +37,7 @@
 - (pending)
 
 ## Verification
-- (pending)
+- `npm run build`
 
 ## Status request
 - In Progress
