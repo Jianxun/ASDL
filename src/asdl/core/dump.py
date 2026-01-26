@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
+from typing import Iterable, Optional
 
 from asdl.diagnostics import SourcePos, SourceSpan
 
@@ -37,6 +37,8 @@ from .registries import (
     SchematicHints,
     SourceSpanIndex,
 )
+
+VISUALIZER_SCHEMA_VERSION = 0
 
 
 def _pos_to_dict(pos: Optional[SourcePos]) -> Optional[dict]:
@@ -601,6 +603,189 @@ def _atomized_device_def_to_dict(device: AtomizedDeviceDef) -> dict:
     }
 
 
+def _visualizer_module_to_dict(module: ModuleGraph) -> dict:
+    """Convert a module graph into a visualizer-ready dict.
+
+    Args:
+        module: Module graph to serialize.
+
+    Returns:
+        Mapping payload for the module.
+    """
+    return {
+        "module_id": module.module_id,
+        "name": module.name,
+        "file_id": module.file_id,
+        "ports": list(module.ports),
+    }
+
+
+def _visualizer_device_to_dict(device: DeviceDef) -> dict:
+    """Convert a device definition into a visualizer-ready dict."""
+    return {
+        "device_id": device.device_id,
+        "name": device.name,
+        "file_id": device.file_id,
+        "ports": list(device.ports),
+    }
+
+
+def _visualizer_net_to_dict(net: NetBundle) -> dict:
+    """Convert a net bundle into a visualizer-ready dict."""
+    return {
+        "net_id": net.net_id,
+        "name_expr_id": net.name_expr_id,
+        "endpoint_ids": list(net.endpoint_ids),
+    }
+
+
+def _visualizer_instance_to_dict(instance: InstanceBundle) -> dict:
+    """Convert an instance bundle into a visualizer-ready dict."""
+    return {
+        "inst_id": instance.inst_id,
+        "name_expr_id": instance.name_expr_id,
+        "ref_kind": instance.ref_kind,
+        "ref_id": instance.ref_id,
+        "ref_raw": instance.ref_raw,
+        "param_expr_ids": instance.param_expr_ids,
+    }
+
+
+def _visualizer_endpoint_to_dict(endpoint: EndpointBundle) -> dict:
+    """Convert an endpoint bundle into a visualizer-ready dict."""
+    return {
+        "endpoint_id": endpoint.endpoint_id,
+        "net_id": endpoint.net_id,
+        "port_expr_id": endpoint.port_expr_id,
+    }
+
+
+def _visualizer_pattern_expressions_to_dict(
+    registries: RegistrySet,
+) -> Optional[dict]:
+    """Convert pattern expressions into a minimal visualizer-ready dict."""
+    if registries.pattern_expressions is None:
+        return None
+    return {
+        expr_id: {"raw": registries.pattern_expressions[expr_id].raw}
+        for expr_id in sorted(registries.pattern_expressions.keys())
+    }
+
+
+def _visualizer_registries_to_dict(registries: RegistrySet) -> dict:
+    """Convert registry data into a minimal visualizer-ready dict."""
+    return {
+        "pattern_expressions": _visualizer_pattern_expressions_to_dict(registries),
+        "pattern_origins": _pattern_origins_to_dict(registries.pattern_origins),
+        "schematic_hints": _schematic_hints_to_dict(registries.schematic_hints),
+    }
+
+
+def _visualizer_module_refs(
+    graph: ProgramGraph, module: ModuleGraph
+) -> list[ModuleGraph]:
+    """Collect referenced modules for a module's instances.
+
+    Args:
+        graph: Program graph containing module definitions.
+        module: Module whose instances reference other modules.
+
+    Returns:
+        Sorted list of referenced module graphs.
+    """
+    module_ids: set[str] = set()
+    for instance in module.instances.values():
+        if instance.ref_kind == "module" and instance.ref_id in graph.modules:
+            module_ids.add(instance.ref_id)
+    return sorted(
+        (graph.modules[module_id] for module_id in module_ids),
+        key=lambda ref: (ref.name, ref.module_id),
+    )
+
+
+def _visualizer_device_refs(
+    graph: ProgramGraph, module: ModuleGraph
+) -> list[DeviceDef]:
+    """Collect referenced devices for a module's instances.
+
+    Args:
+        graph: Program graph containing device definitions.
+        module: Module whose instances reference devices.
+
+    Returns:
+        Sorted list of referenced device definitions.
+    """
+    device_ids: set[str] = set()
+    for instance in module.instances.values():
+        if instance.ref_kind == "device" and instance.ref_id in graph.devices:
+            device_ids.add(instance.ref_id)
+    return sorted(
+        (graph.devices[device_id] for device_id in device_ids),
+        key=lambda ref: (ref.name, ref.device_id),
+    )
+
+
+def visualizer_module_list_to_jsonable(modules: Iterable[ModuleGraph]) -> dict:
+    """Convert entry-file modules into a JSON-ready list payload.
+
+    Args:
+        modules: Iterable of module graphs to list.
+
+    Returns:
+        JSON-ready payload for module listing.
+    """
+    module_list = sorted(modules, key=lambda module: (module.name, module.module_id))
+    return {
+        "schema_version": VISUALIZER_SCHEMA_VERSION,
+        "modules": [_visualizer_module_to_dict(module) for module in module_list],
+    }
+
+
+def visualizer_dump_to_jsonable(graph: ProgramGraph, module_id: str) -> dict:
+    """Convert a selected module into a visualizer JSON payload.
+
+    Args:
+        graph: Program graph containing module and device definitions.
+        module_id: Identifier for the module to dump.
+
+    Returns:
+        JSON-ready payload for the visualizer.
+
+    Raises:
+        KeyError: If the module ID does not exist in the graph.
+    """
+    module = graph.modules[module_id]
+    nets = [
+        _visualizer_net_to_dict(module.nets[net_id])
+        for net_id in sorted(module.nets.keys())
+    ]
+    instances = [
+        _visualizer_instance_to_dict(module.instances[inst_id])
+        for inst_id in sorted(module.instances.keys())
+    ]
+    endpoints = [
+        _visualizer_endpoint_to_dict(module.endpoints[endpoint_id])
+        for endpoint_id in sorted(module.endpoints.keys())
+    ]
+    return {
+        "schema_version": VISUALIZER_SCHEMA_VERSION,
+        "module": _visualizer_module_to_dict(module),
+        "instances": instances,
+        "nets": nets,
+        "endpoints": endpoints,
+        "registries": _visualizer_registries_to_dict(graph.registries),
+        "refs": {
+            "modules": [
+                _visualizer_module_to_dict(ref) for ref in _visualizer_module_refs(graph, module)
+            ],
+            "devices": [
+                _visualizer_device_to_dict(ref)
+                for ref in _visualizer_device_refs(graph, module)
+            ],
+        },
+    }
+
+
 def patterned_graph_to_jsonable(graph: ProgramGraph) -> dict:
     """Convert a ProgramGraph into a JSON-serializable payload.
 
@@ -680,4 +865,6 @@ __all__ = [
     "dump_atomized_graph",
     "dump_patterned_graph",
     "patterned_graph_to_jsonable",
+    "visualizer_dump_to_jsonable",
+    "visualizer_module_list_to_jsonable",
 ]
