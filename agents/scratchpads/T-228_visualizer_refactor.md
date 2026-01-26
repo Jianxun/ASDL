@@ -29,18 +29,21 @@
 - 2026-01-26 01:37 — Intake T-228; reviewed task context + extension entrypoint; set task status to in_progress; next step split extension.ts into modules.
 - 2026-01-26 01:42 — Split visualizer extension into module files + rewired entrypoint; created new `src/extension/` modules; commit ad2d561; next step run build + update scratchpad.
 - 2026-01-26 01:43 — Verified `npm run build` in `extensions/asdl-visualizer`; succeeded with Vite warning about CJS API; next step update scratchpad + prep PR.
+- 2026-01-26 01:43 — Commit 316eec4 (Update T-228 scratchpad); next step summarize patch + open PR.
+- 2026-01-26 01:45 — Opened PR #242; updated task state to ready_for_review + ran lint; next step push final commit.
 
 ## Patch summary
-- (pending)
+- Split visualizer extension logic into modules under `extensions/asdl-visualizer/src/extension/`.
+- Kept `extensions/asdl-visualizer/src/extension.ts` as a thin entrypoint wiring command registration.
 
 ## PR URL
-- (pending)
+- https://github.com/Jianxun/ASDL/pull/242
 
 ## Verification
 - `npm run build`
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - None.

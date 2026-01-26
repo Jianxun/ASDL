@@ -1,7 +1,7 @@
 schema_version: 2
 T-228:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 242
   merged: false
 T-229:
   status: done
