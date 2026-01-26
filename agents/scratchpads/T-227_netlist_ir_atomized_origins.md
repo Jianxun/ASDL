@@ -37,6 +37,8 @@ Todo:
 - 2026-01-25 21:22 — Completed scope/DoD check and diff review; no blockers found; next step post PR comment and set review_clean.
 - 2026-01-25 21:23 — Posted PR review comment; set status to review_clean and ran lint_tasks_state.py; next step merge and closeout.
 - 2026-01-25 21:24 — Set T-227 status to done (merged true) and ran lint_tasks_state.py; next step commit/push and merge PR.
+- 2026-01-25 21:25 — Merged PR #237; remote branch already removed, local branch absent; next step prune and sync main.
+- 2026-01-25 21:25 — Ran `git fetch --prune`, checked out `main`, and pulled latest; task closed.
 
 # Patch summary
 - Removed pattern origin reconstruction in AtomizedGraph -> NetlistIR lowering; origins now flow from atomized entities and the pattern table is built from referenced expression ids.
