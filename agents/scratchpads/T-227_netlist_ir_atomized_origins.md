@@ -19,7 +19,7 @@ Todo:
 - [x] Update lowering tests for atomized-origin data paths.
 - [x] Update atomized_graph_to_netlist_ir to copy origins + build pattern table from atomized origins.
 - [x] Add emit test for numeric pattern rendering across all atoms.
-- [ ] Run `venv/bin/pytest tests/unit_tests/emit -v`.
+- [x] Run `venv/bin/pytest tests/unit_tests/emit -v`.
 
 # Progress log
 
@@ -38,3 +38,4 @@ Todo:
 - 2026-01-25 21:06 — Task intake; created scratchpad and set T-227 in_progress; next step review atomized->netlist lowering code.
 - 2026-01-25 21:15 — Committed NetlistIR lowering updates and atomized-origin test updates (3d11199); next step add emit test.
 - 2026-01-25 21:15 — Added emit test for numeric pattern rendering across all atoms; file: tests/unit_tests/emit/test_netlist_ir_atomized_origins.py; next step run emit test suite.
+- 2026-01-25 21:15 — Ran `venv/bin/pytest tests/unit_tests/emit -v`; result: 25 passed; next step finalize summary and PR.
