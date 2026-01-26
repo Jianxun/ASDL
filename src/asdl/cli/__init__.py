@@ -139,7 +139,11 @@ def patterned_graph_dump(
 
 
 @cli.command("visualizer-dump")
-@click.argument("input_file", type=click.Path(dir_okay=False, path_type=Path))
+@click.argument(
+    "input_files",
+    type=click.Path(dir_okay=False, path_type=Path),
+    nargs=-1,
+)
 @click.option(
     "--module",
     "module_name",
@@ -158,7 +162,7 @@ def patterned_graph_dump(
     help="Emit compact JSON output.",
 )
 def visualizer_dump(
-    input_file: Path,
+    input_files: tuple[Path, ...],
     module_name: Optional[str],
     list_modules: bool,
     compact: bool,
@@ -191,25 +195,48 @@ def visualizer_dump(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    graph, pipeline_diags = run_patterned_graph_pipeline(entry_file=input_file)
-    diagnostics.extend(pipeline_diags)
-    if graph is None or _has_error_diagnostics(diagnostics):
+    if not input_files:
+        diagnostics.append(
+            _diagnostic(
+                CLI_SCHEMA_ERROR,
+                "Provide at least one input file.",
+            )
+        )
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    entry_modules = list_entry_modules(graph, input_file)
-    if list_modules:
-        if not entry_modules:
-            diagnostics.append(
-                _diagnostic(
-                    CLI_SCHEMA_ERROR,
-                    "Entry file contains no modules to list.",
-                )
+    if len(input_files) > 1 and not list_modules:
+        diagnostics.append(
+            _diagnostic(
+                CLI_SCHEMA_ERROR,
+                "visualizer-dump accepts multiple inputs only with --list-modules.",
             )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    payloads: list[dict] = []
+    for input_file in input_files:
+        graph, pipeline_diags = run_patterned_graph_pipeline(entry_file=input_file)
+        diagnostics.extend(pipeline_diags)
+        if graph is None or _has_error_diagnostics(diagnostics):
             _emit_diagnostics(diagnostics)
             raise click.exceptions.Exit(1)
-        payload = visualizer_module_list_to_jsonable(entry_modules)
-    else:
+
+        entry_modules = list_entry_modules(graph, input_file)
+        if list_modules:
+            if not entry_modules:
+                diagnostics.append(
+                    _diagnostic(
+                        CLI_SCHEMA_ERROR,
+                        "Entry file contains no modules to list.",
+                    )
+                )
+                _emit_diagnostics(diagnostics)
+                raise click.exceptions.Exit(1)
+            payloads.append(visualizer_module_list_to_jsonable(entry_modules))
+            continue
+
         if not entry_modules:
             diagnostics.append(
                 _diagnostic(
@@ -253,7 +280,9 @@ def visualizer_dump(
         if selected_module is None or _has_error_diagnostics(diagnostics):
             _emit_diagnostics(diagnostics)
             raise click.exceptions.Exit(1)
-        payload = visualizer_dump_to_jsonable(graph, selected_module.module_id)
+        payloads.append(visualizer_dump_to_jsonable(graph, selected_module.module_id))
+
+    payload: object = payloads[0] if len(payloads) == 1 else payloads
 
     if compact:
         output_text = json.dumps(payload, sort_keys=True, separators=(",", ":"))
