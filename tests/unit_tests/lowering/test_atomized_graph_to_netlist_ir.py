@@ -4,6 +4,7 @@ from asdl.core.atomized_graph import (
     AtomizedInstance,
     AtomizedModuleGraph,
     AtomizedNet,
+    AtomizedPatternOrigin,
     AtomizedProgramGraph,
 )
 from asdl.core.registries import DeviceBackendInfo, RegistrySet
@@ -38,11 +39,6 @@ def test_build_netlist_ir_design_happy_path() -> None:
             "expr_net": "net",
             "expr_inst": "inst",
         },
-        pattern_origins={
-            "pn_vin": ("expr_net", 0, 0),
-            "pn_vout": ("expr_net", 0, 1),
-            "pi1": ("expr_inst", 0, 0),
-        },
         device_backend_templates={
             "d1": {"sim.ngspice": "M {ports} {model}"},
         },
@@ -62,6 +58,13 @@ def test_build_netlist_ir_design_happy_path() -> None:
             ref_id="d1",
             ref_raw="nfet",
             param_values={"m": 2},
+            pattern_origin=AtomizedPatternOrigin(
+                expression_id="expr_inst",
+                segment_index=0,
+                atom_index=0,
+                base_name="M",
+                pattern_parts=[1],
+            ),
         )
     }
     module.nets = {
@@ -69,13 +72,25 @@ def test_build_netlist_ir_design_happy_path() -> None:
             net_id="n1",
             name="VIN",
             endpoint_ids=["e1"],
-            patterned_net_id="pn_vin",
+            pattern_origin=AtomizedPatternOrigin(
+                expression_id="expr_net",
+                segment_index=0,
+                atom_index=0,
+                base_name="V",
+                pattern_parts=["IN"],
+            ),
         ),
         "n2": AtomizedNet(
             net_id="n2",
             name="VOUT",
             endpoint_ids=["e2"],
-            patterned_net_id="pn_vout",
+            pattern_origin=AtomizedPatternOrigin(
+                expression_id="expr_net",
+                segment_index=0,
+                atom_index=1,
+                base_name="V",
+                pattern_parts=["OUT"],
+            ),
         ),
         "n3": AtomizedNet(net_id="n3", name="VSS", endpoint_ids=["e3"]),
     }
@@ -90,7 +105,6 @@ def test_build_netlist_ir_design_happy_path() -> None:
             endpoint_id="e3", net_id="n3", inst_id="i1", port="S"
         ),
     }
-    module.instances["i1"].patterned_inst_id = "pi1"
     program.modules["m1"] = module
 
     design = build_netlist_ir_design(program)
@@ -193,7 +207,6 @@ def test_build_netlist_ir_design_preserves_origin_on_kind_mismatch() -> None:
     program.registries = RegistrySet(
         pattern_expressions={"expr_net": net_expr},
         pattern_expr_kinds={"expr_net": "inst"},
-        pattern_origins={"pn_vin": ("expr_net", 0, 0)},
     )
 
     module = AtomizedModuleGraph(
@@ -207,7 +220,13 @@ def test_build_netlist_ir_design_preserves_origin_on_kind_mismatch() -> None:
             net_id="n1",
             name="VIN",
             endpoint_ids=[],
-            patterned_net_id="pn_vin",
+            pattern_origin=AtomizedPatternOrigin(
+                expression_id="expr_net",
+                segment_index=0,
+                atom_index=0,
+                base_name="V",
+                pattern_parts=["IN"],
+            ),
         )
     }
     program.modules["m1"] = module
