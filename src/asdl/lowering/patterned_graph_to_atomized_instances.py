@@ -17,6 +17,7 @@ from .patterned_graph_to_atomized_context import (
     _entity_span,
 )
 from .patterned_graph_to_atomized_patterns import (
+    _expand_pattern_atoms,
     _expand_pattern,
     _find_expr_by_raw,
     _is_literal_expr,
@@ -226,26 +227,28 @@ def atomize_instances(context: ModuleAtomizationContext) -> None:
         if inst_expr is None:
             continue
 
-        inst_atoms = _expand_pattern(
+        inst_atoms = _expand_pattern_atoms(
             inst_expr,
+            expr_id=inst_bundle.name_expr_id,
             diagnostics=diagnostics,
             context=f"instance '{inst_expr.raw}' in module '{module.name}'",
             fallback_span=inst_span,
         )
         if inst_atoms is None:
             continue
+        inst_atom_names = [name for name, _origin in inst_atoms]
 
         param_values = _expand_instance_params(
             inst_bundle,
             expr_registry,
-            inst_atoms,
+            inst_atom_names,
             diagnostics=diagnostics,
             module_name=module.name,
             fallback_span=inst_span,
         )
 
         reported_duplicates: set[str] = set()
-        for index, name in enumerate(inst_atoms):
+        for index, (name, origin) in enumerate(inst_atoms):
             if name in inst_name_to_id:
                 if name not in reported_duplicates:
                     diagnostics.append(
@@ -271,6 +274,7 @@ def atomize_instances(context: ModuleAtomizationContext) -> None:
                 ref_id=inst_bundle.ref_id,
                 ref_raw=inst_bundle.ref_raw,
                 param_values=values or None,
+                pattern_origin=origin,
                 patterned_inst_id=inst_bundle.inst_id,
                 attrs=inst_bundle.attrs,
             )

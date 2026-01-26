@@ -16,7 +16,7 @@ from .patterned_graph_to_atomized_context import (
 from .patterned_graph_to_atomized_patterns import (
     _bind_patterns,
     _expand_endpoint,
-    _expand_pattern,
+    _expand_pattern_atoms,
     _lookup_expr,
 )
 
@@ -46,8 +46,9 @@ def atomize_nets(context: ModuleAtomizationContext) -> None:
         if net_expr is None:
             continue
 
-        net_atoms = _expand_pattern(
+        net_atoms = _expand_pattern_atoms(
             net_expr,
+            expr_id=net_bundle.name_expr_id,
             diagnostics=diagnostics,
             context=f"net '{net_expr.raw}' in module '{module.name}'",
             fallback_span=net_span,
@@ -57,7 +58,7 @@ def atomize_nets(context: ModuleAtomizationContext) -> None:
 
         net_atom_ids: list[str] = []
         reported_duplicates: set[str] = set()
-        for name in net_atoms:
+        for name, origin in net_atoms:
             existing_id = net_name_to_id.get(name)
             if existing_id is not None:
                 if name not in reported_duplicates:
@@ -80,6 +81,7 @@ def atomize_nets(context: ModuleAtomizationContext) -> None:
                 net_id=net_id,
                 name=name,
                 endpoint_ids=[],
+                pattern_origin=origin,
                 patterned_net_id=net_bundle.net_id,
                 attrs=net_bundle.attrs,
             )
@@ -127,6 +129,7 @@ def _expand_endpoints_for_net(
 
         endpoint_atoms = _expand_endpoint(
             endpoint_expr,
+            expr_id=endpoint_bundle.port_expr_id,
             diagnostics=context.diagnostics,
             context=f"endpoint '{endpoint_expr.raw}' in module '{module.name}'",
             fallback_span=_entity_span(context.source_spans, endpoint_bundle.endpoint_id),
@@ -149,7 +152,7 @@ def _expand_endpoints_for_net(
         if plan is None:
             continue
 
-        for endpoint_index, (inst_name, port) in enumerate(endpoint_atoms):
+        for endpoint_index, (inst_name, port, origin) in enumerate(endpoint_atoms):
             if inst_name in context.duplicate_inst_names:
                 context.diagnostics.append(
                     _diagnostic(
@@ -212,6 +215,7 @@ def _expand_endpoints_for_net(
                 net_id=net_id,
                 inst_id=inst_id,
                 port=port,
+                pattern_origin=origin,
                 patterned_endpoint_id=endpoint_bundle.endpoint_id,
                 attrs=endpoint_bundle.attrs,
             )
