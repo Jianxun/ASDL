@@ -22,10 +22,12 @@ Non-goals (v0):
 
 ## Command
 ```
-asdlc netlist <file.asdl> [-o <out.ext>] [--verify|--no-verify] [--backend <name>] [--top-as-subckt] [--lib <dir> ...]
+asdlc netlist <file.asdl> [--config <path>] [-o <out.ext>] [--verify|--no-verify] [--backend <name>] [--top-as-subckt] [--lib <dir> ...]
 ```
 
 ### Options
+- `--config <path>`:
+  - Explicit `.asdlrc` path (overrides discovery).
 - `-o, --output <path>`: output file path.
   - Default: `{asdl_basename}{extension}` in the same directory as the input file.
 - `--verify` / `--no-verify`:
@@ -42,6 +44,39 @@ asdlc netlist <file.asdl> [-o <out.ext>] [--verify|--no-verify] [--backend <name
 
 ---
 
+## Project config (.asdlrc)
+The CLI loads an optional `.asdlrc` (YAML) per entry file. Discovery starts at
+the entry file directory and walks parents until the first `.asdlrc` is found.
+`--config` skips discovery and uses the explicit path instead.
+
+Schema (v1):
+```yaml
+schema_version: 1
+lib_roots:
+  - ./libs
+backend_config: ${ASDLRC_DIR}/config/backends.yaml
+env:
+  ASDL_LIB_PATH: ${ASDLRC_DIR}/pdk
+```
+
+Rules:
+- `schema_version` is required and must be `1`.
+- `lib_roots` is a list of string paths. `backend_config` is an optional string
+  path. Relative paths are resolved against the `.asdlrc` directory after
+  interpolation and `~` expansion.
+- `env` is a map of string keys/values. `${ASDLRC_DIR}` is available in
+  interpolation, along with `${VAR}` from the process environment and other
+  `.asdlrc` env entries. Expansion runs until stable (max 10 passes) and leaves
+  unresolved tokens as-is.
+- `.asdlrc` `env` entries merge into `os.environ` only when keys are missing.
+- `.asdlrc` `backend_config` is used only when `ASDL_BACKEND_CONFIG` is unset.
+
+Precedence:
+- Import roots search order: CLI `--lib` roots, then `.asdlrc` `lib_roots`, then
+  `ASDL_LIB_PATH`.
+
+---
+
 ## Execution flow
 1. Resolve the import graph for the entry file (parses files and builds the import DB).
 2. Run the refactor pipeline via `run_netlist_ir_pipeline`:
@@ -55,7 +90,8 @@ asdlc netlist <file.asdl> [-o <out.ext>] [--verify|--no-verify] [--backend <name
 ## Import resolution
 - Logical import paths are resolved by searching:
   1) CLI `--lib` roots (in CLI order)
-  2) `ASDL_LIB_PATH` roots (PATH-style list, in order)
+  2) `.asdlrc` `lib_roots` (if present, in order)
+  3) `ASDL_LIB_PATH` roots (PATH-style list, in order)
 - Explicit relative paths (`./` or `../`) resolve against the importing file.
 
 ---
