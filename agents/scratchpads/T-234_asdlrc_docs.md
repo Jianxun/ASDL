@@ -47,7 +47,12 @@
 ## Todo
 - [x] Document .asdlrc schema + discovery in README.
 - [x] Document .asdlrc schema + discovery in CLI spec.
-- [ ] Run verify command.
+- [x] Run verify command.
 
 ## Task understanding
 Document .asdlrc schema, interpolation, discovery, and precedence rules in README and CLI spec, including entry-file search behavior and --config override.
+- 2026-01-26 00:03 — Committed doc updates (README/spec + task state/scratchpad) as 6f61f69; next step run verify command.
+- 2026-01-26 00:04 — Verified ./venv/bin/python -m py_compile src/asdl/cli/__init__.py (ok); next step update status and prep PR.
+
+## Verification
+- ./venv/bin/python -m py_compile src/asdl/cli/__init__.py
