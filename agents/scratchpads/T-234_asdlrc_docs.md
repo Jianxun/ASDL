@@ -56,3 +56,19 @@ Document .asdlrc schema, interpolation, discovery, and precedence rules in READM
 
 ## Verification
 - ./venv/bin/python -m py_compile src/asdl/cli/__init__.py
+- 2026-01-26 00:05 — Committed scratchpad updates as 7c511d9; next step open PR and set status to ready_for_review.
+- 2026-01-26 00:06 — Opened PR https://github.com/Jianxun/ASDL/pull/247; next step set task to ready_for_review.
+- 2026-01-26 00:07 — Set T-234 status to ready_for_review with PR 247; next step push final commit.
+
+## Patch summary
+- Documented .asdlrc schema, discovery, interpolation, and precedence in `README.md`.
+- Updated `docs/specs/spec_cli.md` with --config, .asdlrc rules, and import root ordering.
+
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/247
+
+## Status request (Done / Blocked / In Progress)
+- Ready for review.
+
+## Next steps
+- Reviewer to validate docs and merge PR when approved.
