@@ -25,6 +25,8 @@
 - 2026-01-25 20:54 — Added AtomizedPatternOrigin, atomization origin expansion, atomized graph dump helpers, and origin coverage test; files: src/asdl/core/atomized_graph.py, src/asdl/lowering/patterned_graph_to_atomized_patterns.py, src/asdl/lowering/patterned_graph_to_atomized_instances.py, src/asdl/lowering/patterned_graph_to_atomized_nets.py, src/asdl/core/dump.py, src/asdl/core/__init__.py, tests/unit_tests/core/test_patterned_graph_atomize.py.
 - 2026-01-25 20:54 — Commit 0f8ce35 "Add atomized pattern origins to atomization".
 - 2026-01-25 20:55 — Verified netlist unit tests: `venv/bin/pytest tests/unit_tests/netlist -v` (pass).
+- 2026-01-25 20:57 — Opened PR https://github.com/Jianxun/ASDL/pull/236.
+- 2026-01-25 20:57 — Set T-226 ready_for_review, updated tasks_state, ran lint_tasks_state; files: agents/context/tasks_state.yaml.
 
 ## Patch summary
 - Added AtomizedPatternOrigin and pattern_origin fields on AtomizedNet/Instance/Endpoint.
@@ -33,16 +35,16 @@
 - Added core test coverage for atomized pattern origin attachment.
 
 ## PR URL
-- Pending.
+- https://github.com/Jianxun/ASDL/pull/236
 
 ## Verification
 - `venv/bin/pytest tests/unit_tests/netlist -v`
 
 ## Status request
-- In Progress.
+- Ready for Review.
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Open PR and update tasks_state to ready_for_review.
+- Await reviewer feedback.
