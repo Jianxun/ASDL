@@ -18,6 +18,7 @@
 - `docs/specs/`: active specs (e.g., `docs/specs/spec_ast.md`, `docs/specs/spec_netlist_ir.md`).
 - `scripts/`: helper scripts (e.g., schema generation, visualizer start).
 - `syntax-highlighter/`: VSCode extension assets for ASDL syntax.
+- `extensions/asdl-visualizer/`: VSCode webview visualizer extension (Phase A scaffold).
 
 ## Quick Reference: Imports Subsystem
 - `src/asdl/imports/`: import resolution package (resolver, program DB, name env, diagnostics).

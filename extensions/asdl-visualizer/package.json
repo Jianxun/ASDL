@@ -1,0 +1,70 @@
+{
+  "name": "asdl-visualizer",
+  "displayName": "ASDL Visualizer",
+  "description": "ASDL schematic visualizer (MVP)",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Visualization",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "asdl",
+    "analog",
+    "circuit",
+    "schematic",
+    "visualizer"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:asdl.openVisualizer"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "asdl.openVisualizer",
+        "title": "ASDL: Open Visualizer",
+        "category": "ASDL"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "asdl.openVisualizer",
+          "when": "resourceExtname == .asdl || editorLangId == asdl"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "npm run build:extension && npm run build:webview",
+    "build:extension": "tsc -p ./",
+    "build:webview": "vite build",
+    "watch": "tsc -watch -p ./",
+    "dev:webview": "vite build --watch"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "reactflow": "^11.11.4",
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "@types/react": "^18.2.56",
+    "@types/react-dom": "^18.2.19",
+    "@types/vscode": "^1.60.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10"
+  },
+  "publisher": "asdl-project",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/asdl-suite.git"
+  },
+  "license": "MIT"
+}
