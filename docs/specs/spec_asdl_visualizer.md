@@ -29,7 +29,9 @@ for connectivity and pattern metadata. The visualizer reads:
 
 ### Symbol sidecar (YAML, v0)
 User-editable symbol definitions stored next to the ASDL file. One file may
-contain multiple module symbols.
+contain multiple module and device symbols. Symbols are expressed in grid
+units; there is no per-symbol grid size (the schematic grid is a viewer
+setting).
 
 File naming:
 - `path/to/design.asdl` -> `path/to/design.sym.yaml`
@@ -37,15 +39,43 @@ File naming:
 Schema (outline):
 - `schema_version`: number (required, `0`)
 - `modules`: mapping of `module_name` -> symbol definition
-- `devices` (optional): mapping of `device_name` -> glyph mapping
+- `devices` (optional): mapping of `device_name` -> symbol definition
 
-Module symbol definition (reuses the YAML layout from `prototype/symbol_renderer`):
+Module/device symbol definition (shared structure, adapted from
+`prototype/symbol_renderer`):
+- `body.w`, `body.h`: body size in grid units (required)
 - `pins.top`, `pins.bottom`, `pins.left`, `pins.right`: arrays of pins
-- Pins can be strings or `{name: {dir: in|out|inout}}`
+  (strings or objects). `null` entries reserve spacing slots.
+- `pin_offsets` (optional): per-side mapping of pin name -> offset in grid
+  units (may be fractional).
+- `glyph` (optional, devices only for now):
+  - `glyph.src`: path to SVG asset (relative to the `.asdl` file)
+  - `glyph.viewbox`: optional SVG viewBox string (e.g., `"0 0 100 60"`)
 
-Device glyph mapping example:
-- `devices.nfet_03v3.glyph: nmos4`
-- `devices.nfet_03v3.pin_map: { D: D, G: G, S: S, B: B }`
+Pins are names only; direction is not tracked in the visualizer. Pin placement
+is derived from `body` size and the pin arrays (see "Pin placement rules").
+
+Example (module + device):
+```
+schema_version: 0
+modules:
+  current_mirror_nmos:
+    body: { w: 10, h: 6 }
+    pins:
+      left: [ INP, INN, null, BIAS ]
+      right: [ OUT ]
+      top: [ VDD ]
+      bottom: [ VSS ]
+    pin_offsets:
+      left: { INN: 0.25 }
+devices:
+  nfet_03v3:
+    body: { w: 6, h: 4 }
+    glyph: { src: glyphs/nmos4.svg, viewbox: "0 0 100 60" }
+    pins:
+      left: [ D, G ]
+      right: [ S, B ]
+```
 
 ### Schematic sidecar (YAML, v0)
 User-editable layout definitions stored next to the ASDL file. One file may
@@ -65,13 +95,16 @@ Module layout definition:
 - `net_hubs`: mapping of `net_id` -> hub placement data
 
 Placement data:
-- `x`, `y`: grid coordinates (center)
+- `x`, `y`: grid coordinates in **grid units**.
+  - Instances use **top-left** anchors (x,y are the top-left of the symbol body).
+  - This avoids off-grid pins when `body.w/h` are odd.
 - `orient`: Cadence-style orientation (`R0`, `R90`, `R180`, `R270`, `MX`, `MY`,
   `MXR90`, `MYR90`)
 - `label`: optional display label
 
 Net hub placement data:
-- `groups`: array of hub placements in group order
+- `groups`: array of hub placements in group order.
+  - Net hub `x,y` are **center** coordinates in grid units.
 
 Group order MUST align with `registries.schematic_hints.net_groups` emitted by
 the compiler (derived from net endpoint list-of-lists). If the registry has no
@@ -146,6 +179,47 @@ Core responsibilities:
 3) **Junctions**: render as a small filled dot at the junction node.
 4) **Grid**: positions are snapped to the module `grid_size`.
 5) **Patterns**: render bundles as labels; do not expand patterns in the UI.
+
+### Pin placement rules (symbols)
+Pins are placed along the symbol body edges in grid units:
+- Left/right arrays are ordered **top → bottom**
+- Top/bottom arrays are ordered **left → right**
+- `null` entries reserve a slot and advance spacing
+
+Given:
+- `N`: number of slots on that side (including `null`s)
+- `step`: fixed at 1 grid unit
+- `span = (N - 1) * step` (0 if `N == 1`)
+- `edge_length`: `body.h` for left/right, `body.w` for top/bottom
+- `start = floor((edge_length - span) / 2)` (bias toward origin; keeps pins on-grid)
+
+For each slot index `i`:
+- Left/right: `y = start + i * step + pin_offset`, `x = 0` (left) or `x = body.w`
+- Top/bottom: `x = start + i * step + pin_offset`, `y = 0` (top) or `y = body.h`
+
+`pin_offset` defaults to 0 and can be fractional grid units. It is the symbol
+author's responsibility to align glyph artwork to the pin positions.
+
+### Anchor rules (layout vs symbols)
+- **Instances** are anchored by the **top-left** of the symbol body. Instance
+  `x,y` in `design.sch.yaml` correspond to the top-left corner of the symbol
+  bounding box in grid units.
+- **Net hubs** remain **center-anchored**. Hub `x,y` represent the hub center in
+  grid units (consistent with prior layouts).
+- **Pin coordinates** are derived from the symbol body size and pin arrays, then
+  offset from the instance top-left when rendering.
+- The visualizer must convert between layout anchors and React Flow node
+  top-left pixel coordinates as needed, but the persisted layout remains in
+  grid units using the rules above.
+
+Example (grid units):
+- Symbol body `w=5`, `h=3` with pins on the left side: `[A, null, B]`
+- Instance layout: `x=10`, `y=4` (top-left anchor)
+- Left edge length = `h=3`, `N=3`, `span=(N-1)*1=2`, `start=floor((3-2)/2)=0`
+- Pin slots (left side):
+  - A at `(x=10, y=4 + 0 + 0)` → `(10, 4)`
+  - B at `(x=10, y=4 + 2 + 0)` → `(10, 6)`
+Both pins land on-grid even with an odd body size.
 
 ## Differential Nets
 - A net with `atoms: ["P","N"]` is a diff net. Default render: a single bundled

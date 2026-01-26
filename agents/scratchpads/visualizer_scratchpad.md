@@ -44,6 +44,18 @@ instances/net hubs, and save layout in-place as YAML sidecar.
 - Add device glyph mapping (simple built-in library).
 - Success: symbols render with correct pins.
 
+## Phase A — Implementation Plan (build-based, forward-compatible)
+- Scaffold `extensions/asdl-visualizer/` with a VSCode extension entrypoint and a Vite + React webview app.
+- Webview message contract:
+  - `ready` (webview → extension)
+  - `loadMock` (extension → webview) with mock graph + layout payload
+  - `saveLayout` (webview → extension) with `{moduleId, layout}`
+  - `diagnostics` (extension → webview) reserved for Phase D
+- Webview renders a static mock graph from `loadMock`; button triggers `saveLayout`.
+- Extension resolves active `.asdl` path and writes `design.sch.yaml` alongside it.
+- Build outputs webview bundle to `extensions/asdl-visualizer/media/` and loads it with CSP-safe `webview.asWebviewUri`.
+- Success: command opens webview, mock graph renders, and save writes YAML sidecar.
+
 ## Key Assumptions
 - Single source of truth for connectivity is PatternedGraph.
 - Sidecars are YAML and co-located with `.asdl` files.
@@ -53,3 +65,12 @@ instances/net hubs, and save layout in-place as YAML sidecar.
 - Use VSCode WebView for in-place save and file watching.
 - Hub grouping strictly follows `schematic_hints.net_groups`.
 - Layout uses Cadence `orient`: R0/R90/R180/R270/MX/MY/MXR90/MYR90.
+- Symbol definitions: unified module+device schema in `design.sym.yaml` (no pin direction),
+  grid units only (no per-symbol grid size), optional SVG glyph for devices (relative to .asdl).
+- Pin placement: side arrays ordered left/right top→bottom, top/bottom left→right; slot spacing fixed
+  at 1 grid unit; `start = floor((edge_length - span)/2)`; optional per-pin fractional offsets.
+- Layout coordinates stay center-based (grid units); React Flow uses top-left internally with conversion.
+- Visualizer data: plan to add `asdlc visualizer-dump` CLI for minimal JSON per selected module,
+  run via PATH, no dump files written to repo. Extension will prompt to select module when multiple.
+- ADR candidate: visualizer schema + compiler integration decisions (symbol schema, pin placement rules,
+  no per-symbol grid, CLI `visualizer-dump`, PATH resolution).

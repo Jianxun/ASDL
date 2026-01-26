@@ -1,6 +1,8 @@
 schema_version: 1
 
 archive:
+  - T-227: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-227_netlist_ir_atomized_origins.md, pr: 237}
+  - T-226: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-226_atomized_pattern_origins.md, pr: 236}
   - T-223: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-223_move_legacy_specs.md, pr: 230}
   - T-222: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-222_legacy_xdsl_dependency.md, pr: 234}
   - T-221: {completed_on: 2026-01-25, owner: Executor, scratchpad: agents/scratchpads/T-221_legacy_xdsl_quarantine.md, pr: 232}

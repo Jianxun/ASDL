@@ -1,49 +1,75 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-226
-    title: AtomizedGraph per-atom pattern origins
+  - id: T-228
+    title: Refactor ASDL visualizer extension into multi-file modules
     owner: Executor
     dod: >
-      Add an AtomizedPatternOrigin (or equivalent) dataclass in
-      `src/asdl/core/atomized_graph.py` with explicit
-      {expression_id, segment_index, atom_index, base_name, pattern_parts}.
-      Add optional `pattern_origin` fields to AtomizedNet/AtomizedInstance/AtomizedEndpoint.
-      Populate these fields during atomization by expanding patterns with
-      a helper that returns atoms + parts (reuse/relocate logic from
-      `_expand_pattern_atoms` in `atomized_graph_to_netlist_ir.py`).
-      Ensure atomized origins are attached per literal atom (not per patterned id).
-      Update `src/asdl/core/dump.py` to include atomized pattern origins in dumps.
+      Split `extensions/asdl-visualizer/src/extension.ts` into focused modules
+      under `extensions/asdl-visualizer/src/extension/` (commands, webview,
+      layout, symbols, dump runner, util/types) and keep `extension.ts` as a
+      thin entrypoint. Ensure behavior remains unchanged and `npm run build`
+      succeeds.
     verify:
-      - venv/bin/pytest tests/unit_tests/netlist -v
+      - npm run build
     links:
-      scratchpad: agents/scratchpads/T-226_atomized_pattern_origins.md
+      scratchpad: agents/scratchpads/T-228_visualizer_refactor.md
     files:
-      - src/asdl/core/atomized_graph.py
-      - src/asdl/lowering/patterned_graph_to_atomized_nets.py
-      - src/asdl/lowering/patterned_graph_to_atomized_instances.py
-      - src/asdl/lowering/patterned_graph_to_atomized_patterns.py
+      - extensions/asdl-visualizer/src/extension.ts
+      - extensions/asdl-visualizer/src/extension/
+backlog:
+  - id: T-229
+    title: Add asdlc visualizer-dump CLI (minimal JSON)
+    owner: Executor
+    dod: >
+      Add `asdlc visualizer-dump` with `--module`, `--list-modules`, and
+      `--compact` flags. Emit minimal JSON to stdout with
+      {schema_version, module, instances, nets, endpoints, registries,
+      refs.modules, refs.devices}. `--list-modules` outputs module list JSON
+      for the entry file only. Diagnostics go to stderr; non-zero exit on
+      failures. No files are written.
+    verify:
+      - ./venv/bin/asdlc visualizer-dump examples/**/*.asdl --list-modules
+    links:
+      scratchpad: agents/scratchpads/T-229_visualizer_dump_cli.md
+    files:
+      - src/asdl/cli/__init__.py
       - src/asdl/core/dump.py
-  - id: T-227
-    title: NetlistIR consumes atomized pattern origins
+      - src/asdl/core/pipeline.py
+  - id: T-230
+    title: Extension runs asdlc visualizer-dump + module selection
     owner: Executor
     depends_on:
-      - T-226
+      - T-229
     dod: >
-      Remove origin reconstruction in `src/asdl/lowering/atomized_graph_to_netlist_ir.py`
-      and instead copy Atomized* `pattern_origin` into NetlistIR nets/instances.
-      Delete/retire `_PatternOriginResolver` or reduce it to building the
-      pattern_expression_table from `expression_id` values found in atomized origins.
-      Keep NetlistIR `pattern_expression_table` wiring intact for verifier/rendering.
-      Update/extend emit tests to assert numeric pattern rendering now applies to all
-      atoms (e.g., BUS[25], BUS[24], pin[130], pin[129], sw_row[130], sw_row[129]).
+      Replace dump file selection with `asdlc visualizer-dump` invoked via PATH.
+      If multiple modules exist, prompt via QuickPick and re-run with `--module`.
+      Parse minimal JSON and feed the webview. Surface friendly errors when
+      `asdlc` is missing or the command fails. No dumps are written to disk.
     verify:
-      - venv/bin/pytest tests/unit_tests/emit -v
+      - npm run build
     links:
-      scratchpad: agents/scratchpads/T-227_netlist_ir_atomized_origins.md
+      scratchpad: agents/scratchpads/T-230_visualizer_dump_extension.md
     files:
-      - src/asdl/lowering/atomized_graph_to_netlist_ir.py
-      - src/asdl/emit/netlist/render.py
-      - src/asdl/emit/verify_netlist_ir.py
-      - tests/unit_tests/emit/
-backlog: []
+      - extensions/asdl-visualizer/src/extension.ts
+      - extensions/asdl-visualizer/src/extension/
+  - id: T-231
+    title: Symbol loading + pin placement + top-left instance anchors
+    owner: Executor
+    depends_on:
+      - T-228
+    dod: >
+      Load `design.sym.yaml` for module/device symbols via `file_id` refs from
+      the visualizer dump. Implement unified symbol schema (body, pins, optional
+      glyph, pin_offsets). Apply pin placement rules with floor-biased centering
+      and 1-grid spacing. Use top-left anchors for instance layout; keep hubs
+      center-based. Update React Flow nodes/handles and save path accordingly.
+    verify:
+      - npm run build
+    links:
+      scratchpad: agents/scratchpads/T-231_visualizer_symbols.md
+    files:
+      - extensions/asdl-visualizer/src/extension.ts
+      - extensions/asdl-visualizer/src/extension/
+      - extensions/asdl-visualizer/src/webview/app.tsx
+      - extensions/asdl-visualizer/src/webview/styles.css
