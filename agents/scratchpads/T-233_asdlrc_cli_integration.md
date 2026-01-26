@@ -57,3 +57,6 @@
 ## Next steps
 - Await reviewer feedback.
 - 2026-01-26 13:00 — Review intake; confirmed PR target main and required artifacts present; set status to review_in_progress; next step inspect changes and tests.
+- 2026-01-26 13:05 — Scope check completed against T-233 DoD/links.spec; changes limited to CLI + tests; next step verify test logs and review implementation details.
+- 2026-01-26 13:07 — Verified pytest log in scratchpad for ./venv/bin/pytest tests/unit_tests/cli -k asdlrc; tests not rerun locally; next step finalize review decision.
+- 2026-01-26 13:15 — Review decision: clean; set status to review_clean; posted PR comment with test note; next step merge and closeout.
