@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Iterable, List, Optional
 
 import click
+import yaml
 
 from asdl.diagnostics import Diagnostic, Severity, format_code, render_text
 
@@ -145,6 +147,12 @@ def patterned_graph_dump(
     nargs=-1,
 )
 @click.option(
+    "--config",
+    "config_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Explicit .asdlrc path (overrides discovery).",
+)
+@click.option(
     "--module",
     "module_name",
     help="Module name to dump.",
@@ -163,6 +171,7 @@ def patterned_graph_dump(
 )
 def visualizer_dump(
     input_files: tuple[Path, ...],
+    config_path: Optional[Path],
     module_name: Optional[str],
     list_modules: bool,
     compact: bool,
@@ -217,7 +226,12 @@ def visualizer_dump(
 
     payloads: list[dict] = []
     for input_file in input_files:
-        graph, pipeline_diags = run_patterned_graph_pipeline(entry_file=input_file)
+        lib_roots, _backend_config = _resolve_rc_settings(
+            input_file, config_path, (), diagnostics
+        )
+        graph, pipeline_diags = run_patterned_graph_pipeline(
+            entry_file=input_file, lib_roots=lib_roots
+        )
         diagnostics.extend(pipeline_diags)
         if graph is None or _has_error_diagnostics(diagnostics):
             _emit_diagnostics(diagnostics)
@@ -296,6 +310,12 @@ def visualizer_dump(
 @cli.command("netlist")
 @click.argument("input_file", type=click.Path(dir_okay=False, path_type=Path))
 @click.option(
+    "--config",
+    "config_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Explicit .asdlrc path (overrides discovery).",
+)
+@click.option(
     "-o",
     "--output",
     "output_path",
@@ -329,6 +349,7 @@ def visualizer_dump(
 )
 def netlist(
     input_file: Path,
+    config_path: Optional[Path],
     output_path: Optional[Path],
     verify: bool,
     backend: str,
@@ -355,9 +376,12 @@ def netlist(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
+    resolved_lib_roots, backend_config_path = _resolve_rc_settings(
+        input_file, config_path, lib_roots, diagnostics
+    )
     design, pipeline_diags = run_netlist_ir_pipeline(
         entry_file=input_file,
-        lib_roots=lib_roots,
+        lib_roots=resolved_lib_roots,
         verify=verify,
     )
     diagnostics.extend(pipeline_diags)
@@ -365,7 +389,9 @@ def netlist(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    backend_config, backend_diags = load_backend(backend)
+    backend_config, backend_diags = load_backend(
+        backend, backend_config_path=backend_config_path
+    )
     diagnostics.extend(backend_diags)
     if backend_config is None or _has_error_diagnostics(diagnostics):
         _emit_diagnostics(diagnostics)
@@ -411,6 +437,67 @@ def _has_error_diagnostics(diagnostics: Iterable[Diagnostic]) -> bool:
         diagnostic.severity in (Severity.ERROR, Severity.FATAL)
         for diagnostic in diagnostics
     )
+
+
+def _resolve_rc_settings(
+    entry_file: Path,
+    config_path: Optional[Path],
+    cli_lib_roots: Iterable[Path],
+    diagnostics: List[Diagnostic],
+) -> tuple[list[Path], Optional[Path]]:
+    """Resolve rc-derived settings for a CLI entry file.
+
+    Args:
+        entry_file: Entry file path used for rc discovery.
+        config_path: Optional explicit rc path (overrides discovery).
+        cli_lib_roots: Library roots supplied on the CLI (first in precedence).
+        diagnostics: Diagnostics list to append rc load failures.
+
+    Returns:
+        Tuple of (combined lib roots, backend config path override).
+    """
+    try:
+        from asdl.cli.config import load_asdlrc
+    except Exception as exc:  # pragma: no cover - defensive: missing optional deps
+        diagnostics.append(
+            _diagnostic(
+                CLI_IMPORT_ERROR,
+                f"Failed to load .asdlrc support: {exc}",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    try:
+        rc_config = load_asdlrc(entry_file, config_path=config_path)
+    except (FileNotFoundError, TypeError, ValueError, yaml.YAMLError) as exc:
+        diagnostics.append(
+            _diagnostic(
+                CLI_SCHEMA_ERROR,
+                f"Failed to load .asdlrc: {exc}",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    combined_roots = list(cli_lib_roots)
+    backend_config_path: Optional[Path] = None
+    if rc_config is None:
+        return combined_roots, backend_config_path
+
+    _merge_rc_env(rc_config.env)
+    combined_roots.extend(rc_config.lib_roots)
+
+    if rc_config.backend_config and os.environ.get("ASDL_BACKEND_CONFIG") is None:
+        backend_config_path = rc_config.backend_config
+
+    return combined_roots, backend_config_path
+
+
+def _merge_rc_env(env: dict[str, str]) -> None:
+    """Merge rc env entries into os.environ without overriding existing keys."""
+    for key, value in env.items():
+        os.environ.setdefault(key, value)
 
 
 def _diagnostic(code: str, message: str) -> Diagnostic:
