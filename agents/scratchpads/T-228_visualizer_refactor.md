@@ -1,11 +1,47 @@
 # T-228: Visualizer Extension Refactor
 
-## Goal
-Split `extensions/asdl-visualizer/src/extension.ts` into focused modules under
-`extensions/asdl-visualizer/src/extension/` while keeping behavior unchanged.
+## Task summary (DoD + verify)
+- DoD: Split `extensions/asdl-visualizer/src/extension.ts` into focused modules under
+  `extensions/asdl-visualizer/src/extension/` (commands, webview, layout, symbols,
+  dump runner, util/types) and keep `extension.ts` as a thin entrypoint. Ensure
+  behavior remains unchanged.
+- Verify: `npm run build`
 
-## Notes
-- Keep `extension.ts` as a thin activate/deactivate entrypoint.
-- Prefer small helper modules: commands, webview HTML loader, layout I/O,
-  dump runner, symbols, paths/util, shared types.
-- Ensure `npm run build` passes.
+## Read
+- `agents/roles/executor.md`
+- `agents/context/lessons.md`
+- `agents/context/contract.md`
+- `agents/context/tasks.yaml`
+- `agents/context/tasks_state.yaml`
+- `agents/context/project_status.md`
+- `extensions/asdl-visualizer/src/extension.ts`
+
+## Plan
+- Capture current behavior and split into focused modules under `src/extension/`.
+- Rewire `extension.ts` as a thin entrypoint + command registration.
+- Verify build (or record why skipped).
+
+## Todo
+- [ ] Split `extension.ts` into focused modules (commands, webview, layout, symbols, dump runner, util/types).
+- [ ] Rewire entrypoint and verify `npm run build`.
+
+## Progress log
+- 2026-01-26 01:37 — Intake T-228; reviewed task context + extension entrypoint; set task status to in_progress; next step split extension.ts into modules.
+
+## Patch summary
+- (pending)
+
+## PR URL
+- (pending)
+
+## Verification
+- (pending)
+
+## Status request
+- In Progress
+
+## Blockers / Questions
+- None.
+
+## Next steps
+- Create `extensions/asdl-visualizer/src/extension/` modules and refactor entrypoint.
