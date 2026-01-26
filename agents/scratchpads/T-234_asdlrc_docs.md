@@ -63,6 +63,7 @@ Document .asdlrc schema, interpolation, discovery, and precedence rules in READM
 - 2026-01-26 04:06 — Verified required check/logs present (py_compile) in scratchpad; next step scope and accuracy review of docs.
 - 2026-01-26 04:07 — Reviewed README/spec updates against CLI config behavior; scope matches DoD and docs align with implementation; next step issue review decision.
 - 2026-01-26 04:08 — Posted PR review comment ([Reviewer]: review clean) and set status to review_clean; next step close out and merge.
+- 2026-01-26 04:09 — Marked T-234 done (merged true) for closeout; next step merge PR and clean up branches.
 
 ## Patch summary
 - Documented .asdlrc schema, discovery, interpolation, and precedence in `README.md`.
