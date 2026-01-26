@@ -23,18 +23,20 @@
 - 2026-01-26 00:53 — Committed task setup (`018f2e0` chore: start T-230); files: `agents/context/tasks_state.yaml`, `agents/scratchpads/T-230_visualizer_dump_extension.md`; next step: implement asdlc visualizer-dump integration in extension.
 - 2026-01-26 00:53 — Implemented asdlc visualizer-dump invocation with module list selection, JSON parsing, and friendly CLI errors; updated visualizer graph mapping; committed (`48da3fe` feat: run asdlc visualizer-dump in extension); files: `extensions/asdl-visualizer/src/extension.ts`; next step: run `npm run build` and record results.
 - 2026-01-26 00:53 — Ran `npm run build` (extensions/asdl-visualizer); failed: `tsc` not found; next step: report verify failure.
+- 2026-01-26 00:54 — Opened PR https://github.com/Jianxun/ASDL/pull/241; next step: set task status to ready_for_review.
+- 2026-01-26 00:54 — Updated task status to ready_for_review with PR 241; ran tasks state linter; next step: report completion.
 
 ## Patch summary
 - Updated visualizer extension to run `asdlc visualizer-dump`, prompt for modules, parse minimal JSON, and surface CLI errors.
 
 ## PR URL
-- Pending.
+- https://github.com/Jianxun/ASDL/pull/241
 
 ## Verification
 - `npm run build` (extensions/asdl-visualizer) — failed (`tsc: command not found`).
 
 ## Status request
-- In Progress.
+- Ready for review.
 
 ## Blockers / Questions
 - None.
