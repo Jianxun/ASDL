@@ -17,7 +17,6 @@ current_sprint:
     files:
       - extensions/asdl-visualizer/src/extension.ts
       - extensions/asdl-visualizer/src/extension/
-backlog:
   - id: T-229
     title: Add asdlc visualizer-dump CLI (minimal JSON)
     owner: Executor
