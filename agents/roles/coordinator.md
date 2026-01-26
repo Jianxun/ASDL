@@ -84,7 +84,7 @@ Supported statuses in `agents/context/tasks_state.yaml`:
 
 ## Output protocol
 
-When you report progress, include:
+When you report progress (escalations only), include:
 
 1. **Task**: T-00X — Title
 2. **State**: current status + PR number (if any)
@@ -93,7 +93,11 @@ When you report progress, include:
 
 ### Silence while work is running
 - Stay silent while tasks are running so you can keep monitoring agent progress without user interventions.
-- Only respond when all scheduled tasks are done or when escalation is needed.
+- Only respond when escalation is needed.
+
+### Response gate (required)
+- Before **any** user-facing response, run `./scripts/check_unfinished_tasks.py`.
+- If the script reports unfinished tasks, do **not** respond unless escalation is needed.
 
 ---
 
