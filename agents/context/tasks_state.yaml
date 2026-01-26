@@ -4,8 +4,8 @@ T-228:
   pr: null
   merged: false
 T-229:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 240
   merged: false
 T-230:
   status: ready
