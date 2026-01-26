@@ -29,22 +29,31 @@
 - 2026-01-26 03:30 — Commit 12c9ac9: chore: start T-232 asdlrc loader.
 - 2026-01-26 03:31 — Commit acd973d: test: cover asdlrc discovery and expansion.
 - 2026-01-26 03:31 — Commit 6ec8042: feat: add .asdlrc discovery and parsing.
+- 2026-01-26 03:32 — Commit c048619: chore: update T-232 scratchpad.
+- 2026-01-26 03:34 — Opened PR https://github.com/Jianxun/ASDL/pull/244; updated tasks_state to ready_for_review; lint_tasks_state.py clean.
+- 2026-01-26 03:34 — Commit 5697075: chore: mark T-232 ready for review.
 
 ## Patch summary
 - Added .asdlrc config tests for discovery, interpolation, and path resolution.
 - Implemented .asdlrc discovery and parsing utilities with env interpolation and rc-relative path resolution.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/244
 
 ## Verification
 - ./venv/bin/pytest tests/unit_tests/cli -k asdlrc
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - None
 
 ## Next steps
-- Update task state to in_progress, lint, create feature branch, then inspect existing CLI config code/tests.
+- Await reviewer feedback.
+- 2026-01-26 03:33 — Set T-232 status to review_in_progress; starting review.
+- 2026-01-26 03:35 — Intake: confirmed PR #244 targets main and includes required scratchpad/logs; proceeding with review.
+- 2026-01-26 03:35 — Verified provided pytest log for asdlrc tests; no additional checks run.
+- 2026-01-26 03:35 — Scope/DoD review complete; changes align with discovery, interpolation, and path resolution requirements.
+- 2026-01-26 03:35 — Posted PR review comment; decision: review_clean.
+- 2026-01-26 03:35 — Updated T-232 status to review_clean.
