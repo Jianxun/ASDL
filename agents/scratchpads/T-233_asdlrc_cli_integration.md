@@ -35,6 +35,8 @@
 - 2026-01-26 12:17 — Pushed branch feature/T-233-asdlrc-cli.
 - 2026-01-26 12:18 — Opened PR https://github.com/Jianxun/ASDL/pull/246.
 - 2026-01-26 12:19 — Set T-233 status to ready_for_review; ran lint_tasks_state.py.
+- 2026-01-26 12:20 — Commit 65337fd: chore: mark T-233 ready for review.
+- 2026-01-26 12:21 — Pushed branch feature/T-233-asdlrc-cli (status update + scratchpad).
 
 ## Patch summary
 - Added integration tests covering rc discovery, env merge, lib roots, and backend config precedence.
