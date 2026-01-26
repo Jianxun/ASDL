@@ -20,6 +20,7 @@ type InstanceNode = {
   id: string
   label: string
   pins: string[]
+  symbolKey: string
 }
 
 type NetHubNode = {
@@ -32,6 +33,33 @@ type GraphPayload = {
   instances: InstanceNode[]
   netHubs: NetHubNode[]
   edges: Array<{ id: string; from: string; to: string }>
+  symbols: Record<string, SymbolDefinition>
+}
+
+type SymbolPins = {
+  top?: Array<string | null>
+  bottom?: Array<string | null>
+  left?: Array<string | null>
+  right?: Array<string | null>
+}
+
+type SymbolPinOffsets = {
+  top?: Record<string, number>
+  bottom?: Record<string, number>
+  left?: Record<string, number>
+  right?: Record<string, number>
+}
+
+type SymbolGlyph = {
+  src: string
+  viewbox?: string
+}
+
+type SymbolDefinition = {
+  body: { w: number; h: number }
+  pins: SymbolPins
+  pin_offsets?: SymbolPinOffsets
+  glyph?: SymbolGlyph
 }
 
 type Placement = {
@@ -71,13 +99,20 @@ type WebviewMessage = LoadGraphMessage | DiagnosticsMessage
 
 const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null
 const DEFAULT_GRID_SIZE = 16
-const INSTANCE_WIDTH = 6
-const INSTANCE_HEIGHT = 4
 const HUB_SIZE = 2
+const HUB_HANDLE_ID = 'hub'
+const FALLBACK_SYMBOL: SymbolDefinition = {
+  body: { w: 6, h: 4 },
+  pins: { left: [] }
+}
 
 type InstanceNodeData = {
   label: string
   orient: string
+  body: { w: number; h: number }
+  pins: PinPosition[]
+  gridSize: number
+  glyph?: SymbolGlyph
 }
 
 type HubNodeData = {
@@ -85,6 +120,16 @@ type HubNodeData = {
 }
 
 type VisualNodeData = InstanceNodeData | HubNodeData
+
+type PinSide = 'top' | 'bottom' | 'left' | 'right'
+
+type PinPosition = {
+  id: string
+  name: string
+  side: PinSide
+  x: number
+  y: number
+}
 
 export function App() {
   const [graph, setGraph] = useState<GraphPayload | null>(null)
@@ -150,7 +195,7 @@ export function App() {
 
     nodes.forEach((node) => {
       if (node.type === 'instance') {
-        const { x, y } = centerFromNode(node, gridSize, INSTANCE_WIDTH, INSTANCE_HEIGHT)
+        const { x, y } = gridFromTopLeft(node, gridSize)
         const existing = moduleLayout.instances[node.id]
         moduleLayout.instances[node.id] = {
           x,
@@ -247,15 +292,25 @@ function buildReactFlowGraph(
     const placement = moduleLayout?.instances?.[inst.id]
     const gridX = placement?.x ?? index * 4
     const gridY = placement?.y ?? 0
-    const pos = topLeftFromCenter(gridX, gridY, gridSize, INSTANCE_WIDTH, INSTANCE_HEIGHT)
+    const symbol = graph.symbols[inst.symbolKey] ?? FALLBACK_SYMBOL
+    const body = normalizeSymbolBody(symbol.body)
+    const pins = computePinPositions(symbol, body)
+    const pos = topLeftFromGrid(gridX, gridY, gridSize)
     return {
       id: inst.id,
       type: 'instance',
       position: pos,
-      data: { label: inst.label, orient: placement?.orient ?? 'R0' },
+      data: {
+        label: inst.label,
+        orient: placement?.orient ?? 'R0',
+        body,
+        pins,
+        gridSize,
+        glyph: symbol.glyph
+      },
       style: {
-        width: INSTANCE_WIDTH * gridSize,
-        height: INSTANCE_HEIGHT * gridSize
+        width: body.w * gridSize,
+        height: body.h * gridSize
       }
     } as Node<InstanceNodeData>
   })
@@ -280,8 +335,8 @@ function buildReactFlowGraph(
   const nodeIds = new Set([...instances.map((n) => n.id), ...hubs.map((n) => n.id)])
   const edges = graph.edges
     .map((edge) => {
-      const source = edge.from.includes('.') ? edge.from.split('.')[0] : edge.from
-      const target = edge.to.includes('.') ? edge.to.split('.')[0] : edge.to
+      const { nodeId: source, handleId: sourceHandle } = parseEndpoint(edge.from)
+      const target = edge.to
       if (!nodeIds.has(source) || !nodeIds.has(target)) {
         return null
       }
@@ -289,6 +344,8 @@ function buildReactFlowGraph(
         id: edge.id,
         source,
         target,
+        sourceHandle,
+        targetHandle: HUB_HANDLE_ID,
         type: 'step',
         style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' }
       } as Edge
@@ -315,6 +372,13 @@ function topLeftFromCenter(
   }
 }
 
+function topLeftFromGrid(gridX: number, gridY: number, gridSize: number) {
+  return {
+    x: gridX * gridSize,
+    y: gridY * gridSize
+  }
+}
+
 function centerFromNode(
   node: Node,
   gridSize: number,
@@ -331,13 +395,99 @@ function centerFromNode(
   }
 }
 
+function gridFromTopLeft(node: Node, gridSize: number) {
+  return {
+    x: Math.round(node.position.x / gridSize),
+    y: Math.round(node.position.y / gridSize)
+  }
+}
+
+function normalizeSymbolBody(body: { w?: number; h?: number }) {
+  const w =
+    typeof body.w === 'number' && Number.isFinite(body.w) && body.w > 0
+      ? body.w
+      : FALLBACK_SYMBOL.body.w
+  const h =
+    typeof body.h === 'number' && Number.isFinite(body.h) && body.h > 0
+      ? body.h
+      : FALLBACK_SYMBOL.body.h
+  return { w, h }
+}
+
+function computePinPositions(symbol: SymbolDefinition, body: { w: number; h: number }) {
+  const pins: PinPosition[] = []
+  const offsets = symbol.pin_offsets ?? {}
+  const pinConfig = symbol.pins ?? {}
+
+  const pushPins = (side: PinSide, entries: Array<string | null> | undefined, edge: number) => {
+    if (!entries || entries.length === 0) {
+      return
+    }
+    const span = entries.length > 1 ? entries.length - 1 : 0
+    const start = Math.floor((edge - span) / 2)
+    entries.forEach((entry, index) => {
+      if (typeof entry !== 'string') {
+        return
+      }
+      const offset = offsets[side]?.[entry] ?? 0
+      const along = start + index + offset
+      const position =
+        side === 'left'
+          ? { x: 0, y: along }
+          : side === 'right'
+            ? { x: body.w, y: along }
+            : side === 'top'
+              ? { x: along, y: 0 }
+              : { x: along, y: body.h }
+      pins.push({ id: entry, name: entry, side, ...position })
+    })
+  }
+
+  pushPins('left', pinConfig.left, body.h)
+  pushPins('right', pinConfig.right, body.h)
+  pushPins('top', pinConfig.top, body.w)
+  pushPins('bottom', pinConfig.bottom, body.w)
+
+  return pins
+}
+
+function parseEndpoint(value: string): { nodeId: string; handleId?: string } {
+  const splitIndex = value.lastIndexOf('.')
+  if (splitIndex > 0 && splitIndex < value.length - 1) {
+    return { nodeId: value.slice(0, splitIndex), handleId: value.slice(splitIndex + 1) }
+  }
+  return { nodeId: value }
+}
+
 function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
   return (
     <div className="node instance-node">
-      <Handle type="target" position={Position.Left} />
+      {data.pins.map((pin) => {
+        const style =
+          pin.side === 'left' || pin.side === 'right'
+            ? { top: pin.y * data.gridSize }
+            : { left: pin.x * data.gridSize }
+        const position =
+          pin.side === 'left'
+            ? Position.Left
+            : pin.side === 'right'
+              ? Position.Right
+              : pin.side === 'top'
+                ? Position.Top
+                : Position.Bottom
+        return (
+          <Handle
+            key={`${pin.id}-${pin.side}`}
+            id={pin.id}
+            type="source"
+            position={position}
+            style={style}
+            className="pin-handle"
+          />
+        )
+      })}
       <div className="node-title">{data.label}</div>
       <div className="node-subtitle">{data.orient}</div>
-      <Handle type="source" position={Position.Right} />
     </div>
   )
 }
@@ -345,10 +495,15 @@ function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
 function HubNodeComponent({ data }: NodeProps<HubNodeData>) {
   return (
     <div className="node hub-node">
-      <Handle type="target" position={Position.Left} />
+      <Handle
+        type="target"
+        id={HUB_HANDLE_ID}
+        position={Position.Top}
+        style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+        className="hub-handle"
+      />
       <div className="hub-dot" />
       <div className="hub-label">{data.label}</div>
-      <Handle type="source" position={Position.Right} />
     </div>
   )
 }
