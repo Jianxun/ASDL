@@ -195,11 +195,23 @@ export function buildMockGraph(): GraphPayload {
     symbols: {
       [deviceSymbolKey]: {
         body: { ...DEFAULT_SYMBOL_BODY },
-        pins: { left: ['D', 'G'], right: ['S', 'B'] }
+        pins: {
+          left: [
+            { name: 'D', offset: 0, visible: true },
+            { name: 'G', offset: 0, visible: true }
+          ],
+          right: [
+            { name: 'S', offset: 0, visible: true },
+            { name: 'B', offset: 0, visible: true }
+          ]
+        }
       },
       [moduleSymbolKey]: {
         body: { w: 8, h: 4 },
-        pins: { left: ['IN'], right: ['OUT'] }
+        pins: {
+          left: [{ name: 'IN', offset: 0, visible: true }],
+          right: [{ name: 'OUT', offset: 0, visible: true }]
+        }
       }
     }
   }
