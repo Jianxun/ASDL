@@ -50,6 +50,7 @@ Module/device symbol definition (shared structure, adapted from
   - `{pin_name: {offset?, visible?}}`: inline metadata for a pin entry
     - `offset`: optional fractional grid offset along the edge
     - `visible`: optional boolean (default `true`) to render the pin label
+  - Pin metadata entries MUST be single-key maps.
 - `glyph` (optional, devices only for now):
   - `glyph.src`: path to SVG asset (relative to the `.asdl` file)
   - `glyph.viewbox`: optional SVG viewBox string (e.g., `"0 0 100 60"`)
