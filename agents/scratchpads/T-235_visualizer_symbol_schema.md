@@ -52,3 +52,8 @@
 - Await review.
 - 2026-01-27 02:33 — Opened PR https://github.com/Jianxun/ASDL/pull/248.
 - 2026-01-27 02:33 — Set task status to ready_for_review in agents/context/tasks_state.yaml.
+- 2026-01-27 02:35 — Review intake; confirmed PR targets main, scratchpad/logs present; next step start review + scope check.
+- 2026-01-27 02:35 — Set task status to review_in_progress; linted tasks_state; next step review changes vs DoD/spec.
+- 2026-01-27 02:37 — Scope check complete vs DoD/spec; verify log present (npm run build); no blockers found.
+- 2026-01-27 02:37 — Posted PR review comment; set status to review_clean; next step merge + closeout.
+- 2026-01-27 02:37 — Set task status to done (merged true); linted tasks_state; next step commit/push + merge.
