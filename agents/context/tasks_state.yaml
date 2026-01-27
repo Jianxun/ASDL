@@ -12,8 +12,8 @@ T-234:
   pr: 247
   merged: true
 T-235:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 248
   merged: false
 T-236:
   status: ready
