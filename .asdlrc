@@ -1,6 +1,6 @@
 # Example ASDL project config (not yet consumed by asdlc).
 schema_version: 1
-backend_config: ${ASDLRC_DIR}/config/backends.yaml
+backend_config: ${ASDLRC_DIR}/examples/config/backends.yaml
 lib_roots:
   - ${ASDLRC_DIR}/examples/pdks/${PDK}/asdl
   - ${ASDLRC_DIR}/libs

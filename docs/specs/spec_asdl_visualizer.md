@@ -44,16 +44,22 @@ Schema (outline):
 Module/device symbol definition (shared structure, adapted from
 `prototype/symbol_renderer`):
 - `body.w`, `body.h`: body size in grid units (required)
-- `pins.top`, `pins.bottom`, `pins.left`, `pins.right`: arrays of pins
-  (strings or objects). `null` entries reserve spacing slots.
-- `pin_offsets` (optional): per-side mapping of pin name -> offset in grid
-  units (may be fractional).
+- `pins.top`, `pins.bottom`, `pins.left`, `pins.right`: arrays of pin entries:
+  - `string`: pin name
+  - `null`: spacing slot
+  - `{pin_name: {offset?, visible?}}`: inline metadata for a pin entry
+    - `offset`: optional fractional grid offset along the edge
+    - `visible`: optional boolean (default `true`) to render the pin label
 - `glyph` (optional, devices only for now):
   - `glyph.src`: path to SVG asset (relative to the `.asdl` file)
   - `glyph.viewbox`: optional SVG viewBox string (e.g., `"0 0 100 60"`)
+  - `glyph.box`: placement box in grid units `{x, y, w, h}` (required when glyph is present)
+Glyphs render inside `glyph.box` preserving aspect ratio; no implicit scaling
+or placement is inferred beyond fitting within the box.
 
 Pins are names only; direction is not tracked in the visualizer. Pin placement
-is derived from `body` size and the pin arrays (see "Pin placement rules").
+is derived from `body` size and the pin arrays (see "Pin placement rules"). Pin
+labels are optional per pin via `visible: false`.
 
 Example (module + device):
 ```
@@ -62,18 +68,25 @@ modules:
   current_mirror_nmos:
     body: { w: 10, h: 6 }
     pins:
-      left: [ INP, INN, null, BIAS ]
+      left:
+        - INP
+        - INN: { offset: 0.25 }
+        - null
+        - BIAS
       right: [ OUT ]
       top: [ VDD ]
       bottom: [ VSS ]
-    pin_offsets:
-      left: { INN: 0.25 }
 devices:
   nfet_03v3:
     body: { w: 6, h: 4 }
-    glyph: { src: glyphs/nmos4.svg, viewbox: "0 0 100 60" }
+    glyph:
+      src: glyphs/nmos4.svg
+      viewbox: "0 0 100 60"
+      box: { x: 0.5, y: 0.5, w: 5, h: 3 }
     pins:
-      left: [ D, G ]
+      left:
+        - D
+        - G: { visible: false }
       right: [ S, B ]
 ```
 
@@ -114,7 +127,7 @@ groups, a single hub is assumed. User-defined extra hubs are not supported.
 The renderer builds an explicit node+edge graph:
 - Nodes: instances, net hubs, optional port/junction helpers.
 - Edges: one per endpoint, connecting instance pin handles to net hub handles.
-- Handle IDs: `<pin>@<atom>` for instance/port pins; `net@<atom>` for net hubs.
+- Handle IDs: pin names for instance/port pins; `hub` for net hubs.
 
 ## Host integration (VSCode extension)
 The primary UI host is a VSCode extension with a webview-based editor.
@@ -179,6 +192,17 @@ Core responsibilities:
 3) **Junctions**: render as a small filled dot at the junction node.
 4) **Grid**: positions are snapped to the module `grid_size`.
 5) **Patterns**: render bundles as labels; do not expand patterns in the UI.
+6) **Labels**: pin and hub labels rotate with orientation but are never upside
+   down; vertical text reads bottom-to-top. Pin labels render inside the body
+   edge with a fixed inset.
+
+## Interaction (MVP)
+- Selecting an instance or hub exposes orientation controls:
+  - **Rotate**: rotate 90° counter-clockwise.
+  - **Mirror X**: mirror across the X axis (vertical flip).
+  - **Mirror Y**: mirror across the Y axis (horizontal flip).
+- Orientation edits update the in-memory layout `orient` field and are saved to
+  `design.sch.yaml` when the user clicks **Save Layout**.
 
 ### Pin placement rules (symbols)
 Pins are placed along the symbol body edges in grid units:
@@ -197,8 +221,9 @@ For each slot index `i`:
 - Left/right: `y = start + i * step + pin_offset`, `x = 0` (left) or `x = body.w`
 - Top/bottom: `x = start + i * step + pin_offset`, `y = 0` (top) or `y = body.h`
 
-`pin_offset` defaults to 0 and can be fractional grid units. It is the symbol
-author's responsibility to align glyph artwork to the pin positions.
+`pin_offset` defaults to 0 and can be fractional grid units. The offset comes
+from inline pin metadata when provided. It is the symbol author's
+responsibility to align glyph artwork to the pin positions.
 
 ### Anchor rules (layout vs symbols)
 - **Instances** are anchored by the **top-left** of the symbol body. Instance
@@ -211,6 +236,18 @@ author's responsibility to align glyph artwork to the pin positions.
 - The visualizer must convert between layout anchors and React Flow node
   top-left pixel coordinates as needed, but the persisted layout remains in
   grid units using the rules above.
+
+### Orientation rules
+Instances and net hubs use Cadence-style orientations with **R90 as
+counter-clockwise rotation** in screen coordinates (x→right, y→down). Mirror
+operations apply before rotation. The orientation enum set is exactly:
+`R0`, `R90`, `R180`, `R270`, `MX`, `MY`, `MXR90`, `MYR90`.
+- **MX** mirrors across the X axis (vertical flip): `y → h - y`.
+- **MY** mirrors across the Y axis (horizontal flip): `x → w - x`.
+- **Instances** rotate/mirror about the **top-left** origin of the symbol body.
+- **Net hubs** rotate/mirror about the **center** of the hub.
+- **Hub anchor**: a single hub handle starts on the **right** side for `R0` and
+  is rotated/mirrored with the hub orientation.
 
 Example (grid units):
 - Symbol body `w=5`, `h=3` with pins on the left side: `[A, null, B]`
