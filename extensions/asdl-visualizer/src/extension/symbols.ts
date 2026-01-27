@@ -6,6 +6,8 @@ import { fileExists } from './util'
 import type {
   GraphPayload,
   SymbolDefinition,
+  SymbolGlyph,
+  SymbolPin,
   SymbolPins,
   SymbolSidecar,
   VisualizerDump
@@ -259,17 +261,15 @@ function normalizeSymbolDefinition(
     }
   })
 
-  const pin_offsets = normalizePinOffsets(
-    rawSymbol.pin_offsets as Record<string, unknown> | undefined,
+  const glyph = normalizeGlyph(
+    rawSymbol.glyph as Record<string, unknown> | undefined,
     diagnostics,
-    `${context}.pin_offsets`
+    `${context}.glyph`
   )
-  const glyph = normalizeGlyph(rawSymbol.glyph as Record<string, unknown> | undefined)
 
   return {
     body: { w, h },
     pins,
-    pin_offsets,
     glyph
   }
 }
@@ -291,7 +291,7 @@ function normalizePinArray(
   value: unknown,
   diagnostics: string[],
   context: string
-): Array<string | null> {
+): Array<SymbolPin | null> {
   if (!Array.isArray(value)) {
     return []
   }
@@ -300,44 +300,56 @@ function normalizePinArray(
       return null
     }
     if (typeof entry === 'string') {
-      return entry
+      return { name: entry, offset: 0, visible: true }
     }
-    diagnostics.push(`Invalid pin at ${context}[${index}]; expected string or null.`)
+    if (typeof entry === 'object' && entry !== null && !Array.isArray(entry)) {
+      const keys = Object.keys(entry as Record<string, unknown>)
+      if (keys.length !== 1) {
+        diagnostics.push(`Invalid pin at ${context}[${index}]; expected single-key map.`)
+        return null
+      }
+      const pinName = keys[0]
+      const metadata = (entry as Record<string, unknown>)[pinName]
+      if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+        diagnostics.push(
+          `Invalid pin metadata at ${context}[${index}]; expected object for ${pinName}.`
+        )
+        return { name: pinName, offset: 0, visible: true }
+      }
+      const metaRecord = metadata as Record<string, unknown>
+      let offset = 0
+      if (metaRecord.offset !== undefined) {
+        if (typeof metaRecord.offset === 'number' && Number.isFinite(metaRecord.offset)) {
+          offset = metaRecord.offset
+        } else {
+          diagnostics.push(
+            `Invalid pin offset at ${context}[${index}]; expected number for ${pinName}.`
+          )
+        }
+      }
+      let visible = true
+      if (metaRecord.visible !== undefined) {
+        if (typeof metaRecord.visible === 'boolean') {
+          visible = metaRecord.visible
+        } else {
+          diagnostics.push(
+            `Invalid pin visibility at ${context}[${index}]; expected boolean for ${pinName}.`
+          )
+        }
+      }
+      return { name: pinName, offset, visible }
+    }
+    diagnostics.push(
+      `Invalid pin at ${context}[${index}]; expected string, null, or pin metadata map.`
+    )
     return null
   })
 }
 
-function normalizePinOffsets(
-  value: Record<string, unknown> | undefined,
+function normalizeGlyph(
+  glyphRaw: Record<string, unknown> | undefined,
   diagnostics: string[],
   context: string
-): SymbolDefinition['pin_offsets'] | undefined {
-  if (!value || typeof value !== 'object') {
-    return undefined
-  }
-  const offsets: SymbolDefinition['pin_offsets'] = {}
-  PIN_SIDES.forEach((side) => {
-    const sideRaw = value[side] as Record<string, unknown> | undefined
-    if (!sideRaw || typeof sideRaw !== 'object') {
-      return
-    }
-    const entries: Record<string, number> = {}
-    for (const [name, offset] of Object.entries(sideRaw)) {
-      if (typeof offset === 'number' && Number.isFinite(offset)) {
-        entries[name] = offset
-      } else {
-        diagnostics.push(`Invalid pin offset at ${context}.${side}.${name}; expected number.`)
-      }
-    }
-    if (Object.keys(entries).length > 0) {
-      offsets[side] = entries
-    }
-  })
-  return Object.keys(offsets).length > 0 ? offsets : undefined
-}
-
-function normalizeGlyph(
-  glyphRaw: Record<string, unknown> | undefined
 ): SymbolDefinition['glyph'] | undefined {
   if (!glyphRaw || typeof glyphRaw !== 'object') {
     return undefined
@@ -347,17 +359,66 @@ function normalizeGlyph(
     return undefined
   }
   const viewbox = typeof glyphRaw.viewbox === 'string' ? glyphRaw.viewbox : undefined
+  const boxRaw = glyphRaw.box as Record<string, unknown> | undefined
+  const box = normalizeGlyphBox(boxRaw, diagnostics, `${context}.box`)
+  if (!box) {
+    return undefined
+  }
   return {
     src,
-    viewbox
+    viewbox,
+    box
   }
+}
+
+function normalizeGlyphBox(
+  value: Record<string, unknown> | undefined,
+  diagnostics: string[],
+  context: string
+): SymbolGlyph['box'] | null {
+  if (!value || typeof value !== 'object') {
+    diagnostics.push(`Missing glyph box at ${context}.`)
+    return null
+  }
+  const x = normalizeGlyphBoxValue(value.x, `${context}.x`, diagnostics)
+  const y = normalizeGlyphBoxValue(value.y, `${context}.y`, diagnostics)
+  const w = normalizeGlyphBoxSize(value.w, `${context}.w`, diagnostics)
+  const h = normalizeGlyphBoxSize(value.h, `${context}.h`, diagnostics)
+  if (x === null || y === null || w === null || h === null) {
+    return null
+  }
+  return { x, y, w, h }
+}
+
+function normalizeGlyphBoxValue(
+  value: unknown,
+  context: string,
+  diagnostics: string[]
+): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  diagnostics.push(`Invalid ${context}; expected number.`)
+  return null
+}
+
+function normalizeGlyphBoxSize(
+  value: unknown,
+  context: string,
+  diagnostics: string[]
+): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value
+  }
+  diagnostics.push(`Invalid ${context}; expected positive number.`)
+  return null
 }
 
 function buildFallbackSymbol(pins: string[]): SymbolDefinition {
   const height = Math.max(DEFAULT_SYMBOL_BODY.h, Math.max(1, pins.length - 1))
   return {
     body: { w: DEFAULT_SYMBOL_BODY.w, h: height },
-    pins: { left: pins }
+    pins: { left: pins.map((pin) => ({ name: pin, offset: 0, visible: true })) }
   }
 }
 
@@ -365,8 +426,8 @@ function collectSymbolPins(pins: SymbolPins): string[] {
   const entries: string[] = []
   PIN_SIDES.forEach((side) => {
     pins[side]?.forEach((pin) => {
-      if (typeof pin === 'string') {
-        entries.push(pin)
+      if (pin && typeof pin === 'object') {
+        entries.push(pin.name)
       }
     })
   })

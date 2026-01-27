@@ -37,28 +37,27 @@ type GraphPayload = {
 }
 
 type SymbolPins = {
-  top?: Array<string | null>
-  bottom?: Array<string | null>
-  left?: Array<string | null>
-  right?: Array<string | null>
+  top?: Array<SymbolPin | null>
+  bottom?: Array<SymbolPin | null>
+  left?: Array<SymbolPin | null>
+  right?: Array<SymbolPin | null>
 }
 
-type SymbolPinOffsets = {
-  top?: Record<string, number>
-  bottom?: Record<string, number>
-  left?: Record<string, number>
-  right?: Record<string, number>
+type SymbolPin = {
+  name: string
+  offset: number
+  visible: boolean
 }
 
 type SymbolGlyph = {
   src: string
   viewbox?: string
+  box: { x: number; y: number; w: number; h: number }
 }
 
 type SymbolDefinition = {
   body: { w: number; h: number }
   pins: SymbolPins
-  pin_offsets?: SymbolPinOffsets
   glyph?: SymbolGlyph
 }
 
@@ -129,6 +128,7 @@ type PinPosition = {
   side: PinSide
   x: number
   y: number
+  visible: boolean
 }
 
 export function App() {
@@ -416,21 +416,19 @@ function normalizeSymbolBody(body: { w?: number; h?: number }) {
 
 function computePinPositions(symbol: SymbolDefinition, body: { w: number; h: number }) {
   const pins: PinPosition[] = []
-  const offsets = symbol.pin_offsets ?? {}
   const pinConfig = symbol.pins ?? {}
 
-  const pushPins = (side: PinSide, entries: Array<string | null> | undefined, edge: number) => {
+  const pushPins = (side: PinSide, entries: Array<SymbolPin | null> | undefined, edge: number) => {
     if (!entries || entries.length === 0) {
       return
     }
     const span = entries.length > 1 ? entries.length - 1 : 0
     const start = Math.floor((edge - span) / 2)
     entries.forEach((entry, index) => {
-      if (typeof entry !== 'string') {
+      if (!entry) {
         return
       }
-      const offset = offsets[side]?.[entry] ?? 0
-      const along = start + index + offset
+      const along = start + index + entry.offset
       const position =
         side === 'left'
           ? { x: 0, y: along }
@@ -439,7 +437,7 @@ function computePinPositions(symbol: SymbolDefinition, body: { w: number; h: num
             : side === 'top'
               ? { x: along, y: 0 }
               : { x: along, y: body.h }
-      pins.push({ id: entry, name: entry, side, ...position })
+      pins.push({ id: entry.name, name: entry.name, side, visible: entry.visible, ...position })
     })
   }
 
