@@ -12,9 +12,9 @@ T-234:
   pr: 247
   merged: true
 T-235:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 248
+  merged: true
 T-236:
   status: ready
   pr: null

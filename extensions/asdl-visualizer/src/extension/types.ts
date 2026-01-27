@@ -41,29 +41,28 @@ export type VisualizerDump = {
   }
 }
 
-export type SymbolPins = {
-  top?: Array<string | null>
-  bottom?: Array<string | null>
-  left?: Array<string | null>
-  right?: Array<string | null>
+export type SymbolPin = {
+  name: string
+  offset: number
+  visible: boolean
 }
 
-export type SymbolPinOffsets = {
-  top?: Record<string, number>
-  bottom?: Record<string, number>
-  left?: Record<string, number>
-  right?: Record<string, number>
+export type SymbolPins = {
+  top?: Array<SymbolPin | null>
+  bottom?: Array<SymbolPin | null>
+  left?: Array<SymbolPin | null>
+  right?: Array<SymbolPin | null>
 }
 
 export type SymbolGlyph = {
   src: string
   viewbox?: string
+  box: { x: number; y: number; w: number; h: number }
 }
 
 export type SymbolDefinition = {
   body: { w: number; h: number }
   pins: SymbolPins
-  pin_offsets?: SymbolPinOffsets
   glyph?: SymbolGlyph
 }
 

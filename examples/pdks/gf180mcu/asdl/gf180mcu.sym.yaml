@@ -1,0 +1,21 @@
+schema_version: 0
+
+devices:
+  nfet_03v3:
+    body: { w: 6, h: 4 }
+    pins:
+      left:
+        - d
+        - g: { offset: 0.25 }
+      right:
+        - s
+        - b
+  pfet_03v3:
+    body: { w: 6, h: 4 }
+    pins:
+      left:
+        - d
+        - g: { visible: false }
+      right:
+        - s
+        - b
