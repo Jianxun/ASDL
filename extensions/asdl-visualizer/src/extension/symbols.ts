@@ -24,7 +24,8 @@ type SymbolLibrary = {
 }
 
 export async function loadSymbolLibrary(
-  dump: VisualizerDump
+  dump: VisualizerDump,
+  webview: vscode.Webview
 ): Promise<SymbolLibrary> {
   const diagnostics: string[] = []
   const symbols: Record<string, SymbolDefinition> = {}
@@ -56,18 +57,22 @@ export async function loadSymbolLibrary(
     const modules = payload.modules ?? {}
     const devices = payload.devices ?? {}
     for (const [name, rawSymbol] of Object.entries(modules)) {
-      const symbol = normalizeSymbolDefinition(
+      const symbol = await normalizeSymbolDefinition(
         rawSymbol,
         diagnostics,
-        `${symbolUri.fsPath}#modules.${name}`
+        `${symbolUri.fsPath}#modules.${name}`,
+        fileId,
+        webview
       )
       symbols[makeSymbolKey(fileId, 'module', name)] = symbol
     }
     for (const [name, rawSymbol] of Object.entries(devices)) {
-      const symbol = normalizeSymbolDefinition(
+      const symbol = await normalizeSymbolDefinition(
         rawSymbol,
         diagnostics,
-        `${symbolUri.fsPath}#devices.${name}`
+        `${symbolUri.fsPath}#devices.${name}`,
+        fileId,
+        webview
       )
       symbols[makeSymbolKey(fileId, 'device', name)] = symbol
     }
@@ -217,7 +222,7 @@ export function buildMockGraph(): GraphPayload {
   }
 }
 
-function collectFileIds(dump: VisualizerDump): Set<string> {
+export function collectFileIds(dump: VisualizerDump): Set<string> {
   const fileIds = new Set<string>()
   if (dump.module?.file_id) {
     fileIds.add(dump.module.file_id)
@@ -250,11 +255,13 @@ function makeSymbolKey(
   return `${fileId}::${kind}::${name}`
 }
 
-function normalizeSymbolDefinition(
+async function normalizeSymbolDefinition(
   raw: unknown,
   diagnostics: string[],
-  context: string
-): SymbolDefinition {
+  context: string,
+  fileId: string,
+  webview: vscode.Webview
+): Promise<SymbolDefinition> {
   if (!raw || typeof raw !== 'object') {
     diagnostics.push(`Invalid symbol definition at ${context}; using defaults.`)
     return buildFallbackSymbol([])
@@ -273,10 +280,12 @@ function normalizeSymbolDefinition(
     }
   })
 
-  const glyph = normalizeGlyph(
+  const glyph = await normalizeGlyph(
     rawSymbol.glyph as Record<string, unknown> | undefined,
     diagnostics,
-    `${context}.glyph`
+    `${context}.glyph`,
+    fileId,
+    webview
   )
 
   return {
@@ -358,11 +367,13 @@ function normalizePinArray(
   })
 }
 
-function normalizeGlyph(
+async function normalizeGlyph(
   glyphRaw: Record<string, unknown> | undefined,
   diagnostics: string[],
-  context: string
-): SymbolDefinition['glyph'] | undefined {
+  context: string,
+  fileId: string,
+  webview: vscode.Webview
+): Promise<SymbolDefinition['glyph'] | undefined> {
   if (!glyphRaw || typeof glyphRaw !== 'object') {
     return undefined
   }
@@ -376,11 +387,42 @@ function normalizeGlyph(
   if (!box) {
     return undefined
   }
+  const resolvedSrc = await resolveGlyphSource(src, fileId, webview, diagnostics, context)
+  if (!resolvedSrc) {
+    return undefined
+  }
   return {
-    src,
+    src: resolvedSrc,
     viewbox,
     box
   }
+}
+
+async function resolveGlyphSource(
+  src: string,
+  fileId: string,
+  webview: vscode.Webview,
+  diagnostics: string[],
+  context: string
+): Promise<string | null> {
+  const baseDir = path.dirname(fileId)
+  const resolvedPath = path.isAbsolute(src) ? src : path.resolve(baseDir, src)
+  const glyphUri = vscode.Uri.file(resolvedPath)
+  if (!(await fileExists(glyphUri))) {
+    diagnostics.push(`Missing glyph asset at ${resolvedPath} for ${context}.`)
+    return null
+  }
+  const glyphRoot = vscode.Uri.file(path.dirname(resolvedPath))
+  const roots = webview.options.localResourceRoots ?? []
+  const rootMap = new Map(roots.map((root) => [root.fsPath, root]))
+  if (!rootMap.has(glyphRoot.fsPath)) {
+    rootMap.set(glyphRoot.fsPath, glyphRoot)
+    webview.options = {
+      enableScripts: true,
+      localResourceRoots: Array.from(rootMap.values())
+    }
+  }
+  return webview.asWebviewUri(glyphUri).toString()
 }
 
 function normalizeGlyphBox(
