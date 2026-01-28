@@ -24,20 +24,24 @@
 - 2026-01-27 21:19 — Implemented orientation helpers, oriented body/pin geometry, and hub handle placement in webview; files touched: extensions/asdl-visualizer/src/webview/app.tsx; next step: commit changes.
 - 2026-01-27 21:20 — Commit 68a25ea (feat: apply visualizer orient transforms); next step: run visualizer build.
 - 2026-01-27 21:21 — Verification: cd extensions/asdl-visualizer && npm run build (success; Vite CJS deprecation warning only).
+- 2026-01-27 21:21 — Commit 5e1d7d2 (chore: update T-237 scratchpad); next step: open PR.
+- 2026-01-27 21:21 — Opened PR https://github.com/Jianxun/ASDL/pull/250; next step: update tasks_state.
+- 2026-01-27 21:21 — Set T-237 status to ready_for_review with PR 250; ran ./venv/bin/python scripts/lint_tasks_state.py; next step: final push.
 
 # Patch summary
 - Added Cadence-style orientation helpers for mirrors/rotations and applied them to instance body sizing, pin placement, glyph box placement, and hub handle positioning in the visualizer webview.
 
 # PR URL
+- https://github.com/Jianxun/ASDL/pull/250
 
 # Verification
 - cd extensions/asdl-visualizer && npm run build
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Ready for review
 
 # Blockers / Questions
 - None.
 
 # Next steps
-- Open PR, update tasks_state to ready_for_review, and record PR URL.
+- Await reviewer feedback.
