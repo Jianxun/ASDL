@@ -102,6 +102,7 @@ const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : nul
 const DEFAULT_GRID_SIZE = 16
 const HUB_SIZE = 2
 const HUB_HANDLE_ID = 'hub'
+const EDGE_STEP_OFFSET_UNITS = 0.8
 const FALLBACK_SYMBOL: SymbolDefinition = {
   body: { w: 6, h: 4 },
   pins: { left: [] }
@@ -292,7 +293,8 @@ export function App() {
               snapGrid={[gridSize, gridSize]}
               defaultEdgeOptions={{
                 type: 'step',
-                style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' }
+                style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' },
+                pathOptions: { offset: gridSize * EDGE_STEP_OFFSET_UNITS }
               }}
               connectionLineType={ConnectionLineType.Step}
               connectionLineStyle={{ stroke: '#e2e8f0', strokeWidth: 2 }}
@@ -385,6 +387,7 @@ function buildReactFlowGraph(
         sourceHandle,
         targetHandle: HUB_HANDLE_ID,
         type: 'step',
+        pathOptions: { offset: gridSize * EDGE_STEP_OFFSET_UNITS },
         style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' }
       } as Edge
     })
