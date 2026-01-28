@@ -20,7 +20,7 @@ T-236:
   pr: 249
   merged: true
 T-237:
-  status: ready_for_review
+  status: request_changes
   pr: 250
   merged: false
 T-238:

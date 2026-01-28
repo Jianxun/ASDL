@@ -27,6 +27,10 @@
 - 2026-01-27 21:21 — Commit 5e1d7d2 (chore: update T-237 scratchpad); next step: open PR.
 - 2026-01-27 21:21 — Opened PR https://github.com/Jianxun/ASDL/pull/250; next step: update tasks_state.
 - 2026-01-27 21:21 — Set T-237 status to ready_for_review with PR 250; ran ./venv/bin/python scripts/lint_tasks_state.py; next step: final push.
+- 2026-01-27 21:27 — Review intake: confirmed PR #250 metadata, scratchpad, and verify logs; next step: set review_in_progress and begin checks.
+- 2026-01-27 21:27 — Set T-237 status to review_in_progress; ran ./venv/bin/python scripts/lint_tasks_state.py; next step: scope/spec review.
+- 2026-01-27 21:28 — Scope/spec review complete; found glyph artwork not rotated/mirrored with orientation (box only), which breaks symbol orient for non-R0; next step: request changes.
+- 2026-01-27 21:28 — Posted PR review comment requesting glyph transform; set status to request_changes; ran ./venv/bin/python scripts/lint_tasks_state.py; next step: await executor updates.
 
 # Patch summary
 - Added Cadence-style orientation helpers for mirrors/rotations and applied them to instance body sizing, pin placement, glyph box placement, and hub handle positioning in the visualizer webview.
