@@ -7,6 +7,7 @@ import ReactFlow, {
   Handle,
   useEdgesState,
   useNodesState,
+  useUpdateNodeInternals,
   type Edge,
   type Node,
   type NodeProps,
@@ -122,6 +123,7 @@ type HubNodeData = {
 type VisualNodeData = InstanceNodeData | HubNodeData
 
 type PinSide = 'top' | 'bottom' | 'left' | 'right'
+type Orient = 'R0' | 'R90' | 'R180' | 'R270' | 'MX' | 'MY' | 'MXR90' | 'MYR90'
 
 type PinPosition = {
   id: string
@@ -326,25 +328,27 @@ function buildReactFlowGraph(
     const placement = moduleLayout?.instances?.[inst.id]
     const gridX = placement?.x ?? index * 4
     const gridY = placement?.y ?? 0
+    const orient = normalizeOrient(placement?.orient)
     const symbol = graph.symbols[inst.symbolKey] ?? FALLBACK_SYMBOL
     const body = normalizeSymbolBody(symbol.body)
     const pins = computePinPositions(symbol, body)
     const pos = topLeftFromGrid(gridX, gridY, gridSize)
+    const orientedBody = computeOrientData(body.w, body.h, orient)
     return {
       id: inst.id,
       type: 'instance',
       position: pos,
       data: {
         label: inst.label,
-        orient: placement?.orient ?? 'R0',
+        orient,
         body,
         pins,
         gridSize,
         glyph: symbol.glyph
       },
       style: {
-        width: body.w * gridSize,
-        height: body.h * gridSize
+        width: orientedBody.width * gridSize,
+        height: orientedBody.height * gridSize
       }
     } as Node<InstanceNodeData>
   })
@@ -483,6 +487,112 @@ function computePinPositions(symbol: SymbolDefinition, body: { w: number; h: num
   return pins
 }
 
+function normalizeOrient(value: string | undefined): Orient {
+  const raw = (value ?? 'R0').toUpperCase()
+  if (
+    raw === 'R0' ||
+    raw === 'R90' ||
+    raw === 'R180' ||
+    raw === 'R270' ||
+    raw === 'MX' ||
+    raw === 'MY' ||
+    raw === 'MXR90' ||
+    raw === 'MYR90'
+  ) {
+    return raw as Orient
+  }
+  return 'R0'
+}
+
+type OrientMatrix = { a: number; b: number; c: number; d: number }
+type OrientData = OrientMatrix & {
+  tx: number
+  ty: number
+  width: number
+  height: number
+  transform: string
+}
+
+function orientMatrix(orient: Orient): OrientMatrix {
+  const mirrorX = orient.startsWith('MX')
+  const mirrorY = orient.startsWith('MY')
+  const rotation = orient.endsWith('R90')
+    ? 90
+    : orient.endsWith('R180')
+      ? 180
+      : orient.endsWith('R270')
+        ? 270
+        : 0
+  const sx = mirrorY ? -1 : 1
+  const sy = mirrorX ? -1 : 1
+
+  const r =
+    rotation === 90
+      ? { r11: 0, r12: 1, r21: -1, r22: 0 }
+      : rotation === 180
+        ? { r11: -1, r12: 0, r21: 0, r22: -1 }
+        : rotation === 270
+          ? { r11: 0, r12: -1, r21: 1, r22: 0 }
+          : { r11: 1, r12: 0, r21: 0, r22: 1 }
+
+  return {
+    a: r.r11 * sx,
+    b: r.r21 * sx,
+    c: r.r12 * sy,
+    d: r.r22 * sy
+  }
+}
+
+function computeOrientData(w: number, h: number, orient: Orient): OrientData {
+  const { a, b, c, d } = orientMatrix(orient)
+  const points = [
+    { x: 0, y: 0 },
+    { x: w, y: 0 },
+    { x: 0, y: h },
+    { x: w, y: h }
+  ].map((p) => ({ x: a * p.x + c * p.y, y: b * p.x + d * p.y }))
+  const xs = points.map((p) => p.x)
+  const ys = points.map((p) => p.y)
+  const minX = Math.min(...xs)
+  const maxX = Math.max(...xs)
+  const minY = Math.min(...ys)
+  const maxY = Math.max(...ys)
+  const tx = -minX
+  const ty = -minY
+  return {
+    a,
+    b,
+    c,
+    d,
+    tx,
+    ty,
+    width: maxX - minX,
+    height: maxY - minY,
+    transform: `matrix(${a}, ${b}, ${c}, ${d}, ${tx}, ${ty})`
+  }
+}
+
+function applyOrientPoint(x: number, y: number, orient: OrientData): { x: number; y: number } {
+  return { x: orient.a * x + orient.c * y + orient.tx, y: orient.b * x + orient.d * y + orient.ty }
+}
+
+function mapPinSide(side: PinSide, orient: OrientData): PinSide {
+  const vector =
+    side === 'left'
+      ? { x: -1, y: 0 }
+      : side === 'right'
+        ? { x: 1, y: 0 }
+        : side === 'top'
+          ? { x: 0, y: -1 }
+          : { x: 0, y: 1 }
+  const x = orient.a * vector.x + orient.c * vector.y
+  const y = orient.b * vector.x + orient.d * vector.y
+  if (Math.abs(x) >= Math.abs(y)) {
+    return x < 0 ? 'left' : 'right'
+  }
+  return y < 0 ? 'top' : 'bottom'
+}
+
 function parseEndpoint(value: string): { nodeId: string; handleId?: string } {
   const splitIndex = value.lastIndexOf('.')
   if (splitIndex > 0 && splitIndex < value.length - 1) {
@@ -491,7 +601,27 @@ function parseEndpoint(value: string): { nodeId: string; handleId?: string } {
   return { nodeId: value }
 }
 
-function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
+function InstanceNodeComponent({ id, data }: NodeProps<InstanceNodeData>) {
+  const updateNodeInternals = useUpdateNodeInternals()
+  const orient = normalizeOrient(data.orient)
+  const baseWidth = data.body.w * data.gridSize
+  const baseHeight = data.body.h * data.gridSize
+  const orientData = computeOrientData(baseWidth, baseHeight, orient)
+
+  const orientedPins = useMemo(() => {
+    return data.pins.map((pin) => {
+      const x = pin.x * data.gridSize
+      const y = pin.y * data.gridSize
+      const { x: ox, y: oy } = applyOrientPoint(x, y, orientData)
+      const side = mapPinSide(pin.side, orientData)
+      return { ...pin, x: ox, y: oy, side }
+    })
+  }, [data.pins, data.gridSize, orientData])
+
+  useEffect(() => {
+    updateNodeInternals(id)
+  }, [id, orient, updateNodeInternals])
+
   const glyph = data.glyph
   const glyphStyle = glyph
     ? {
@@ -503,26 +633,32 @@ function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
     : undefined
   return (
     <div className="node instance-node">
-      {glyph && (
-        <svg
-          className="glyph-frame"
-          style={glyphStyle}
-          viewBox={glyph.viewbox}
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <image
-            href={glyph.src}
-            width="100%"
-            height="100%"
+      <div
+        className="symbol-layer"
+        style={{
+          width: baseWidth,
+          height: baseHeight,
+          transformOrigin: '0 0',
+          transform: orientData.transform
+        }}
+      >
+        {glyph && (
+          <svg
+            className="glyph-frame"
+            style={glyphStyle}
+            viewBox={glyph.viewbox}
             preserveAspectRatio="xMidYMid meet"
-          />
-        </svg>
-      )}
-      {data.pins.map((pin) => {
-        const style =
-          pin.side === 'left' || pin.side === 'right'
-            ? { top: pin.y * data.gridSize }
-            : { left: pin.x * data.gridSize }
+          >
+            <image
+              href={glyph.src}
+              width="100%"
+              height="100%"
+              preserveAspectRatio="xMidYMid meet"
+            />
+          </svg>
+        )}
+      </div>
+      {orientedPins.map((pin) => {
         const position =
           pin.side === 'left'
             ? Position.Left
@@ -537,7 +673,7 @@ function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
             id={pin.id}
             type="source"
             position={position}
-            style={style}
+            style={{ left: pin.x, top: pin.y, transform: 'translate(-50%, -50%)' }}
             className="pin-handle"
           />
         )

@@ -129,6 +129,12 @@ body {
   position: relative;
 }
 
+.symbol-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
 .glyph-frame {
   position: absolute;
   pointer-events: none;
