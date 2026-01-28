@@ -17,19 +17,27 @@
 - Run build verify.
 
 # Progress log
+- 2026-01-27 21:10 — Task intake; reviewed contract/spec/tasks; noted existing in-progress status; next step: inspect visualizer webview orientation handling.
+- 2026-01-27 21:10 — Ran task state lint (./venv/bin/python scripts/lint_tasks_state.py); OK; next step: implement orient transforms.
+- 2026-01-27 21:19 — Started implementing orient transform helpers and applying to instance/hub geometry in webview; next step: adjust app.tsx and commit.
+- 2026-01-27 21:20 — Commit 1c5d76c (chore: start T-237 orient transforms); updated tasks_state and scratchpad; next step: finish app.tsx orient logic.
+- 2026-01-27 21:19 — Implemented orientation helpers, oriented body/pin geometry, and hub handle placement in webview; files touched: extensions/asdl-visualizer/src/webview/app.tsx; next step: commit changes.
+- 2026-01-27 21:20 — Commit 68a25ea (feat: apply visualizer orient transforms); next step: run visualizer build.
+- 2026-01-27 21:21 — Verification: cd extensions/asdl-visualizer && npm run build (success; Vite CJS deprecation warning only).
 
 # Patch summary
+- Added Cadence-style orientation helpers for mirrors/rotations and applied them to instance body sizing, pin placement, glyph box placement, and hub handle positioning in the visualizer webview.
 
 # PR URL
 
 # Verification
+- cd extensions/asdl-visualizer && npm run build
 
 # Status request (Done / Blocked / In Progress)
+- In Progress
 
 # Blockers / Questions
+- None.
 
 # Next steps
-
-- 2026-01-27 21:10 — Task intake; reviewed contract/spec/tasks; noted existing in-progress status; next step: inspect visualizer webview orientation handling.
-- 2026-01-27 21:10 — Ran task state lint (./venv/bin/python scripts/lint_tasks_state.py); OK; next step: implement orient transforms.
-- 2026-01-27 21:19 — Started implementing orient transform helpers and applying to instance/hub geometry in webview; next step: adjust app.tsx and commit.
+- Open PR, update tasks_state to ready_for_review, and record PR URL.
