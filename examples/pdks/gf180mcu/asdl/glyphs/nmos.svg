@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <g stroke="#e2e8f0" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <g stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
 
     <!-- Gate line (left) -->
     <line x1="30" y1="25" x2="30" y2="75" />

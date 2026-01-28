@@ -412,16 +412,6 @@ async function resolveGlyphSource(
     diagnostics.push(`Missing glyph asset at ${resolvedPath} for ${context}.`)
     return null
   }
-  const glyphRoot = vscode.Uri.file(path.dirname(resolvedPath))
-  const roots = webview.options.localResourceRoots ?? []
-  const rootMap = new Map(roots.map((root) => [root.fsPath, root]))
-  if (!rootMap.has(glyphRoot.fsPath)) {
-    rootMap.set(glyphRoot.fsPath, glyphRoot)
-    webview.options = {
-      enableScripts: true,
-      localResourceRoots: Array.from(rootMap.values())
-    }
-  }
   return webview.asWebviewUri(glyphUri).toString()
 }
 

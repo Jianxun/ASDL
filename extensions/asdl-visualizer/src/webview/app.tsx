@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactFlow, {
   Background,
   ConnectionLineType,
@@ -10,7 +10,8 @@ import ReactFlow, {
   type Edge,
   type Node,
   type NodeProps,
-  type NodeTypes
+  type NodeTypes,
+  type ReactFlowInstance
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
@@ -138,6 +139,9 @@ export function App() {
   const [gridSize, setGridSize] = useState<number>(DEFAULT_GRID_SIZE)
   const [nodes, setNodes, onNodesChange] = useNodesState<VisualNodeData>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const reactFlowRef = useRef<ReactFlowInstance | null>(null)
+  const [fitViewToken, setFitViewToken] = useState(0)
+  const graphRef = useRef<GraphPayload | null>(null)
 
   const nodeTypes = useMemo<NodeTypes>(() => ({
     instance: InstanceNodeComponent,
@@ -148,21 +152,35 @@ export function App() {
     const handleMessage = (event: MessageEvent<WebviewMessage>) => {
       const message = event.data
       if (message.type === 'loadGraph') {
-        setGraph(message.payload.graph)
-        setLayout(message.payload.layout)
+        const nextGraph = message.payload.graph
+        const prevGraph = graphRef.current
+        const isSameModule = prevGraph?.moduleId === nextGraph.moduleId
+        const isSameShape =
+          prevGraph &&
+          prevGraph.instances.length === nextGraph.instances.length &&
+          prevGraph.netHubs.length === nextGraph.netHubs.length &&
+          prevGraph.edges.length === nextGraph.edges.length
+        const shouldRebuild = !prevGraph || !isSameModule || !isSameShape
+
+        if (shouldRebuild) {
+          setGraph(nextGraph)
+          setLayout(message.payload.layout)
+          graphRef.current = nextGraph
+          const moduleLayout = message.payload.layout.modules[nextGraph.moduleId]
+          const grid = moduleLayout?.grid_size ?? DEFAULT_GRID_SIZE
+          setGridSize(grid)
+          const { nodes: rfNodes, edges: rfEdges } = buildReactFlowGraph(
+            nextGraph,
+            moduleLayout,
+            grid
+          )
+          setNodes(rfNodes)
+          setEdges(rfEdges)
+          setFitViewToken((token) => token + 1)
+        }
         if (message.payload.diagnostics) {
           setDiagnostics(message.payload.diagnostics)
         }
-        const moduleLayout = message.payload.layout.modules[message.payload.graph.moduleId]
-        const grid = moduleLayout?.grid_size ?? DEFAULT_GRID_SIZE
-        setGridSize(grid)
-        const { nodes: rfNodes, edges: rfEdges } = buildReactFlowGraph(
-          message.payload.graph,
-          moduleLayout,
-          grid
-        )
-        setNodes(rfNodes)
-        setEdges(rfEdges)
       }
       if (message.type === 'diagnostics') {
         setDiagnostics(message.payload.items)
@@ -176,6 +194,20 @@ export function App() {
       window.removeEventListener('message', handleMessage)
     }
   }, [])
+
+  useEffect(() => {
+    if (fitViewToken === 0) {
+      return
+    }
+    const instance = reactFlowRef.current
+    if (!instance) {
+      return
+    }
+    const handle = requestAnimationFrame(() => {
+      instance.fitView({ padding: 0.2 })
+    })
+    return () => cancelAnimationFrame(handle)
+  }, [fitViewToken])
 
   const onSave = useCallback(() => {
     if (!layout || !graph) {
@@ -251,7 +283,9 @@ export function App() {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               nodeTypes={nodeTypes}
-              fitView
+              onInit={(instance) => {
+                reactFlowRef.current = instance
+              }}
               snapToGrid
               snapGrid={[gridSize, gridSize]}
               defaultEdgeOptions={{
