@@ -28,6 +28,8 @@ ANSI_RESET = "\033[0m"
 def build_command(prompt: str) -> list[str]:
     return [
         "codex",
+        "-s",
+        "danger-full-access",
         "exec",
         "--json",
         "--skip-git-repo-check",
