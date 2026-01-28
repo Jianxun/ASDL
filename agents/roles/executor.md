@@ -51,7 +51,7 @@ Your job is to implement **one task (T-00X)** end-to-end against the existing co
    - You will receive feedback from the reviewer agent in the form of comments to the PR.
    - You should address the findings and resolve the issues to the best of your abilities.
    - After the follow up changes are commited, you should leave a PR comment, prefixed with `[Executor]:`.
-   - All responses to the reviewer must be GitHub PR comments. To avoid malformed comments, create a temporary file, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
+   - All responses to the reviewer must be GitHub PR comments. To avoid malformed comments, create a temporary file under project root `temp_comment.txt`, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
 
 ---
 
