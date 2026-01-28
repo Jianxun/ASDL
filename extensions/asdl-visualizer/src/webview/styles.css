@@ -126,15 +126,30 @@ body {
 .instance-node {
   background: linear-gradient(145deg, #111827, #0b1120);
   border-color: #334155;
+  position: relative;
+}
+
+.glyph-frame {
+  position: absolute;
+  pointer-events: none;
+}
+
+.glyph-frame image {
+  width: 100%;
+  height: 100%;
 }
 
 .node-title {
   font-weight: 600;
+  position: relative;
+  z-index: 1;
 }
 
 .node-subtitle {
   font-size: 11px;
   color: var(--muted);
+  position: relative;
+  z-index: 1;
 }
 
 .hub-node {

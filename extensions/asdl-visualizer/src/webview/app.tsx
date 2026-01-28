@@ -458,8 +458,32 @@ function parseEndpoint(value: string): { nodeId: string; handleId?: string } {
 }
 
 function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
+  const glyph = data.glyph
+  const glyphStyle = glyph
+    ? {
+        left: glyph.box.x * data.gridSize,
+        top: glyph.box.y * data.gridSize,
+        width: glyph.box.w * data.gridSize,
+        height: glyph.box.h * data.gridSize
+      }
+    : undefined
   return (
     <div className="node instance-node">
+      {glyph && (
+        <svg
+          className="glyph-frame"
+          style={glyphStyle}
+          viewBox={glyph.viewbox}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <image
+            href={glyph.src}
+            width="100%"
+            height="100%"
+            preserveAspectRatio="xMidYMid meet"
+          />
+        </svg>
+      )}
       {data.pins.map((pin) => {
         const style =
           pin.side === 'left' || pin.side === 'right'

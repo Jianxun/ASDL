@@ -1,9 +1,10 @@
+import path from 'path'
 import * as vscode from 'vscode'
 import YAML from 'yaml'
 
 import { loadVisualizerDump, loadVisualizerModuleList, VisualizerDumpError } from './dumpRunner'
 import { buildMockLayout, readLayoutSidecar, writeLayoutSidecar } from './layout'
-import { buildGraphFromDump, buildMockGraph, loadSymbolLibrary } from './symbols'
+import { buildGraphFromDump, buildMockGraph, collectFileIds, loadSymbolLibrary } from './symbols'
 import type { LoadGraphPayload, VisualizerModule } from './types'
 import { resolveActiveAsdlUri } from './util'
 import { getWebviewHtml } from './webview'
@@ -35,7 +36,7 @@ export function registerOpenVisualizerCommand(
     panel.webview.onDidReceiveMessage(async (message) => {
       if (message?.type === 'ready') {
         try {
-          const payload = await loadGraphPayload(asdlUri)
+          const payload = await loadGraphPayload(asdlUri, panel.webview, context.extensionUri)
           panel.webview.postMessage({ type: 'loadGraph', payload })
           panel.webview.postMessage({
             type: 'diagnostics',
@@ -78,18 +79,45 @@ export function registerOpenVisualizerCommand(
   })
 }
 
-async function loadGraphPayload(asdlUri: vscode.Uri): Promise<LoadGraphPayload> {
+async function loadGraphPayload(
+  asdlUri: vscode.Uri,
+  webview: vscode.Webview,
+  extensionUri: vscode.Uri
+): Promise<LoadGraphPayload> {
   const diagnostics: string[] = []
   const moduleList = await loadVisualizerModuleList(asdlUri)
   diagnostics.push(...moduleList.diagnostics)
   const selectedModule = await promptForModule(moduleList.modules)
   const dumpResult = await loadVisualizerDump(asdlUri, selectedModule.name)
   diagnostics.push(...dumpResult.diagnostics)
-  const symbolLibrary = await loadSymbolLibrary(dumpResult.dump)
+  configureWebviewRoots(webview, extensionUri, dumpResult.dump)
+  const symbolLibrary = await loadSymbolLibrary(dumpResult.dump, webview)
   diagnostics.push(...symbolLibrary.diagnostics)
   const graph = buildGraphFromDump(dumpResult.dump, diagnostics, symbolLibrary.symbols)
   const layout = await readLayoutSidecar(asdlUri, graph, dumpResult.dump.module.name)
   return { graph, layout, diagnostics }
+}
+
+function configureWebviewRoots(
+  webview: vscode.Webview,
+  extensionUri: vscode.Uri,
+  dump: Parameters<typeof collectFileIds>[0]
+) {
+  const roots = new Map<string, vscode.Uri>()
+  roots.set(extensionUri.fsPath, extensionUri)
+  collectFileIds(dump).forEach((fileId) => {
+    if (!fileId) {
+      return
+    }
+    const dir = path.dirname(fileId)
+    if (!roots.has(dir)) {
+      roots.set(dir, vscode.Uri.file(dir))
+    }
+  })
+  webview.options = {
+    enableScripts: true,
+    localResourceRoots: Array.from(roots.values())
+  }
 }
 
 async function promptForModule(

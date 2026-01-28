@@ -35,7 +35,7 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
    - **Blockers**: comment `[Reviewer]:` findings, set `request_changes`.
    - **Escalation**: comment `[Reviewer]:`, open/link an issue, set `escalation_needed`.
    - **Clean**: comment `[Reviewer]:` with results, set `review_clean`. Then **immediately** follow the merge and closeout process to close the task (no stop after summary).
-   - All review comments must be GitHub PR comments. To avoid malformed comments, create a temporary file, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
+   - All review comments must be GitHub PR comments. To avoid malformed comments, create a temporary file under project root `temp_comment.txt`, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
    - Append the final review decision and rationale to the scratchpad.
 
 5. **Merge & closeout**
