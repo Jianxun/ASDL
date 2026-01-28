@@ -31,6 +31,8 @@
 - 2026-01-27 21:27 — Set T-237 status to review_in_progress; ran ./venv/bin/python scripts/lint_tasks_state.py; next step: scope/spec review.
 - 2026-01-27 21:28 — Scope/spec review complete; found glyph artwork not rotated/mirrored with orientation (box only), which breaks symbol orient for non-R0; next step: request changes.
 - 2026-01-27 21:28 — Posted PR review comment requesting glyph transform; set status to request_changes; ran ./venv/bin/python scripts/lint_tasks_state.py; next step: await executor updates.
+- 2026-01-28 09:42 — Review follow-up: updated glyph rendering to apply orient matrix via SVG transform; file: extensions/asdl-visualizer/src/webview/app.tsx; next step: run visualizer build.
+- 2026-01-28 09:44 — Verification: cd extensions/asdl-visualizer && npm run build (success; Vite CJS deprecation warning only); next step: commit changes and update PR.
 
 # Patch summary
 - Added Cadence-style orientation helpers for mirrors/rotations and applied them to instance body sizing, pin placement, glyph box placement, and hub handle positioning in the visualizer webview.
@@ -39,6 +41,7 @@
 - https://github.com/Jianxun/ASDL/pull/250
 
 # Verification
+- cd extensions/asdl-visualizer && npm run build
 - cd extensions/asdl-visualizer && npm run build
 
 # Status request (Done / Blocked / In Progress)

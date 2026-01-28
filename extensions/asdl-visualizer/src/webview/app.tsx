@@ -74,6 +74,7 @@ type GlyphRender = {
   src: string
   viewbox?: string
   box: { x: number; y: number; w: number; h: number }
+  matrix: Matrix
 }
 
 type Placement = {
@@ -329,7 +330,8 @@ function buildReactFlowGraph(
       ? {
           src: symbol.glyph.src,
           viewbox: symbol.glyph.viewbox,
-          box: orientRect(symbol.glyph.box, orientationMatrix)
+          box: symbol.glyph.box,
+          matrix: orientationMatrix
         }
       : undefined
     const pos = topLeftFromGrid(gridX, gridY, gridSize)
@@ -514,6 +516,10 @@ function applyMatrix(point: { x: number; y: number }, matrix: Matrix) {
   }
 }
 
+function matrixToSvgTransform(matrix: Matrix) {
+  return `matrix(${matrix.a} ${matrix.b} ${matrix.c} ${matrix.d} ${matrix.e} ${matrix.f})`
+}
+
 function buildOrientationMatrix(
   spec: OrientationSpec,
   body: { w: number; h: number }
@@ -687,10 +693,10 @@ function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
   const glyph = data.glyph
   const glyphStyle = glyph
     ? {
-        left: glyph.box.x * data.gridSize,
-        top: glyph.box.y * data.gridSize,
-        width: glyph.box.w * data.gridSize,
-        height: glyph.box.h * data.gridSize
+        left: 0,
+        top: 0,
+        width: data.body.w * data.gridSize,
+        height: data.body.h * data.gridSize
       }
     : undefined
   return (
@@ -699,15 +705,25 @@ function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
         <svg
           className="glyph-frame"
           style={glyphStyle}
-          viewBox={glyph.viewbox}
-          preserveAspectRatio="xMidYMid meet"
+          viewBox={`0 0 ${data.body.w} ${data.body.h}`}
         >
-          <image
-            href={glyph.src}
-            width="100%"
-            height="100%"
-            preserveAspectRatio="xMidYMid meet"
-          />
+          <g transform={matrixToSvgTransform(glyph.matrix)}>
+            <svg
+              x={glyph.box.x}
+              y={glyph.box.y}
+              width={glyph.box.w}
+              height={glyph.box.h}
+              viewBox={glyph.viewbox}
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <image
+                href={glyph.src}
+                width="100%"
+                height="100%"
+                preserveAspectRatio="xMidYMid meet"
+              />
+            </svg>
+          </g>
         </svg>
       )}
       {data.pins.map((pin) => {
