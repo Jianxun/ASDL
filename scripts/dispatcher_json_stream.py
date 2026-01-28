@@ -32,7 +32,6 @@ def build_command(prompt: str) -> list[str]:
         "--json",
         "-s",
         "danger-full-access",
-        "--skip-git-repo-check",
         prompt,
     ]
 
