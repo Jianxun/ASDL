@@ -35,6 +35,7 @@ wheels/
 .coverage
 htmlcov/
 .pytest_cache/
+extensions/asdl-visualizer/test-results/
 
 # OS specific
 .DS_Store
@@ -64,3 +65,4 @@ legacy/
 #examples/scratch/
 
 .env
+extensions/asdl-visualizer/src/webview/public/dev_payload.json
