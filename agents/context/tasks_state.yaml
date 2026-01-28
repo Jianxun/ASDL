@@ -20,7 +20,7 @@ T-236:
   pr: 249
   merged: true
 T-237:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-238:
