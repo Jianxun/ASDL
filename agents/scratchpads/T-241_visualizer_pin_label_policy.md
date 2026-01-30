@@ -39,6 +39,8 @@
 - 2026-01-29 21:24 — Set T-241 status to ready_for_review with PR 253 and ran tasks_state linter; next step commit scratchpad/state updates.
 - 2026-01-29 21:25 — Commit 9d4b9b2 (chore: finalize T-241 status); captured ready_for_review state + scratchpad updates; next step push branch.
 - 2026-01-29 21:26 — Review intake; set T-241 status to review_in_progress; next step verify checks and review changes.
+- 2026-01-29 21:27 — Verified `npm run build` in `extensions/asdl-visualizer` (vite CJS warning only); next step scope + code review.
+- 2026-01-29 21:28 — Scope review vs DoD complete; changes confined to visualizer types/symbol parsing + example sidecar; next step finalize review decision.
 
 ## Patch summary
 - Added pin label policy + conn_label support to visualizer extension types/graph builder.
