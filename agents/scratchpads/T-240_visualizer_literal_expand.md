@@ -26,6 +26,7 @@
 - 2026-01-29 20:47 — Commit 84840e6: added CLI test covering literal enum expansion + numeric label formatting; next step implement visualizer dump expansion helpers.
 - 2026-01-29 20:51 — Commit 23a45f5: added visualizer enum expansion + numeric label helpers and wired dump expansion; next step run visualizer-dump verify command.
 - 2026-01-29 20:53 — Ran `./venv/bin/asdlc visualizer-dump examples/libs/mosbius_devices/ota_nmos/ota_nmos.asdl` (ok); next step finalize closeout and PR.
+- 2026-01-29 20:54 — Opened PR https://github.com/Jianxun/ASDL/pull/252; next step set task status ready_for_review.
 
 ## Patch summary
 - Added visualizer enum expansion + numeric label helpers in `src/asdl/patterns_refactor/expand.py` and exported via `src/asdl/patterns_refactor/__init__.py`.
@@ -33,16 +34,16 @@
 - Added CLI test covering literal enum expansion and numeric labels in `tests/unit_tests/cli/test_visualizer_dump.py`.
 
 ## PR URL
-- (pending)
+- https://github.com/Jianxun/ASDL/pull/252
 
 ## Verification
 - `./venv/bin/asdlc visualizer-dump examples/libs/mosbius_devices/ota_nmos/ota_nmos.asdl`
 
 ## Status request
-- In Progress
+- Done
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Open PR, set T-240 to ready_for_review, and link the PR in the scratchpad.
+- Set T-240 status to ready_for_review and await reviewer feedback.
