@@ -23,11 +23,13 @@ type InstanceNode = {
   label: string
   pins: string[]
   symbolKey: string
+  layoutKey?: string
 }
 
 type NetHubNode = {
   id: string
   label: string
+  layoutKey?: string
 }
 
 type GraphPayload = {
@@ -77,7 +79,7 @@ type LayoutPayload = {
     {
       grid_size?: number
       instances: Record<string, Placement>
-      net_hubs: Record<string, { groups: Placement[] }>
+      net_hubs: Record<string, Record<string, Placement>>
     }
   >
 }
@@ -119,6 +121,7 @@ type InstanceNodeData = {
 
 type HubNodeData = {
   label: string
+  orient: string
 }
 
 type VisualNodeData = InstanceNodeData | HubNodeData
@@ -222,36 +225,50 @@ export function App() {
       modules: { ...layout.modules }
     }
     const existingModule = nextLayout.modules[moduleId]
+    const instanceLayoutKeys = new Map(
+      graph.instances.map((inst) => [inst.id, inst.layoutKey ?? inst.id])
+    )
+    const hubLayoutKeys = new Map(
+      graph.netHubs.map((hub) => [hub.id, hub.layoutKey ?? hub.id])
+    )
     const moduleLayout = {
       grid_size: gridSize,
-      instances: { ...(existingModule?.instances ?? {}) },
-      net_hubs: { ...(existingModule?.net_hubs ?? {}) }
+      instances: {},
+      net_hubs: {}
     }
 
     nodes.forEach((node) => {
       if (node.type === 'instance') {
         const { x, y } = gridFromTopLeft(node, gridSize)
-        const existing = moduleLayout.instances[node.id]
-        moduleLayout.instances[node.id] = {
+        const layoutKey = instanceLayoutKeys.get(node.id) ?? node.id
+        const existing =
+          existingModule?.instances?.[layoutKey] ?? existingModule?.instances?.[node.id]
+        const orient = normalizeOrient((node.data as InstanceNodeData).orient)
+        moduleLayout.instances[layoutKey] = {
           x,
           y,
-          orient: existing?.orient ?? 'R0',
+          orient,
           label: existing?.label
         }
       }
       if (node.type === 'hub') {
         const { x, y } = centerFromNode(node, gridSize, HUB_SIZE, HUB_SIZE)
-        const existing = moduleLayout.net_hubs[node.id]
-        const group = existing?.groups?.[0]
-        moduleLayout.net_hubs[node.id] = {
-          groups: [
-            {
-              x,
-              y,
-              orient: group?.orient,
-              label: group?.label
-            }
-          ]
+        const layoutKey = hubLayoutKeys.get(node.id) ?? node.id
+        const existing =
+          existingModule?.net_hubs?.[layoutKey] ?? existingModule?.net_hubs?.[node.id]
+        const sanitized = sanitizeHubLayout(existing)
+        const entry = firstHubEntry(sanitized)
+        const firstKey = entry?.key ?? 'hub1'
+        const firstHub = entry?.placement
+        const orient = normalizeOrient((node.data as HubNodeData).orient)
+        moduleLayout.net_hubs[layoutKey] = {
+          ...sanitized,
+          [firstKey]: {
+            x,
+            y,
+            orient,
+            label: firstHub?.label
+          }
         }
       }
     })
@@ -327,7 +344,9 @@ function buildReactFlowGraph(
   gridSize: number
 ): { nodes: Array<Node<VisualNodeData>>; edges: Array<Edge> } {
   const instances = graph.instances.map((inst, index) => {
-    const placement = moduleLayout?.instances?.[inst.id]
+    const layoutKey = inst.layoutKey ?? inst.id
+    const placement =
+      moduleLayout?.instances?.[layoutKey] ?? moduleLayout?.instances?.[inst.id]
     const gridX = placement?.x ?? index * 4
     const gridY = placement?.y ?? 0
     const orient = normalizeOrient(placement?.orient)
@@ -356,15 +375,19 @@ function buildReactFlowGraph(
   })
 
   const hubs = graph.netHubs.map((hub, index) => {
-    const placement = moduleLayout?.net_hubs?.[hub.id]?.groups?.[0]
+    const layoutKey = hub.layoutKey ?? hub.id
+    const placement =
+      firstHubPlacement(moduleLayout?.net_hubs?.[layoutKey]) ??
+      firstHubPlacement(moduleLayout?.net_hubs?.[hub.id])
     const gridX = placement?.x ?? (instances.length + 2) * 4
     const gridY = placement?.y ?? index * 4
     const pos = topLeftFromCenter(gridX, gridY, gridSize, HUB_SIZE, HUB_SIZE)
+    const orient = normalizeOrient(placement?.orient)
     return {
       id: hub.id,
       type: 'hub',
       position: pos,
-      data: { label: hub.label },
+      data: { label: hub.label, orient },
       style: {
         width: HUB_SIZE * gridSize,
         height: HUB_SIZE * gridSize
@@ -441,6 +464,47 @@ function gridFromTopLeft(node: Node, gridSize: number) {
     x: Math.round(node.position.x / gridSize),
     y: Math.round(node.position.y / gridSize)
   }
+}
+
+function isPlacement(value: unknown): value is Placement {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  const candidate = value as Placement
+  return Number.isFinite(candidate.x) && Number.isFinite(candidate.y)
+}
+
+function sanitizeHubLayout(
+  hubLayout: Record<string, Placement> | undefined
+): Record<string, Placement> {
+  if (!hubLayout) {
+    return {}
+  }
+  const sanitized: Record<string, Placement> = {}
+  for (const [key, placement] of Object.entries(hubLayout)) {
+    if (isPlacement(placement)) {
+      sanitized[key] = placement
+    }
+  }
+  return sanitized
+}
+
+function firstHubEntry(
+  hubLayout: Record<string, Placement> | undefined
+): { key: string; placement: Placement } | undefined {
+  if (!hubLayout) {
+    return undefined
+  }
+  for (const [key, placement] of Object.entries(hubLayout)) {
+    if (isPlacement(placement)) {
+      return { key, placement }
+    }
+  }
+  return undefined
+}
+
+function firstHubPlacement(hubLayout: Record<string, Placement> | undefined): Placement | undefined {
+  return firstHubEntry(hubLayout)?.placement
 }
 
 function normalizeSymbolBody(body: { w?: number; h?: number }) {
@@ -596,6 +660,23 @@ function mapPinSide(side: PinSide, orient: OrientData): PinSide {
   return y < 0 ? 'top' : 'bottom'
 }
 
+function mapVectorToSide(x: number, y: number): PinSide {
+  if (Math.abs(x) >= Math.abs(y)) {
+    return x < 0 ? 'left' : 'right'
+  }
+  return y < 0 ? 'top' : 'bottom'
+}
+
+function positionFromSide(side: PinSide): Position {
+  return side === 'left'
+    ? Position.Left
+    : side === 'right'
+      ? Position.Right
+      : side === 'top'
+        ? Position.Top
+        : Position.Bottom
+}
+
 function parseEndpoint(value: string): { nodeId: string; handleId?: string } {
   const splitIndex = value.lastIndexOf('.')
   if (splitIndex > 0 && splitIndex < value.length - 1) {
@@ -662,14 +743,7 @@ function InstanceNodeComponent({ id, data }: NodeProps<InstanceNodeData>) {
         )}
       </div>
       {orientedPins.map((pin) => {
-        const position =
-          pin.side === 'left'
-            ? Position.Left
-            : pin.side === 'right'
-              ? Position.Right
-              : pin.side === 'top'
-                ? Position.Top
-                : Position.Bottom
+        const position = positionFromSide(pin.side)
         return (
           <Handle
             key={`${pin.id}-${pin.side}`}
@@ -688,12 +762,17 @@ function InstanceNodeComponent({ id, data }: NodeProps<InstanceNodeData>) {
 }
 
 function HubNodeComponent({ data }: NodeProps<HubNodeData>) {
+  const orient = normalizeOrient(data.orient)
+  const { a, b, c, d } = orientMatrix(orient)
+  const dirX = a
+  const dirY = b
+  const handlePosition = positionFromSide(mapVectorToSide(dirX, dirY))
   return (
     <div className="node hub-node">
       <Handle
         type="target"
         id={HUB_HANDLE_ID}
-        position={Position.Top}
+        position={handlePosition}
         style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
         className="hub-handle"
       />

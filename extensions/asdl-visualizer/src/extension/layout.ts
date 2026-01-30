@@ -61,9 +61,9 @@ export function buildMockLayout(): LayoutPayload {
           XBUF: { x: 2, y: 4, orient: 'R0' }
         },
         net_hubs: {
-          net_vdd: { groups: [{ x: 10, y: 0 }] },
-          net_vss: { groups: [{ x: 10, y: 8 }] },
-          net_out: { groups: [{ x: 10, y: 4 }] }
+          net_vdd: { hub1: { x: 10, y: 0 } },
+          net_vss: { hub1: { x: 10, y: 8 } },
+          net_out: { hub1: { x: 10, y: 4 } }
         }
       }
     }
@@ -87,35 +87,63 @@ function mergeLayoutModule(
     moduleLayout.net_hubs = {}
   }
 
-  const instIds = graph.instances.map((inst) => inst.id)
-  const hubIds = graph.netHubs.map((hub) => hub.id)
-  const cols = Math.max(1, Math.ceil(Math.sqrt(instIds.length || 1)))
+  const instKeys = graph.instances.map((inst) => inst.layoutKey ?? inst.id)
+  const cols = Math.max(1, Math.ceil(Math.sqrt(instKeys.length || 1)))
   const xStep = 4
   const yStep = 4
 
-  instIds.forEach((instId, index) => {
-    if (!moduleLayout.instances[instId]) {
-      moduleLayout.instances[instId] = {
+  graph.instances.forEach((inst, index) => {
+    const instKey = inst.layoutKey ?? inst.id
+    const fallbackId = inst.id
+    const existingPlacement = moduleLayout.instances[instKey] ?? moduleLayout.instances[fallbackId]
+    if (!moduleLayout.instances[instKey]) {
+      moduleLayout.instances[instKey] = existingPlacement ?? {
         x: (index % cols) * xStep,
         y: Math.floor(index / cols) * yStep,
         orient: 'R0'
       }
+      if (fallbackId !== instKey && moduleLayout.instances[fallbackId]) {
+        delete moduleLayout.instances[fallbackId]
+      }
     }
   })
 
-  hubIds.forEach((hubId, index) => {
-    if (!moduleLayout.net_hubs[hubId]) {
-      moduleLayout.net_hubs[hubId] = {
-        groups: [
-          {
+  graph.netHubs.forEach((hub, index) => {
+    const hubKey = hub.layoutKey ?? hub.id
+    const fallbackId = hub.id
+    const existingHubRaw = moduleLayout.net_hubs[hubKey] ?? moduleLayout.net_hubs[fallbackId]
+    const existingHub = isHubLayout(existingHubRaw) ? existingHubRaw : undefined
+    if (!existingHub) {
+      moduleLayout.net_hubs[hubKey] =
+        ({
+          hub1: {
             x: (cols + 2) * xStep,
             y: index * yStep
           }
-        ]
-      }
+        } satisfies LayoutPayload['modules'][string]['net_hubs'][string])
+    } else if (!moduleLayout.net_hubs[hubKey]) {
+      moduleLayout.net_hubs[hubKey] = existingHub
+    }
+    if (fallbackId !== hubKey && moduleLayout.net_hubs[fallbackId]) {
+      delete moduleLayout.net_hubs[fallbackId]
     }
   })
 
   moduleLayout.grid_size = gridSize
   return moduleLayout
+}
+
+function isHubLayout(
+  value: LayoutPayload['modules'][string]['net_hubs'][string] | undefined
+): value is Record<string, { x: number; y: number; orient?: string; label?: string }> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
+  return Object.values(value).some((entry) => {
+    if (!entry || typeof entry !== 'object') {
+      return false
+    }
+    const candidate = entry as { x?: number; y?: number }
+    return Number.isFinite(candidate.x) && Number.isFinite(candidate.y)
+  })
 }

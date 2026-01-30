@@ -1,7 +1,7 @@
 type GraphPayload = {
   moduleId: string
-  instances: Array<{ id: string; label: string; pins: string[]; symbolKey: string }>
-  netHubs: Array<{ id: string; label: string }>
+  instances: Array<{ id: string; label: string; pins: string[]; symbolKey: string; layoutKey?: string }>
+  netHubs: Array<{ id: string; label: string; layoutKey?: string }>
   edges: Array<{ id: string; from: string; to: string }>
   symbols: Record<string, SymbolDefinition>
 }
@@ -13,7 +13,7 @@ type LayoutPayload = {
     {
       grid_size?: number
       instances: Record<string, { x: number; y: number; orient?: string; label?: string }>
-      net_hubs: Record<string, { groups: Array<{ x: number; y: number; orient?: string }> }>
+      net_hubs: Record<string, Record<string, { x: number; y: number; orient?: string; label?: string }>>
     }
   >
 }
@@ -108,12 +108,12 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
   const graph: GraphPayload = {
     moduleId: 'mock_top',
     instances: [
-      { id: 'M1', label: 'M1', pins: ['D', 'G', 'S'], symbolKey },
-      { id: 'XBUF', label: 'XBUF', pins: ['IN', 'OUT'], symbolKey: moduleKey }
+      { id: 'M1', label: 'M1', pins: ['D', 'G', 'S'], symbolKey, layoutKey: 'M1' },
+      { id: 'XBUF', label: 'XBUF', pins: ['IN', 'OUT'], symbolKey: moduleKey, layoutKey: 'XBUF' }
     ],
     netHubs: [
-      { id: 'net_in', label: 'IN' },
-      { id: 'net_out', label: 'OUT' }
+      { id: 'net_in', label: 'IN', layoutKey: 'IN' },
+      { id: 'net_out', label: 'OUT', layoutKey: 'OUT' }
     ],
     edges: [
       { id: 'e1', from: 'M1.G', to: 'net_in' },
@@ -159,8 +159,8 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
           XBUF: { x: 10, y: 2, orient: 'R0' }
         },
         net_hubs: {
-          net_in: { groups: [{ x: 6, y: 2 }] },
-          net_out: { groups: [{ x: 14, y: 2 }] }
+          net_in: { hub1: { x: 6, y: 2 } },
+          net_out: { hub1: { x: 14, y: 2 } }
         }
       }
     }

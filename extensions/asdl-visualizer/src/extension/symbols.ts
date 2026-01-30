@@ -102,6 +102,53 @@ export function buildGraphFromDump(
     return typeof raw === 'string' && raw.length > 0 ? raw : exprId
   }
 
+  const instanceLabelCounts = new Map<string, number>()
+  dump.instances?.forEach((inst) => {
+    const label = resolveExprRaw(inst.name_expr_id) || inst.ref_raw || inst.inst_id
+    if (!label) {
+      return
+    }
+    instanceLabelCounts.set(label, (instanceLabelCounts.get(label) ?? 0) + 1)
+  })
+  instanceLabelCounts.forEach((count, label) => {
+    if (count > 1) {
+      diagnostics.push(
+        `Duplicate instance name "${label}" appears ${count} times; layout keys will use "${label}#<id>".`
+      )
+    }
+  })
+
+  const netLabelCounts = new Map<string, number>()
+  dump.nets?.forEach((net) => {
+    const label = resolveExprRaw(net.name_expr_id) || net.net_id
+    if (!label) {
+      return
+    }
+    netLabelCounts.set(label, (netLabelCounts.get(label) ?? 0) + 1)
+  })
+  netLabelCounts.forEach((count, label) => {
+    if (count > 1) {
+      diagnostics.push(
+        `Duplicate net name "${label}" appears ${count} times; layout keys will use "${label}#<id>".`
+      )
+    }
+  })
+
+  const layoutKeyForLabel = (
+    label: string,
+    fallbackId: string,
+    counts: Map<string, number>
+  ) => {
+    if (!label) {
+      return fallbackId
+    }
+    const count = counts.get(label) ?? 0
+    if (count > 1) {
+      return `${label}#${fallbackId}`
+    }
+    return label
+  }
+
   const instNameToId = new Map<string, string>()
   const instances =
     dump.instances?.map((inst) => {
@@ -135,15 +182,20 @@ export function buildGraphFromDump(
         id: inst.inst_id,
         label,
         pins,
-        symbolKey
+        symbolKey,
+        layoutKey: layoutKeyForLabel(label, inst.inst_id, instanceLabelCounts)
       }
     }) ?? []
 
   const netHubs =
-    dump.nets?.map((net) => ({
-      id: net.net_id,
-      label: resolveExprRaw(net.name_expr_id) || net.net_id
-    })) ?? []
+    dump.nets?.map((net) => {
+      const label = resolveExprRaw(net.name_expr_id) || net.net_id
+      return {
+        id: net.net_id,
+        label,
+        layoutKey: layoutKeyForLabel(label, net.net_id, netLabelCounts)
+      }
+    }) ?? []
 
   const edges =
     dump.endpoints?.map((endpoint) => {
