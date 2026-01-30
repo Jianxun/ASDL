@@ -30,6 +30,10 @@
 - 2026-01-29 21:35 — Ran `npm run build` in `extensions/asdl-visualizer`; succeeded (Vite CJS deprecation warning only); next step prep PR.
 - 2026-01-29 21:39 — Review intake; confirmed PR #254 targets main and includes scratchpad + build log; next step set review_in_progress and start review.
 - 2026-01-29 21:39 — Set T-242 status to review_in_progress; next step lint tasks_state and review code changes.
+- 2026-01-29 21:40 — Verified executor build log in scratchpad; did not rerun `npm run build`; next step scope/code review.
+- 2026-01-29 21:40 — Scope check complete against DoD; changes limited to webview + dev harness; next step finalize review decision and post PR comment.
+- 2026-01-29 21:40 — Updated PR title to include task ID (T-242); next step record review decision and comment on PR.
+- 2026-01-29 21:40 — Review clean; set T-242 status to review_clean; next step post PR comment and proceed to merge/closeout.
 
 ## Patch summary
 - Added orientation-aware pin label rendering that prefers numeric connection labels and respects per-pin label policy.
