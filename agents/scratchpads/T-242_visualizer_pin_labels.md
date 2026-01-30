@@ -30,13 +30,19 @@
 - 2026-01-29 21:35 — Ran `npm run build` in `extensions/asdl-visualizer`; succeeded (Vite CJS deprecation warning only); next step prep PR.
 
 ## Patch summary
+- Added orientation-aware pin label rendering that prefers numeric connection labels and respects per-pin label policy.
+- Styled pin labels to sit inside symbol edges and updated dev harness data for label scenarios.
 
 ## PR URL
+- https://github.com/Jianxun/ASDL/pull/254
 
 ## Verification
+- `cd extensions/asdl-visualizer && npm run build`
 
 ## Status request
+- Ready for review.
 
 ## Blockers / Questions
 
 ## Next steps
+- None.
