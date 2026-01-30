@@ -6,8 +6,6 @@ type GraphPayload = {
   symbols: Record<string, SymbolDefinition>
 }
 
-type PinLabelPolicy = 'auto' | 'always' | 'never'
-
 type LayoutPayload = {
   schema_version: number
   modules: Record<
@@ -23,10 +21,10 @@ type LayoutPayload = {
 type SymbolDefinition = {
   body: { w: number; h: number }
   pins: {
-    top?: Array<{ name: string; offset: number; visible: boolean; label?: PinLabelPolicy } | null>
-    bottom?: Array<{ name: string; offset: number; visible: boolean; label?: PinLabelPolicy } | null>
-    left?: Array<{ name: string; offset: number; visible: boolean; label?: PinLabelPolicy } | null>
-    right?: Array<{ name: string; offset: number; visible: boolean; label?: PinLabelPolicy } | null>
+    top?: Array<{ name: string; offset: number; visible: boolean; connect_by_label?: boolean } | null>
+    bottom?: Array<{ name: string; offset: number; visible: boolean; connect_by_label?: boolean } | null>
+    left?: Array<{ name: string; offset: number; visible: boolean; connect_by_label?: boolean } | null>
+    right?: Array<{ name: string; offset: number; visible: boolean; connect_by_label?: boolean } | null>
   }
   glyph?: {
     src: string
@@ -144,7 +142,7 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
       [moduleKey]: {
         body: { w: 8, h: 4 },
         pins: {
-          left: [{ name: 'IN', offset: 0, visible: true, label: 'always' }],
+          left: [{ name: 'IN', offset: 0, visible: true, connect_by_label: true }],
           right: [{ name: 'OUT', offset: 0, visible: true }]
         }
       }

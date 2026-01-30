@@ -11,6 +11,17 @@
   oriented pin positions.
 - Updated gf180mcu nmos/pmos glyph strokes to white for visibility.
   Recent commits: b36211f, 9ff80cf, 1218750 on `feature/webview-harness`.
+## Current status (2026-01-30)
+- PR #251 merged to `main` with visualizer layout/hub schema changes, name-keyed
+  layouts, hub orient handling, grid-aligned edges/handles, and scratchpads for
+  T-240/T-241/T-242.
+- Visualizer spec updated to document numeric pattern pin labels (`<3>`, `<3,1>`)
+  and `;`-joined slices. Default hub launch direction is right-facing.
+- User requested redefining pin labeling: replace `label` policy with
+  `connect_by_label` to mean “show net label outside the symbol near the pin
+  handle and suppress the wire; pin name labels remain inside.”
+- User stated T-240/T-242 are done; next session should update tasks state/archive
+  accordingly and rename schema fields to `connect_by_label`.
 ## Current status (2026-01-24)
 - Implemented stricter AtomizedGraph validation and binding rules; diagnostics now flag
   duplicate instance names, duplicate instance ports, and nets with zero endpoints.

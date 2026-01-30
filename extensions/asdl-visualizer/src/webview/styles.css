@@ -159,7 +159,8 @@ body {
   z-index: 1;
 }
 
-.pin-label {
+.pin-name,
+.net-label {
   position: absolute;
   font-size: 10px;
   font-weight: 600;
@@ -171,23 +172,43 @@ body {
   z-index: 1;
 }
 
-.pin-label--left {
+.pin-name--left {
   transform: translate(0, -50%);
   text-align: left;
 }
 
-.pin-label--right {
+.pin-name--right {
   transform: translate(-100%, -50%);
   text-align: right;
 }
 
-.pin-label--top {
+.pin-name--top {
   transform: translate(-50%, 0) rotate(-90deg);
   transform-origin: left top;
 }
 
-.pin-label--bottom {
+.pin-name--bottom {
   transform: translate(-50%, -100%) rotate(-90deg);
+  transform-origin: left top;
+}
+
+.net-label--left {
+  transform: translate(-100%, -50%);
+  text-align: right;
+}
+
+.net-label--right {
+  transform: translate(0, -50%);
+  text-align: left;
+}
+
+.net-label--top {
+  transform: translate(-50%, -100%) rotate(-90deg);
+  transform-origin: left top;
+}
+
+.net-label--bottom {
+  transform: translate(-50%, 0) rotate(-90deg);
   transform-origin: left top;
 }
 

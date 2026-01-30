@@ -42,13 +42,11 @@ export type VisualizerDump = {
   }
 }
 
-export type PinLabelPolicy = 'auto' | 'always' | 'never'
-
 export type SymbolPin = {
   name: string
   offset: number
   visible: boolean
-  label?: PinLabelPolicy
+  connect_by_label?: boolean
 }
 
 export type SymbolPins = {
