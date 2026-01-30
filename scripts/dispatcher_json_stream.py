@@ -19,6 +19,7 @@ import yaml
 DEFAULT_PROMPT = "analyze the structure of the codebase"
 TASKS_STATE_PATH = "agents/context/tasks_state.yaml"
 MAX_REVIEW_ROUNDS = 3
+IMESSAGE_SCRIPT = os.path.join(os.path.dirname(__file__), "send_imessage.sh")
 
 ANSI_GREEN = "\033[32m"
 ANSI_BLUE = "\033[34m"
@@ -231,6 +232,7 @@ def run_scheduler(
                 return exit_code
 
             status = task_status(tasks_state_path, task_id)
+            send_imessage("executor", task_id, status, executor_summary)
             if status != "ready_for_review":
                 print(
                     f"Interrupted: task {task_id} status is '{status}', expected 'ready_for_review'.",
@@ -249,6 +251,7 @@ def run_scheduler(
                 return exit_code
 
             status = task_status(tasks_state_path, task_id)
+            send_imessage("reviewer", task_id, status, reviewer_summary)
             if status == "done":
                 print(f"Task {task_id} completed.")
                 break
@@ -271,6 +274,21 @@ def run_scheduler(
             )
             return 1
     return 0
+
+
+def send_imessage(role: str, task_id: str, status: str | None, response: str | None) -> None:
+    message_status = status or "unknown"
+    response_text = response or "No agent response captured."
+    payload = f"[{role}] [{task_id}] ({message_status}): {response_text}"
+    try:
+        subprocess.run(
+            [IMESSAGE_SCRIPT, payload],
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+    except FileNotFoundError:
+        print(f"Warning: {IMESSAGE_SCRIPT} not found; skipping iMessage send.", file=sys.stderr)
 
 
 def main() -> int:
