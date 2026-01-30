@@ -1,8 +1,8 @@
 schema_version: 2
 T-243:
-  status: ready_for_review
+  status: done
   pr: 256
-  merged: false
+  merged: true
 T-240:
   status: done
   pr: 252
