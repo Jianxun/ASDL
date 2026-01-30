@@ -36,9 +36,11 @@ type GraphPayload = {
   moduleId: string
   instances: InstanceNode[]
   netHubs: NetHubNode[]
-  edges: Array<{ id: string; from: string; to: string }>
+  edges: Array<{ id: string; from: string; to: string; conn_label?: string }>
   symbols: Record<string, SymbolDefinition>
 }
+
+type PinLabelPolicy = 'auto' | 'always' | 'never'
 
 type SymbolPins = {
   top?: Array<SymbolPin | null>
@@ -51,6 +53,7 @@ type SymbolPin = {
   name: string
   offset: number
   visible: boolean
+  label?: PinLabelPolicy
 }
 
 type SymbolGlyph = {
@@ -105,6 +108,8 @@ const DEFAULT_GRID_SIZE = 16
 const HUB_SIZE = 2
 const HUB_HANDLE_ID = 'hub'
 const EDGE_STEP_OFFSET_UNITS = 0.8
+const PIN_LABEL_INSET_RATIO = 0.6
+const PIN_LABEL_INSET_MIN_PX = 6
 const FALLBACK_SYMBOL: SymbolDefinition = {
   body: { w: 6, h: 4 },
   pins: { left: [] }
@@ -115,6 +120,7 @@ type InstanceNodeData = {
   orient: string
   body: { w: number; h: number }
   pins: PinPosition[]
+  pinLabels: Record<string, string | null>
   gridSize: number
   glyph?: SymbolGlyph
 }
@@ -136,6 +142,7 @@ type PinPosition = {
   x: number
   y: number
   visible: boolean
+  labelPolicy: PinLabelPolicy
 }
 
 export function App() {
@@ -343,6 +350,9 @@ function buildReactFlowGraph(
   moduleLayout: LayoutPayload['modules'][string] | undefined,
   gridSize: number
 ): { nodes: Array<Node<VisualNodeData>>; edges: Array<Edge> } {
+  const netLabelById = new Map(
+    graph.netHubs.map((hub) => [hub.id, hub.label || hub.id])
+  )
   const instances = graph.instances.map((inst, index) => {
     const layoutKey = inst.layoutKey ?? inst.id
     const placement =
@@ -353,6 +363,7 @@ function buildReactFlowGraph(
     const symbol = graph.symbols[inst.symbolKey] ?? FALLBACK_SYMBOL
     const body = normalizeSymbolBody(symbol.body)
     const pins = computePinPositions(symbol, body)
+    const pinLabels = buildPinLabelMap(inst.id, pins, graph.edges, netLabelById)
     const pos = topLeftFromGrid(gridX, gridY, gridSize)
     const orientedBody = computeOrientData(body.w, body.h, orient)
     return {
@@ -364,6 +375,7 @@ function buildReactFlowGraph(
         orient,
         body,
         pins,
+        pinLabels,
         gridSize,
         glyph: symbol.glyph
       },
@@ -542,7 +554,14 @@ function computePinPositions(symbol: SymbolDefinition, body: { w: number; h: num
             : side === 'top'
               ? { x: along, y: 0 }
               : { x: along, y: body.h }
-      pins.push({ id: entry.name, name: entry.name, side, visible: entry.visible, ...position })
+      pins.push({
+        id: entry.name,
+        name: entry.name,
+        side,
+        visible: entry.visible,
+        labelPolicy: normalizePinLabelPolicy(entry.label),
+        ...position
+      })
     })
   }
 
@@ -552,6 +571,13 @@ function computePinPositions(symbol: SymbolDefinition, body: { w: number; h: num
   pushPins('bottom', pinConfig.bottom, body.w)
 
   return pins
+}
+
+function normalizePinLabelPolicy(value: PinLabelPolicy | undefined): PinLabelPolicy {
+  if (value === 'always' || value === 'never') {
+    return value
+  }
+  return 'auto'
 }
 
 function normalizeOrient(value: string | undefined): Orient {
@@ -685,6 +711,89 @@ function parseEndpoint(value: string): { nodeId: string; handleId?: string } {
   return { nodeId: value }
 }
 
+function buildPinLabelMap(
+  instanceId: string,
+  pins: PinPosition[],
+  edges: GraphPayload['edges'],
+  netLabelById: Map<string, string>
+): Record<string, string | null> {
+  const labelsByPin = new Map<string, { numeric: string[]; nets: string[] }>()
+  edges.forEach((edge) => {
+    const { nodeId, handleId } = parseEndpoint(edge.from)
+    if (nodeId !== instanceId || !handleId) {
+      return
+    }
+    const entry = labelsByPin.get(handleId) ?? { numeric: [], nets: [] }
+    const numericLabel = edge.conn_label?.trim()
+    if (numericLabel) {
+      entry.numeric.push(numericLabel)
+    } else {
+      const netLabel = netLabelById.get(edge.to)
+      if (netLabel) {
+        entry.nets.push(netLabel)
+      }
+    }
+    labelsByPin.set(handleId, entry)
+  })
+
+  const pinLabels: Record<string, string | null> = {}
+  pins.forEach((pin) => {
+    if (!pin.visible || pin.labelPolicy === 'never') {
+      pinLabels[pin.id] = null
+      return
+    }
+    const entry = labelsByPin.get(pin.id)
+    const numericLabel = joinLabels(entry?.numeric ?? [])
+    if (numericLabel) {
+      pinLabels[pin.id] = numericLabel
+      return
+    }
+    if (pin.labelPolicy === 'always') {
+      pinLabels[pin.id] = joinLabels(entry?.nets ?? [])
+      return
+    }
+    pinLabels[pin.id] = null
+  })
+
+  return pinLabels
+}
+
+function joinLabels(labels: string[]): string | null {
+  const seen = new Set<string>()
+  const ordered: string[] = []
+  labels.forEach((label) => {
+    const trimmed = label.trim()
+    if (!trimmed || seen.has(trimmed)) {
+      return
+    }
+    seen.add(trimmed)
+    ordered.push(trimmed)
+  })
+  return ordered.length > 0 ? ordered.join(';') : null
+}
+
+function pinLabelInset(gridSize: number): number {
+  return Math.max(PIN_LABEL_INSET_MIN_PX, Math.round(gridSize * PIN_LABEL_INSET_RATIO))
+}
+
+function computePinLabelPosition(
+  x: number,
+  y: number,
+  side: PinSide,
+  inset: number
+): { x: number; y: number } {
+  if (side === 'left') {
+    return { x: x + inset, y }
+  }
+  if (side === 'right') {
+    return { x: x - inset, y }
+  }
+  if (side === 'top') {
+    return { x, y: y + inset }
+  }
+  return { x, y: y - inset }
+}
+
 function InstanceNodeComponent({ id, data }: NodeProps<InstanceNodeData>) {
   const updateNodeInternals = useUpdateNodeInternals()
   const orient = normalizeOrient(data.orient)
@@ -693,14 +802,17 @@ function InstanceNodeComponent({ id, data }: NodeProps<InstanceNodeData>) {
   const orientData = computeOrientData(baseWidth, baseHeight, orient)
 
   const orientedPins = useMemo(() => {
+    const inset = pinLabelInset(data.gridSize)
     return data.pins.map((pin) => {
       const x = pin.x * data.gridSize
       const y = pin.y * data.gridSize
       const { x: ox, y: oy } = applyOrientPoint(x, y, orientData)
       const side = mapPinSide(pin.side, orientData)
-      return { ...pin, x: ox, y: oy, side }
+      const labelText = data.pinLabels[pin.id] ?? null
+      const labelPos = labelText ? computePinLabelPosition(ox, oy, side, inset) : null
+      return { ...pin, x: ox, y: oy, side, labelText, labelPos }
     })
-  }, [data.pins, data.gridSize, orientData])
+  }, [data.pins, data.gridSize, data.pinLabels, orientData])
 
   useEffect(() => {
     updateNodeInternals(id)
@@ -745,14 +857,23 @@ function InstanceNodeComponent({ id, data }: NodeProps<InstanceNodeData>) {
       {orientedPins.map((pin) => {
         const position = positionFromSide(pin.side)
         return (
-          <Handle
-            key={`${pin.id}-${pin.side}`}
-            id={pin.id}
-            type="source"
-            position={position}
-            style={{ left: pin.x, top: pin.y, transform: 'translate(-50%, -50%)' }}
-            className="pin-handle"
-          />
+          <React.Fragment key={`${pin.id}-${pin.side}`}>
+            <Handle
+              id={pin.id}
+              type="source"
+              position={position}
+              style={{ left: pin.x, top: pin.y, transform: 'translate(-50%, -50%)' }}
+              className="pin-handle"
+            />
+            {pin.labelText && pin.labelPos && (
+              <div
+                className={`pin-label pin-label--${pin.side}`}
+                style={{ left: pin.labelPos.x, top: pin.labelPos.y }}
+              >
+                {pin.labelText}
+              </div>
+            )}
+          </React.Fragment>
         )
       })}
       <div className="node-title">{data.label}</div>

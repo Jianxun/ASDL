@@ -2,9 +2,11 @@ type GraphPayload = {
   moduleId: string
   instances: Array<{ id: string; label: string; pins: string[]; symbolKey: string; layoutKey?: string }>
   netHubs: Array<{ id: string; label: string; layoutKey?: string }>
-  edges: Array<{ id: string; from: string; to: string }>
+  edges: Array<{ id: string; from: string; to: string; conn_label?: string }>
   symbols: Record<string, SymbolDefinition>
 }
+
+type PinLabelPolicy = 'auto' | 'always' | 'never'
 
 type LayoutPayload = {
   schema_version: number
@@ -21,10 +23,10 @@ type LayoutPayload = {
 type SymbolDefinition = {
   body: { w: number; h: number }
   pins: {
-    top?: Array<{ name: string; offset: number; visible: boolean } | null>
-    bottom?: Array<{ name: string; offset: number; visible: boolean } | null>
-    left?: Array<{ name: string; offset: number; visible: boolean } | null>
-    right?: Array<{ name: string; offset: number; visible: boolean } | null>
+    top?: Array<{ name: string; offset: number; visible: boolean; label?: PinLabelPolicy } | null>
+    bottom?: Array<{ name: string; offset: number; visible: boolean; label?: PinLabelPolicy } | null>
+    left?: Array<{ name: string; offset: number; visible: boolean; label?: PinLabelPolicy } | null>
+    right?: Array<{ name: string; offset: number; visible: boolean; label?: PinLabelPolicy } | null>
   }
   glyph?: {
     src: string
@@ -116,8 +118,8 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
       { id: 'net_out', label: 'OUT', layoutKey: 'OUT' }
     ],
     edges: [
-      { id: 'e1', from: 'M1.G', to: 'net_in' },
-      { id: 'e2', from: 'M1.D', to: 'net_out' },
+      { id: 'e1', from: 'M1.G', to: 'net_in', conn_label: '<3>' },
+      { id: 'e2', from: 'M1.D', to: 'net_out', conn_label: '<3,1>' },
       { id: 'e3', from: 'XBUF.IN', to: 'net_in' },
       { id: 'e4', from: 'XBUF.OUT', to: 'net_out' }
     ],
@@ -142,7 +144,7 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
       [moduleKey]: {
         body: { w: 8, h: 4 },
         pins: {
-          left: [{ name: 'IN', offset: 0, visible: true }],
+          left: [{ name: 'IN', offset: 0, visible: true, label: 'always' }],
           right: [{ name: 'OUT', offset: 0, visible: true }]
         }
       }
