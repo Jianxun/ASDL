@@ -22,15 +22,21 @@
 
 ## Progress log
 - 2026-01-29 20:36 — Read task/contract/context; set T-240 status to in_progress and created feature branch `feature/T-240-visualizer-literal-expand`; next step inspect dump implementation.
+- 2026-01-29 20:44 — Commit 780aea4: record T-240 start state (tasks_state + scratchpad); next step add regression coverage for visualizer expansion.
+- 2026-01-29 20:47 — Commit 84840e6: added CLI test covering literal enum expansion + numeric label formatting; next step implement visualizer dump expansion helpers.
+- 2026-01-29 20:51 — Commit 23a45f5: added visualizer enum expansion + numeric label helpers and wired dump expansion; next step run visualizer-dump verify command.
+- 2026-01-29 20:53 — Ran `./venv/bin/asdlc visualizer-dump examples/libs/mosbius_devices/ota_nmos/ota_nmos.asdl` (ok); next step finalize closeout and PR.
 
 ## Patch summary
-- (pending)
+- Added visualizer enum expansion + numeric label helpers in `src/asdl/patterns_refactor/expand.py` and exported via `src/asdl/patterns_refactor/__init__.py`.
+- Updated visualizer dump to expand instances/endpoints, emit numeric `conn_label`, and sync net endpoint IDs in `src/asdl/core/dump.py`.
+- Added CLI test covering literal enum expansion and numeric labels in `tests/unit_tests/cli/test_visualizer_dump.py`.
 
 ## PR URL
 - (pending)
 
 ## Verification
-- (pending)
+- `./venv/bin/asdlc visualizer-dump examples/libs/mosbius_devices/ota_nmos/ota_nmos.asdl`
 
 ## Status request
 - In Progress
@@ -39,4 +45,4 @@
 - None.
 
 ## Next steps
-- Review `src/asdl/core/dump.py` and pattern utilities to locate expansion rules for visualizer dump.
+- Open PR, set T-240 to ready_for_review, and link the PR in the scratchpad.
