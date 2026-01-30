@@ -6,7 +6,7 @@ devices:
     pins:
       left:
         - d
-        - g: { offset: 0.25 }
+        - g: { offset: 0.25, label: always }
       right:
         - s
         - b

@@ -31,6 +31,7 @@ export type VisualizerDump = {
     endpoint_id: string
     net_id: string
     port_expr_id: string
+    conn_label?: string
   }>
   registries?: {
     pattern_expressions?: Record<string, { raw?: string }> | null
@@ -41,10 +42,13 @@ export type VisualizerDump = {
   }
 }
 
+export type PinLabelPolicy = 'auto' | 'always' | 'never'
+
 export type SymbolPin = {
   name: string
   offset: number
   visible: boolean
+  label?: PinLabelPolicy
 }
 
 export type SymbolPins = {
@@ -87,7 +91,7 @@ export type GraphPayload = {
     layoutKey?: string
   }>
   netHubs: Array<{ id: string; label: string; layoutKey?: string }>
-  edges: Array<{ id: string; from: string; to: string }>
+  edges: Array<{ id: string; from: string; to: string; conn_label?: string }>
   symbols: Record<string, SymbolDefinition>
 }
 
