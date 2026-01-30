@@ -93,6 +93,27 @@ def _patterned_visualizer_yaml() -> str:
     )
 
 
+def _patterned_net_enum_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      mn_in_<p|n>: nfet",
+            "    nets:",
+            "      $out_<p|n>:",
+            "        - mn_in_<p|n>.D",
+            "devices:",
+            "  nfet:",
+            "    ports: [D]",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"M{inst} {ports}\"",
+        ]
+    )
+
+
 def test_cli_visualizer_dump_list_modules(tmp_path: Path) -> None:
     input_path = tmp_path / "design.asdl"
     input_path.write_text(_multi_module_yaml(), encoding="utf-8")
@@ -163,3 +184,46 @@ def test_cli_visualizer_dump_expands_literal_enums_and_labels(tmp_path: Path) ->
     ]
     assert len(bus_endpoints) == 1
     assert bus_endpoints[0].get("conn_label") == "<3>;<2>;<1>"
+
+
+def test_cli_visualizer_dump_expands_nets_and_remaps_endpoints(tmp_path: Path) -> None:
+    input_path = tmp_path / "design.asdl"
+    input_path.write_text(_patterned_net_enum_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["visualizer-dump", str(input_path), "--module", "top"],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+
+    def resolve_expr(expr_id: str) -> str:
+        registry = (payload.get("registries") or {}).get("pattern_expressions") or {}
+        raw = registry.get(expr_id, {}).get("raw")
+        return raw if isinstance(raw, str) and raw else expr_id
+
+    net_label_by_id = {
+        net["net_id"]: resolve_expr(net["name_expr_id"]) for net in payload["nets"]
+    }
+    assert set(net_label_by_id.values()) == {"$out_p", "$out_n"}
+
+    endpoint_label_by_id = {
+        endpoint["endpoint_id"]: resolve_expr(endpoint["port_expr_id"])
+        for endpoint in payload["endpoints"]
+    }
+    endpoint_net_labels = {
+        endpoint_label_by_id[endpoint["endpoint_id"]]: net_label_by_id[endpoint["net_id"]]
+        for endpoint in payload["endpoints"]
+    }
+    assert endpoint_net_labels["mn_in_p.D"] == "$out_p"
+    assert endpoint_net_labels["mn_in_n.D"] == "$out_n"
+
+    for net in payload["nets"]:
+        label = resolve_expr(net["name_expr_id"])
+        endpoint_labels = {endpoint_label_by_id[endpoint_id] for endpoint_id in net["endpoint_ids"]}
+        if label == "$out_p":
+            assert endpoint_labels == {"mn_in_p.D"}
+        elif label == "$out_n":
+            assert endpoint_labels == {"mn_in_n.D"}

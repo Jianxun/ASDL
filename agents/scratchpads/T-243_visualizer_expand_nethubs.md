@@ -30,3 +30,4 @@
 
 # Next steps
 - 2026-01-30 00:07 — Set T-243 status to in_progress, ran lint, created feature branch; next step inspect visualizer dump/net expansion behavior.
+- 2026-01-30 00:18 — Added CLI unit test coverage for net expansion + endpoint remap in visualizer dump; files: tests/unit_tests/cli/test_visualizer_dump.py; next step implement net expansion/remap logic in dump.
