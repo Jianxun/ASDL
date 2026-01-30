@@ -652,10 +652,11 @@ def _visualizer_net_to_dict(
     Returns:
         Mapping payload for the net.
     """
+    resolved_endpoint_ids = net.endpoint_ids if endpoint_ids is None else endpoint_ids
     return {
         "net_id": net_id or net.net_id,
         "name_expr_id": name_expr_id or net.name_expr_id,
-        "endpoint_ids": list(endpoint_ids or net.endpoint_ids),
+        "endpoint_ids": list(resolved_endpoint_ids),
     }
 
 
@@ -1071,7 +1072,7 @@ def _visualizer_nets_to_dict(
                     net,
                     net_id=expanded_id,
                     name_expr_id=atom.text,
-                    endpoint_ids=endpoint_ids.get(expanded_id),
+                    endpoint_ids=endpoint_ids.get(expanded_id, []),
                 )
             )
     return nets
