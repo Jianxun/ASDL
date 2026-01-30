@@ -1,21 +1,30 @@
 schema_version: 0
-
+modules: {}
 devices:
   nfet_03v3:
-    body: { w: 6, h: 4 }
+    body: { w: 4, h: 6 }
     pins:
-      left:
-        - d
-        - g: { offset: 0.25, label: always }
+      left: 
+        - g: { offset: 0, visible: false}
       right:
-        - s
-        - b
+        - b: { offset: 1, visible: false, connect_by_label: always}
+      top:
+        - d: { offset: 1, visible: false}
+      bottom:
+        - s: { offset: 1, visible: false}
+    glyph: { src: glyphs/nmos.svg, box: { x: 0, y: 0, w: 6, h: 6 } }
+    pin_offsets:
+      right:
+        b: 1
   pfet_03v3:
-    body: { w: 6, h: 4 }
+    body: { w: 4, h: 6 }
     pins:
-      left:
-        - d
-        - g: { visible: false }
+      left: 
+        - g: { offset: 0, visible: false}
       right:
-        - s
-        - b
+        - b: { offset: -1, connect_by_label: always}
+      top:
+        - s: { offset: 1, visible: false}
+      bottom:
+        - d: { offset: 1, visible: false}
+    glyph: { src: glyphs/pmos.svg, box: { x: 0, y: 0, w: 6, h: 6 } }

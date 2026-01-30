@@ -49,7 +49,9 @@ Module/device symbol definition (shared structure, adapted from
   - `null`: spacing slot
   - `{pin_name: {offset?, visible?}}`: inline metadata for a pin entry
     - `offset`: optional fractional grid offset along the edge
-    - `visible`: optional boolean (default `true`) to render the pin label
+    - `visible`: optional boolean (default `true`) to render the pin name label
+    - `connect_by_label`: optional boolean (default `false`) to render the
+      net/slice label at the pin (see "Connection labeling")
   - Pin metadata entries MUST be single-key maps.
 - `glyph` (optional, devices only for now):
   - `glyph.src`: path to SVG asset (relative to the `.asdl` file)
@@ -60,7 +62,7 @@ or placement is inferred beyond fitting within the box.
 
 Pins are names only; direction is not tracked in the visualizer. Pin placement
 is derived from `body` size and the pin arrays (see "Pin placement rules"). Pin
-labels are optional per pin via `visible: false`.
+name labels are optional per pin via `visible: false`.
 
 Example (module + device):
 ```
@@ -144,11 +146,13 @@ syntax:
 - When multiple slices are forced at a pin (see below), join with `;`
   following the slice syntax in `docs/specs/spec_asdl_pattern_expansion.md`.
 
-Pin-level label policy can override the default behavior:
-- Pin `label: auto` (default): show labels only when the edge provides a
-  numeric pattern label.
-- Pin `label: always`: always show a label at the pin; if no numeric label is
-  provided, render the net/slice label and join multiple slices with `;`.
+Pin-level net label policy can override the default behavior:
+- Pin `connect_by_label: true`: always render a label at the pin even when the
+  edge provides no numeric pattern label. The label uses the net/slice naming
+  (join multiple slices with `;`). The net/slice label is positioned just
+  outside the symbol body, adjacent to the pin handle. When `connect_by_label`
+  is true, the wire between the pin and net hub is suppressed. Pin name labels
+  are independent and render inside the symbol body when `visible` is true.
 
 ## Host integration (VSCode extension)
 The primary UI host is a VSCode extension with a webview-based editor.
@@ -213,9 +217,10 @@ Core responsibilities:
 3) **Junctions**: render as a small filled dot at the junction node.
 4) **Grid**: positions are snapped to the module `grid_size`.
 5) **Patterns**: render bundles as labels; do not expand patterns in the UI.
-6) **Labels**: pin and hub labels rotate with orientation but are never upside
-   down; vertical text reads bottom-to-top. Pin labels render inside the body
-   edge with a fixed inset.
+6) **Labels**: pin name labels and hub labels rotate with orientation but are
+   never upside down; vertical text reads bottom-to-top. Pin name labels render
+   inside the body edge with a fixed inset. Net/slice labels render just outside
+   the body edge adjacent to the pin handle.
 
 ## Interaction (MVP)
 - Selecting an instance or hub exposes orientation controls:
@@ -283,7 +288,7 @@ Both pins land on-grid even with an odd body size.
 - A net with `atoms: ["P","N"]` is a diff net. Default render: a single bundled
   thick line between endpoints.
 - At each endpoint, if the pin atom order differs from the net order, show a
-  small swap glyph next to the pin label (e.g., `swap` icon).
+  small swap glyph next to the net/slice label (e.g., `swap` icon).
 - Optional debug view: render two thin lines (P and N) near the endpoint only.
 
 Example binding (swapped polarity):

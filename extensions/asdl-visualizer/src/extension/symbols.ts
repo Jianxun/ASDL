@@ -5,7 +5,6 @@ import YAML from 'yaml'
 import { fileExists } from './util'
 import type {
   GraphPayload,
-  PinLabelPolicy,
   SymbolDefinition,
   SymbolGlyph,
   SymbolPin,
@@ -375,7 +374,7 @@ function normalizePinArray(
       return null
     }
     if (typeof entry === 'string') {
-      return { name: entry, offset: 0, visible: true, label: 'auto' }
+      return { name: entry, offset: 0, visible: true, connect_by_label: false }
     }
     if (typeof entry === 'object' && entry !== null && !Array.isArray(entry)) {
       const keys = Object.keys(entry as Record<string, unknown>)
@@ -412,13 +411,17 @@ function normalizePinArray(
           )
         }
       }
-      const label = normalizePinLabelPolicy(
-        metaRecord.label,
-        `${context}[${index}]`,
-        pinName,
-        diagnostics
-      )
-      return { name: pinName, offset, visible, label }
+      let connectByLabel = false
+      if (metaRecord.connect_by_label !== undefined) {
+        if (typeof metaRecord.connect_by_label === 'boolean') {
+          connectByLabel = metaRecord.connect_by_label
+        } else {
+          diagnostics.push(
+            `Invalid connect_by_label at ${context}[${index}]; expected boolean for ${pinName}.`
+          )
+        }
+      }
+      return { name: pinName, offset, visible, connect_by_label: connectByLabel }
     }
     diagnostics.push(
       `Invalid pin at ${context}[${index}]; expected string, null, or pin metadata map.`
@@ -523,27 +526,9 @@ function buildFallbackSymbol(pins: string[]): SymbolDefinition {
   return {
     body: { w: DEFAULT_SYMBOL_BODY.w, h: height },
     pins: {
-      left: pins.map((pin) => ({ name: pin, offset: 0, visible: true, label: 'auto' }))
+      left: pins.map((pin) => ({ name: pin, offset: 0, visible: true, connect_by_label: false }))
     }
   }
-}
-
-function normalizePinLabelPolicy(
-  value: unknown,
-  context: string,
-  pinName: string,
-  diagnostics: string[]
-): PinLabelPolicy {
-  if (value === undefined) {
-    return 'auto'
-  }
-  if (value === 'auto' || value === 'always' || value === 'never') {
-    return value
-  }
-  diagnostics.push(
-    `Invalid pin label policy at ${context}; expected "auto", "always", or "never" for ${pinName}.`
-  )
-  return 'auto'
 }
 
 function collectSymbolPins(pins: SymbolPins): string[] {
