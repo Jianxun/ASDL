@@ -1,161 +1,59 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-232
-    title: Add .asdlrc discovery + parsing utilities
+  - id: T-240
+    title: Expand literal patterns in visualizer dump + add numeric labels
     owner: Executor
     dod: >
-      Implement a config loader that discovers `.asdlrc` by walking parents
-      from an entry file directory, parses YAML schema_version 1, resolves
-      relative paths against the rc directory, and expands `${ASDLRC_DIR}` and
-      `${VAR}` tokens. Provide an API that returns rc `lib_roots`,
-      `backend_config`, and an env map intended for merge into `os.environ`.
-      Add unit tests for discovery, interpolation, and path resolution.
+      Update visualizer dump generation to expand literal enum patterns in
+      instance names and endpoint pin names for visualization. Keep numeric
+      range patterns compact but attach per-endpoint numeric labels formatted
+      as `<3>` or tuple form `<3,1>`; join multiple slices with `;` following
+      `docs/specs/spec_asdl_pattern_expansion.md`. Ensure ota_nmos visualizer
+      dump emits endpoints for `mn_tail.<s|b>` and `mn_in_<n>.d`.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/cli -k asdlrc
+      - ./venv/bin/asdlc visualizer-dump examples/libs/mosbius_devices/ota_nmos/ota_nmos.asdl
     links:
-      scratchpad: agents/scratchpads/T-232_asdlrc_loader.md
+      scratchpad: agents/scratchpads/T-240_visualizer_literal_expand.md
     files:
-      - src/asdl/cli/config.py
-      - tests/unit_tests/cli/test_asdlrc_config.py
-  - id: T-233
-    title: Wire .asdlrc into asdlc CLI (netlist + visualizer-dump)
+      - src/asdl/core/dump.py
+      - src/asdl/core/registries.py
+      - src/asdl/patterns_refactor/
+  - id: T-241
+    title: Consume endpoint labels + pin label policy in extension graph
     owner: Executor
     depends_on:
-      - T-232
+      - T-240
     dod: >
-      Add `--config` to the `asdlc` CLI and load `.asdlrc` based on each entry
-      file. Merge rc `env` into `os.environ` only for missing keys, apply rc
-      `lib_roots` after CLI `--lib` roots, and honor rc `backend_config` when
-      `ASDL_BACKEND_CONFIG` is unset. Ensure `asdlc netlist` and
-      `asdlc visualizer-dump` both use rc-derived library roots and backend
-      config precedence. Add integration tests that exercise rc discovery and
-      precedence across commands.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/cli -k asdlrc
-    links:
-      scratchpad: agents/scratchpads/T-233_asdlrc_cli_integration.md
-    files:
-      - src/asdl/cli/__init__.py
-      - src/asdl/cli/config.py
-      - tests/unit_tests/cli/test_asdlrc_cli.py
-  - id: T-234
-    title: Document .asdlrc schema + discovery rules
-    owner: Executor
-    depends_on:
-      - T-232
-      - T-233
-    dod: >
-      Document the `.asdlrc` schema (schema_version, lib_roots,
-      backend_config, env), interpolation rules, and discovery order in
-      README and CLI spec docs. Note precedence rules and the entry-file
-      directory search behavior.
-    verify:
-      - ./venv/bin/python -m py_compile src/asdl/cli/__init__.py
-    links:
-      scratchpad: agents/scratchpads/T-234_asdlrc_docs.md
-    files:
-      - README.md
-      - docs/specs/spec_cli.md
-  - id: T-235
-    title: Update visualizer symbol schema (inline pin metadata)
-    owner: Executor
-    dod: >
-      Keep `schema_version: 0` but replace `pin_offsets` with inline pin
-      metadata entries in `design.sym.yaml`. Accept pin list entries as
-      `string | null | {pin: {offset?, visible?}}`, validate single-key maps,
-      and default `visible` to true. Remove legacy parsing, emit diagnostics
-      for malformed pin entries, and update pin placement to use per-pin
-      offsets. Extend `glyph` metadata to include explicit placement
-      `glyph.box: {x,y,w,h}` in grid units so glyph scaling is specified by
-      schema instead of inferred. Update the visualizer spec and add a
-      gf180mcu symbol sidecar that uses the new format.
+      Extend visualizer dump types and symbol parsing to include pin label
+      policy (`label: auto|always|never`). Build GraphPayload edges with
+      optional `conn_label` and emit per-pin label data for the webview. Prefer
+      numeric `conn_label` over pin `label: always`.
     verify:
       - cd extensions/asdl-visualizer && npm run build
     links:
-      scratchpad: agents/scratchpads/T-235_visualizer_symbol_schema.md
+      scratchpad: agents/scratchpads/T-241_visualizer_pin_label_policy.md
     files:
-      - docs/specs/spec_asdl_visualizer.md
       - extensions/asdl-visualizer/src/extension/types.ts
       - extensions/asdl-visualizer/src/extension/symbols.ts
-      - extensions/asdl-visualizer/src/webview/app.tsx
       - examples/pdks/gf180mcu/asdl/gf180mcu.sym.yaml
-  - id: T-236
-    title: Render SVG glyphs in visualizer nodes
+  - id: T-242
+    title: Render numeric pin labels + forced labels in webview
     owner: Executor
     depends_on:
-      - T-235
+      - T-241
     dod: >
-      Resolve `glyph.src` relative to the source `.asdl` file and pass a
-      webview-safe URI to the webview payload. Render the SVG glyph inside
-      instance nodes using the schema-provided `glyph.box` (grid units) and
-      preserve aspect ratio; do not infer scale or coordinates. Honor optional
-      `viewbox` metadata. Emit a diagnostic when glyph resolution fails.
+      Render connection labels at pin handles for numeric patterns, using
+      `<3>` and tuple `<3,1>` formatting and `;` joins. Honor pin `label:
+      always` by rendering net/slice labels when no numeric label exists.
+      Labels must respect symbol orientation and stay inside the body edge.
     verify:
       - cd extensions/asdl-visualizer && npm run build
     links:
-      scratchpad: agents/scratchpads/T-236_visualizer_glyph_rendering.md
-    files:
-      - extensions/asdl-visualizer/src/extension/commands.ts
-      - extensions/asdl-visualizer/src/extension/symbols.ts
-      - extensions/asdl-visualizer/src/extension/types.ts
-      - extensions/asdl-visualizer/src/webview/app.tsx
-  - id: T-237
-    title: Apply orient rotation/mirroring to symbols and hub handle
-    owner: Executor
-    dod: >
-      Implement `orient` transforms for instance nodes (R0/R90/R180/R270/MX/MY/
-      MXR90/MYR90) following Cadence Virtuoso orientation semantics with R90
-      as counter-clockwise rotation about the symbol's top-left origin, and
-      mirror operations applied before rotation. Use a consistent mirror
-      system for screen coords (x→right, y→down) and define it in code/spec.
-      Update pin geometry to respect orientation, swap body dimensions when
-      rotated, and move the hub handle to the oriented side with hub transforms
-      about the hub center (single movable handle).
-    verify:
-      - cd extensions/asdl-visualizer && npm run build
-    links:
-      scratchpad: agents/scratchpads/T-237_visualizer_orient_transforms.md
+      scratchpad: agents/scratchpads/T-242_visualizer_pin_labels.md
     files:
       - extensions/asdl-visualizer/src/webview/app.tsx
       - extensions/asdl-visualizer/src/webview/styles.css
-  - id: T-238
-    title: Render pin + hub labels with non-upside-down orientation
-    owner: Executor
-    depends_on:
-      - T-235
-      - T-237
-    dod: >
-      Render pin labels and hub labels in the webview, honoring per-pin
-      `visible: false` to hide text only. Rotate label text with the symbol
-      orientation but clamp to horizontal or vertical with vertical text
-      reading bottom-to-top and no upside-down text. Place pin labels inside
-      the body edge with a fixed inset. Add CSS for label placement and
-      alignment.
-    verify:
-      - cd extensions/asdl-visualizer && npm run build
-    links:
-      scratchpad: agents/scratchpads/T-238_visualizer_label_orientation.md
-    files:
-      - extensions/asdl-visualizer/src/webview/app.tsx
-      - extensions/asdl-visualizer/src/webview/styles.css
-  - id: T-239
-    title: Add orientation controls to visualizer selection UI
-    owner: Executor
-    depends_on:
-      - T-237
-    dod: >
-      When an instance or hub is selected, show Rotate (CCW 90), Mirror X, and
-      Mirror Y controls in the webview. Actions update the selected node's
-      `orient` in local state and ensure the layout save path persists the new
-      orientation. Apply actions to the current selection only and update the
-      node render immediately.
-    verify:
-      - cd extensions/asdl-visualizer && npm run build
-    links:
-      scratchpad: agents/scratchpads/T-239_visualizer_orient_controls.md
-    files:
-      - extensions/asdl-visualizer/src/webview/app.tsx
-      - extensions/asdl-visualizer/src/webview/styles.css
+      - extensions/asdl-visualizer/src/webview/devHarness.ts
 
 backlog: []

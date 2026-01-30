@@ -1,6 +1,14 @@
 schema_version: 1
 
 archive:
+  - T-239: {completed_on: 2026-01-30, owner: Executor, scratchpad: agents/scratchpads/T-239_visualizer_orient_controls.md, pr: null}
+  - T-238: {completed_on: 2026-01-30, owner: Executor, scratchpad: agents/scratchpads/T-238_visualizer_label_orientation.md, pr: null}
+  - T-237: {completed_on: 2026-01-30, owner: Executor, scratchpad: agents/scratchpads/T-237_visualizer_orient_transforms.md, pr: null}
+  - T-236: {completed_on: 2026-01-30, owner: Executor, scratchpad: agents/scratchpads/T-236_visualizer_glyph_rendering.md, pr: 249}
+  - T-235: {completed_on: 2026-01-30, owner: Executor, scratchpad: agents/scratchpads/T-235_visualizer_symbol_schema.md, pr: 248}
+  - T-234: {completed_on: 2026-01-30, owner: Executor, scratchpad: agents/scratchpads/T-234_asdlrc_docs.md, pr: 247}
+  - T-233: {completed_on: 2026-01-30, owner: Executor, scratchpad: agents/scratchpads/T-233_asdlrc_cli_integration.md, pr: 246}
+  - T-232: {completed_on: 2026-01-30, owner: Executor, scratchpad: agents/scratchpads/T-232_asdlrc_loader.md, pr: 244}
   - T-231: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-231_visualizer_symbols.md, pr: 243}
   - T-230: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-230_visualizer_dump_extension.md, pr: 241}
   - T-229: {completed_on: 2026-01-26, owner: Executor, scratchpad: agents/scratchpads/T-229_visualizer_dump_cli.md, pr: 240}
