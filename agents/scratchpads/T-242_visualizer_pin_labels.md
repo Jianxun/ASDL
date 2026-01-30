@@ -34,6 +34,7 @@
 - 2026-01-29 21:40 — Scope check complete against DoD; changes limited to webview + dev harness; next step finalize review decision and post PR comment.
 - 2026-01-29 21:40 — Updated PR title to include task ID (T-242); next step record review decision and comment on PR.
 - 2026-01-29 21:40 — Review clean; set T-242 status to review_clean; next step post PR comment and proceed to merge/closeout.
+- 2026-01-29 21:40 — Posted PR review comment (`review_clean`); next step merge and close out task.
 
 ## Patch summary
 - Added orientation-aware pin label rendering that prefers numeric connection labels and respects per-pin label policy.
