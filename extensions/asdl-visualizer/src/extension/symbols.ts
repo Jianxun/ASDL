@@ -5,6 +5,7 @@ import YAML from 'yaml'
 import { fileExists } from './util'
 import type {
   GraphPayload,
+  PinLabelPolicy,
   SymbolDefinition,
   SymbolGlyph,
   SymbolPin,
@@ -213,7 +214,8 @@ export function buildGraphFromDump(
       return {
         id: endpoint.endpoint_id,
         from,
-        to: endpoint.net_id
+        to: endpoint.net_id,
+        conn_label: endpoint.conn_label
       }
     }) ?? []
 
@@ -373,7 +375,7 @@ function normalizePinArray(
       return null
     }
     if (typeof entry === 'string') {
-      return { name: entry, offset: 0, visible: true }
+      return { name: entry, offset: 0, visible: true, label: 'auto' }
     }
     if (typeof entry === 'object' && entry !== null && !Array.isArray(entry)) {
       const keys = Object.keys(entry as Record<string, unknown>)
@@ -410,7 +412,13 @@ function normalizePinArray(
           )
         }
       }
-      return { name: pinName, offset, visible }
+      const label = normalizePinLabelPolicy(
+        metaRecord.label,
+        `${context}[${index}]`,
+        pinName,
+        diagnostics
+      )
+      return { name: pinName, offset, visible, label }
     }
     diagnostics.push(
       `Invalid pin at ${context}[${index}]; expected string, null, or pin metadata map.`
@@ -514,8 +522,28 @@ function buildFallbackSymbol(pins: string[]): SymbolDefinition {
   const height = Math.max(DEFAULT_SYMBOL_BODY.h, Math.max(1, pins.length - 1))
   return {
     body: { w: DEFAULT_SYMBOL_BODY.w, h: height },
-    pins: { left: pins.map((pin) => ({ name: pin, offset: 0, visible: true })) }
+    pins: {
+      left: pins.map((pin) => ({ name: pin, offset: 0, visible: true, label: 'auto' }))
+    }
   }
+}
+
+function normalizePinLabelPolicy(
+  value: unknown,
+  context: string,
+  pinName: string,
+  diagnostics: string[]
+): PinLabelPolicy {
+  if (value === undefined) {
+    return 'auto'
+  }
+  if (value === 'auto' || value === 'always' || value === 'never') {
+    return value
+  }
+  diagnostics.push(
+    `Invalid pin label policy at ${context}; expected "auto", "always", or "never" for ${pinName}.`
+  )
+  return 'auto'
 }
 
 function collectSymbolPins(pins: SymbolPins): string[] {
