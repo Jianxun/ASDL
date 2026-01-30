@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import Iterable, Optional
 
-from asdl.diagnostics import SourcePos, SourceSpan
+from asdl.diagnostics import Diagnostic, Severity, SourcePos, SourceSpan, format_code
 from asdl.patterns_refactor import VisualizerPatternAtom, expand_literal_enums_for_visualizer
 
 from .atomized_graph import (
@@ -40,6 +41,8 @@ from .registries import (
 )
 
 VISUALIZER_SCHEMA_VERSION = 0
+VISUALIZER_NET_EXPANSION_MISMATCH = format_code("TOOL", 10)
+VISUALIZER_NO_SPAN_NOTE = "No source span available."
 
 
 def _pos_to_dict(pos: Optional[SourcePos]) -> Optional[dict]:
@@ -634,21 +637,26 @@ def _visualizer_device_to_dict(device: DeviceDef) -> dict:
 def _visualizer_net_to_dict(
     net: NetBundle,
     *,
+    net_id: Optional[str] = None,
+    name_expr_id: Optional[str] = None,
     endpoint_ids: Optional[list[str]] = None,
 ) -> dict:
     """Convert a net bundle into a visualizer-ready dict.
 
     Args:
         net: Net bundle to serialize.
+        net_id: Optional net ID override.
+        name_expr_id: Optional name expression override.
         endpoint_ids: Optional endpoint ID override list.
 
     Returns:
         Mapping payload for the net.
     """
+    resolved_endpoint_ids = net.endpoint_ids if endpoint_ids is None else endpoint_ids
     return {
-        "net_id": net.net_id,
-        "name_expr_id": net.name_expr_id,
-        "endpoint_ids": list(endpoint_ids or net.endpoint_ids),
+        "net_id": net_id or net.net_id,
+        "name_expr_id": name_expr_id or net.name_expr_id,
+        "endpoint_ids": list(resolved_endpoint_ids),
     }
 
 
@@ -682,6 +690,7 @@ def _visualizer_endpoint_to_dict(
     endpoint: EndpointBundle,
     *,
     endpoint_id: Optional[str] = None,
+    net_id: Optional[str] = None,
     port_expr_id: Optional[str] = None,
     conn_label: Optional[str] = None,
 ) -> dict:
@@ -690,6 +699,7 @@ def _visualizer_endpoint_to_dict(
     Args:
         endpoint: Endpoint bundle to serialize.
         endpoint_id: Optional endpoint ID override.
+        net_id: Optional net ID override.
         port_expr_id: Optional port expression override.
         conn_label: Optional connection label for numeric patterns.
 
@@ -698,7 +708,7 @@ def _visualizer_endpoint_to_dict(
     """
     payload = {
         "endpoint_id": endpoint_id or endpoint.endpoint_id,
-        "net_id": endpoint.net_id,
+        "net_id": net_id or endpoint.net_id,
         "port_expr_id": port_expr_id or endpoint.port_expr_id,
     }
     if conn_label is not None:
@@ -763,6 +773,124 @@ def _visualizer_expr_id_for_atom(
     return atom.text
 
 
+@dataclass(frozen=True)
+class _VisualizerNetExpansion:
+    """Net expansion metadata for visualizer dumps.
+
+    Attributes:
+        expr: Parsed pattern expression for the net name, if available.
+        atoms: Expanded literal-enum atoms, or None if expansion is unavailable.
+    """
+
+    expr: Optional[PatternExpr]
+    atoms: Optional[list[VisualizerPatternAtom]]
+
+
+def _visualizer_net_expansions(
+    module: ModuleGraph,
+    registries: RegistrySet,
+) -> dict[str, _VisualizerNetExpansion]:
+    """Resolve net name expansions for visualizer output.
+
+    Args:
+        module: Module graph containing net bundles.
+        registries: Registry set containing pattern expressions.
+
+    Returns:
+        Mapping of net IDs to expansion metadata.
+    """
+    expansions: dict[str, _VisualizerNetExpansion] = {}
+    for net_id in module.nets.keys():
+        net = module.nets[net_id]
+        expr, atoms = _visualizer_expand_expr(net.name_expr_id, registries)
+        expansions[net_id] = _VisualizerNetExpansion(expr=expr, atoms=atoms)
+    return expansions
+
+
+def _visualizer_net_ids_for_atoms(
+    net_id: str,
+    atoms: list[VisualizerPatternAtom],
+) -> list[str]:
+    """Build expanded net IDs for each expansion atom.
+
+    Args:
+        net_id: Base net ID.
+        atoms: Expanded pattern atoms.
+
+    Returns:
+        List of net IDs aligned with atom indices.
+    """
+    return [
+        net_id if index == 0 else _visualizer_expanded_id(net_id, index)
+        for index in range(len(atoms))
+    ]
+
+
+def _visualizer_select_net_id(
+    net_id: str,
+    net_ids: Optional[list[str]],
+    index: int,
+) -> str:
+    """Select a net ID for an expansion index.
+
+    Args:
+        net_id: Base net ID.
+        net_ids: Expanded net IDs, if any.
+        index: Expansion index for the endpoint.
+
+    Returns:
+        Net ID to use for the endpoint.
+    """
+    if not net_ids:
+        return net_id
+    if 0 <= index < len(net_ids):
+        return net_ids[index]
+    return net_ids[0]
+
+
+def _visualizer_net_expansion_mismatch_diagnostic(
+    net: NetBundle,
+    *,
+    expr: Optional[PatternExpr],
+    net_count: int,
+    endpoint_counts: Iterable[int],
+    registries: RegistrySet,
+) -> Diagnostic:
+    """Build a diagnostic for net/endpoint expansion mismatches.
+
+    Args:
+        net: Net bundle with literal enum expansion.
+        expr: Parsed pattern expression for the net name.
+        net_count: Number of expanded net variants.
+        endpoint_counts: Observed endpoint expansion counts.
+        registries: Registry set for source span lookup.
+
+    Returns:
+        Diagnostic warning describing the mismatch.
+    """
+    span = None
+    if registries.source_spans is not None:
+        span = registries.source_spans.get(net.net_id)
+    net_label = expr.raw if expr is not None else net.name_expr_id
+    sorted_counts = ", ".join(str(count) for count in sorted(set(endpoint_counts)))
+    message = (
+        f"Net '{net_label}' expands to {net_count} literal variants, "
+        f"but endpoint expansions have counts {{{sorted_counts}}}; "
+        "remapping endpoints to index 0."
+    )
+    notes = None
+    if span is None:
+        notes = [VISUALIZER_NO_SPAN_NOTE]
+    return Diagnostic(
+        code=VISUALIZER_NET_EXPANSION_MISMATCH,
+        severity=Severity.WARNING,
+        message=message,
+        primary_span=span,
+        notes=notes,
+        source="visualizer-dump",
+    )
+
+
 def _visualizer_instances_to_dict(
     module: ModuleGraph,
     registries: RegistrySet,
@@ -812,31 +940,47 @@ def _visualizer_instances_to_dict(
 def _visualizer_endpoints_to_dict(
     module: ModuleGraph,
     registries: RegistrySet,
-) -> tuple[list[dict], dict[str, list[str]]]:
+    net_expansions: dict[str, _VisualizerNetExpansion],
+) -> tuple[list[dict], dict[str, list[str]], list[Diagnostic]]:
     """Expand endpoints with literal enums and numeric labels.
 
     Args:
         module: Module graph containing endpoints.
         registries: Registry set containing pattern expressions.
+        net_expansions: Net expansion metadata for remapping endpoints.
 
     Returns:
-        Tuple of (endpoint payloads, net endpoint id mapping).
+        Tuple of (endpoint payloads, net endpoint id mapping, diagnostics).
     """
     endpoints: list[dict] = []
     endpoint_ids: dict[str, list[str]] = {}
+    diagnostics: list[Diagnostic] = []
+    endpoint_counts: dict[str, set[int]] = {}
+    net_expansion_ids = {
+        net_id: _visualizer_net_ids_for_atoms(net_id, expansion.atoms)
+        for net_id, expansion in net_expansions.items()
+        if expansion.atoms is not None and len(expansion.atoms) > 1
+    }
     for endpoint_id in sorted(module.endpoints.keys()):
         endpoint = module.endpoints[endpoint_id]
         expr, atoms = _visualizer_expand_expr(endpoint.port_expr_id, registries)
+        net_ids = net_expansion_ids.get(endpoint.net_id)
+        endpoint_len = len(atoms) if atoms is not None else 1
+        if net_ids is not None:
+            endpoint_counts.setdefault(endpoint.net_id, set()).add(endpoint_len)
         if atoms is None:
-            payload = _visualizer_endpoint_to_dict(endpoint)
+            net_id = _visualizer_select_net_id(endpoint.net_id, net_ids, 0)
+            payload = _visualizer_endpoint_to_dict(endpoint, net_id=net_id)
             endpoints.append(payload)
-            endpoint_ids.setdefault(endpoint.net_id, []).append(payload["endpoint_id"])
+            endpoint_ids.setdefault(net_id, []).append(payload["endpoint_id"])
             continue
         if len(atoms) == 1:
             atom = atoms[0]
+            net_id = _visualizer_select_net_id(endpoint.net_id, net_ids, 0)
             payload = _visualizer_endpoint_to_dict(
                 endpoint,
                 endpoint_id=endpoint_id,
+                net_id=net_id,
                 port_expr_id=_visualizer_expr_id_for_atom(
                     endpoint.port_expr_id,
                     expr,
@@ -845,19 +989,93 @@ def _visualizer_endpoints_to_dict(
                 conn_label=atom.numeric_label,
             )
             endpoints.append(payload)
-            endpoint_ids.setdefault(endpoint.net_id, []).append(payload["endpoint_id"])
+            endpoint_ids.setdefault(net_id, []).append(payload["endpoint_id"])
             continue
         for index, atom in enumerate(atoms):
             expanded_id = endpoint_id if index == 0 else _visualizer_expanded_id(endpoint_id, index)
+            net_id = _visualizer_select_net_id(endpoint.net_id, net_ids, index)
             payload = _visualizer_endpoint_to_dict(
                 endpoint,
                 endpoint_id=expanded_id,
+                net_id=net_id,
                 port_expr_id=atom.text,
                 conn_label=atom.numeric_label,
             )
             endpoints.append(payload)
-            endpoint_ids.setdefault(endpoint.net_id, []).append(expanded_id)
-    return endpoints, endpoint_ids
+            endpoint_ids.setdefault(net_id, []).append(expanded_id)
+    for net_id, counts in endpoint_counts.items():
+        expansion = net_expansions.get(net_id)
+        if expansion is None or expansion.atoms is None:
+            continue
+        net_count = len(expansion.atoms)
+        if any(count != net_count for count in counts):
+            diagnostics.append(
+                _visualizer_net_expansion_mismatch_diagnostic(
+                    module.nets[net_id],
+                    expr=expansion.expr,
+                    net_count=net_count,
+                    endpoint_counts=counts,
+                    registries=registries,
+                )
+            )
+    return endpoints, endpoint_ids, diagnostics
+
+
+def _visualizer_nets_to_dict(
+    module: ModuleGraph,
+    net_expansions: dict[str, _VisualizerNetExpansion],
+    endpoint_ids: dict[str, list[str]],
+) -> list[dict]:
+    """Expand nets with literal enums for visualizer output.
+
+    Args:
+        module: Module graph containing nets.
+        net_expansions: Net expansion metadata.
+        endpoint_ids: Mapping of net IDs to endpoint IDs (after remapping).
+
+    Returns:
+        List of net payloads for the visualizer.
+    """
+    nets: list[dict] = []
+    for net_id in sorted(module.nets.keys()):
+        net = module.nets[net_id]
+        expansion = net_expansions.get(net_id)
+        expr = expansion.expr if expansion is not None else None
+        atoms = expansion.atoms if expansion is not None else None
+        if atoms is None:
+            nets.append(
+                _visualizer_net_to_dict(
+                    net,
+                    endpoint_ids=endpoint_ids.get(net_id),
+                )
+            )
+            continue
+        if len(atoms) == 1:
+            atom = atoms[0]
+            nets.append(
+                _visualizer_net_to_dict(
+                    net,
+                    net_id=net_id,
+                    name_expr_id=_visualizer_expr_id_for_atom(
+                        net.name_expr_id,
+                        expr,
+                        atom,
+                    ),
+                    endpoint_ids=endpoint_ids.get(net_id),
+                )
+            )
+            continue
+        for index, atom in enumerate(atoms):
+            expanded_id = net_id if index == 0 else _visualizer_expanded_id(net_id, index)
+            nets.append(
+                _visualizer_net_to_dict(
+                    net,
+                    net_id=expanded_id,
+                    name_expr_id=atom.text,
+                    endpoint_ids=endpoint_ids.get(expanded_id, []),
+                )
+            )
+    return nets
 
 
 def _visualizer_pattern_expressions_to_dict(
@@ -941,12 +1159,18 @@ def visualizer_module_list_to_jsonable(modules: Iterable[ModuleGraph]) -> dict:
     }
 
 
-def visualizer_dump_to_jsonable(graph: ProgramGraph, module_id: str) -> dict:
+def visualizer_dump_to_jsonable(
+    graph: ProgramGraph,
+    module_id: str,
+    *,
+    diagnostics: Optional[list[Diagnostic]] = None,
+) -> dict:
     """Convert a selected module into a visualizer JSON payload.
 
     Args:
         graph: Program graph containing module and device definitions.
         module_id: Identifier for the module to dump.
+        diagnostics: Optional diagnostics list to append warnings.
 
     Returns:
         JSON-ready payload for the visualizer.
@@ -955,14 +1179,19 @@ def visualizer_dump_to_jsonable(graph: ProgramGraph, module_id: str) -> dict:
         KeyError: If the module ID does not exist in the graph.
     """
     module = graph.modules[module_id]
-    endpoints, endpoint_ids = _visualizer_endpoints_to_dict(module, graph.registries)
-    nets = [
-        _visualizer_net_to_dict(
-            module.nets[net_id],
-            endpoint_ids=endpoint_ids.get(net_id),
-        )
-        for net_id in sorted(module.nets.keys())
-    ]
+    net_expansions = _visualizer_net_expansions(module, graph.registries)
+    endpoints, endpoint_ids, net_diags = _visualizer_endpoints_to_dict(
+        module,
+        graph.registries,
+        net_expansions,
+    )
+    if diagnostics is not None:
+        diagnostics.extend(net_diags)
+    nets = _visualizer_nets_to_dict(
+        module,
+        net_expansions,
+        endpoint_ids,
+    )
     instances = _visualizer_instances_to_dict(module, graph.registries)
     return {
         "schema_version": VISUALIZER_SCHEMA_VERSION,
