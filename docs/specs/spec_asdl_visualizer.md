@@ -135,6 +135,21 @@ The renderer builds an explicit node+edge graph:
 - Edges: one per endpoint, connecting instance pin handles to net hub handles.
 - Handle IDs: pin names for instance/port pins; `hub` for net hubs.
 
+### Connection labeling (numeric patterns)
+For numeric patterns, the visualizer stays compact (no instance explosion) and
+renders edge labels at the **pin**. Label formatting mirrors authored pattern
+syntax:
+- Single numeric index: `<3>`
+- Multi-axis: tuple style, e.g. `<3,1>`
+- When multiple slices are forced at a pin (see below), join with `;`
+  following the slice syntax in `docs/specs/spec_asdl_pattern_expansion.md`.
+
+Pin-level label policy can override the default behavior:
+- Pin `label: auto` (default): show labels only when the edge provides a
+  numeric pattern label.
+- Pin `label: always`: always show a label at the pin; if no numeric label is
+  provided, render the net/slice label and join multiple slices with `;`.
+
 ## Host integration (VSCode extension)
 The primary UI host is a VSCode extension with a webview-based editor.
 
