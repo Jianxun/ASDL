@@ -6,6 +6,7 @@ import json
 from typing import Iterable, Optional
 
 from asdl.diagnostics import SourcePos, SourceSpan
+from asdl.patterns_refactor import VisualizerPatternAtom, expand_literal_enums_for_visualizer
 
 from .atomized_graph import (
     AtomizedDeviceDef,
@@ -630,20 +631,46 @@ def _visualizer_device_to_dict(device: DeviceDef) -> dict:
     }
 
 
-def _visualizer_net_to_dict(net: NetBundle) -> dict:
-    """Convert a net bundle into a visualizer-ready dict."""
+def _visualizer_net_to_dict(
+    net: NetBundle,
+    *,
+    endpoint_ids: Optional[list[str]] = None,
+) -> dict:
+    """Convert a net bundle into a visualizer-ready dict.
+
+    Args:
+        net: Net bundle to serialize.
+        endpoint_ids: Optional endpoint ID override list.
+
+    Returns:
+        Mapping payload for the net.
+    """
     return {
         "net_id": net.net_id,
         "name_expr_id": net.name_expr_id,
-        "endpoint_ids": list(net.endpoint_ids),
+        "endpoint_ids": list(endpoint_ids or net.endpoint_ids),
     }
 
 
-def _visualizer_instance_to_dict(instance: InstanceBundle) -> dict:
-    """Convert an instance bundle into a visualizer-ready dict."""
+def _visualizer_instance_to_dict(
+    instance: InstanceBundle,
+    *,
+    inst_id: Optional[str] = None,
+    name_expr_id: Optional[str] = None,
+) -> dict:
+    """Convert an instance bundle into a visualizer-ready dict.
+
+    Args:
+        instance: Instance bundle to serialize.
+        inst_id: Optional instance ID override.
+        name_expr_id: Optional name expression override.
+
+    Returns:
+        Mapping payload for the instance.
+    """
     return {
-        "inst_id": instance.inst_id,
-        "name_expr_id": instance.name_expr_id,
+        "inst_id": inst_id or instance.inst_id,
+        "name_expr_id": name_expr_id or instance.name_expr_id,
         "ref_kind": instance.ref_kind,
         "ref_id": instance.ref_id,
         "ref_raw": instance.ref_raw,
@@ -651,13 +678,186 @@ def _visualizer_instance_to_dict(instance: InstanceBundle) -> dict:
     }
 
 
-def _visualizer_endpoint_to_dict(endpoint: EndpointBundle) -> dict:
-    """Convert an endpoint bundle into a visualizer-ready dict."""
-    return {
-        "endpoint_id": endpoint.endpoint_id,
+def _visualizer_endpoint_to_dict(
+    endpoint: EndpointBundle,
+    *,
+    endpoint_id: Optional[str] = None,
+    port_expr_id: Optional[str] = None,
+    conn_label: Optional[str] = None,
+) -> dict:
+    """Convert an endpoint bundle into a visualizer-ready dict.
+
+    Args:
+        endpoint: Endpoint bundle to serialize.
+        endpoint_id: Optional endpoint ID override.
+        port_expr_id: Optional port expression override.
+        conn_label: Optional connection label for numeric patterns.
+
+    Returns:
+        Mapping payload for the endpoint.
+    """
+    payload = {
+        "endpoint_id": endpoint_id or endpoint.endpoint_id,
         "net_id": endpoint.net_id,
-        "port_expr_id": endpoint.port_expr_id,
+        "port_expr_id": port_expr_id or endpoint.port_expr_id,
     }
+    if conn_label is not None:
+        payload["conn_label"] = conn_label
+    return payload
+
+
+def _visualizer_expand_expr(
+    expr_id: str,
+    registries: RegistrySet,
+) -> tuple[Optional[PatternExpr], Optional[list[VisualizerPatternAtom]]]:
+    """Resolve and expand a pattern expression for visualizer output.
+
+    Args:
+        expr_id: Pattern expression identifier.
+        registries: Registry set containing pattern expressions.
+
+    Returns:
+        Tuple of (pattern expression or None, expanded atoms or None).
+    """
+    if registries.pattern_expressions is None:
+        return None, None
+    expr = registries.pattern_expressions.get(expr_id)
+    if expr is None:
+        return None, None
+    atoms, errors = expand_literal_enums_for_visualizer(expr)
+    if atoms is None or errors:
+        return expr, None
+    return expr, atoms
+
+
+def _visualizer_expanded_id(base_id: str, index: int) -> str:
+    """Format a stable expanded identifier for visualizer output.
+
+    Args:
+        base_id: Base PatternedGraph identifier.
+        index: Expansion index.
+
+    Returns:
+        Expanded identifier string.
+    """
+    return f"{base_id}:{index}"
+
+
+def _visualizer_expr_id_for_atom(
+    expr_id: str,
+    expr: Optional[PatternExpr],
+    atom: VisualizerPatternAtom,
+) -> str:
+    """Select the best expression identifier for a visualizer atom.
+
+    Args:
+        expr_id: Original expression identifier.
+        expr: Parsed pattern expression (if available).
+        atom: Expanded atom for the expression.
+
+    Returns:
+        Expression identifier or literal text for visualizer use.
+    """
+    if expr is not None and atom.text == expr.raw:
+        return expr_id
+    return atom.text
+
+
+def _visualizer_instances_to_dict(
+    module: ModuleGraph,
+    registries: RegistrySet,
+) -> list[dict]:
+    """Expand instances with literal enums for visualizer output.
+
+    Args:
+        module: Module graph containing instances.
+        registries: Registry set containing pattern expressions.
+
+    Returns:
+        List of instance payloads for the visualizer.
+    """
+    instances: list[dict] = []
+    for inst_id in sorted(module.instances.keys()):
+        instance = module.instances[inst_id]
+        expr, atoms = _visualizer_expand_expr(instance.name_expr_id, registries)
+        if atoms is None:
+            instances.append(_visualizer_instance_to_dict(instance))
+            continue
+        if len(atoms) == 1:
+            atom = atoms[0]
+            instances.append(
+                _visualizer_instance_to_dict(
+                    instance,
+                    inst_id=inst_id,
+                    name_expr_id=_visualizer_expr_id_for_atom(
+                        instance.name_expr_id,
+                        expr,
+                        atom,
+                    ),
+                )
+            )
+            continue
+        for index, atom in enumerate(atoms):
+            expanded_id = inst_id if index == 0 else _visualizer_expanded_id(inst_id, index)
+            instances.append(
+                _visualizer_instance_to_dict(
+                    instance,
+                    inst_id=expanded_id,
+                    name_expr_id=atom.text,
+                )
+            )
+    return instances
+
+
+def _visualizer_endpoints_to_dict(
+    module: ModuleGraph,
+    registries: RegistrySet,
+) -> tuple[list[dict], dict[str, list[str]]]:
+    """Expand endpoints with literal enums and numeric labels.
+
+    Args:
+        module: Module graph containing endpoints.
+        registries: Registry set containing pattern expressions.
+
+    Returns:
+        Tuple of (endpoint payloads, net endpoint id mapping).
+    """
+    endpoints: list[dict] = []
+    endpoint_ids: dict[str, list[str]] = {}
+    for endpoint_id in sorted(module.endpoints.keys()):
+        endpoint = module.endpoints[endpoint_id]
+        expr, atoms = _visualizer_expand_expr(endpoint.port_expr_id, registries)
+        if atoms is None:
+            payload = _visualizer_endpoint_to_dict(endpoint)
+            endpoints.append(payload)
+            endpoint_ids.setdefault(endpoint.net_id, []).append(payload["endpoint_id"])
+            continue
+        if len(atoms) == 1:
+            atom = atoms[0]
+            payload = _visualizer_endpoint_to_dict(
+                endpoint,
+                endpoint_id=endpoint_id,
+                port_expr_id=_visualizer_expr_id_for_atom(
+                    endpoint.port_expr_id,
+                    expr,
+                    atom,
+                ),
+                conn_label=atom.numeric_label,
+            )
+            endpoints.append(payload)
+            endpoint_ids.setdefault(endpoint.net_id, []).append(payload["endpoint_id"])
+            continue
+        for index, atom in enumerate(atoms):
+            expanded_id = endpoint_id if index == 0 else _visualizer_expanded_id(endpoint_id, index)
+            payload = _visualizer_endpoint_to_dict(
+                endpoint,
+                endpoint_id=expanded_id,
+                port_expr_id=atom.text,
+                conn_label=atom.numeric_label,
+            )
+            endpoints.append(payload)
+            endpoint_ids.setdefault(endpoint.net_id, []).append(expanded_id)
+    return endpoints, endpoint_ids
 
 
 def _visualizer_pattern_expressions_to_dict(
@@ -755,18 +955,15 @@ def visualizer_dump_to_jsonable(graph: ProgramGraph, module_id: str) -> dict:
         KeyError: If the module ID does not exist in the graph.
     """
     module = graph.modules[module_id]
+    endpoints, endpoint_ids = _visualizer_endpoints_to_dict(module, graph.registries)
     nets = [
-        _visualizer_net_to_dict(module.nets[net_id])
+        _visualizer_net_to_dict(
+            module.nets[net_id],
+            endpoint_ids=endpoint_ids.get(net_id),
+        )
         for net_id in sorted(module.nets.keys())
     ]
-    instances = [
-        _visualizer_instance_to_dict(module.instances[inst_id])
-        for inst_id in sorted(module.instances.keys())
-    ]
-    endpoints = [
-        _visualizer_endpoint_to_dict(module.endpoints[endpoint_id])
-        for endpoint_id in sorted(module.endpoints.keys())
-    ]
+    instances = _visualizer_instances_to_dict(module, graph.registries)
     return {
         "schema_version": VISUALIZER_SCHEMA_VERSION,
         "module": _visualizer_module_to_dict(module),
