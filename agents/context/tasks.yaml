@@ -1,6 +1,23 @@
 schema_version: 2
 
 current_sprint:
+  - id: T-243
+    title: Expand literal net hubs in visualizer dump
+    owner: Executor
+    dod: >
+      Expand literal-enum net names in visualizer dumps so net hubs mirror
+      instance/endpoint literal expansions. Emit expanded net IDs and remap
+      endpoint net_id to the corresponding expansion index (default index 0)
+      when present, falling back with diagnostics if counts diverge. Ensure
+      expanded nets carry updated endpoint_ids. Add CLI unit coverage for
+      expanded nets and endpoint remapping in visualizer dumps.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/cli/test_visualizer_dump.py -v
+    links:
+      scratchpad: agents/scratchpads/T-243_visualizer_expand_nethubs.md
+    files:
+      - src/asdl/core/dump.py
+      - tests/unit_tests/cli/test_visualizer_dump.py
   - id: T-240
     title: Expand literal patterns in visualizer dump + add numeric labels
     owner: Executor
