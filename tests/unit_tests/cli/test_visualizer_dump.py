@@ -207,7 +207,7 @@ def test_cli_visualizer_dump_expands_nets_and_remaps_endpoints(tmp_path: Path) -
     net_label_by_id = {
         net["net_id"]: resolve_expr(net["name_expr_id"]) for net in payload["nets"]
     }
-    assert set(net_label_by_id.values()) == {"$out_p", "$out_n"}
+    assert set(net_label_by_id.values()) == {"out_p", "out_n"}
 
     endpoint_label_by_id = {
         endpoint["endpoint_id"]: resolve_expr(endpoint["port_expr_id"])
@@ -217,13 +217,13 @@ def test_cli_visualizer_dump_expands_nets_and_remaps_endpoints(tmp_path: Path) -
         endpoint_label_by_id[endpoint["endpoint_id"]]: net_label_by_id[endpoint["net_id"]]
         for endpoint in payload["endpoints"]
     }
-    assert endpoint_net_labels["mn_in_p.D"] == "$out_p"
-    assert endpoint_net_labels["mn_in_n.D"] == "$out_n"
+    assert endpoint_net_labels["mn_in_p.D"] == "out_p"
+    assert endpoint_net_labels["mn_in_n.D"] == "out_n"
 
     for net in payload["nets"]:
         label = resolve_expr(net["name_expr_id"])
         endpoint_labels = {endpoint_label_by_id[endpoint_id] for endpoint_id in net["endpoint_ids"]}
-        if label == "$out_p":
+        if label == "out_p":
             assert endpoint_labels == {"mn_in_p.D"}
-        elif label == "$out_n":
+        elif label == "out_n":
             assert endpoint_labels == {"mn_in_n.D"}

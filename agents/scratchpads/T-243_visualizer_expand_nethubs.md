@@ -32,3 +32,4 @@
 - 2026-01-30 00:07 — Set T-243 status to in_progress, ran lint, created feature branch; next step inspect visualizer dump/net expansion behavior.
 - 2026-01-30 00:18 — Added CLI unit test coverage for net expansion + endpoint remap in visualizer dump; files: tests/unit_tests/cli/test_visualizer_dump.py; next step implement net expansion/remap logic in dump.
 - 2026-01-30 00:38 — Implemented net literal enum expansion + endpoint remap with diagnostics in visualizer dump; updated CLI to pass diagnostics; files: src/asdl/core/dump.py, src/asdl/cli/__init__.py; next step run targeted pytest.
+- 2026-01-30 00:46 — Adjusted net expansion test expectations for port naming and reran pytest; tests/unit_tests/cli/test_visualizer_dump.py now passing.
