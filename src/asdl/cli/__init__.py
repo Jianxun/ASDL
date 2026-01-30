@@ -294,7 +294,13 @@ def visualizer_dump(
         if selected_module is None or _has_error_diagnostics(diagnostics):
             _emit_diagnostics(diagnostics)
             raise click.exceptions.Exit(1)
-        payloads.append(visualizer_dump_to_jsonable(graph, selected_module.module_id))
+        payloads.append(
+            visualizer_dump_to_jsonable(
+                graph,
+                selected_module.module_id,
+                diagnostics=diagnostics,
+            )
+        )
 
     payload: object = payloads[0] if len(payloads) == 1 else payloads
 
