@@ -28,6 +28,8 @@
 - 2026-01-29 21:35 — Commit cb25d49 "chore: start T-242"; updated task state + scratchpad; next step implement webview changes.
 - 2026-01-29 21:35 — Commit 7de50db "feat: render visualizer pin labels"; added label rendering + styles + dev harness; next step verify build.
 - 2026-01-29 21:35 — Ran `npm run build` in `extensions/asdl-visualizer`; succeeded (Vite CJS deprecation warning only); next step prep PR.
+- 2026-01-29 21:39 — Review intake; confirmed PR #254 targets main and includes scratchpad + build log; next step set review_in_progress and start review.
+- 2026-01-29 21:39 — Set T-242 status to review_in_progress; next step lint tasks_state and review code changes.
 
 ## Patch summary
 - Added orientation-aware pin label rendering that prefers numeric connection labels and respects per-pin label policy.
