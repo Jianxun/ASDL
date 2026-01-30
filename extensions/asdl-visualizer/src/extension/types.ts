@@ -84,8 +84,9 @@ export type GraphPayload = {
     label: string
     pins: string[]
     symbolKey: string
+    layoutKey?: string
   }>
-  netHubs: Array<{ id: string; label: string }>
+  netHubs: Array<{ id: string; label: string; layoutKey?: string }>
   edges: Array<{ id: string; from: string; to: string }>
   symbols: Record<string, SymbolDefinition>
 }
@@ -97,7 +98,7 @@ export type LayoutPayload = {
     {
       grid_size?: number
       instances: Record<string, { x: number; y: number; orient?: string; label?: string }>
-      net_hubs: Record<string, { groups: Array<{ x: number; y: number; orient?: string; label?: string }> }>
+      net_hubs: Record<string, Record<string, { x: number; y: number; orient?: string; label?: string }>>
     }
   >
 }

@@ -105,8 +105,8 @@ Schema (outline):
 
 Module layout definition:
 - `grid_size`: number (optional, default 16)
-- `instances`: mapping of `inst_id` -> placement data
-- `net_hubs`: mapping of `net_id` -> hub placement data
+- `instances`: mapping of `inst_name` -> placement data
+- `net_hubs`: mapping of `net_name` -> `{hub_name: placement}`
 
 Placement data:
 - `x`, `y`: grid coordinates in **grid units**.
@@ -117,18 +117,38 @@ Placement data:
 - `label`: optional display label
 
 Net hub placement data:
-- `groups`: array of hub placements in group order.
-  - Net hub `x,y` are **center** coordinates in grid units.
+- Hub placement mapping: `{ hub_name: placement }`.
+  - Hub `x,y` are **center** coordinates in grid units.
+  - `orient` rotates the hub’s launch direction for routed edges.
 
-Group order MUST align with `registries.schematic_hints.net_groups` emitted by
+Hub order MUST align with `registries.schematic_hints.net_groups` emitted by
 the compiler (derived from net endpoint list-of-lists). If the registry has no
 groups, a single hub is assumed. User-defined extra hubs are not supported.
+
+Layout keys use instance/net display names. If names collide, the visualizer
+uses `${name}#${id}` to disambiguate. Legacy layouts keyed by `inst_id` or
+`net_id` are still accepted and will be migrated on save.
 
 ## Derived visualizer graph
 The renderer builds an explicit node+edge graph:
 - Nodes: instances, net hubs, optional port/junction helpers.
 - Edges: one per endpoint, connecting instance pin handles to net hub handles.
 - Handle IDs: pin names for instance/port pins; `hub` for net hubs.
+
+### Connection labeling (numeric patterns)
+For numeric patterns, the visualizer stays compact (no instance explosion) and
+renders edge labels at the **pin**. Label formatting mirrors authored pattern
+syntax:
+- Single numeric index: `<3>`
+- Multi-axis: tuple style, e.g. `<3,1>`
+- When multiple slices are forced at a pin (see below), join with `;`
+  following the slice syntax in `docs/specs/spec_asdl_pattern_expansion.md`.
+
+Pin-level label policy can override the default behavior:
+- Pin `label: auto` (default): show labels only when the edge provides a
+  numeric pattern label.
+- Pin `label: always`: always show a label at the pin; if no numeric label is
+  provided, render the net/slice label and join multiple slices with `;`.
 
 ## Host integration (VSCode extension)
 The primary UI host is a VSCode extension with a webview-based editor.
@@ -159,7 +179,7 @@ Phase 2 - Editable layout:
 
 Phase 3 - Minimal validation:
 - Warn on layout entries that reference missing graph IDs.
-- Validate hub group counts vs `schematic_hints.net_groups`.
+- Validate hub counts vs `schematic_hints.net_groups`.
 - Surface diagnostics in a small panel or status bar.
 
 ## VSCode extension skeleton (outline)
@@ -182,7 +202,7 @@ Core responsibilities:
 - Layout entries MUST reference existing PatternedGraph IDs.
 - Missing layout entries fall back to a default placement (diagnostic warning).
 - Extra layout entries that do not match graph IDs are ignored with diagnostics.
-- Net hub group counts MUST match `schematic_hints.net_groups` when present.
+- Net hub counts MUST match `schematic_hints.net_groups` when present.
 - Symbol pins MUST align with module/device port lists; mismatches emit diagnostics.
 - When schematic data contradicts ASDL connectivity or structure, ASDL wins; the
   UI should surface a warning and allow the user to reload from ASDL.

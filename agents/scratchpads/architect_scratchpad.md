@@ -1,6 +1,16 @@
 # Architect Scratchpad
 
 ## Architecture notes (session summary; not yet ADRs)
+## Current status (2026-01-28)
+- Visualizer dev loop added on branch `feature/webview-harness`: webview dev harness,
+  Playwright viewport test, and payload builder script for real .asdl fixtures.
+- Fixed VS Code webview flicker/reset by removing runtime mutation of
+  `webview.options` during glyph resolution.
+- Added discrete orient transforms (R0/R90/R180/R270/MX/MY/MXR90/MYR90) in the
+  webview; glyphs rotate/mirror with symbols and handle routing updates with
+  oriented pin positions.
+- Updated gf180mcu nmos/pmos glyph strokes to white for visibility.
+  Recent commits: b36211f, 9ff80cf, 1218750 on `feature/webview-harness`.
 ## Current status (2026-01-24)
 - Implemented stricter AtomizedGraph validation and binding rules; diagnostics now flag
   duplicate instance names, duplicate instance ports, and nets with zero endpoints.

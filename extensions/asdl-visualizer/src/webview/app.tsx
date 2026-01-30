@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactFlow, {
   Background,
   ConnectionLineType,
@@ -7,10 +7,12 @@ import ReactFlow, {
   Handle,
   useEdgesState,
   useNodesState,
+  useUpdateNodeInternals,
   type Edge,
   type Node,
   type NodeProps,
-  type NodeTypes
+  type NodeTypes,
+  type ReactFlowInstance
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
@@ -21,11 +23,13 @@ type InstanceNode = {
   label: string
   pins: string[]
   symbolKey: string
+  layoutKey?: string
 }
 
 type NetHubNode = {
   id: string
   label: string
+  layoutKey?: string
 }
 
 type GraphPayload = {
@@ -75,7 +79,7 @@ type LayoutPayload = {
     {
       grid_size?: number
       instances: Record<string, Placement>
-      net_hubs: Record<string, { groups: Placement[] }>
+      net_hubs: Record<string, Record<string, Placement>>
     }
   >
 }
@@ -100,6 +104,7 @@ const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : nul
 const DEFAULT_GRID_SIZE = 16
 const HUB_SIZE = 2
 const HUB_HANDLE_ID = 'hub'
+const EDGE_STEP_OFFSET_UNITS = 0.8
 const FALLBACK_SYMBOL: SymbolDefinition = {
   body: { w: 6, h: 4 },
   pins: { left: [] }
@@ -116,11 +121,13 @@ type InstanceNodeData = {
 
 type HubNodeData = {
   label: string
+  orient: string
 }
 
 type VisualNodeData = InstanceNodeData | HubNodeData
 
 type PinSide = 'top' | 'bottom' | 'left' | 'right'
+type Orient = 'R0' | 'R90' | 'R180' | 'R270' | 'MX' | 'MY' | 'MXR90' | 'MYR90'
 
 type PinPosition = {
   id: string
@@ -138,6 +145,9 @@ export function App() {
   const [gridSize, setGridSize] = useState<number>(DEFAULT_GRID_SIZE)
   const [nodes, setNodes, onNodesChange] = useNodesState<VisualNodeData>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const reactFlowRef = useRef<ReactFlowInstance | null>(null)
+  const [fitViewToken, setFitViewToken] = useState(0)
+  const graphRef = useRef<GraphPayload | null>(null)
 
   const nodeTypes = useMemo<NodeTypes>(() => ({
     instance: InstanceNodeComponent,
@@ -148,21 +158,35 @@ export function App() {
     const handleMessage = (event: MessageEvent<WebviewMessage>) => {
       const message = event.data
       if (message.type === 'loadGraph') {
-        setGraph(message.payload.graph)
-        setLayout(message.payload.layout)
+        const nextGraph = message.payload.graph
+        const prevGraph = graphRef.current
+        const isSameModule = prevGraph?.moduleId === nextGraph.moduleId
+        const isSameShape =
+          prevGraph &&
+          prevGraph.instances.length === nextGraph.instances.length &&
+          prevGraph.netHubs.length === nextGraph.netHubs.length &&
+          prevGraph.edges.length === nextGraph.edges.length
+        const shouldRebuild = !prevGraph || !isSameModule || !isSameShape
+
+        if (shouldRebuild) {
+          setGraph(nextGraph)
+          setLayout(message.payload.layout)
+          graphRef.current = nextGraph
+          const moduleLayout = message.payload.layout.modules[nextGraph.moduleId]
+          const grid = moduleLayout?.grid_size ?? DEFAULT_GRID_SIZE
+          setGridSize(grid)
+          const { nodes: rfNodes, edges: rfEdges } = buildReactFlowGraph(
+            nextGraph,
+            moduleLayout,
+            grid
+          )
+          setNodes(rfNodes)
+          setEdges(rfEdges)
+          setFitViewToken((token) => token + 1)
+        }
         if (message.payload.diagnostics) {
           setDiagnostics(message.payload.diagnostics)
         }
-        const moduleLayout = message.payload.layout.modules[message.payload.graph.moduleId]
-        const grid = moduleLayout?.grid_size ?? DEFAULT_GRID_SIZE
-        setGridSize(grid)
-        const { nodes: rfNodes, edges: rfEdges } = buildReactFlowGraph(
-          message.payload.graph,
-          moduleLayout,
-          grid
-        )
-        setNodes(rfNodes)
-        setEdges(rfEdges)
       }
       if (message.type === 'diagnostics') {
         setDiagnostics(message.payload.items)
@@ -177,6 +201,20 @@ export function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (fitViewToken === 0) {
+      return
+    }
+    const instance = reactFlowRef.current
+    if (!instance) {
+      return
+    }
+    const handle = requestAnimationFrame(() => {
+      instance.fitView({ padding: 0.2 })
+    })
+    return () => cancelAnimationFrame(handle)
+  }, [fitViewToken])
+
   const onSave = useCallback(() => {
     if (!layout || !graph) {
       return
@@ -187,36 +225,50 @@ export function App() {
       modules: { ...layout.modules }
     }
     const existingModule = nextLayout.modules[moduleId]
+    const instanceLayoutKeys = new Map(
+      graph.instances.map((inst) => [inst.id, inst.layoutKey ?? inst.id])
+    )
+    const hubLayoutKeys = new Map(
+      graph.netHubs.map((hub) => [hub.id, hub.layoutKey ?? hub.id])
+    )
     const moduleLayout = {
       grid_size: gridSize,
-      instances: { ...(existingModule?.instances ?? {}) },
-      net_hubs: { ...(existingModule?.net_hubs ?? {}) }
+      instances: {},
+      net_hubs: {}
     }
 
     nodes.forEach((node) => {
       if (node.type === 'instance') {
         const { x, y } = gridFromTopLeft(node, gridSize)
-        const existing = moduleLayout.instances[node.id]
-        moduleLayout.instances[node.id] = {
+        const layoutKey = instanceLayoutKeys.get(node.id) ?? node.id
+        const existing =
+          existingModule?.instances?.[layoutKey] ?? existingModule?.instances?.[node.id]
+        const orient = normalizeOrient((node.data as InstanceNodeData).orient)
+        moduleLayout.instances[layoutKey] = {
           x,
           y,
-          orient: existing?.orient ?? 'R0',
+          orient,
           label: existing?.label
         }
       }
       if (node.type === 'hub') {
         const { x, y } = centerFromNode(node, gridSize, HUB_SIZE, HUB_SIZE)
-        const existing = moduleLayout.net_hubs[node.id]
-        const group = existing?.groups?.[0]
-        moduleLayout.net_hubs[node.id] = {
-          groups: [
-            {
-              x,
-              y,
-              orient: group?.orient,
-              label: group?.label
-            }
-          ]
+        const layoutKey = hubLayoutKeys.get(node.id) ?? node.id
+        const existing =
+          existingModule?.net_hubs?.[layoutKey] ?? existingModule?.net_hubs?.[node.id]
+        const sanitized = sanitizeHubLayout(existing)
+        const entry = firstHubEntry(sanitized)
+        const firstKey = entry?.key ?? 'hub1'
+        const firstHub = entry?.placement
+        const orient = normalizeOrient((node.data as HubNodeData).orient)
+        moduleLayout.net_hubs[layoutKey] = {
+          ...sanitized,
+          [firstKey]: {
+            x,
+            y,
+            orient,
+            label: firstHub?.label
+          }
         }
       }
     })
@@ -251,12 +303,15 @@ export function App() {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               nodeTypes={nodeTypes}
-              fitView
+              onInit={(instance) => {
+                reactFlowRef.current = instance
+              }}
               snapToGrid
               snapGrid={[gridSize, gridSize]}
               defaultEdgeOptions={{
                 type: 'step',
-                style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' }
+                style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' },
+                pathOptions: { offset: gridSize * EDGE_STEP_OFFSET_UNITS }
               }}
               connectionLineType={ConnectionLineType.Step}
               connectionLineStyle={{ stroke: '#e2e8f0', strokeWidth: 2 }}
@@ -289,42 +344,50 @@ function buildReactFlowGraph(
   gridSize: number
 ): { nodes: Array<Node<VisualNodeData>>; edges: Array<Edge> } {
   const instances = graph.instances.map((inst, index) => {
-    const placement = moduleLayout?.instances?.[inst.id]
+    const layoutKey = inst.layoutKey ?? inst.id
+    const placement =
+      moduleLayout?.instances?.[layoutKey] ?? moduleLayout?.instances?.[inst.id]
     const gridX = placement?.x ?? index * 4
     const gridY = placement?.y ?? 0
+    const orient = normalizeOrient(placement?.orient)
     const symbol = graph.symbols[inst.symbolKey] ?? FALLBACK_SYMBOL
     const body = normalizeSymbolBody(symbol.body)
     const pins = computePinPositions(symbol, body)
     const pos = topLeftFromGrid(gridX, gridY, gridSize)
+    const orientedBody = computeOrientData(body.w, body.h, orient)
     return {
       id: inst.id,
       type: 'instance',
       position: pos,
       data: {
         label: inst.label,
-        orient: placement?.orient ?? 'R0',
+        orient,
         body,
         pins,
         gridSize,
         glyph: symbol.glyph
       },
       style: {
-        width: body.w * gridSize,
-        height: body.h * gridSize
+        width: orientedBody.width * gridSize,
+        height: orientedBody.height * gridSize
       }
     } as Node<InstanceNodeData>
   })
 
   const hubs = graph.netHubs.map((hub, index) => {
-    const placement = moduleLayout?.net_hubs?.[hub.id]?.groups?.[0]
+    const layoutKey = hub.layoutKey ?? hub.id
+    const placement =
+      firstHubPlacement(moduleLayout?.net_hubs?.[layoutKey]) ??
+      firstHubPlacement(moduleLayout?.net_hubs?.[hub.id])
     const gridX = placement?.x ?? (instances.length + 2) * 4
     const gridY = placement?.y ?? index * 4
     const pos = topLeftFromCenter(gridX, gridY, gridSize, HUB_SIZE, HUB_SIZE)
+    const orient = normalizeOrient(placement?.orient)
     return {
       id: hub.id,
       type: 'hub',
       position: pos,
-      data: { label: hub.label },
+      data: { label: hub.label, orient },
       style: {
         width: HUB_SIZE * gridSize,
         height: HUB_SIZE * gridSize
@@ -347,6 +410,7 @@ function buildReactFlowGraph(
         sourceHandle,
         targetHandle: HUB_HANDLE_ID,
         type: 'step',
+        pathOptions: { offset: gridSize * EDGE_STEP_OFFSET_UNITS },
         style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' }
       } as Edge
     })
@@ -402,6 +466,47 @@ function gridFromTopLeft(node: Node, gridSize: number) {
   }
 }
 
+function isPlacement(value: unknown): value is Placement {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  const candidate = value as Placement
+  return Number.isFinite(candidate.x) && Number.isFinite(candidate.y)
+}
+
+function sanitizeHubLayout(
+  hubLayout: Record<string, Placement> | undefined
+): Record<string, Placement> {
+  if (!hubLayout) {
+    return {}
+  }
+  const sanitized: Record<string, Placement> = {}
+  for (const [key, placement] of Object.entries(hubLayout)) {
+    if (isPlacement(placement)) {
+      sanitized[key] = placement
+    }
+  }
+  return sanitized
+}
+
+function firstHubEntry(
+  hubLayout: Record<string, Placement> | undefined
+): { key: string; placement: Placement } | undefined {
+  if (!hubLayout) {
+    return undefined
+  }
+  for (const [key, placement] of Object.entries(hubLayout)) {
+    if (isPlacement(placement)) {
+      return { key, placement }
+    }
+  }
+  return undefined
+}
+
+function firstHubPlacement(hubLayout: Record<string, Placement> | undefined): Placement | undefined {
+  return firstHubEntry(hubLayout)?.placement
+}
+
 function normalizeSymbolBody(body: { w?: number; h?: number }) {
   const w =
     typeof body.w === 'number' && Number.isFinite(body.w) && body.w > 0
@@ -449,6 +554,129 @@ function computePinPositions(symbol: SymbolDefinition, body: { w: number; h: num
   return pins
 }
 
+function normalizeOrient(value: string | undefined): Orient {
+  const raw = (value ?? 'R0').toUpperCase()
+  if (
+    raw === 'R0' ||
+    raw === 'R90' ||
+    raw === 'R180' ||
+    raw === 'R270' ||
+    raw === 'MX' ||
+    raw === 'MY' ||
+    raw === 'MXR90' ||
+    raw === 'MYR90'
+  ) {
+    return raw as Orient
+  }
+  return 'R0'
+}
+
+type OrientMatrix = { a: number; b: number; c: number; d: number }
+type OrientData = OrientMatrix & {
+  tx: number
+  ty: number
+  width: number
+  height: number
+  transform: string
+}
+
+function orientMatrix(orient: Orient): OrientMatrix {
+  const mirrorX = orient.startsWith('MX')
+  const mirrorY = orient.startsWith('MY')
+  const rotation = orient.endsWith('R90')
+    ? 90
+    : orient.endsWith('R180')
+      ? 180
+      : orient.endsWith('R270')
+        ? 270
+        : 0
+  const sx = mirrorY ? -1 : 1
+  const sy = mirrorX ? -1 : 1
+
+  const r =
+    rotation === 90
+      ? { r11: 0, r12: 1, r21: -1, r22: 0 }
+      : rotation === 180
+        ? { r11: -1, r12: 0, r21: 0, r22: -1 }
+        : rotation === 270
+          ? { r11: 0, r12: -1, r21: 1, r22: 0 }
+          : { r11: 1, r12: 0, r21: 0, r22: 1 }
+
+  return {
+    a: r.r11 * sx,
+    b: r.r21 * sx,
+    c: r.r12 * sy,
+    d: r.r22 * sy
+  }
+}
+
+function computeOrientData(w: number, h: number, orient: Orient): OrientData {
+  const { a, b, c, d } = orientMatrix(orient)
+  const points = [
+    { x: 0, y: 0 },
+    { x: w, y: 0 },
+    { x: 0, y: h },
+    { x: w, y: h }
+  ].map((p) => ({ x: a * p.x + c * p.y, y: b * p.x + d * p.y }))
+  const xs = points.map((p) => p.x)
+  const ys = points.map((p) => p.y)
+  const minX = Math.min(...xs)
+  const maxX = Math.max(...xs)
+  const minY = Math.min(...ys)
+  const maxY = Math.max(...ys)
+  const tx = -minX
+  const ty = -minY
+  return {
+    a,
+    b,
+    c,
+    d,
+    tx,
+    ty,
+    width: maxX - minX,
+    height: maxY - minY,
+    transform: `matrix(${a}, ${b}, ${c}, ${d}, ${tx}, ${ty})`
+  }
+}
+
+function applyOrientPoint(x: number, y: number, orient: OrientData): { x: number; y: number } {
+  return { x: orient.a * x + orient.c * y + orient.tx, y: orient.b * x + orient.d * y + orient.ty }
+}
+
+function mapPinSide(side: PinSide, orient: OrientData): PinSide {
+  const vector =
+    side === 'left'
+      ? { x: -1, y: 0 }
+      : side === 'right'
+        ? { x: 1, y: 0 }
+        : side === 'top'
+          ? { x: 0, y: -1 }
+          : { x: 0, y: 1 }
+  const x = orient.a * vector.x + orient.c * vector.y
+  const y = orient.b * vector.x + orient.d * vector.y
+  if (Math.abs(x) >= Math.abs(y)) {
+    return x < 0 ? 'left' : 'right'
+  }
+  return y < 0 ? 'top' : 'bottom'
+}
+
+function mapVectorToSide(x: number, y: number): PinSide {
+  if (Math.abs(x) >= Math.abs(y)) {
+    return x < 0 ? 'left' : 'right'
+  }
+  return y < 0 ? 'top' : 'bottom'
+}
+
+function positionFromSide(side: PinSide): Position {
+  return side === 'left'
+    ? Position.Left
+    : side === 'right'
+      ? Position.Right
+      : side === 'top'
+        ? Position.Top
+        : Position.Bottom
+}
+
 function parseEndpoint(value: string): { nodeId: string; handleId?: string } {
   const splitIndex = value.lastIndexOf('.')
   if (splitIndex > 0 && splitIndex < value.length - 1) {
@@ -457,7 +685,27 @@ function parseEndpoint(value: string): { nodeId: string; handleId?: string } {
   return { nodeId: value }
 }
 
-function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
+function InstanceNodeComponent({ id, data }: NodeProps<InstanceNodeData>) {
+  const updateNodeInternals = useUpdateNodeInternals()
+  const orient = normalizeOrient(data.orient)
+  const baseWidth = data.body.w * data.gridSize
+  const baseHeight = data.body.h * data.gridSize
+  const orientData = computeOrientData(baseWidth, baseHeight, orient)
+
+  const orientedPins = useMemo(() => {
+    return data.pins.map((pin) => {
+      const x = pin.x * data.gridSize
+      const y = pin.y * data.gridSize
+      const { x: ox, y: oy } = applyOrientPoint(x, y, orientData)
+      const side = mapPinSide(pin.side, orientData)
+      return { ...pin, x: ox, y: oy, side }
+    })
+  }, [data.pins, data.gridSize, orientData])
+
+  useEffect(() => {
+    updateNodeInternals(id)
+  }, [id, orient, updateNodeInternals])
+
   const glyph = data.glyph
   const glyphStyle = glyph
     ? {
@@ -469,41 +717,40 @@ function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
     : undefined
   return (
     <div className="node instance-node">
-      {glyph && (
-        <svg
-          className="glyph-frame"
-          style={glyphStyle}
-          viewBox={glyph.viewbox}
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <image
-            href={glyph.src}
-            width="100%"
-            height="100%"
+      <div
+        className="symbol-layer"
+        style={{
+          width: baseWidth,
+          height: baseHeight,
+          transformOrigin: '0 0',
+          transform: orientData.transform
+        }}
+      >
+        {glyph && (
+          <svg
+            className="glyph-frame"
+            style={glyphStyle}
+            viewBox={glyph.viewbox}
             preserveAspectRatio="xMidYMid meet"
-          />
-        </svg>
-      )}
-      {data.pins.map((pin) => {
-        const style =
-          pin.side === 'left' || pin.side === 'right'
-            ? { top: pin.y * data.gridSize }
-            : { left: pin.x * data.gridSize }
-        const position =
-          pin.side === 'left'
-            ? Position.Left
-            : pin.side === 'right'
-              ? Position.Right
-              : pin.side === 'top'
-                ? Position.Top
-                : Position.Bottom
+          >
+            <image
+              href={glyph.src}
+              width="100%"
+              height="100%"
+              preserveAspectRatio="xMidYMid meet"
+            />
+          </svg>
+        )}
+      </div>
+      {orientedPins.map((pin) => {
+        const position = positionFromSide(pin.side)
         return (
           <Handle
             key={`${pin.id}-${pin.side}`}
             id={pin.id}
             type="source"
             position={position}
-            style={style}
+            style={{ left: pin.x, top: pin.y, transform: 'translate(-50%, -50%)' }}
             className="pin-handle"
           />
         )
@@ -515,12 +762,17 @@ function InstanceNodeComponent({ data }: NodeProps<InstanceNodeData>) {
 }
 
 function HubNodeComponent({ data }: NodeProps<HubNodeData>) {
+  const orient = normalizeOrient(data.orient)
+  const { a, b, c, d } = orientMatrix(orient)
+  const dirX = a
+  const dirY = b
+  const handlePosition = positionFromSide(mapVectorToSide(dirX, dirY))
   return (
     <div className="node hub-node">
       <Handle
         type="target"
         id={HUB_HANDLE_ID}
-        position={Position.Top}
+        position={handlePosition}
         style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
         className="hub-handle"
       />

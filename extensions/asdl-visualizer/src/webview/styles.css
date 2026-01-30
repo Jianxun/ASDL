@@ -113,7 +113,8 @@ body {
   height: 100%;
   border-radius: 10px;
   background: #0f172a;
-  border: 1px solid #1e293b;
+  border: none;
+  box-shadow: 0 0 0 1px #1e293b;
   color: #e2e8f0;
   display: flex;
   flex-direction: column;
@@ -125,8 +126,14 @@ body {
 
 .instance-node {
   background: linear-gradient(145deg, #111827, #0b1120);
-  border-color: #334155;
+  box-shadow: 0 0 0 1px #334155;
   position: relative;
+}
+
+.symbol-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 .glyph-frame {
@@ -154,7 +161,7 @@ body {
 
 .hub-node {
   background: #1f2937;
-  border-color: #475569;
+  box-shadow: 0 0 0 1px #475569;
   position: relative;
 }
 

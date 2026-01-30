@@ -44,7 +44,10 @@
     "build:extension": "tsc -p ./",
     "build:webview": "vite build",
     "watch": "tsc -watch -p ./",
-    "dev:webview": "vite build --watch"
+    "dev:webview": "vite build --watch",
+    "dev:webview:serve": "vite --config vite.config.ts --host 127.0.0.1 --port 5173",
+    "dev:webview:payload": "node ./scripts/build-dev-payload.mjs",
+    "test:webview": "playwright test -c playwright.config.ts"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -58,6 +61,7 @@
     "@types/react-dom": "^18.2.19",
     "@types/vscode": "^1.60.0",
     "@vitejs/plugin-react": "^4.2.0",
+    "@playwright/test": "^1.41.2",
     "typescript": "^5.3.3",
     "vite": "^5.0.10"
   },
