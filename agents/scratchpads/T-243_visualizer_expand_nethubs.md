@@ -21,18 +21,23 @@
 - 2026-01-30 00:18 — Added CLI unit test coverage for net expansion + endpoint remap in visualizer dump; files: tests/unit_tests/cli/test_visualizer_dump.py; next step implement net expansion/remap logic in dump.
 - 2026-01-30 00:38 — Implemented net literal enum expansion + endpoint remap with diagnostics in visualizer dump; updated CLI to pass diagnostics; files: src/asdl/core/dump.py, src/asdl/cli/__init__.py; next step run targeted pytest.
 - 2026-01-30 00:46 — Adjusted net expansion test expectations for port naming and reran pytest; tests/unit_tests/cli/test_visualizer_dump.py now passing.
+- 2026-01-30 00:52 — Opened PR https://github.com/Jianxun/ASDL/pull/256; next step set task status to ready_for_review.
+- 2026-01-30 00:53 — Set T-243 status to ready_for_review and ran lint_tasks_state.py.
 
 # Patch summary
 - Expanded visualizer net dumps to split literal-enum nets, remap endpoint net IDs, and emit mismatch diagnostics.
 - Added CLI unit coverage for expanded nets and endpoint remapping in visualizer dumps.
 
 # PR URL
+- https://github.com/Jianxun/ASDL/pull/256
 
 # Verification
 - ./venv/bin/pytest tests/unit_tests/cli/test_visualizer_dump.py -v
 
 # Status request (Done / Blocked / In Progress)
+Done
 
 # Blockers / Questions
 
 # Next steps
+- Await reviewer feedback.
