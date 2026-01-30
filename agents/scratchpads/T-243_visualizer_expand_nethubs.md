@@ -23,10 +23,18 @@
 - 2026-01-30 00:46 — Adjusted net expansion test expectations for port naming and reran pytest; tests/unit_tests/cli/test_visualizer_dump.py now passing.
 - 2026-01-30 00:52 — Opened PR https://github.com/Jianxun/ASDL/pull/256; next step set task status to ready_for_review.
 - 2026-01-30 00:53 — Set T-243 status to ready_for_review and ran lint_tasks_state.py.
+- 2026-01-30 01:08 — Review intake for PR #256; base is main and testing logs present; next step begin code review and update status to review_in_progress.
+- 2026-01-30 01:23 — Completed scope + code review; found endpoint_id fallback bug for expanded nets without endpoints; next step post review comment and set request_changes.
+- 2026-01-30 01:26 — Posted PR review comment with blocker on net endpoint_ids fallback; next step update task status to request_changes and run lint.
+- 2026-01-30 01:32 — Fixed visualizer net endpoint_ids fallback to preserve empty lists for expanded nets; files: src/asdl/core/dump.py; next step rerun pytest.
+- 2026-01-30 01:33 — Ran ./venv/bin/pytest tests/unit_tests/cli/test_visualizer_dump.py -v; all tests passed; next step commit fix.
+- 2026-01-30 01:34 — Committed fix a486ac5 (Fix visualizer net endpoint fallback); next step update task status and notify reviewer.
+- 2026-01-30 01:35 — Set T-243 status to ready_for_review and ran lint_tasks_state.py; next step post PR follow-up comment.
 
 # Patch summary
 - Expanded visualizer net dumps to split literal-enum nets, remap endpoint net IDs, and emit mismatch diagnostics.
 - Added CLI unit coverage for expanded nets and endpoint remapping in visualizer dumps.
+- Fixed expanded-net endpoint_ids fallback to preserve empty lists instead of inheriting original net endpoints.
 
 # PR URL
 - https://github.com/Jianxun/ASDL/pull/256
