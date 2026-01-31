@@ -27,6 +27,7 @@
 - 2026-01-31 01:17 — Set T-246 to review_in_progress; next: run sphinx-build verify.
 - 2026-01-31 01:19 — Ran ./venv/bin/sphinx-build -b html docs docs/_build/html; build succeeded with 35 warnings (toctree not included, transitions, missing _static); next: scope/DoD check.
 - 2026-01-31 01:22 — Scope check against DoD/links.spec complete; changes limited to Sphinx config/requirements/index/README; next: finalize review decision.
+- 2026-01-31 01:25 — Review decision: clean; warnings noted but non-blocking; next: post PR comment and merge/closeout.
 
 # Patch summary
 - Added Sphinx configuration with MyST and ASDL domain support plus docs requirements.
