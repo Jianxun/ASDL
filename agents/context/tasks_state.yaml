@@ -8,6 +8,6 @@ T-245:
   pr: 259
   merged: true
 T-246:
-  status: review_clean
+  status: done
   pr: 260
-  merged: false
+  merged: true
