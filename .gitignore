@@ -54,6 +54,9 @@ Thumbs.db
 *.temp
 *~ 
 
+# Docs builds
+examples/docs/_build/
+
 designs
 #examples
 prototype/visualization/demonstrations

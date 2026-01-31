@@ -48,19 +48,19 @@ current_sprint:
       - T-245
     dod: >
       Add Sphinx config that loads the ASDL domain and MyST parser, includes
-      generated Markdown docs under docs/asdl in the toctree, and documents
+      generated Markdown docs under examples/docs/libs in the toctree, and documents
       the build entrypoint. Provide a requirements file or pyproject extras
       to install sphinx + myst-parser. Add a smoke doc build command that
       runs on the generated docs set. Do not touch unrelated style docs
       (e.g., docs/code_styles/docstrings_comments.md).
     verify:
-      - ./venv/bin/sphinx-build -b html docs docs/_build/html
+      - ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html
     links:
       scratchpad: agents/scratchpads/T-246_sphinx_build_config.md
     files:
-      - docs/conf.py
-      - docs/index.rst
-      - docs/requirements.txt
-      - docs/asdl/README.md
+      - examples/docs/conf.py
+      - examples/docs/index.rst
+      - examples/docs/requirements.txt
+      - examples/docs/README.md
 
 backlog: []
