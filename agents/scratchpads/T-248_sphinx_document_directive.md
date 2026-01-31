@@ -65,3 +65,4 @@
 - 2026-01-31 02:59 — Review intake: confirmed PR targets main and includes scratchpad + verify logs; set status to review_in_progress; next step: run review checks.
 - 2026-01-31 03:00 — Reviewed code vs DoD and scope; relied on executor pytest log (not re-run locally); no blockers found; next step: post PR review comment and mark review_clean.
 - 2026-01-31 03:01 — Posted PR review comment ([Reviewer]: clean); next step: set review_clean status and proceed to merge/closeout.
+- 2026-01-31 03:01 — Set T-248 status to done (merged=true) in preparation for merge; next step: lint tasks_state and push final commit.
