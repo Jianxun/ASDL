@@ -25,15 +25,22 @@
 - 2026-01-31 03:10 — Ran pytest tests/unit_tests/docs/test_sphinx_library_directive.py -v; result: PASS; next step run Sphinx build verify.
 - 2026-01-31 03:14 — Adjusted library file collection defaults (skip _archive, prefer *_doc) and excluded examples/docs/libs markdown from Sphinx sources; files: src/asdl/docs/sphinx_domain.py, examples/docs/conf.py; next step rerun Sphinx build.
 - 2026-01-31 03:14 — Ran ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html; result: SUCCESS with 1 warning (missing _static dir).
+- 2026-01-31 03:14 — Refined library file selection defaults and docs exclude_patterns; files: src/asdl/docs/sphinx_domain.py, examples/docs/conf.py; commit be64505; next step finalize status and PR.
 
 # Patch summary
+- Added deterministic ASDL library file collection with archive/doc preferences and new `asdl:library` directive rendering.
+- Added ordering unit test for library file expansion.
+- Updated examples/docs index/README and Sphinx exclude patterns to render libraries via directive without pre-generated Markdown.
 
 # PR URL
 
 # Verification
+- ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_library_directive.py -v (PASS)
+- ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html (SUCCESS; warning: missing `_static` dir)
 
 # Status request (Done / Blocked / In Progress)
 
 # Blockers / Questions
+- None.
 
 # Next steps
