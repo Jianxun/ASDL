@@ -33,6 +33,7 @@
 - 2026-01-31 00:32 — Verify check: executor provided pytest log for tests/unit_tests/docs/test_sphinx_domain.py; not re-run locally; next step: code review.
 - 2026-01-31 00:36 — Code review complete: docstring policy violation found in new Sphinx domain APIs; next step: request changes and update status.
 - 2026-01-31 00:37 — Posted PR review comment requesting docstring updates; decision: request_changes; next step: update task status + lint.
+- 2026-01-31 00:39 — Set task status to request_changes and ran ./venv/bin/python scripts/lint_tasks_state.py (OK); pushed review state; next step: await executor updates.
 
 # Patch summary
 - Added ASDL Sphinx domain with object types, roles, reference naming helpers, and stable target IDs in src/asdl/docs/sphinx_domain.py.
