@@ -262,6 +262,52 @@ if SPHINX_AVAILABLE:
             else:
                 _LOGGER.info(message, location=location)
 
+    def _render_asdl_document(
+        domain: "AsdlDomain",
+        state_document: nodes.document,
+        file_path: Path,
+    ) -> Optional[nodes.section]:
+        """Parse and render a single ASDL document for Sphinx.
+
+        Args:
+            domain: ASDL domain used to register cross-reference targets.
+            state_document: Docutils document to receive target registrations.
+            file_path: Path to the ASDL file to parse.
+
+        Returns:
+            Rendered docutils section, or ``None`` when parsing fails.
+        """
+        document, diagnostics = parse_file(str(file_path))
+        if diagnostics:
+            _report_diagnostics(diagnostics)
+        if document is None:
+            return None
+
+        docstrings = extract_docstrings_from_file(file_path)
+        doc_title = _document_title(document, file_path)
+
+        _register_document_objects(
+            domain,
+            document,
+            file_path=file_path,
+            doc_title=doc_title,
+        )
+
+        from .sphinx_render import render_docutils
+
+        rendered = render_docutils(
+            document,
+            docstrings,
+            file_path=file_path,
+            title=doc_title,
+        )
+        for section in rendered.findall(nodes.section):
+            if not section.get("ids"):
+                state_document.note_implicit_target(section)
+        for target in rendered.findall(nodes.target):
+            state_document.note_explicit_target(target)
+        return rendered
+
     def _register_document_objects(
         domain: "AsdlDomain",
         document: AsdlDocument,
@@ -361,40 +407,47 @@ if SPHINX_AVAILABLE:
                 raise AsdlDomainError("ASDL document directive requires a file path")
 
             file_path = _resolve_asdl_path(self.env.srcdir, argument)
-            document, diagnostics = parse_file(str(file_path))
-            if diagnostics:
-                _report_diagnostics(diagnostics)
-            if document is None:
-                return []
-
-            docstrings = extract_docstrings_from_file(file_path)
-            doc_title = _document_title(document, file_path)
 
             domain = self.env.get_domain(ASDL_DOMAIN_NAME)
             if not isinstance(domain, AsdlDomain):
                 raise AsdlDomainError("ASDL domain is not available")
 
-            _register_document_objects(
-                domain,
-                document,
-                file_path=file_path,
-                doc_title=doc_title,
-            )
+            rendered = _render_asdl_document(domain, self.state.document, file_path)
+            return [rendered] if rendered is not None else []
 
-            from .sphinx_render import render_docutils
+    class AsdlLibraryDirective(SphinxDirective):
+        """Render all ASDL documents under a directory."""
 
-            rendered = render_docutils(
-                document,
-                docstrings,
-                file_path=file_path,
-                title=doc_title,
-            )
-            for section in rendered.findall(nodes.section):
-                if not section.get("ids"):
-                    self.state.document.note_implicit_target(section)
-            for target in rendered.findall(nodes.target):
-                self.state.document.note_explicit_target(target)
-            return [rendered]
+        has_content = False
+        required_arguments = 1
+        optional_arguments = 0
+        final_argument_whitespace = True
+
+        def run(self) -> list[nodes.Node]:  # type: ignore[name-defined]
+            argument = self.arguments[0].strip()
+            if not argument:
+                raise AsdlDomainError("ASDL library directive requires a directory path")
+
+            library_path = _resolve_asdl_path(self.env.srcdir, argument)
+            if not library_path.exists():
+                _LOGGER.error("ASDL library path not found: %s", library_path)
+                return []
+
+            domain = self.env.get_domain(ASDL_DOMAIN_NAME)
+            if not isinstance(domain, AsdlDomain):
+                raise AsdlDomainError("ASDL domain is not available")
+
+            asdl_files = collect_asdl_library_files(library_path)
+            if not asdl_files:
+                _LOGGER.warning("No ASDL files found under: %s", library_path)
+                return []
+
+            rendered_nodes: list[nodes.Node] = []
+            for file_path in asdl_files:
+                rendered = _render_asdl_document(domain, self.state.document, file_path)
+                if rendered is not None:
+                    rendered_nodes.append(rendered)
+            return rendered_nodes
 
     def _build_directives() -> dict[str, type[SphinxDirective]]:
         directives: dict[str, type[SphinxDirective]] = {}
@@ -405,6 +458,7 @@ if SPHINX_AVAILABLE:
                 {"objtype": objtype},
             )
         directives["document"] = AsdlDocumentDirective
+        directives["library"] = AsdlLibraryDirective
         return directives
 
 

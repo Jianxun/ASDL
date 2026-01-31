@@ -19,6 +19,7 @@
 # Progress log
 - 2026-01-31 03:06 — Task intake; reviewed role instructions and task metadata; next step inspect Sphinx domain/docs.
 - 2026-01-31 03:06 — Initialized scratchpad, set T-249 in_progress, ran tasks_state lint, created feature branch `feature/T-249-sphinx-library-directive`; next step implement helper + tests.
+- 2026-01-31 03:07 — Added deterministic ASDL library file collection helper + ordering test; files: src/asdl/docs/sphinx_domain.py, tests/unit_tests/docs/test_sphinx_library_directive.py; commit 5705897; next step add library directive wiring.
 
 # Patch summary
 
