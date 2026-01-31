@@ -4,8 +4,8 @@ T-247:
   pr: 262
   merged: true
 T-248:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 263
   merged: false
 T-249:
   status: ready

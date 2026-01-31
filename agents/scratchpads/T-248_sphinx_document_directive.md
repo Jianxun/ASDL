@@ -39,3 +39,25 @@
 - 2026-01-31 10:20 — Implemented asdl:document directive, diagnostics reporting, and object registration; updated sphinx_domain helpers; next step: add integration test.
 - 2026-01-31 10:30 — Added Sphinx integration test for asdl:document registration; next step: run pytest.
 - 2026-01-31 10:35 — Ran `./venv/bin/pytest tests/unit_tests/docs/test_sphinx_document_directive.py -v` (pass); next step: commit changes.
+- 2026-01-31 10:40 — Commit 74833d0: add asdl:document directive, diagnostics reporting, and integration test; files: src/asdl/docs/sphinx_domain.py, tests/unit_tests/docs/test_sphinx_document_directive.py, agents/scratchpads/T-248_sphinx_document_directive.md, agents/context/tasks_state.yaml; next step: finalize status/PR.
+- 2026-01-31 10:50 — Opened PR https://github.com/Jianxun/ASDL/pull/263; next step: update task status + lint.
+
+## Patch summary
+- Implemented `asdl:document` directive to parse ASDL sources, log diagnostics, register domain objects, and render docutils sections with implicit targets for TOC stability.
+- Added a Sphinx integration test that builds a tiny project and asserts ASDL object registration.
+
+## PR URL
+- https://github.com/Jianxun/ASDL/pull/263
+
+## Verification
+- ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_document_directive.py -v
+
+## Status request
+- ready_for_review
+
+## Blockers / Questions
+- None.
+
+## Next steps
+- Await review.
+- 2026-01-31 11:00 — Updated T-248 status to ready_for_review (PR 263) and ran lint_tasks_state.py; next step: commit metadata updates.
