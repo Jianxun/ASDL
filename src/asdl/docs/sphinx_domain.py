@@ -108,6 +108,24 @@ def _slugify(value: str) -> str:
     return normalized or "asdl"
 
 
+def collect_asdl_library_files(root: Path) -> list[Path]:
+    """Collect ASDL files under a directory in deterministic order.
+
+    Args:
+        root: Directory (or file) to scan for ``.asdl`` sources.
+
+    Returns:
+        Sorted list of ``.asdl`` files, ordered by relative path from ``root``.
+    """
+    if root.is_file():
+        return [root] if root.suffix == ".asdl" else []
+    if not root.exists():
+        return []
+
+    candidates = [path for path in root.rglob("*.asdl") if path.is_file()]
+    return sorted(candidates, key=lambda path: path.relative_to(root).as_posix())
+
+
 try:  # pragma: no cover - exercised indirectly when Sphinx is available.
     from docutils import nodes
     from sphinx.domains import Domain, ObjType
