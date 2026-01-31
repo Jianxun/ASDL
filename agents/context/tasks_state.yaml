@@ -4,8 +4,8 @@ T-244:
   pr: 258
   merged: true
 T-245:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 259
   merged: false
 T-246:
   status: ready
