@@ -23,6 +23,10 @@
 - 2026-01-31 00:10 — Documented Sphinx build entrypoint in ASDL docs README; committed bb677b8 (Document Sphinx build command); next: run Sphinx build verification.
 - 2026-01-31 00:14 — Ran ./venv/bin/sphinx-build -b html docs docs/_build/html after installing docs requirements; build succeeded with warnings about missing toctree entries and transitions; next: summarize patch and prep PR.
 - 2026-01-31 00:20 — Opened PR https://github.com/Jianxun/ASDL/pull/260; moved T-246 to ready_for_review and re-linted task state; next: push status updates.
+- 2026-01-31 01:15 — Review intake; confirmed branch based on main and PR info present; next: set review_in_progress and run checks.
+- 2026-01-31 01:17 — Set T-246 to review_in_progress; next: run sphinx-build verify.
+- 2026-01-31 01:19 — Ran ./venv/bin/sphinx-build -b html docs docs/_build/html; build succeeded with 35 warnings (toctree not included, transitions, missing _static); next: scope/DoD check.
+- 2026-01-31 01:22 — Scope check against DoD/links.spec complete; changes limited to Sphinx config/requirements/index/README; next: finalize review decision.
 
 # Patch summary
 - Added Sphinx configuration with MyST and ASDL domain support plus docs requirements.
