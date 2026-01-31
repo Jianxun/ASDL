@@ -1,66 +1,66 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-244
-    title: Add ASDL Sphinx domain (Tier 1)
+  - id: T-247
+    title: Render ASDL docs to docutils nodes (Tier 2)
     owner: Executor
     dod: >
-      Implement a minimal Sphinx domain that registers ASDL objects (doc,
-      module, port, net, inst, var, pattern, import) with reference roles
-      matching the agreed naming scheme. Provide registration entry points
-      and stable target IDs without requiring Sphinx directives to parse
-      ASDL files yet. Include minimal unit coverage for object registration
-      and target naming. Do not touch unrelated style docs (e.g.,
-      docs/code_styles/docstrings_comments.md).
+      Add a docutils-node renderer that mirrors the Markdown layout for ASDL
+      docs (overview, imports, per-module sections, interface/variables/
+      instances/nets/patterns tables). The renderer must accept a parsed
+      ASDL document + docstring index and return a top-level docutils node
+      tree without depending on Sphinx runtime globals. Provide focused
+      unit coverage for section/table structure and basic content wiring.
+      Do not touch unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
     verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_domain.py -v
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v
     links:
-      scratchpad: agents/scratchpads/T-244_sphinx_domain.md
+      scratchpad: agents/scratchpads/T-247_sphinx_render.md
+    files:
+      - src/asdl/docs/sphinx_render.py
+      - tests/unit_tests/docs/test_sphinx_render.py
+  - id: T-248
+    title: Implement asdl:document directive (Tier 2)
+    owner: Executor
+    depends_on:
+      - T-247
+    dod: >
+      Implement an `asdl:document` directive that resolves a file path
+      relative to the Sphinx source directory, parses the ASDL file, extracts
+      docstrings, renders docutils nodes using the new renderer, and registers
+      ASDL objects with the domain for cross-references. Diagnostics from
+      parsing must surface as Sphinx warnings/errors without crashing. Add a
+      small integration test (skip if Sphinx unavailable) that exercises the
+      directive on a sample ASDL file and asserts object registration.
+      Do not touch unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_document_directive.py -v
+    links:
+      scratchpad: agents/scratchpads/T-248_sphinx_document_directive.md
     files:
       - src/asdl/docs/sphinx_domain.py
-      - src/asdl/docs/__init__.py
-      - tests/unit_tests/docs/test_sphinx_domain.py
-  - id: T-245
-    title: Emit Sphinx-friendly directives/labels in ASDL Markdown docs
+      - tests/unit_tests/docs/test_sphinx_document_directive.py
+  - id: T-249
+    title: Support library-wide directive usage in examples/docs (Tier 2)
     owner: Executor
     depends_on:
-      - T-244
+      - T-248
     dod: >
-      Extend Markdown rendering to emit MyST directives/labels that register
-      ASDL objects with the Sphinx domain (module, port, net, inst, var,
-      pattern, import, doc). Ensure cross-ref names follow the agreed
-      scheme (module::name, module::$port, file::alias) and keep output
-      Markdown valid for current docs. Add unit coverage asserting the
-      emitted directives/labels for swmatrix_Tgate_doc. Do not touch
-      unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_markdown_sphinx_refs.py -v
-    links:
-      scratchpad: agents/scratchpads/T-245_sphinx_markdown_refs.md
-    files:
-      - src/asdl/docs/markdown.py
-      - tests/unit_tests/docs/test_markdown_sphinx_refs.py
-  - id: T-246
-    title: Wire Sphinx build config for ASDL docs (Tier 1)
-    owner: Executor
-    depends_on:
-      - T-244
-      - T-245
-    dod: >
-      Add Sphinx config that loads the ASDL domain and MyST parser, includes
-      generated Markdown docs under examples/docs/libs in the toctree, and documents
-      the build entrypoint. Provide a requirements file or pyproject extras
-      to install sphinx + myst-parser. Add a smoke doc build command that
-      runs on the generated docs set. Do not touch unrelated style docs
-      (e.g., docs/code_styles/docstrings_comments.md).
+      Add a directory-capable directive or helper (e.g., `asdl:library`) that
+      expands all `.asdl` files under a given directory and renders them in
+      deterministic order.
+      Update examples/docs to use the directive for `examples/libs` so Tier 2
+      docs build without pre-generated Markdown. Provide a small test for
+      directory expansion ordering. Do not touch unrelated style docs (e.g.,
+      docs/code_styles/docstrings_comments.md).
     verify:
       - ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html
     links:
-      scratchpad: agents/scratchpads/T-246_sphinx_build_config.md
+      scratchpad: agents/scratchpads/T-249_sphinx_library_directive.md
     files:
-      - examples/docs/conf.py
+      - src/asdl/docs/sphinx_domain.py
       - examples/docs/index.rst
-      - examples/docs/requirements.txt
       - examples/docs/README.md
+      - tests/unit_tests/docs/test_sphinx_library_directive.py
 
 backlog: []

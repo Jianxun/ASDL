@@ -1,13 +1,13 @@
 schema_version: 2
-T-244:
-  status: done
-  pr: 258
-  merged: true
-T-245:
-  status: done
-  pr: 259
-  merged: true
-T-246:
-  status: done
-  pr: 260
-  merged: true
+T-247:
+  status: ready
+  pr: null
+  merged: false
+T-248:
+  status: ready
+  pr: null
+  merged: false
+T-249:
+  status: ready
+  pr: null
+  merged: false
