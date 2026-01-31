@@ -314,7 +314,7 @@ export function App() {
               snapToGrid
               snapGrid={[gridSize, gridSize]}
               defaultEdgeOptions={{
-                type: 'step',
+                type: 'smoothstep',
                 style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' },
                 pathOptions: { offset: gridSize * EDGE_STEP_OFFSET_UNITS }
               }}
@@ -433,7 +433,7 @@ function buildReactFlowGraph(
         target,
         sourceHandle,
         targetHandle: HUB_HANDLE_ID,
-        type: 'step',
+        type: 'smoothstep',
         pathOptions: { offset: gridSize * EDGE_STEP_OFFSET_UNITS },
         style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' }
       } as Edge
