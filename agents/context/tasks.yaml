@@ -10,7 +10,8 @@ current_sprint:
       matching the agreed naming scheme. Provide registration entry points
       and stable target IDs without requiring Sphinx directives to parse
       ASDL files yet. Include minimal unit coverage for object registration
-      and target naming.
+      and target naming. Do not touch unrelated style docs (e.g.,
+      docs/code_styles/docstrings_comments.md).
     verify:
       - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_domain.py -v
     links:
@@ -30,7 +31,8 @@ current_sprint:
       pattern, import, doc). Ensure cross-ref names follow the agreed
       scheme (module::name, module::$port, file::alias) and keep output
       Markdown valid for current docs. Add unit coverage asserting the
-      emitted directives/labels for swmatrix_Tgate_doc.
+      emitted directives/labels for swmatrix_Tgate_doc. Do not touch
+      unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
     verify:
       - ./venv/bin/pytest tests/unit_tests/docs/test_markdown_sphinx_refs.py -v
     links:
@@ -49,7 +51,8 @@ current_sprint:
       generated Markdown docs under docs/asdl in the toctree, and documents
       the build entrypoint. Provide a requirements file or pyproject extras
       to install sphinx + myst-parser. Add a smoke doc build command that
-      runs on the generated docs set.
+      runs on the generated docs set. Do not touch unrelated style docs
+      (e.g., docs/code_styles/docstrings_comments.md).
     verify:
       - ./venv/bin/sphinx-build -b html docs docs/_build/html
     links:
