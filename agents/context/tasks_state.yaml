@@ -1,6 +1,6 @@
 schema_version: 2
 T-244:
-  status: ready_for_review
+  status: request_changes
   pr: 257
   merged: false
 T-245:
