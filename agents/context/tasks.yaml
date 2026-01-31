@@ -1,76 +1,63 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-243
-    title: Expand literal net hubs in visualizer dump
+  - id: T-244
+    title: Add ASDL Sphinx domain (Tier 1)
     owner: Executor
     dod: >
-      Expand literal-enum net names in visualizer dumps so net hubs mirror
-      instance/endpoint literal expansions. Emit expanded net IDs and remap
-      endpoint net_id to the corresponding expansion index (default index 0)
-      when present, falling back with diagnostics if counts diverge. Ensure
-      expanded nets carry updated endpoint_ids. Add CLI unit coverage for
-      expanded nets and endpoint remapping in visualizer dumps.
+      Implement a minimal Sphinx domain that registers ASDL objects (doc,
+      module, port, net, inst, var, pattern, import) with reference roles
+      matching the agreed naming scheme. Provide registration entry points
+      and stable target IDs without requiring Sphinx directives to parse
+      ASDL files yet. Include minimal unit coverage for object registration
+      and target naming.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/cli/test_visualizer_dump.py -v
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_domain.py -v
     links:
-      scratchpad: agents/scratchpads/T-243_visualizer_expand_nethubs.md
+      scratchpad: agents/scratchpads/T-244_sphinx_domain.md
     files:
-      - src/asdl/core/dump.py
-      - tests/unit_tests/cli/test_visualizer_dump.py
-  - id: T-240
-    title: Expand literal patterns in visualizer dump + add numeric labels
-    owner: Executor
-    dod: >
-      Update visualizer dump generation to expand literal enum patterns in
-      instance names and endpoint pin names for visualization. Keep numeric
-      range patterns compact but attach per-endpoint numeric labels formatted
-      as `<3>` or tuple form `<3,1>`; join multiple slices with `;` following
-      `docs/specs/spec_asdl_pattern_expansion.md`. Ensure ota_nmos visualizer
-      dump emits endpoints for `mn_tail.<s|b>` and `mn_in_<n>.d`.
-    verify:
-      - ./venv/bin/asdlc visualizer-dump examples/libs/mosbius_devices/ota_nmos/ota_nmos.asdl
-    links:
-      scratchpad: agents/scratchpads/T-240_visualizer_literal_expand.md
-    files:
-      - src/asdl/core/dump.py
-      - src/asdl/core/registries.py
-      - src/asdl/patterns_refactor/
-  - id: T-241
-    title: Consume endpoint labels + pin label policy in extension graph
+      - src/asdl/docs/sphinx_domain.py
+      - src/asdl/docs/__init__.py
+      - tests/unit_tests/docs/test_sphinx_domain.py
+  - id: T-245
+    title: Emit Sphinx-friendly directives/labels in ASDL Markdown docs
     owner: Executor
     depends_on:
-      - T-240
+      - T-244
     dod: >
-      Extend visualizer dump types and symbol parsing to include pin label
-      policy (`label: auto|always|never`). Build GraphPayload edges with
-      optional `conn_label` and emit per-pin label data for the webview. Prefer
-      numeric `conn_label` over pin `label: always`.
+      Extend Markdown rendering to emit MyST directives/labels that register
+      ASDL objects with the Sphinx domain (module, port, net, inst, var,
+      pattern, import, doc). Ensure cross-ref names follow the agreed
+      scheme (module::name, module::$port, file::alias) and keep output
+      Markdown valid for current docs. Add unit coverage asserting the
+      emitted directives/labels for swmatrix_Tgate_doc.
     verify:
-      - cd extensions/asdl-visualizer && npm run build
+      - ./venv/bin/pytest tests/unit_tests/docs/test_markdown_sphinx_refs.py -v
     links:
-      scratchpad: agents/scratchpads/T-241_visualizer_pin_label_policy.md
+      scratchpad: agents/scratchpads/T-245_sphinx_markdown_refs.md
     files:
-      - extensions/asdl-visualizer/src/extension/types.ts
-      - extensions/asdl-visualizer/src/extension/symbols.ts
-      - examples/pdks/gf180mcu/asdl/gf180mcu.sym.yaml
-  - id: T-242
-    title: Render numeric pin labels + forced labels in webview
+      - src/asdl/docs/markdown.py
+      - tests/unit_tests/docs/test_markdown_sphinx_refs.py
+  - id: T-246
+    title: Wire Sphinx build config for ASDL docs (Tier 1)
     owner: Executor
     depends_on:
-      - T-241
+      - T-244
+      - T-245
     dod: >
-      Render connection labels at pin handles for numeric patterns, using
-      `<3>` and tuple `<3,1>` formatting and `;` joins. Honor pin `label:
-      always` by rendering net/slice labels when no numeric label exists.
-      Labels must respect symbol orientation and stay inside the body edge.
+      Add Sphinx config that loads the ASDL domain and MyST parser, includes
+      generated Markdown docs under docs/asdl in the toctree, and documents
+      the build entrypoint. Provide a requirements file or pyproject extras
+      to install sphinx + myst-parser. Add a smoke doc build command that
+      runs on the generated docs set.
     verify:
-      - cd extensions/asdl-visualizer && npm run build
+      - ./venv/bin/sphinx-build -b html docs docs/_build/html
     links:
-      scratchpad: agents/scratchpads/T-242_visualizer_pin_labels.md
+      scratchpad: agents/scratchpads/T-246_sphinx_build_config.md
     files:
-      - extensions/asdl-visualizer/src/webview/app.tsx
-      - extensions/asdl-visualizer/src/webview/styles.css
-      - extensions/asdl-visualizer/src/webview/devHarness.ts
+      - docs/conf.py
+      - docs/index.rst
+      - docs/requirements.txt
+      - docs/asdl/README.md
 
 backlog: []
