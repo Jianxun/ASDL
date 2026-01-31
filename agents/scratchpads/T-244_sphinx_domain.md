@@ -35,3 +35,4 @@
 - 2026-01-31 00:05 — Added initial unit tests for ASDL Sphinx domain registration + target naming (TDD); files touched: tests/unit_tests/docs/test_sphinx_domain.py; next step: implement sphinx_domain module and exports.
 - 2026-01-31 00:12 — Implemented ASDL Sphinx domain module with registration helpers, target naming, and fallback stubs; updated docs package exports; files touched: src/asdl/docs/sphinx_domain.py, src/asdl/docs/__init__.py; next step: run unit tests.
 - 2026-01-31 00:14 — Commit b7ce713 (chore: start T-244 scratchpad); files: agents/context/tasks_state.yaml, agents/scratchpads/T-244_sphinx_domain.md; next step: add tests for Sphinx domain.
+- 2026-01-31 00:15 — Commit 0c37df0 (test: cover ASDL sphinx domain helpers); files: tests/unit_tests/docs/test_sphinx_domain.py, agents/scratchpads/T-244_sphinx_domain.md; next step: implement Sphinx domain module.
