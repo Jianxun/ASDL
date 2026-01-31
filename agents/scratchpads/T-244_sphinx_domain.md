@@ -28,6 +28,11 @@
 - 2026-01-31 00:17 — Verified tests: ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_domain.py -v (pass); next step: update scratchpad summary and prep PR.
 - 2026-01-31 00:18 — Opened PR https://github.com/Jianxun/ASDL/pull/257; next step: update task status to ready_for_review.
 - 2026-01-31 00:19 — Set task status to ready_for_review (PR 257) and ran ./venv/bin/python scripts/lint_tasks_state.py (OK); next step: push updated scratchpad/state.
+- 2026-01-31 00:28 — Review intake: confirmed PR #257 targets main and includes required files/logs; set status to review_in_progress; next step: scope + code review.
+- 2026-01-31 00:31 — Scope check complete: changes limited to task files + scratchpad/state; links.spec not present; next step: verify checks/logs.
+- 2026-01-31 00:32 — Verify check: executor provided pytest log for tests/unit_tests/docs/test_sphinx_domain.py; not re-run locally; next step: code review.
+- 2026-01-31 00:36 — Code review complete: docstring policy violation found in new Sphinx domain APIs; next step: request changes and update status.
+- 2026-01-31 00:37 — Posted PR review comment requesting docstring updates; decision: request_changes; next step: update task status + lint.
 
 # Patch summary
 - Added ASDL Sphinx domain with object types, roles, reference naming helpers, and stable target IDs in src/asdl/docs/sphinx_domain.py.
