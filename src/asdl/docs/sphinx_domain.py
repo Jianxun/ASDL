@@ -108,11 +108,18 @@ def _slugify(value: str) -> str:
     return normalized or "asdl"
 
 
-def collect_asdl_library_files(root: Path) -> list[Path]:
+def collect_asdl_library_files(
+    root: Path,
+    *,
+    include_archive: bool = False,
+    prefer_doc: bool = True,
+) -> list[Path]:
     """Collect ASDL files under a directory in deterministic order.
 
     Args:
         root: Directory (or file) to scan for ``.asdl`` sources.
+        include_archive: Whether to include ``_archive`` directories.
+        prefer_doc: Prefer ``*_doc.asdl`` files over sibling ``*.asdl`` files.
 
     Returns:
         Sorted list of ``.asdl`` files, ordered by relative path from ``root``.
@@ -122,7 +129,23 @@ def collect_asdl_library_files(root: Path) -> list[Path]:
     if not root.exists():
         return []
 
-    candidates = [path for path in root.rglob("*.asdl") if path.is_file()]
+    candidates = []
+    for path in root.rglob("*.asdl"):
+        if not path.is_file():
+            continue
+        if not include_archive and "_archive" in path.parts:
+            continue
+        candidates.append(path)
+
+    if prefer_doc:
+        doc_overrides: set[Path] = set()
+        for path in candidates:
+            if not path.stem.endswith("_doc"):
+                continue
+            base_stem = path.stem[: -len("_doc")]
+            base_path = path.with_name(f"{base_stem}{path.suffix}")
+            doc_overrides.add(base_path)
+        candidates = [path for path in candidates if path not in doc_overrides]
     return sorted(candidates, key=lambda path: path.relative_to(root).as_posix())
 
 

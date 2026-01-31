@@ -21,6 +21,10 @@
 - 2026-01-31 03:06 — Initialized scratchpad, set T-249 in_progress, ran tasks_state lint, created feature branch `feature/T-249-sphinx-library-directive`; next step implement helper + tests.
 - 2026-01-31 03:07 — Added deterministic ASDL library file collection helper + ordering test; files: src/asdl/docs/sphinx_domain.py, tests/unit_tests/docs/test_sphinx_library_directive.py; commit 5705897; next step add library directive wiring.
 - 2026-01-31 03:08 — Implemented reusable ASDL document renderer and added asdl:library directive wiring; file: src/asdl/docs/sphinx_domain.py; commit 4a0fc87; next step update examples/docs to use directive.
+- 2026-01-31 03:09 — Updated examples/docs index and README to use asdl:library directive; files: examples/docs/index.rst, examples/docs/README.md; commit 84c3b11; next step run tests/verification.
+- 2026-01-31 03:10 — Ran pytest tests/unit_tests/docs/test_sphinx_library_directive.py -v; result: PASS; next step run Sphinx build verify.
+- 2026-01-31 03:14 — Adjusted library file collection defaults (skip _archive, prefer *_doc) and excluded examples/docs/libs markdown from Sphinx sources; files: src/asdl/docs/sphinx_domain.py, examples/docs/conf.py; next step rerun Sphinx build.
+- 2026-01-31 03:14 — Ran ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html; result: SUCCESS with 1 warning (missing _static dir).
 
 # Patch summary
 
