@@ -40,3 +40,5 @@
 - 2026-01-31 00:00 — Drafted Sphinx domain helpers with stable target ids and registry; added exports in docs __init__; next step add unit tests.
 - 2026-01-31 00:00 — Added unit tests for target naming and registration; next step run verify.
 - 2026-01-31 00:00 — Ran pytest for docs domain tests; all passed; next step commit changes.
+- 2026-01-31 00:00 — Committed Sphinx domain helpers (c08fd7e); next step commit tests + task state.
+- 2026-01-31 00:00 — Committed unit tests and task tracking updates (c87ea62); next step update scratchpad and closeout.
