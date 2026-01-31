@@ -4,7 +4,7 @@ T-247:
   pr: 262
   merged: true
 T-248:
-  status: review_in_progress
+  status: review_clean
   pr: 263
   merged: false
 T-249:
