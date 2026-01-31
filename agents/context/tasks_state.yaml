@@ -8,6 +8,6 @@ T-245:
   pr: 259
   merged: true
 T-246:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
