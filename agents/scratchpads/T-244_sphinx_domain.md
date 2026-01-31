@@ -26,6 +26,8 @@
 - 2026-01-31 00:15 — Commit 0c37df0 (test: cover ASDL sphinx domain helpers); files: tests/unit_tests/docs/test_sphinx_domain.py, agents/scratchpads/T-244_sphinx_domain.md; next step: implement Sphinx domain module.
 - 2026-01-31 00:16 — Commit d323c7a (feat: add ASDL sphinx domain); files: src/asdl/docs/sphinx_domain.py, src/asdl/docs/__init__.py, agents/scratchpads/T-244_sphinx_domain.md; next step: run unit tests.
 - 2026-01-31 00:17 — Verified tests: ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_domain.py -v (pass); next step: update scratchpad summary and prep PR.
+- 2026-01-31 00:18 — Opened PR https://github.com/Jianxun/ASDL/pull/257; next step: update task status to ready_for_review.
+- 2026-01-31 00:19 — Set task status to ready_for_review (PR 257) and ran ./venv/bin/python scripts/lint_tasks_state.py (OK); next step: push updated scratchpad/state.
 
 # Patch summary
 - Added ASDL Sphinx domain with object types, roles, reference naming helpers, and stable target IDs in src/asdl/docs/sphinx_domain.py.
@@ -33,15 +35,16 @@
 - Added unit tests for domain registration and target naming in tests/unit_tests/docs/test_sphinx_domain.py.
 
 # PR URL
+https://github.com/Jianxun/ASDL/pull/257
 
 # Verification
 - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_domain.py -v
 
 # Status request (Done / Blocked / In Progress)
-- In Progress
+- Ready for review
 
 # Blockers / Questions
 - None.
 
 # Next steps
-- Open PR and update task status to ready_for_review.
+- Await reviewer feedback.
