@@ -52,3 +52,9 @@
 - 2026-01-31 00:00 — Opened PR https://github.com/Jianxun/ASDL/pull/259; next step update task state to ready_for_review.
 - 2026-01-31 00:00 — Set T-245 status to ready_for_review (PR 259) and ran lint_tasks_state.py; next step finalize closeout.
 - 2026-01-31 00:00 — Committed task state + scratchpad updates (6d6a685); next step push branch.
+- 2026-01-31 00:54 — Review intake; confirmed PR targets main and DoD scope; set T-245 to review_in_progress and ran lint_tasks_state.py; next step inspect code/tests.
+- 2026-01-31 00:54 — Completed scope review against DoD (markdown renderer + test + state/scratchpad only); no out-of-scope changes found; next step validate test evidence.
+- 2026-01-31 00:54 — Verified executor test log for ./venv/bin/pytest tests/unit_tests/docs/test_markdown_sphinx_refs.py -v; did not rerun locally; next step finalize review decision.
+- 2026-01-31 00:54 — Review decision: clean; posted PR comment; next step set status review_clean and begin merge/closeout.
+- 2026-01-31 00:54 — Set T-245 status to review_clean and ran lint_tasks_state.py; next step merge PR and close out.
+- 2026-01-31 00:54 — Set T-245 status to done (merged true) and ran lint_tasks_state.py; next step commit review/closeout updates and merge PR.
