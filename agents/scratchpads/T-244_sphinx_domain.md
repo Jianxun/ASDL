@@ -34,17 +34,23 @@
 - 2026-01-31 00:36 — Code review complete: docstring policy violation found in new Sphinx domain APIs; next step: request changes and update status.
 - 2026-01-31 00:37 — Posted PR review comment requesting docstring updates; decision: request_changes; next step: update task status + lint.
 - 2026-01-31 00:39 — Set task status to request_changes and ran ./venv/bin/python scripts/lint_tasks_state.py (OK); pushed review state; next step: await executor updates.
+- 2026-01-31 01:10 — Review follow-up: expanded public API docstrings to Google-style sections; files touched: src/asdl/docs/sphinx_domain.py; next step: update task status and lint.
+- 2026-01-31 01:12 — Commit 4a760ae (chore: set T-244 in progress); files: agents/context/tasks_state.yaml; next step: commit docstring updates.
+- 2026-01-31 01:13 — Commit dd79c2e (docs: expand ASDL sphinx domain docstrings); files: src/asdl/docs/sphinx_domain.py; next step: set task status to ready_for_review.
+- 2026-01-31 01:14 — Commit 60227fe (chore: set T-244 ready for review) and ran ./venv/bin/python scripts/lint_tasks_state.py (OK); next step: notify reviewer.
 
 # Patch summary
 - Added ASDL Sphinx domain with object types, roles, reference naming helpers, and stable target IDs in src/asdl/docs/sphinx_domain.py.
 - Exported domain helpers via src/asdl/docs/__init__.py.
 - Added unit tests for domain registration and target naming in tests/unit_tests/docs/test_sphinx_domain.py.
+- Expanded Google-style docstrings for ASDL Sphinx domain public APIs in src/asdl/docs/sphinx_domain.py.
 
 # PR URL
 https://github.com/Jianxun/ASDL/pull/257
 
 # Verification
 - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_domain.py -v
+- Not re-run for docstring-only updates (latest run still from 2026-01-31).
 
 # Status request (Done / Blocked / In Progress)
 - Ready for review
