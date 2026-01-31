@@ -35,6 +35,7 @@
 - 2026-01-31 00:35 — Scope review complete: changes align with T-244 DoD; no links.spec present; next step implementation review.
 - 2026-01-31 00:35 — Implementation review complete: no blockers found; next step post PR comment and mark review_clean.
 - 2026-01-31 00:36 — Posted review comment and set T-244 review_clean; ran lint_tasks_state.py; next step merge and closeout.
+- 2026-01-31 00:36 — Set T-244 done (merged true) and ran lint_tasks_state.py; next step merge PR and clean branches.
 
 ## Patch summary
 - Added ASDL Sphinx domain module with target id helpers, registry, and minimal directives.
