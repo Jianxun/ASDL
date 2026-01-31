@@ -10,7 +10,10 @@ Build docs with:
 .. toctree::
    :maxdepth: 2
    :caption: ASDL Library Docs
-   :glob:
 
    README
-   libs/*
+
+ASDL Library Docs
+-----------------
+
+.. asdl:library:: ../libs

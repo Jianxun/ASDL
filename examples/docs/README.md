@@ -1,10 +1,11 @@
 # ASDL Library Docs
 
-This directory holds generated Markdown documentation for ASDL libraries under
-`examples/libs/`. The renderer pulls comment-based docstrings from ASDL YAML
-files and formats them into module-level reference docs.
+This directory holds Sphinx documentation for ASDL libraries under
+`examples/libs/`. The docs build directly from the source `.asdl` files via the
+``asdl:library`` directive, which renders the docstrings into module-level
+reference docs without pre-generated Markdown.
 
-## Generate docs
+## Optional: generate Markdown
 
 ```bash
 venv/bin/python scripts/gen_asdl_docs.py \
