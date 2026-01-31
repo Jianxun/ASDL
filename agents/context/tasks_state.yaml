@@ -8,6 +8,6 @@ T-248:
   pr: 263
   merged: true
 T-249:
-  status: ready_for_review
+  status: done
   pr: 264
-  merged: false
+  merged: true

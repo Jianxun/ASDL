@@ -28,6 +28,13 @@
 - 2026-01-31 03:14 — Refined library file selection defaults and docs exclude_patterns; files: src/asdl/docs/sphinx_domain.py, examples/docs/conf.py; commit be64505; next step finalize status and PR.
 - 2026-01-31 03:16 — Opened PR https://github.com/Jianxun/ASDL/pull/264; next step set task status ready_for_review.
 - 2026-01-31 03:16 — Set T-249 status to ready_for_review (PR 264) and ran tasks_state linter; next step await review.
+- 2026-01-31 03:19 — Review intake: PR targets main, scratchpad/verify logs present; next step set review_in_progress and begin checks.
+- 2026-01-31 03:19 — Set T-249 status to review_in_progress, ran tasks_state linter; next step scope review and code inspection.
+- 2026-01-31 03:20 — Scope review complete against DoD/links.spec (none present); changes confined to Sphinx domain + examples docs + test; next step verify logs and inspect implementation.
+- 2026-01-31 03:20 — Verified executor logs for pytest + Sphinx build; no additional local runs; next step finalize code review and decision.
+- 2026-01-31 03:20 — Review decision: clean; posted PR comment with test status; next step set review_clean and merge/closeout.
+- 2026-01-31 03:20 — Set T-249 status to review_clean, ran tasks_state linter; next step merge and closeout.
+- 2026-01-31 03:21 — Set T-249 status to done (merged true) and ran tasks_state linter; next step commit and merge PR.
 
 # Patch summary
 - Added deterministic ASDL library file collection with archive/doc preferences and new `asdl:library` directive rendering.
