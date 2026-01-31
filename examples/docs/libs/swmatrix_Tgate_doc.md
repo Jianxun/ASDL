@@ -1,5 +1,9 @@
 # swmatrix_Tgate
 
+(swmatrix_Tgate_doc_doc)=
+```{asdl:doc} swmatrix_Tgate_doc_doc
+```
+
 ## Overview
 Switch Matrix Tgate (swmatrix_Tgate)
 Power: VDDd (3.3V), VSSd (0V)
@@ -10,6 +14,13 @@ Specs:
   - Cpar < 20 fF
 
 ## Imports
+
+```{asdl:import} swmatrix_Tgate_doc::gf_std
+```
+
+```{asdl:import} swmatrix_Tgate_doc::gf
+```
+
 | Alias | Path | Description |
 | --- | --- | --- |
 | gf_std | gf180mcu_std.asdl | GF180 standard cell library |
@@ -17,10 +28,32 @@ Specs:
 
 ## Module `swmatrix_Tgate`
 
+```{asdl:module} swmatrix_Tgate
+```
+
 ### Notes
 Transmission-gate switch with control logic.
 
 ### Interface
+
+```{asdl:port} swmatrix_Tgate::$VDDd
+```
+
+```{asdl:port} swmatrix_Tgate::$VSSd
+```
+
+```{asdl:port} swmatrix_Tgate::$control
+```
+
+```{asdl:port} swmatrix_Tgate::$enable
+```
+
+```{asdl:port} swmatrix_Tgate::$T1
+```
+
+```{asdl:port} swmatrix_Tgate::$T2
+```
+
 | Name | Kind | Direction | Description |
 | --- | --- | --- | --- |
 | $VDDd |  |  | nominal 3.3V |
@@ -31,6 +64,16 @@ Transmission-gate switch with control logic.
 | $T2 |  |  | Tgate analog terminal 2 |
 
 ### Variables
+
+```{asdl:var} swmatrix_Tgate::L
+```
+
+```{asdl:var} swmatrix_Tgate::W
+```
+
+```{asdl:var} swmatrix_Tgate::NF
+```
+
 | Name | Default | Description |
 | --- | --- | --- |
 | L | 0.28u | gate length |
@@ -38,6 +81,22 @@ Transmission-gate switch with control logic.
 | NF | 6 | fingers |
 
 ### Instances
+
+```{asdl:inst} swmatrix_Tgate::inv1
+```
+
+```{asdl:inst} swmatrix_Tgate::inv2
+```
+
+```{asdl:inst} swmatrix_Tgate::nand2
+```
+
+```{asdl:inst} swmatrix_Tgate::mn
+```
+
+```{asdl:inst} swmatrix_Tgate::mp
+```
+
 | Instance | Ref | Params | Description |
 | --- | --- | --- | --- |
 | inv1 | gf_std.inv_1 |  |  |
@@ -48,6 +107,28 @@ Transmission-gate switch with control logic.
 
 ### Nets
 #### Power
+
+```{asdl:net} swmatrix_Tgate::$VDDd
+```
+
+```{asdl:net} swmatrix_Tgate::$VSSd
+```
+
+```{asdl:net} swmatrix_Tgate::$control
+```
+
+```{asdl:net} swmatrix_Tgate::$enable
+```
+
+```{asdl:net} swmatrix_Tgate::net1
+```
+
+```{asdl:net} swmatrix_Tgate::gated_control
+```
+
+```{asdl:net} swmatrix_Tgate::gated_controlb
+```
+
 | Name | Endpoints | Description |
 | --- | --- | --- |
 | $VDDd | <inv1\|inv2\|nand2>.<VPWR\|VNB>, mp.b | nominal 3.3V |
@@ -58,6 +139,13 @@ Transmission-gate switch with control logic.
 | gated_control | inv1.Y, inv2.A, mn.g |  |
 | gated_controlb | inv2.Y, mp.g |  |
 #### Analog terminals
+
+```{asdl:net} swmatrix_Tgate::$T1
+```
+
+```{asdl:net} swmatrix_Tgate::$T2
+```
+
 | Name | Endpoints | Description |
 | --- | --- | --- |
 | $T1 | <mn\|mp>.d | Tgate analog terminal 1 |
