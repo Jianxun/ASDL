@@ -16,7 +16,7 @@
 - Run verify command.
 ## Todo
 - [x] Add tests for MyST directives/labels in swmatrix_Tgate_doc output.
-- [ ] Update Markdown renderer to emit ASDL domain directives/labels.
+- [x] Update Markdown renderer to emit ASDL domain directives/labels.
 - [ ] Run verify command.
 
 # Progress log
@@ -34,3 +34,5 @@
 # Next steps
 - 2026-01-31 00:00 — Task intake; confirmed T-245 ready; read contract/lessons/project_status; next step inspect markdown renderer + tests.
 - 2026-01-31 00:00 — Added unit test for MyST directives/labels in swmatrix_Tgate doc output; files touched: tests/unit_tests/docs/test_markdown_sphinx_refs.py; next step update markdown renderer.
+- 2026-01-31 00:00 — Committed test coverage for Sphinx directives/labels (22b1425); next step update markdown renderer.
+- 2026-01-31 00:00 — Updated markdown renderer to emit ASDL MyST directives/labels for docs, modules, imports, and module members; files touched: src/asdl/docs/markdown.py; next step run tests.
