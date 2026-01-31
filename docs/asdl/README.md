@@ -14,3 +14,11 @@ venv/bin/python scripts/gen_asdl_docs.py \
 
 The generator writes one Markdown file per input source, using the input file
 stem as the output filename.
+
+## Build docs
+
+Install the docs requirements (see `docs/requirements.txt`), then build HTML:
+
+```bash
+./venv/bin/sphinx-build -b html docs docs/_build/html
+```
