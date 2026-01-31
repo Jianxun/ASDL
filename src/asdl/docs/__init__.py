@@ -19,6 +19,7 @@ from .sphinx_domain import (
     make_asdl_target_id,
     register_asdl_object,
 )
+from .sphinx_render import render_docutils
 
 __all__ = [
     "ASDL_DOMAIN_NAME",
@@ -38,4 +39,5 @@ __all__ = [
     "register_asdl_object",
     "render_markdown",
     "render_markdown_from_file",
+    "render_docutils",
 ]

@@ -1,8 +1,8 @@
 schema_version: 2
 T-247:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 262
+  merged: true
 T-248:
   status: ready
   pr: null
