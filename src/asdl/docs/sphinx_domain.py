@@ -73,7 +73,18 @@ except ImportError:  # pragma: no cover - exercised when sphinx is not installed
 
 @dataclass(frozen=True)
 class AsdlObjectEntry:
-    """Registry entry for an ASDL object reference."""
+    """Registry entry for an ASDL object reference.
+
+    Args:
+        objtype: ASDL object type string used by the domain registry.
+        name: Canonical object name stored in the registry.
+        docname: Sphinx document name where the object is defined.
+        anchor: Target anchor ID for the object reference.
+        display_name: Display label used in inventories and cross-references.
+
+    Invariants:
+        Values are stored verbatim and treated as the canonical registry record.
+    """
 
     objtype: str
     name: str
@@ -116,13 +127,35 @@ def asdl_reference_name(objtype: str, name: str, *, module: Optional[str] = None
 
 
 def asdl_object_key(objtype: str, name: str) -> str:
-    """Return the registry key for a named ASDL object."""
+    """Return the registry key for a named ASDL object.
+
+    Args:
+        objtype: ASDL object type string.
+        name: Canonical object name.
+
+    Returns:
+        Registry key formatted as ``<objtype>:<name>``.
+
+    Side Effects:
+        Validates ``objtype`` against the configured ASDL object types.
+    """
     _validate_objtype(objtype)
     return f"{objtype}:{name}"
 
 
 def asdl_target_id(objtype: str, name: str) -> str:
-    """Return a stable target ID for an ASDL object reference."""
+    """Return a stable target ID for an ASDL object reference.
+
+    Args:
+        objtype: ASDL object type string.
+        name: Canonical object name.
+
+    Returns:
+        Normalized target identifier prefixed with ``asdl-``.
+
+    Side Effects:
+        Validates ``objtype`` against the configured ASDL object types.
+    """
     _validate_objtype(objtype)
     normalized = _normalize_target(name)
     return f"asdl-{objtype}-{normalized}"
@@ -137,7 +170,22 @@ def register_asdl_object(
     display_name: Optional[str] = None,
     anchor: Optional[str] = None,
 ) -> AsdlObjectEntry:
-    """Register an ASDL object entry in the provided registry."""
+    """Register an ASDL object entry in the provided registry.
+
+    Args:
+        registry: Mutable registry mapping keys to object entries.
+        objtype: ASDL object type string.
+        name: Canonical object name.
+        docname: Sphinx document name where the object is defined.
+        display_name: Optional display label for inventories or xrefs.
+        anchor: Optional explicit anchor target ID.
+
+    Returns:
+        The newly created registry entry.
+
+    Side Effects:
+        Mutates ``registry`` by inserting the entry for the object key.
+    """
     _validate_objtype(objtype)
     target = anchor or asdl_target_id(objtype, name)
     entry = AsdlObjectEntry(
@@ -169,7 +217,21 @@ class AsdlDomain(Domain):
         display_name: Optional[str] = None,
         anchor: Optional[str] = None,
     ) -> AsdlObjectEntry:
-        """Register an ASDL object in the domain data store."""
+        """Register an ASDL object in the domain data store.
+
+        Args:
+            objtype: ASDL object type string.
+            name: Canonical object name.
+            docname: Sphinx document name where the object is defined.
+            display_name: Optional display label for inventories or xrefs.
+            anchor: Optional explicit anchor target ID.
+
+        Returns:
+            The registry entry stored for the object.
+
+        Side Effects:
+            Updates the domain ``objects`` registry and ``docnames`` index.
+        """
         entry = register_asdl_object(
             self.data["objects"],
             objtype,
@@ -192,7 +254,21 @@ class AsdlDomain(Domain):
         display_name: Optional[str] = None,
         anchor: Optional[str] = None,
     ) -> AsdlObjectEntry:
-        """Alias for register_object to match Sphinx naming conventions."""
+        """Alias for register_object to match Sphinx naming conventions.
+
+        Args:
+            objtype: ASDL object type string.
+            name: Canonical object name.
+            docname: Sphinx document name where the object is defined.
+            display_name: Optional display label for inventories or xrefs.
+            anchor: Optional explicit anchor target ID.
+
+        Returns:
+            The registry entry stored for the object.
+
+        Side Effects:
+            Updates the domain ``objects`` registry and ``docnames`` index.
+        """
         return self.register_object(
             objtype,
             name,
@@ -202,7 +278,17 @@ class AsdlDomain(Domain):
         )
 
     def clear_doc(self, docname: str) -> None:
-        """Remove all ASDL objects associated with a document."""
+        """Remove all ASDL objects associated with a document.
+
+        Args:
+            docname: Sphinx document name whose objects should be removed.
+
+        Returns:
+            None.
+
+        Side Effects:
+            Deletes entries from the domain ``objects`` registry and ``docnames`` index.
+        """
         keys = self.data["docnames"].pop(docname, set())
         for key in keys:
             self.data["objects"].pop(key, None)
@@ -259,7 +345,17 @@ class AsdlDomain(Domain):
 
 
 def setup(app: "Sphinx") -> dict[str, object]:
-    """Register the ASDL Sphinx domain extension."""
+    """Register the ASDL Sphinx domain extension.
+
+    Args:
+        app: Sphinx application instance used to register the domain.
+
+    Returns:
+        Extension metadata describing parallel safety.
+
+    Side Effects:
+        Registers :class:`AsdlDomain` with the Sphinx application.
+    """
     if not _SPHINX_AVAILABLE:
         raise RuntimeError("Sphinx is required to register the ASDL domain")
     app.add_domain(AsdlDomain)
