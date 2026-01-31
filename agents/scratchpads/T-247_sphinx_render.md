@@ -46,3 +46,10 @@ Done
 - 2026-01-31 02:36 — Commit 83dcefc: add docutils renderer + unit tests + export; next step: update verification and status.
 - 2026-01-31 02:37 — Pushed branch and opened PR https://github.com/Jianxun/ASDL/pull/262; next step: set task to ready_for_review.
 - 2026-01-31 02:37 — Set T-247 status to ready_for_review with PR 262 and ran `./venv/bin/python scripts/lint_tasks_state.py`; next step: finalize response.
+- 2026-01-31 02:40 — Review intake: confirmed PR #262 targets main, scratchpad/testing info present; next step: set status to review_in_progress and run checks.
+- 2026-01-31 02:40 — Set T-247 status to review_in_progress and ran `./venv/bin/python scripts/lint_tasks_state.py`; next step: execute required tests.
+- 2026-01-31 02:40 — Ran `./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v` (pass); next step: complete scope/code review.
+- 2026-01-31 02:41 — Updated PR title/body to include task ID; next step: finalize scope/code review.
+- 2026-01-31 02:41 — Scope review: changes align with DoD and no unrelated docs touched; next step: finalize code review decision.
+- 2026-01-31 02:42 — Code review complete with no blockers; next step: post PR comment and proceed to merge/closeout.
+- 2026-01-31 02:42 — Set T-247 status to review_clean, ran lint, and posted PR review comment; next step: merge/closeout.
