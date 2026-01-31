@@ -53,3 +53,4 @@ Done
 - 2026-01-31 02:41 — Scope review: changes align with DoD and no unrelated docs touched; next step: finalize code review decision.
 - 2026-01-31 02:42 — Code review complete with no blockers; next step: post PR comment and proceed to merge/closeout.
 - 2026-01-31 02:42 — Set T-247 status to review_clean, ran lint, and posted PR review comment; next step: merge/closeout.
+- 2026-01-31 02:42 — Set T-247 status to done (merged true) and ran lint; next step: commit/push and merge PR.
