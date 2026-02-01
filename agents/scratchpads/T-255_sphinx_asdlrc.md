@@ -34,3 +34,23 @@
 - 2026-02-01 09:32 — Implemented .asdlrc discovery/merge for Sphinx depgraph builds; files touched: src/asdl/docs/sphinx_domain.py; commit 027332f; next step update docs note.
 - 2026-02-01 09:35 — Documented .asdlrc support in examples/docs README; files touched: examples/docs/README.md; commit 1acd210; next step run verify tests.
 - 2026-02-01 09:38 — Verified new Sphinx .asdlrc coverage; command `./venv/bin/pytest tests/unit_tests/docs/test_sphinx_asdlrc.py -v`; result: pass; next step finalize scratchpad and PR.
+
+# Patch summary
+- Added Sphinx .asdlrc-aware config path resolution, env merge, and lib_roots propagation for depgraph builds.
+- Added Sphinx project manifest + .asdlrc unit test fixture to ensure imports resolve without AST-010.
+- Documented .asdlrc lib_roots/env support in examples docs README.
+
+# PR URL
+- Pending.
+
+# Verification
+- ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_asdlrc.py -v
+
+# Status request
+- In Progress
+
+# Blockers / Questions
+- None.
+
+# Next steps
+- Open PR and update tasks_state to ready_for_review.
