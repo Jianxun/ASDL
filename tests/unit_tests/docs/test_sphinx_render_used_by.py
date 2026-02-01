@@ -41,7 +41,10 @@ def test_sphinx_render_links_used_by_and_disambiguation(tmp_path: Path) -> None:
     entry_path = tmp_path / "entry.asdl"
 
     lib1_path.write_text(
-        "modules:\n  Child: {}\n  Dup: {}\n",
+        "top: Child\n"
+        "modules:\n"
+        "  Child: {}\n"
+        "  Dup: {}\n",
         encoding="utf-8",
     )
     lib2_path.write_text("modules:\n  Dup: {}\n", encoding="utf-8")
@@ -49,6 +52,7 @@ def test_sphinx_render_links_used_by_and_disambiguation(tmp_path: Path) -> None:
         "imports:\n"
         "  lib1: ./lib1.asdl\n"
         "  lib2: ./lib2.asdl\n"
+        "top: Top\n"
         "modules:\n"
         "  Top:\n"
         "    instances:\n"

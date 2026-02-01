@@ -39,3 +39,5 @@ Verify:
 # Next steps
 - 2026-01-31 22:08 — Task intake, set T-253 in_progress, created scratchpad, ran task state linter; files: agents/context/tasks_state.yaml, agents/scratchpads/T-253_sphinx_used_by.md; next step: add tests for used-by + links.
 - 2026-01-31 22:16 — Added unit tests for used-by rendering, instance links, and module-id anchors; updated Sphinx document directive expectations; files: tests/unit_tests/docs/test_sphinx_render_used_by.py, tests/unit_tests/docs/test_sphinx_document_directive.py; next step: implement renderer + Sphinx env changes.
+- 2026-01-31 22:21 — Implemented depgraph helpers, Sphinx env depgraph build, module-id anchors, instance link rendering, used-by sections, and table cell node support; files: src/asdl/docs/depgraph.py, src/asdl/docs/sphinx_domain.py, src/asdl/docs/sphinx_render.py; next step: run tests.
+- 2026-01-31 22:22 — Ran ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render_used_by.py -v (passed); next step: commit implementation and update task status.

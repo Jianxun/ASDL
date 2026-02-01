@@ -493,6 +493,32 @@ def _instance_identifier(module_id: str, name: str) -> str:
     return f"{module_id}:{name}"
 
 
+def module_identifier(name: str, file_id: str) -> str:
+    """Build a stable module identifier from a name and file_id.
+
+    Args:
+        name: Module name.
+        file_id: Normalized file identifier string.
+
+    Returns:
+        Stable module identifier using the `name__hash8` format.
+    """
+    return _module_identifier(name, file_id)
+
+
+def instance_identifier(module_id: str, name: str) -> str:
+    """Build a stable instance identifier.
+
+    Args:
+        module_id: Owning module identifier.
+        name: Instance name.
+
+    Returns:
+        Instance identifier string.
+    """
+    return _instance_identifier(module_id, name)
+
+
 def _file_to_dict(item: DepGraphFile) -> dict:
     """Convert a DepGraphFile to a JSON-serializable mapping."""
     return {"file_id": item.file_id, "entry": item.entry}
@@ -571,4 +597,6 @@ __all__ = [
     "build_dependency_graph",
     "dependency_graph_to_jsonable",
     "dump_dependency_graph",
+    "instance_identifier",
+    "module_identifier",
 ]
