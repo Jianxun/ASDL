@@ -39,11 +39,17 @@ Verify:
 - 2026-01-31 22:33 — Scope review complete against T-253 DoD/links.spec (none present); changes limited to depgraph helpers, Sphinx domain/rendering, tests, and task metadata; next step: verify logs and inspect implementation details.
 - 2026-01-31 22:34 — Verified executor log for pytest in scratchpad; no rerun; next step: implementation review.
 - 2026-01-31 22:36 — Implementation review found duplicate Used-by entries when multiple instances reference the same module; posted PR comment requesting dedupe and set T-253 request_changes; ran task state linter; next step: await executor fix.
+- 2026-02-01 09:10 — Added duplicate-instance coverage for used-by dedupe; file: tests/unit_tests/docs/test_sphinx_render_used_by.py; next step: commit test.
+- 2026-02-01 09:11 — Commit ac853b2 "test: cover used-by dedupe"; next step: dedupe parent module ids in render/index.
+- 2026-02-01 09:14 — Deduped parents_by_module entries to prevent duplicate used-by rows; file: src/asdl/docs/sphinx_render.py; next step: run tests.
+- 2026-02-01 09:15 — Ran ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render_used_by.py -v (passed); next step: commit fix.
+- 2026-02-01 09:16 — Commit 53bc83c "fix: dedupe used-by parents"; next step: update task state + respond on PR.
 
 # Patch summary
 - Added depgraph helpers for module/instance identifiers and stored dependency graphs in Sphinx env from the project manifest.
 - Updated Sphinx doc rendering to use module_id anchors, link instance refs, render used-by sections, and support node cells in tables.
 - Added unit coverage for used-by/link rendering and updated document directive expectations.
+- Deduped parent module ids before rendering used-by sections and added coverage for duplicate instances.
 
 # PR URL
 https://github.com/Jianxun/ASDL/pull/269

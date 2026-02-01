@@ -12,7 +12,7 @@ T-252:
   pr: 268
   merged: true
 T-253:
-  status: request_changes
+  status: ready_for_review
   pr: 269
   merged: false
 T-254:
