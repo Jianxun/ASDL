@@ -377,6 +377,20 @@ def _render_module(
         _append_paragraphs(notes, module_doc)
         section += notes
 
+    pattern_rows = _build_pattern_rows(name, module, docstrings)
+    if pattern_rows:
+        pattern_section = _section("Patterns")
+        pattern_names = list((module.patterns or {}).keys())
+        _append_targets(
+            pattern_section,
+            "pattern",
+            [_qualify_module_name(name, pattern_name) for pattern_name in pattern_names],
+        )
+        table = _render_table(["Name", "Expression", "Axis", "Description"], pattern_rows)
+        if table is not None:
+            pattern_section += table
+        section += pattern_section
+
     interface_rows = _build_interface_rows(name, module, docstrings)
     if interface_rows:
         interface_section = _section("Interface")
@@ -386,7 +400,7 @@ def _render_module(
             "port",
             [_qualify_module_name(name, port_name) for port_name in port_names],
         )
-        table = _render_table(["Name", "Kind", "Direction", "Description"], interface_rows)
+        table = _render_table(["Name", "Description"], interface_rows)
         if table is not None:
             interface_section += table
         section += interface_section
@@ -433,20 +447,6 @@ def _render_module(
     if net_section is not None:
         section += net_section
 
-    pattern_rows = _build_pattern_rows(name, module, docstrings)
-    if pattern_rows:
-        pattern_section = _section("Patterns")
-        pattern_names = list((module.patterns or {}).keys())
-        _append_targets(
-            pattern_section,
-            "pattern",
-            [_qualify_module_name(name, pattern_name) for pattern_name in pattern_names],
-        )
-        table = _render_table(["Name", "Expression", "Axis", "Description"], pattern_rows)
-        if table is not None:
-            pattern_section += table
-        section += pattern_section
-
     return section
 
 
@@ -459,7 +459,7 @@ def _build_interface_rows(
         if not net_name.startswith("$"):
             continue
         doc = _docstring_text(docstrings, ("modules", module_name, "nets", net_name))
-        rows.append((net_name, "", "", doc or ""))
+        rows.append((net_name, doc or ""))
     return rows
 
 
