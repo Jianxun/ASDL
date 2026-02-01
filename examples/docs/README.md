@@ -20,6 +20,10 @@ Install the docs requirements (see `examples/docs/requirements.txt`), then build
 ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html
 ```
 
+Docs builds honor `.asdlrc` (discovered next to `project.yaml`, or via the
+`asdl_project_config` override in `conf.py`) so `lib_roots` and `env` entries
+apply to import resolution.
+
 ## Theme
 
 The docs use the Read the Docs Sphinx theme (`sphinx-rtd-theme`) for HTML output.
