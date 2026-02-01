@@ -21,3 +21,5 @@
 - 2026-02-01 00:02 — Committed task prep scratchpad/status updates (2c4968f); files touched: agents/context/tasks_state.yaml, agents/scratchpads/T-258_sphinx_title_dedupe.md; next step commit tests.
 - 2026-02-01 00:03 — Committed title/top module test coverage (7644be1); files touched: tests/unit_tests/docs/test_sphinx_render.py, agents/scratchpads/T-258_sphinx_title_dedupe.md; next step update renderer logic.
 - 2026-02-01 00:04 — Implemented file-stem titles and Top module section rendering; files touched: src/asdl/docs/sphinx_render.py, src/asdl/docs/sphinx_domain.py; next step commit renderer changes.
+- 2026-02-01 00:05 — Committed renderer updates for file-stem titles and Top module section (395b758); files touched: src/asdl/docs/sphinx_render.py, src/asdl/docs/sphinx_domain.py, agents/scratchpads/T-258_sphinx_title_dedupe.md; next step run tests.
+- 2026-02-01 00:06 — Verified pytest tests/unit_tests/docs/test_sphinx_render.py -v (passed); next step update scratchpad summary and prep PR.
