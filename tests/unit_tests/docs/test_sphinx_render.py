@@ -42,11 +42,21 @@ def _table_headers(table: nodes.table) -> list[str]:
     return [entry.astext() for entry in row.findall(nodes.entry)]
 
 
+def _find_section(node: nodes.Node, title: str) -> nodes.section | None:
+    for section in node.findall(nodes.section):
+        if not section:
+            continue
+        if isinstance(section[0], nodes.title) and section[0].astext() == title:
+            return section
+    return None
+
+
 def test_sphinx_render_swmatrix_structure_and_content() -> None:
     rendered = _render_docutils(SWMATRIX_TGATE)
     titles = _section_titles(rendered)
 
     assert titles[0] == "swmatrix_Tgate"
+    assert "Top module" not in titles
     assert "Overview" in titles
     assert "Imports" in titles
     assert "Module `swmatrix_Tgate`" in titles
@@ -74,6 +84,12 @@ def test_sphinx_render_full_switch_sections() -> None:
     rendered = _render_docutils(FULL_SWITCH)
     titles = _section_titles(rendered)
 
+    assert titles[0] == "full_switch_matrix_130_by_25"
+    assert "Top module" in titles
+    if "Overview" in titles:
+        assert titles.index("Overview") < titles.index("Top module")
+    assert titles.index("Top module") < titles.index("Imports")
+
     patterns_index = titles.index("Patterns")
     assert patterns_index < titles.index("Interface")
     assert patterns_index < titles.index("Instances")
@@ -88,3 +104,7 @@ def test_sphinx_render_full_switch_sections() -> None:
     text = rendered.astext()
     assert "$BUS<@BUS>" in text
     assert "bus broadcast to all rows" in text
+
+    top_section = _find_section(rendered, "Top module")
+    assert top_section is not None
+    assert "full_switch_matrix_130_by_25_no_probes" in top_section.astext()

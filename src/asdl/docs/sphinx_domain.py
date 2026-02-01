@@ -490,10 +490,6 @@ if SPHINX_AVAILABLE:
         Returns:
             Title string for the rendered document.
         """
-        if document.top:
-            return document.top
-        if document.modules and len(document.modules) == 1:
-            return next(iter(document.modules.keys()))
         if file_path is not None:
             return file_path.stem
         return "ASDL Document"
