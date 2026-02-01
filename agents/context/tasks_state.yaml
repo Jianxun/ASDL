@@ -16,6 +16,6 @@ T-253:
   pr: 269
   merged: true
 T-254:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 271
   merged: false
