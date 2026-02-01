@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import os
 from pathlib import Path
 import re
 from typing import Iterable, MutableMapping, Optional, Sequence, Tuple
 
 from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
+import yaml as pyyaml
 
 from asdl.ast.models import AsdlDocument, ModuleDecl
 from asdl.ast.parser import parse_file
@@ -518,6 +520,47 @@ if SPHINX_AVAILABLE:
             else:
                 _LOGGER.info(message, location=location)
 
+    def _merge_rc_env(env: dict[str, str]) -> None:
+        """Merge rc env entries into os.environ without overriding existing keys."""
+        for key, value in env.items():
+            os.environ.setdefault(key, value)
+
+    def _resolve_project_config_path(
+        srcdir: Path, config_value: Optional[str | Path]
+    ) -> Optional[Path]:
+        """Resolve the rc config override path relative to the Sphinx source dir."""
+        if config_value is None:
+            return None
+        if isinstance(config_value, str) and config_value.strip() == "":
+            return None
+        candidate = Path(config_value)
+        if not candidate.is_absolute():
+            candidate = srcdir / candidate
+        return candidate.resolve(strict=False)
+
+    def _resolve_project_lib_roots(
+        manifest_path: Path,
+        config_path: Optional[Path],
+    ) -> list[Path]:
+        """Load .asdlrc settings for project builds and return lib roots."""
+        try:
+            from asdl.cli.config import load_asdlrc
+        except Exception as exc:  # pragma: no cover - defensive: missing optional deps
+            _LOGGER.error("Failed to load .asdlrc support: %s", exc)
+            return []
+
+        try:
+            rc_config = load_asdlrc(manifest_path, config_path=config_path)
+        except (FileNotFoundError, TypeError, ValueError, pyyaml.YAMLError) as exc:
+            _LOGGER.error("Failed to load .asdlrc: %s", exc)
+            return []
+
+        if rc_config is None:
+            return []
+
+        _merge_rc_env(rc_config.env)
+        return list(rc_config.lib_roots)
+
     def _render_asdl_document(
         domain: "AsdlDomain",
         state_document: nodes.document,
@@ -568,6 +611,8 @@ if SPHINX_AVAILABLE:
     def _store_dependency_graph(
         app: "Sphinx",
         entries: Sequence[AsdlProjectEntry],
+        *,
+        lib_roots: Optional[Sequence[Path]] = None,
     ) -> None:
         """Build and store the ASDL dependency graph on the Sphinx environment."""
         if not hasattr(app, "env"):
@@ -576,7 +621,8 @@ if SPHINX_AVAILABLE:
         graph = None
         if entries:
             graph, diagnostics = build_dependency_graph(
-                [entry.source_path for entry in entries]
+                [entry.source_path for entry in entries],
+                lib_roots=lib_roots,
             )
             if diagnostics:
                 _report_diagnostics(diagnostics)
@@ -586,6 +632,7 @@ if SPHINX_AVAILABLE:
         """Generate per-file ASDL stub pages from the project manifest."""
         srcdir = Path(app.srcdir)
         manifest_rel = app.config.asdl_project_manifest
+        config_value = app.config.asdl_project_config
         generated_dirname = app.config.asdl_project_generated_dir
         toc_filename = app.config.asdl_project_toc_filename
         manifest_path = srcdir / manifest_rel
@@ -595,6 +642,9 @@ if SPHINX_AVAILABLE:
             _store_dependency_graph(app, [])
             return
 
+        config_path = _resolve_project_config_path(srcdir, config_value)
+        lib_roots = _resolve_project_lib_roots(manifest_path, config_path)
+
         try:
             entries = collect_asdl_project_entries(
                 manifest_path,
@@ -603,12 +653,12 @@ if SPHINX_AVAILABLE:
             )
         except AsdlDomainError as exc:
             _LOGGER.error(str(exc))
-            _store_dependency_graph(app, [])
+            _store_dependency_graph(app, [], lib_roots=lib_roots)
             return
 
         if not entries:
             _LOGGER.warning("ASDL project manifest is empty: %s", manifest_path)
-            _store_dependency_graph(app, [])
+            _store_dependency_graph(app, [], lib_roots=lib_roots)
             return
 
         output_dir = srcdir / generated_dirname
@@ -617,7 +667,7 @@ if SPHINX_AVAILABLE:
             output_dir=output_dir,
             toc_filename=toc_filename,
         )
-        _store_dependency_graph(app, entries)
+        _store_dependency_graph(app, entries, lib_roots=lib_roots)
 
     def _register_document_objects(
         domain: "AsdlDomain",
@@ -895,6 +945,7 @@ def setup(app: "Sphinx") -> dict[str, object]:
 
     app.add_domain(AsdlDomain)
     app.add_config_value("asdl_project_manifest", ASDL_PROJECT_MANIFEST, "env")
+    app.add_config_value("asdl_project_config", None, "env")
     app.add_config_value(
         "asdl_project_generated_dir", ASDL_PROJECT_GENERATED_DIR, "env"
     )
