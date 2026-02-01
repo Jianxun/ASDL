@@ -8,8 +8,8 @@ T-251:
   pr: 267
   merged: true
 T-252:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 268
   merged: false
 T-253:
   status: ready
