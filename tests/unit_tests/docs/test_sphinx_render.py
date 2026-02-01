@@ -64,7 +64,7 @@ def test_sphinx_render_swmatrix_structure_and_content() -> None:
 
     headers = {tuple(_table_headers(table)) for table in rendered.findall(nodes.table)}
     assert ("Alias", "Path", "Description") in headers
-    assert ("Name", "Kind", "Direction", "Description") in headers
+    assert ("Name", "Description") in headers
     assert ("Name", "Default", "Description") in headers
     assert ("Instance", "Ref", "Params", "Description") in headers
     assert ("Name", "Endpoints", "Description") in headers
@@ -73,6 +73,11 @@ def test_sphinx_render_swmatrix_structure_and_content() -> None:
 def test_sphinx_render_full_switch_sections() -> None:
     rendered = _render_docutils(FULL_SWITCH)
     titles = _section_titles(rendered)
+
+    patterns_index = titles.index("Patterns")
+    assert patterns_index < titles.index("Interface")
+    assert patterns_index < titles.index("Instances")
+    assert patterns_index < titles.index("Nets")
 
     nets_index = titles.index("Nets")
     assert titles.index("data chain") > nets_index
