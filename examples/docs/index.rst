@@ -12,8 +12,4 @@ Build docs with:
    :caption: ASDL Library Docs
 
    README
-
-ASDL Library Docs
------------------
-
-.. asdl:library:: ../libs
+   _generated/project
