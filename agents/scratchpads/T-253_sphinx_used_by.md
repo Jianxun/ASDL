@@ -44,6 +44,12 @@ Verify:
 - 2026-02-01 09:14 — Deduped parents_by_module entries to prevent duplicate used-by rows; file: src/asdl/docs/sphinx_render.py; next step: run tests.
 - 2026-02-01 09:15 — Ran ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render_used_by.py -v (passed); next step: commit fix.
 - 2026-02-01 09:16 — Commit 53bc83c "fix: dedupe used-by parents"; next step: update task state + respond on PR.
+- 2026-02-01 10:20 — Review intake: confirmed PR targets main, scratchpad/verify logs present; set T-253 review_in_progress and ran task state linter; next step: scope + implementation review.
+- 2026-02-01 10:25 — Scope review complete against T-253 DoD/links.spec (none present); changes limited to depgraph helpers, Sphinx domain/rendering, tests, and task metadata; next step: verify logs and inspect implementation.
+- 2026-02-01 10:27 — Verified executor pytest log in scratchpad; no rerun; next step: implementation review.
+- 2026-02-01 10:35 — Implementation review complete; no blockers found; next step: post review comment and set review_clean.
+- 2026-02-01 10:40 — Posted PR review comment (clean), set T-253 review_clean, and ran task state linter; next step: merge and closeout.
+- 2026-02-01 10:45 — Set T-253 done (merged true) and ran task state linter; next step: commit/push, merge PR, and cleanup branches.
 
 # Patch summary
 - Added depgraph helpers for module/instance identifiers and stored dependency graphs in Sphinx env from the project manifest.

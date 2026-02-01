@@ -12,9 +12,9 @@ T-252:
   pr: 268
   merged: true
 T-253:
-  status: ready_for_review
+  status: done
   pr: 269
-  merged: false
+  merged: true
 T-254:
   status: ready
   pr: null
