@@ -29,6 +29,7 @@
 - 2026-01-31 21:34 — Commit f39e3b1: "feat: add depgraph-dump CLI command".
 - 2026-01-31 21:35 — Opened PR https://github.com/Jianxun/ASDL/pull/267.
 - 2026-01-31 21:35 — Set T-251 status to ready_for_review and ran scripts/lint_tasks_state.py.
+- 2026-01-31 21:35 — Commit 09644b0: "chore: update T-251 status and scratchpad".
 
 ## Patch summary
 - Added depgraph-dump CLI command with rc/lib resolution, JSON output, and diagnostics handling.
