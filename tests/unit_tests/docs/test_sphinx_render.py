@@ -55,15 +55,18 @@ def test_sphinx_render_swmatrix_structure_and_content() -> None:
     rendered = _render_docutils(SWMATRIX_TGATE)
     titles = _section_titles(rendered)
 
-    assert titles[0] == "swmatrix_Tgate"
+    assert titles[0] == "swmatrix_Tgate.asdl"
     assert "Top module" not in titles
-    assert "Overview" in titles
+    assert "Overview" not in titles
     assert "Imports" in titles
     assert "Module `swmatrix_Tgate`" in titles
+    assert "Notes" in titles
     assert "Interface" in titles
     assert "Variables" in titles
     assert "Instances" in titles
     assert "Nets" in titles
+    assert titles.index("Imports") < titles.index("Module `swmatrix_Tgate`")
+    assert titles.index("Module `swmatrix_Tgate`") < titles.index("Notes")
 
     text = rendered.astext()
     assert "Switch Matrix Tgate" in text
@@ -84,11 +87,13 @@ def test_sphinx_render_full_switch_sections() -> None:
     rendered = _render_docutils(FULL_SWITCH)
     titles = _section_titles(rendered)
 
-    assert titles[0] == "full_switch_matrix_130_by_25"
+    assert titles[0] == "full_switch_matrix_130_by_25.asdl"
     assert "Top module" in titles
-    if "Overview" in titles:
-        assert titles.index("Overview") < titles.index("Top module")
+    assert "Overview" not in titles
     assert titles.index("Top module") < titles.index("Imports")
+    assert titles.index("Imports") < titles.index(
+        "Module `full_switch_matrix_130_by_25_no_probes`"
+    )
 
     patterns_index = titles.index("Patterns")
     assert patterns_index < titles.index("Interface")
