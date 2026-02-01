@@ -36,6 +36,10 @@
 - 2026-02-01 09:38 — Verified new Sphinx .asdlrc coverage; command `./venv/bin/pytest tests/unit_tests/docs/test_sphinx_asdlrc.py -v`; result: pass; next step finalize scratchpad and PR.
 - 2026-02-01 09:45 — Opened PR https://github.com/Jianxun/ASDL/pull/274; next step set task status to ready_for_review.
 - 2026-02-01 09:46 — Set T-255 status to ready_for_review and linted tasks_state; files touched: agents/context/tasks_state.yaml; next step push updates.
+- 2026-02-01 02:12 — Review intake complete; PR targets main; set status to review_in_progress and linted tasks_state; next step review code/tests and scope.
+- 2026-02-01 02:13 — Ran verify command `./venv/bin/pytest tests/unit_tests/docs/test_sphinx_asdlrc.py -v`; result: pass; next step scope/implementation review.
+- 2026-02-01 02:14 — Scope review complete against T-255 DoD/links.spec (none present); changes limited to Sphinx domain config, example docs note, tests, and task metadata; next step finalize implementation review/decision.
+- 2026-02-01 02:14 — Review decision: clean; posted PR comment with test results; next step update status to review_clean and proceed to merge/closeout.
 
 # Patch summary
 - Added Sphinx .asdlrc-aware config path resolution, env merge, and lib_roots propagation for depgraph builds.
