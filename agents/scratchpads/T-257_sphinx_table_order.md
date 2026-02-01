@@ -31,6 +31,7 @@
 - 2026-02-01 02:49 — Ran ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v; result: passed; next step scope/implementation review.
 - 2026-02-01 02:50 — Scope and implementation review complete; changes match DoD; next step post review comment and set review_clean.
 - 2026-02-01 02:50 — Posted review comment on PR 276 and set T-257 status to review_clean; next step merge and closeout.
+- 2026-02-01 02:51 — Set T-257 status to done (merged true) and linted tasks state; next step merge PR and clean up branches.
 
 # Patch summary
 - Reordered module rendering so Patterns appear before other tables in Sphinx output.
