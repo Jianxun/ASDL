@@ -38,6 +38,7 @@
 - 2026-02-01 10:13 — Set T-251 status to review_clean and linted tasks_state; next step: merge and close out.
 - 2026-02-01 10:15 — Set T-251 status to done (merged true) and linted tasks_state; next step: commit/push and merge PR.
 - 2026-02-01 10:17 — Committed/pushed review closeout metadata (667a829); next step: merge PR and clean branches.
+- 2026-02-01 10:18 — Logged review closeout entry (c545adc) and pushed; next step: merge PR and clean branches.
 
 ## Patch summary
 - Added depgraph-dump CLI command with rc/lib resolution, JSON output, and diagnostics handling.
