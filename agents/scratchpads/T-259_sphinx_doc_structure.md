@@ -17,4 +17,6 @@
 - Run verify command.
 
 # Progress log
-- 
+-
+- 2026-02-01 11:38 — Task intake: align Sphinx doc titles/sections with file/module semantics; will adjust renderer and tests; next step inspect sphinx_render.
+- 2026-02-01 11:39 — Updated Sphinx render tests for file-title with extension, no file Overview fallback, Notes ordering, and Imports ordering; files: tests/unit_tests/docs/test_sphinx_render.py; next step adjust renderer.
