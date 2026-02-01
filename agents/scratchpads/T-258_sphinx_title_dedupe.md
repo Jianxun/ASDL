@@ -1,5 +1,5 @@
 # Task summary (DoD + verify)
-- DoD: Prevent Sphinx pages from showing a nested duplicate of the top module name (page title + module section). Adjust document/module rendering so the module heading is suppressed or renamed when it matches the document title. Add or update unit coverage to assert only one top-level title is emitted for single-module documents. Do not touch unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
+- DoD: Always use the ASDL file stem as the page title (do not promote `document.top` or single-module names). Render `top` as a separate document-level "Top module" section placed after Overview and before Imports so it is visible without duplicating module titles. Update unit coverage to assert title selection and top-section rendering. Do not touch unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
 - Verify: ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v
 
 # Read (paths)
@@ -10,10 +10,11 @@
 - agents/context/project_status.md
 
 # Plan
-- Inspect current doc title + module section rendering in sphinx_render.
-- Implement title/module header de-dupe behavior for single-module docs.
-- Update tests to assert only one top-level title.
+- Inspect current title/overview/import rendering in sphinx_render.
+- Update title selection to always use file stem and insert "Top module" section.
+- Update tests to assert title selection and top section placement.
 - Run verify command.
 
 # Progress log
-- 
+- 2026-02-01 00:00 — Task intake; updated scratchpad DoD/plan to match T-258; next step set task in_progress and branch.
+- 2026-02-01 00:01 — Updated Sphinx render tests for file-stem titles and Top module section expectations; files touched: tests/unit_tests/docs/test_sphinx_render.py; next step commit tests then update renderer.
