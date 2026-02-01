@@ -45,3 +45,9 @@
 - 2026-02-01 02:34 — Opened PR https://github.com/Jianxun/ASDL/pull/275; next: update tasks_state and lint.
 - 2026-02-01 02:34 — Set T-256 status to ready_for_review with PR 275; next: run lint_tasks_state.
 - 2026-02-01 02:34 — Ran ./venv/bin/python scripts/lint_tasks_state.py (ok).
+- 2026-02-01 02:37 — Review intake: PR 275 targets main, scratchpad and verify logs present; set T-256 to review_in_progress; next: run required tests and scope check.
+- 2026-02-01 02:37 — Verification rerun: ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_project_pages.py -v (passed); next: scope review.
+- 2026-02-01 02:38 — Scope check complete; changes align with DoD and no out-of-scope docs touched; next: finalize review decision.
+- 2026-02-01 02:38 — Review decision: clean; posted PR review comment; next: set status review_clean and begin merge/closeout.
+- 2026-02-01 02:38 — Set T-256 status to review_clean and linted tasks_state; next: merge and close out.
+- 2026-02-01 02:39 — Set T-256 status to done with merged=true and linted tasks_state; next: commit, push, and merge PR.
