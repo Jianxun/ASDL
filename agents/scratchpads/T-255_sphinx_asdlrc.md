@@ -20,12 +20,17 @@
 - Ensure Sphinx ASDL domain uses `.asdlrc` (auto-discover near project manifest or explicit override) to load lib_roots/env via `asdl.cli.config`, merge env vars without clobbering existing OS env, and pass resulting lib_roots into depgraph so imports resolve without AST-010. Add fixture-backed unit test and doc note.
 
 # Todo
-- [ ] Locate Sphinx domain depgraph build and config plumbing.
-- [ ] Implement `.asdlrc` discovery + config merge + lib_roots propagation.
-- [ ] Add/adjust unit test fixture for manifest + `.asdlrc` import resolution.
-- [ ] Update examples/docs/README.md note.
-- [ ] Run verify command.
+- [x] Locate Sphinx domain depgraph build and config plumbing.
+- [x] Implement `.asdlrc` discovery + config merge + lib_roots propagation.
+- [x] Add/adjust unit test fixture for manifest + `.asdlrc` import resolution.
+- [x] Update examples/docs/README.md note.
+- [x] Run verify command.
 
 # Progress log
 - 2026-02-01 09:00 — Task intake and scope reviewed; read context/contract/task docs; next step set task status and branch.
 - 2026-02-01 09:02 — Set T-255 status to in_progress and linted tasks_state; created feature branch; next step inspect Sphinx domain code.
+- 2026-02-01 09:10 — Committed task kickoff metadata; files touched: agents/context/tasks_state.yaml, agents/scratchpads/T-255_sphinx_asdlrc.md; commit c8a8cdc; next step add Sphinx .asdlrc test coverage.
+- 2026-02-01 09:18 — Added Sphinx manifest + .asdlrc unit test fixture; files touched: tests/unit_tests/docs/test_sphinx_asdlrc.py; commit cbcdcdf; next step implement .asdlrc handling in Sphinx domain.
+- 2026-02-01 09:32 — Implemented .asdlrc discovery/merge for Sphinx depgraph builds; files touched: src/asdl/docs/sphinx_domain.py; commit 027332f; next step update docs note.
+- 2026-02-01 09:35 — Documented .asdlrc support in examples/docs README; files touched: examples/docs/README.md; commit 1acd210; next step run verify tests.
+- 2026-02-01 09:38 — Verified new Sphinx .asdlrc coverage; command `./venv/bin/pytest tests/unit_tests/docs/test_sphinx_asdlrc.py -v`; result: pass; next step finalize scratchpad and PR.
