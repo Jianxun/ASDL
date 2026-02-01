@@ -35,6 +35,10 @@ Verify:
 - 2026-01-31 22:23 — Commit f2b4f6e "feat: add used-by sections and module links"; next step: open PR.
 - 2026-01-31 22:24 — Opened PR https://github.com/Jianxun/ASDL/pull/269; next step: update task state + lint.
 - 2026-01-31 22:25 — Set T-253 ready_for_review with PR 269; ran ./venv/bin/python scripts/lint_tasks_state.py; next step: commit scratchpad + task state.
+- 2026-01-31 22:32 — Review intake: PR targets main, scratchpad + verify logs present; set T-253 to review_in_progress and ran task state linter; next step: scope + implementation review.
+- 2026-01-31 22:33 — Scope review complete against T-253 DoD/links.spec (none present); changes limited to depgraph helpers, Sphinx domain/rendering, tests, and task metadata; next step: verify logs and inspect implementation details.
+- 2026-01-31 22:34 — Verified executor log for pytest in scratchpad; no rerun; next step: implementation review.
+- 2026-01-31 22:36 — Implementation review found duplicate Used-by entries when multiple instances reference the same module; posted PR comment requesting dedupe and set T-253 request_changes; ran task state linter; next step: await executor fix.
 
 # Patch summary
 - Added depgraph helpers for module/instance identifiers and stored dependency graphs in Sphinx env from the project manifest.
