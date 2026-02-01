@@ -78,13 +78,16 @@ def render_docutils(
         document: Parsed ASDL document.
         docstrings: Extracted docstrings for the source document.
         file_path: Optional file path for fallback title generation.
-        title: Optional explicit document title override.
+        title: Optional explicit document title override when no file path is available.
         sphinx_env: Optional Sphinx environment for cross-reference lookups.
 
     Returns:
         A docutils section containing the rendered ASDL documentation tree.
     """
-    doc_title = title or _document_title(document, file_path)
+    if file_path is None and title is not None:
+        doc_title = title
+    else:
+        doc_title = _document_title(document, file_path)
     overview, overview_module = _document_overview(document, docstrings)
     file_namespace = _file_namespace(doc_title, file_path)
     doc_ref_name = _document_ref_name(doc_title, file_path)
@@ -98,6 +101,10 @@ def render_docutils(
         overview_section = _section("Overview")
         _append_paragraphs(overview_section, overview)
         root += overview_section
+
+    top_section = _render_top_module_section(document, context)
+    if top_section is not None:
+        root += top_section
 
     if document.imports:
         root += _render_imports(document.imports, docstrings, file_namespace=file_namespace)
@@ -271,10 +278,6 @@ def _make_module_link(module: DepGraphModule, context: RenderContext) -> nodes.N
 
 
 def _document_title(document: AsdlDocument, file_path: Optional[Path]) -> str:
-    if document.top:
-        return document.top
-    if document.modules and len(document.modules) == 1:
-        return next(iter(document.modules.keys()))
     if file_path is not None:
         return file_path.stem
     return "ASDL Document"
@@ -326,6 +329,31 @@ def _document_overview(
             return module_doc, module_name
 
     return None, None
+
+
+def _render_top_module_section(
+    document: AsdlDocument,
+    context: RenderContext,
+) -> Optional[nodes.section]:
+    if not document.top:
+        return None
+
+    section = _section("Top module")
+    module_name = document.top
+    para = nodes.paragraph()
+    link_node = _maybe_link_module(module_name, context)
+    para += link_node
+    section += para
+    return section
+
+
+def _maybe_link_module(module_name: str, context: RenderContext) -> nodes.Node:
+    if context.graph_index is None or context.file_id is None:
+        return nodes.literal(text=module_name)
+    module = context.graph_index.modules_by_file.get((context.file_id, module_name))
+    if module is None:
+        return nodes.literal(text=module_name)
+    return _make_module_link(module, context)
 
 
 def _render_imports(

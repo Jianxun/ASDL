@@ -19,3 +19,5 @@
 - 2026-02-01 00:00 — Task intake; updated scratchpad DoD/plan to match T-258; next step set task in_progress and branch.
 - 2026-02-01 00:01 — Updated Sphinx render tests for file-stem titles and Top module section expectations; files touched: tests/unit_tests/docs/test_sphinx_render.py; next step commit tests then update renderer.
 - 2026-02-01 00:02 — Committed task prep scratchpad/status updates (2c4968f); files touched: agents/context/tasks_state.yaml, agents/scratchpads/T-258_sphinx_title_dedupe.md; next step commit tests.
+- 2026-02-01 00:03 — Committed title/top module test coverage (7644be1); files touched: tests/unit_tests/docs/test_sphinx_render.py, agents/scratchpads/T-258_sphinx_title_dedupe.md; next step update renderer logic.
+- 2026-02-01 00:04 — Implemented file-stem titles and Top module section rendering; files touched: src/asdl/docs/sphinx_render.py, src/asdl/docs/sphinx_domain.py; next step commit renderer changes.
