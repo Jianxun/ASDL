@@ -30,6 +30,7 @@
 - 2026-02-01 11:46 — Verified executor test log present for ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v; no additional checks run; next step scope and code review.
 - 2026-02-01 11:46 — Scope review complete: changes limited to sphinx_render + tests + task metadata, aligned with DoD; next step record review decision.
 - 2026-02-01 11:46 — Posted review comment and marked review_clean; next step merge and closeout.
+- 2026-02-01 11:47 — Set T-259 status to done (merged true) for closeout; next step lint tasks_state, merge PR, and clean branches.
 
 # Patch summary
 - Updated Sphinx doc titles to use file names with extensions and restricted Overview to file docstrings only.
