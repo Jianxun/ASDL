@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from asdl.docs.depgraph import module_identifier
 from asdl.docs.sphinx_domain import ASDL_DOMAIN_NAME, SPHINX_AVAILABLE
 
 pytest.importorskip("sphinx")
@@ -77,10 +78,12 @@ def test_sphinx_document_directive_registers_objects(tmp_path: Path) -> None:
 
     domain = app.env.get_domain(ASDL_DOMAIN_NAME)
     objects = domain.data.get("objects", {})
+    sample_id = str((srcdir / "sample.asdl").resolve())
+    top_id = module_identifier("top", sample_id)
     expected = {
         ("doc", "sample_doc"),
         ("import", "sample::lib"),
-        ("module", "top"),
+        ("module", top_id),
         ("port", "top::$IN"),
         ("net", "top::$IN"),
         ("net", "top::OUT"),
