@@ -3,15 +3,10 @@
 Brief context record for the Architect; reconcile from task status and reviews.
 
 ## Current state
-- MVP specs live under `docs/specs_mvp/` for AST/NFIR/IFIR/emission; full specs remain under `docs/specs/`.
-- Netlist emission runs end-to-end through the refactor pipeline (PatternedGraph -> AtomizedGraph -> NetlistIR -> netlist emitter); CLI uses NetlistIR.
-- Legacy xDSL GraphIR/IFIR pipeline is slated for hard decommission; CLI `ir-dump` and xDSL IR code will be removed from the active tree.
-- Refactor specs remain under `docs/specs_refactor/` (PatternedGraph core, pattern service, migration plan).
-- Import resolver exists under `src/asdl/imports/` but is not yet wired into the core lowering path.
-- Netlist emission is backend-config driven; placeholder disambiguation (`{file_id}`, `{sym_name}`, `{top_sym_name}`) is still pending.
-- ADR-0022 forbids spliced net names; refactor specs updated and implementation queued (T-188).
-- Planned refactor inspection tooling: PatternedGraph JSON dump + CLI `patterned-graph-dump` (T-189/T-190).
-- Atomized core graph conversion and stateless verification passes are planned next (T-191/T-192/T-193).
+- ASDL docs pipeline is focused on Sphinx (Tier 2); Markdown generation is deprecated.
+- Comment-based docstring extraction is implemented per ADR-0021 and feeds Sphinx rendering.
+- Doc rendering targets per-file `asdl:document` pages plus project-level manifest wiring.
+- Dependency graph support is the active enabler for instance cross-links and "Used by" sections.
 
 ## Last verified status
 - `venv/bin/pytest tests/unit_tests/ast`
@@ -25,12 +20,10 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - `venv/bin/python -m py_compile src/asdl/emit/netlist/*.py`
 
 ## Next steps (1-3)
-1. Remove IFIR paths from netlist emission and verification (T-219).
-2. Retire CLI `ir-dump` and legacy xDSL entrypoints (T-220).
-3. Move legacy xDSL specs to `docs/legacy/` and quarantine IR code/deps (T-223/T-221/T-222).
+1. T-250: Build ASDL dependency graph model + JSON export (module_id = name__hash8).
+2. T-252: Generate per-file Sphinx pages from project manifest.
+3. T-253: Add instance cross-links + Used-by sections.
 
 ## Risks / unknowns
-- Coordinating pattern expansion semantics across legacy and refactor pipelines is currently the highest ambiguity.
-- Hard decommissioning xDSL may affect any downstream users relying on `ir-dump` or GraphIR/IFIR APIs.
-- Backend-specific emission rules beyond ngspice remain undefined.
-- Import-aware compilation is partially implemented but not yet exercised end-to-end in CLI or pipeline tests.
+- Module name collisions across files must be disambiguated in tooling without exposing hash IDs to users.
+- Sphinx link resolution depends on depgraph completeness; unresolved refs should degrade gracefully.

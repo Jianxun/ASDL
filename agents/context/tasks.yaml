@@ -1,66 +1,106 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-247
-    title: Render ASDL docs to docutils nodes (Tier 2)
+  - id: T-250
+    title: Build ASDL dependency graph model + JSON export
     owner: Executor
     dod: >
-      Add a docutils-node renderer that mirrors the Markdown layout for ASDL
-      docs (overview, imports, per-module sections, interface/variables/
-      instances/nets/patterns tables). The renderer must accept a parsed
-      ASDL document + docstring index and return a top-level docutils node
-      tree without depending on Sphinx runtime globals. Provide focused
-      unit coverage for section/table structure and basic content wiring.
-      Do not touch unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v
-    links:
-      scratchpad: agents/scratchpads/T-247_sphinx_render.md
-    files:
-      - src/asdl/docs/sphinx_render.py
-      - tests/unit_tests/docs/test_sphinx_render.py
-  - id: T-248
-    title: Implement asdl:document directive (Tier 2)
-    owner: Executor
-    depends_on:
-      - T-247
-    dod: >
-      Implement an `asdl:document` directive that resolves a file path
-      relative to the Sphinx source directory, parses the ASDL file, extracts
-      docstrings, renders docutils nodes using the new renderer, and registers
-      ASDL objects with the domain for cross-references. Diagnostics from
-      parsing must surface as Sphinx warnings/errors without crashing. Add a
-      small integration test (skip if Sphinx unavailable) that exercises the
-      directive on a sample ASDL file and asserts object registration.
-      Do not touch unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_document_directive.py -v
-    links:
-      scratchpad: agents/scratchpads/T-248_sphinx_document_directive.md
-    files:
-      - src/asdl/docs/sphinx_domain.py
-      - tests/unit_tests/docs/test_sphinx_document_directive.py
-  - id: T-249
-    title: Support library-wide directive usage in examples/docs (Tier 2)
-    owner: Executor
-    depends_on:
-      - T-248
-    dod: >
-      Add a directory-capable directive or helper (e.g., `asdl:library`) that
-      expands all `.asdl` files under a given directory and renders them in
-      deterministic order.
-      Update examples/docs to use the directive for `examples/libs` so Tier 2
-      docs build without pre-generated Markdown. Provide a small test for
-      directory expansion ordering. Do not touch unrelated style docs (e.g.,
+      Implement a dependency-graph builder that uses the import resolver to
+      produce module/instance edges from one or more entry ASDL files. Define
+      a stable JSON schema (files, modules, instances, edges, unresolved) and
+      provide serialization helpers. Module identifiers must be
+      `name__hash8` where `hash8 = sha1(file_id)[:8]`; use `module_id` for
+      tooling/anchors while keeping `name` for display. Include focused unit
+      coverage for graph construction and edge resolution using a small
+      fixture. Do not touch unrelated style docs (e.g.,
       docs/code_styles/docstrings_comments.md).
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/docs/test_depgraph.py -v
+    links:
+      scratchpad: agents/scratchpads/T-250_depgraph_model.md
+    files:
+      - src/asdl/docs/depgraph.py
+      - tests/unit_tests/docs/test_depgraph.py
+  - id: T-251
+    title: Add asdlc depgraph-dump command
+    owner: Executor
+    depends_on:
+      - T-250
+    dod: >
+      Add an `asdlc depgraph-dump` CLI command that accepts one or more entry
+      ASDL files, builds the dependency graph, and writes JSON to a user-
+      supplied path (stdout if omitted). Command must surface diagnostics and
+      exit non-zero on errors. Include a CLI test that asserts output schema,
+      including presence of `module_id` fields. Do not touch unrelated style
+      docs (e.g., docs/code_styles/docstrings_comments.md).
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/cli/test_depgraph_dump.py -v
+    links:
+      scratchpad: agents/scratchpads/T-251_depgraph_cli.md
+    files:
+      - src/asdl/cli/__init__.py
+      - tests/unit_tests/cli/test_depgraph_dump.py
+  - id: T-252
+    title: Generate per-file Sphinx pages from project manifest
+    owner: Executor
+    depends_on:
+      - T-250
+    dod: >
+      Add a project manifest (examples/docs/project.yaml) listing entry ASDL
+      files. Implement a Sphinx build hook that generates per-file stub pages
+      under examples/docs/_generated and a toctree that includes them. Each
+      stub must render exactly one ASDL file via `asdl:document`. Add a small
+      test that verifies deterministic stub ordering. Do not touch unrelated
+      style docs (e.g., docs/code_styles/docstrings_comments.md).
     verify:
       - ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html
     links:
-      scratchpad: agents/scratchpads/T-249_sphinx_library_directive.md
+      scratchpad: agents/scratchpads/T-252_sphinx_project_pages.md
     files:
       - src/asdl/docs/sphinx_domain.py
       - examples/docs/index.rst
+      - examples/docs/project.yaml
+      - tests/unit_tests/docs/test_sphinx_project_pages.py
+  - id: T-253
+    title: Add instance cross-links + Used-by sections
+    owner: Executor
+    depends_on:
+      - T-250
+      - T-252
+    dod: >
+      Extend the docutils renderer to link instance refs to module definitions
+      when resolvable and to emit a "Used by" section listing parent modules
+      based on the dependency graph. Use graph lookups from the Sphinx env and
+      degrade to plain text when unresolved. Anchor targets should use
+      `module_id`; display module names without hash. When collisions are
+      present in the current page scope, disambiguate with the relative file
+      path (not the hash). Add unit coverage for links and used-by rendering.
+      Do not touch unrelated style docs (e.g.,
+      docs/code_styles/docstrings_comments.md).
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render_used_by.py -v
+    links:
+      scratchpad: agents/scratchpads/T-253_sphinx_used_by.md
+    files:
+      - src/asdl/docs/sphinx_render.py
+      - src/asdl/docs/sphinx_domain.py
+      - tests/unit_tests/docs/test_sphinx_render_used_by.py
+  - id: T-254
+    title: Switch examples/docs to RTD theme
+    owner: Executor
+    depends_on:
+      - T-252
+    dod: >
+      Update Sphinx config to use Read the Docs theme and add the dependency
+      to examples/docs/requirements.txt. Update examples/docs/README.md to
+      mention the theme. Do not touch unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
+    verify:
+      - ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html
+    links:
+      scratchpad: agents/scratchpads/T-254_rtd_theme.md
+    files:
+      - examples/docs/conf.py
+      - examples/docs/requirements.txt
       - examples/docs/README.md
-      - tests/unit_tests/docs/test_sphinx_library_directive.py
 
 backlog: []

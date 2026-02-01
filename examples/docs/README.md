@@ -5,19 +5,12 @@ This directory holds Sphinx documentation for ASDL libraries under
 ``asdl:library`` directive, which renders the docstrings into module-level
 reference docs without pre-generated Markdown.
 
-## Optional: generate Markdown
+## Source mapping
 
-```bash
-venv/bin/python scripts/gen_asdl_docs.py \
-  examples/libs/sw_matrix \
-  --out examples/docs/libs
-```
+The docs use the Tier 2 Sphinx directives directly:
 
-The generator scans directories recursively and writes one Markdown file per
-ASDL source, using the input file stem as the output filename.
-If multiple sources share the same stem, the generator reports a collision.
-
-To include archived examples under `_archive`, add `--include-archive`.
+- `.. asdl:library:: ../libs` renders all library `.asdl` files.
+- `.. asdl:document:: path/to/file.asdl` renders a single file.
 
 ## Build docs
 

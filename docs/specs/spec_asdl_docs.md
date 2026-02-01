@@ -2,13 +2,14 @@
 
 ## Purpose
 Define how design intent embedded as YAML comments in ASDL files is extracted
-and rendered into Markdown documentation, with a focus on ports/pins as the
-contract surface between blocks.
+and rendered into documentation, with a focus on ports/pins as the contract
+surface between blocks. Markdown generation and Sphinx rendering are both
+supported outputs.
 
 ## Scope
 - Applies to documentation generation only; comments are not part of the AST.
 - Uses comment-preserving parsing (ruamel.yaml) against raw ASDL YAML.
-- Targets Markdown output; Sphinx integration is out of scope.
+- Targets Markdown output and Sphinx rendering via Tier 1/2 tooling.
 
 ## Conventions
 - A **comment block** is one or more consecutive `#` lines with no blank lines
@@ -87,7 +88,7 @@ nets:
   $enable_in: [sw_row<@ROW>.enable]
 ```
 
-## Markdown layout (recommended)
+## Documentation layout (recommended)
 
 ### Document
 - Title (file name or top module name)
@@ -105,6 +106,14 @@ nets:
   - Table: `name`, `default`, `description`
 - Instances
   - Table: `instance`, `ref`, `params`, `description`
+  - When possible, `ref` should link to the referenced module definition.
+  - Display rule: show the module `name` only; if collisions are present in the
+    current page scope, disambiguate with `name (relative/path.asdl)` rather
+    than any hash-based ID.
+- Used by (optional)
+  - List modules that instantiate this module when a dependency graph is available.
+  - Display rule: same as instances; never expose hash-based IDs unless in a
+    debug context.
 - Nets
   - Group by section/bundle docstrings when present.
   - For each net: `name`, `endpoints`, `description`
@@ -113,7 +122,33 @@ nets:
 - Notes / Specs
   - Freeform specs or constraints captured in module-level comments.
 
+## Build modes
+
+### Tier 1 (Markdown)
+- `scripts/gen_asdl_docs.py` renders per-file Markdown docs.
+- Sphinx can ingest the Markdown with MyST, but cross-refs are limited to
+  emitted domain directives.
+
+### Tier 2 (Sphinx-native)
+- `asdl:document` renders a single ASDL file directly into a Sphinx page.
+- `asdl:library` renders all `.asdl` files under a directory.
+- Project manifests may list entry files to generate per-file pages.
+- Instance links and "Used by" sections are driven by a dependency graph.
+
+## Dependency graph (Tier 2)
+- The `asdlc depgraph-dump` command emits a resolved graph that maps module
+  definitions to instance refs across files.
+- The Sphinx extension may load this graph to enable instance cross-links and
+  "Used by" sections.
+### Module identity and collisions
+- Module names must be unique within a file; same-name modules across files are
+  allowed.
+- Use a deterministic internal module identifier:
+  `module_id = "{name}__{hash8}"`, where `hash8 = sha1(file_id)[:8]`.
+- `module_id` is for tooling (JSON keys, anchors, cross-links). User-facing
+  docs should display `name` only; when disambiguation is needed, show
+  `name (relative/path.asdl)` rather than the hash.
+
 ## Non-goals
 - No AST schema changes and no requirement to add `doc` or `metadata` fields.
 - No comment extraction from list items or scalar values outside mapping keys.
-- No Sphinx or HTML generation in this spec.
