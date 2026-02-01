@@ -161,6 +161,8 @@ def _build_depgraph_index(graph: DependencyGraph) -> DepGraphIndex:
     parents_by_module: dict[str, list[str]] = {}
     for edge in graph.edges:
         parents_by_module.setdefault(edge.to_module_id, []).append(edge.from_module_id)
+    for module_id, parent_ids in parents_by_module.items():
+        parents_by_module[module_id] = list(dict.fromkeys(parent_ids))
     return DepGraphIndex(
         modules_by_id=modules_by_id,
         modules_by_file=modules_by_file,
