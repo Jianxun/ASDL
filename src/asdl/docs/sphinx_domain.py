@@ -6,7 +6,10 @@ from dataclasses import dataclass
 import hashlib
 from pathlib import Path
 import re
-from typing import Iterable, MutableMapping, Optional, Tuple
+from typing import Iterable, MutableMapping, Optional, Sequence, Tuple
+
+from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
 
 from asdl.ast.models import AsdlDocument, ModuleDecl
 from asdl.ast.parser import parse_file
@@ -27,6 +30,10 @@ ASDL_OBJECT_TYPES = (
     "import",
 )
 
+ASDL_PROJECT_MANIFEST = "project.yaml"
+ASDL_PROJECT_GENERATED_DIR = "_generated"
+ASDL_PROJECT_TOC_FILENAME = "project.rst"
+
 
 @dataclass(frozen=True)
 class AsdlObjectEntry:
@@ -45,6 +52,25 @@ class AsdlObjectEntry:
     docname: str
     target_id: str
     display_name: str
+
+
+@dataclass(frozen=True)
+class AsdlProjectEntry:
+    """Manifest-backed ASDL documentation entry for generated pages.
+
+    Args:
+        source: Manifest entry string (POSIX-style path relative to Sphinx srcdir).
+        source_path: Absolute path to the ASDL file on disk.
+        stub_relpath: Relative path to the generated stub page under ``_generated``.
+        docname: Sphinx docname for the stub page.
+        title: Title rendered in the stub page.
+    """
+
+    source: str
+    source_path: Path
+    stub_relpath: Path
+    docname: str
+    title: str
 
 
 class AsdlDomainError(ValueError):
@@ -147,6 +173,211 @@ def collect_asdl_library_files(
             doc_overrides.add(base_path)
         candidates = [path for path in candidates if path not in doc_overrides]
     return sorted(candidates, key=lambda path: path.relative_to(root).as_posix())
+
+
+def collect_asdl_project_entries(
+    manifest_path: Path,
+    *,
+    srcdir: Optional[Path] = None,
+    generated_dirname: str = ASDL_PROJECT_GENERATED_DIR,
+) -> list[AsdlProjectEntry]:
+    """Load ASDL project manifest entries in deterministic order.
+
+    Args:
+        manifest_path: Path to the project manifest YAML file.
+        srcdir: Sphinx source directory used to resolve entry paths. Defaults to
+            the manifest parent directory.
+        generated_dirname: Directory name under ``srcdir`` where stub pages live.
+
+    Returns:
+        Ordered list of project entries with computed stub metadata.
+    """
+    srcdir = srcdir or manifest_path.parent
+    entries = _load_asdl_project_manifest(manifest_path)
+    return [
+        _build_project_entry(entry, srcdir, generated_dirname)
+        for entry in entries
+    ]
+
+
+def write_asdl_project_pages(
+    entries: Sequence[AsdlProjectEntry],
+    *,
+    output_dir: Path,
+    toc_filename: str = ASDL_PROJECT_TOC_FILENAME,
+) -> Path:
+    """Write stub pages and a toctree for the ASDL project entries.
+
+    Args:
+        entries: Ordered project entries to render.
+        output_dir: Output directory for generated stubs.
+        toc_filename: Filename for the generated toctree page.
+
+    Returns:
+        Path to the generated toctree page.
+    """
+    _prepare_generated_dir(output_dir)
+
+    for entry in entries:
+        stub_path = output_dir / entry.stub_relpath
+        stub_path.parent.mkdir(parents=True, exist_ok=True)
+        stub_path.write_text(
+            _render_project_stub(entry),
+            encoding="utf-8",
+        )
+
+    toc_path = output_dir / toc_filename
+    toc_path.write_text(
+        _render_project_toc(entries),
+        encoding="utf-8",
+    )
+    return toc_path
+
+
+def _load_asdl_project_manifest(manifest_path: Path) -> list[str]:
+    """Parse the project manifest and normalize its entries.
+
+    Args:
+        manifest_path: Path to the manifest YAML file.
+
+    Returns:
+        Sorted list of manifest entry strings.
+    """
+    if not manifest_path.exists():
+        return []
+
+    yaml = YAML(typ="safe")
+    try:
+        data = yaml.load(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, YAMLError) as exc:
+        raise AsdlDomainError(
+            f"Failed to read ASDL project manifest: {manifest_path}"
+        ) from exc
+
+    if not data:
+        return []
+    if not isinstance(data, dict):
+        raise AsdlDomainError(
+            "ASDL project manifest must be a mapping with an 'entries' list"
+        )
+
+    entries = data.get("entries", [])
+    if entries is None:
+        return []
+    if not isinstance(entries, list):
+        raise AsdlDomainError("ASDL project manifest 'entries' must be a list")
+
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for entry in entries:
+        if not isinstance(entry, str):
+            raise AsdlDomainError("ASDL project manifest entries must be strings")
+        cleaned = Path(entry.strip()).as_posix()
+        if not cleaned:
+            continue
+        if cleaned in seen:
+            continue
+        seen.add(cleaned)
+        normalized.append(cleaned)
+
+    return sorted(normalized)
+
+
+def _build_project_entry(
+    entry: str,
+    srcdir: Path,
+    generated_dirname: str,
+) -> AsdlProjectEntry:
+    """Build a project entry with derived metadata."""
+    source_path = _resolve_project_entry_path(srcdir, entry)
+    stub_relpath = _entry_to_stub_relpath(entry)
+    stub_docname = (
+        Path(generated_dirname) / stub_relpath.with_suffix("")
+    ).as_posix()
+    title = source_path.stem or stub_relpath.stem
+    return AsdlProjectEntry(
+        source=entry,
+        source_path=source_path,
+        stub_relpath=stub_relpath,
+        docname=stub_docname,
+        title=title,
+    )
+
+
+def _resolve_project_entry_path(srcdir: Path, entry: str) -> Path:
+    """Resolve a manifest entry path relative to the Sphinx source directory."""
+    candidate = Path(entry)
+    if not candidate.is_absolute():
+        candidate = srcdir / candidate
+    return candidate.resolve(strict=False)
+
+
+def _entry_to_stub_relpath(entry: str) -> Path:
+    """Map a manifest entry path to a generated stub relative path."""
+    parts = [
+        part
+        for part in Path(entry).as_posix().split("/")
+        if part not in ("", ".", "..")
+    ]
+    if not parts:
+        raise AsdlDomainError(f"Invalid ASDL project entry: {entry}")
+    filename = parts[-1]
+    if filename.endswith(".asdl"):
+        filename = filename[: -len(".asdl")]
+    parts[-1] = f"{filename}.rst"
+    return Path(*parts)
+
+
+def _prepare_generated_dir(output_dir: Path) -> None:
+    """Ensure the generated directory exists and remove old stub pages."""
+    if output_dir.exists():
+        for path in output_dir.rglob("*.rst"):
+            path.unlink()
+        for path in sorted(output_dir.rglob("*"), reverse=True):
+            if path.is_dir():
+                try:
+                    next(path.iterdir())
+                except StopIteration:
+                    path.rmdir()
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+
+def _render_project_stub(entry: AsdlProjectEntry) -> str:
+    """Render a single stub page for a project entry."""
+    title = entry.title
+    underline = "=" * len(title)
+    lines = [
+        "..",
+        "   Generated file. Do not edit directly.",
+        "",
+        title,
+        underline,
+        "",
+        f".. asdl:document:: {entry.source}",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def _render_project_toc(entries: Sequence[AsdlProjectEntry]) -> str:
+    """Render the toctree page for generated project entries."""
+    title = "ASDL Project Files"
+    underline = "=" * len(title)
+    lines = [
+        "..",
+        "   Generated file. Do not edit directly.",
+        "",
+        title,
+        underline,
+        "",
+        ".. toctree::",
+        "   :maxdepth: 2",
+        "",
+    ]
+    for entry in entries:
+        lines.append(f"   {entry.stub_relpath.with_suffix('').as_posix()}")
+    lines.append("")
+    return "\n".join(lines)
 
 
 try:  # pragma: no cover - exercised indirectly when Sphinx is available.
@@ -330,6 +561,39 @@ if SPHINX_AVAILABLE:
         for target in rendered.findall(nodes.target):
             state_document.note_explicit_target(target)
         return rendered
+
+    def _generate_project_pages(app: "Sphinx") -> None:
+        """Generate per-file ASDL stub pages from the project manifest."""
+        srcdir = Path(app.srcdir)
+        manifest_rel = app.config.asdl_project_manifest
+        generated_dirname = app.config.asdl_project_generated_dir
+        toc_filename = app.config.asdl_project_toc_filename
+        manifest_path = srcdir / manifest_rel
+
+        if not manifest_path.exists():
+            _LOGGER.info("ASDL project manifest not found: %s", manifest_path)
+            return
+
+        try:
+            entries = collect_asdl_project_entries(
+                manifest_path,
+                srcdir=srcdir,
+                generated_dirname=generated_dirname,
+            )
+        except AsdlDomainError as exc:
+            _LOGGER.error(str(exc))
+            return
+
+        if not entries:
+            _LOGGER.warning("ASDL project manifest is empty: %s", manifest_path)
+            return
+
+        output_dir = srcdir / generated_dirname
+        write_asdl_project_pages(
+            entries,
+            output_dir=output_dir,
+            toc_filename=toc_filename,
+        )
 
     def _register_document_objects(
         domain: "AsdlDomain",
@@ -599,6 +863,14 @@ def setup(app: "Sphinx") -> dict[str, object]:
         raise RuntimeError("Sphinx is required to register the ASDL domain.")
 
     app.add_domain(AsdlDomain)
+    app.add_config_value("asdl_project_manifest", ASDL_PROJECT_MANIFEST, "env")
+    app.add_config_value(
+        "asdl_project_generated_dir", ASDL_PROJECT_GENERATED_DIR, "env"
+    )
+    app.add_config_value(
+        "asdl_project_toc_filename", ASDL_PROJECT_TOC_FILENAME, "env"
+    )
+    app.connect("builder-inited", _generate_project_pages)
     return {
         "version": "0.1",
         "parallel_read_safe": True,
@@ -612,8 +884,14 @@ __all__ = [
     "AsdlDomain",
     "AsdlDomainError",
     "AsdlObjectEntry",
+    "AsdlProjectEntry",
     "SPHINX_AVAILABLE",
+    "ASDL_PROJECT_GENERATED_DIR",
+    "ASDL_PROJECT_MANIFEST",
+    "ASDL_PROJECT_TOC_FILENAME",
     "make_asdl_target_id",
     "register_asdl_object",
+    "collect_asdl_project_entries",
+    "write_asdl_project_pages",
     "setup",
 ]
