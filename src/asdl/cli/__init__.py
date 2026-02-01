@@ -140,6 +140,121 @@ def patterned_graph_dump(
     _emit_diagnostics(diagnostics)
 
 
+@cli.command("depgraph-dump")
+@click.argument(
+    "input_files",
+    type=click.Path(dir_okay=False, path_type=Path),
+    nargs=-1,
+)
+@click.option(
+    "--config",
+    "config_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Explicit .asdlrc path (overrides discovery).",
+)
+@click.option(
+    "--lib",
+    "lib_roots",
+    multiple=True,
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Library search root (repeatable).",
+)
+@click.option(
+    "-o",
+    "--output",
+    "output_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Output file path (stdout if omitted).",
+)
+@click.option(
+    "--compact",
+    is_flag=True,
+    default=False,
+    help="Emit compact JSON output.",
+)
+def depgraph_dump(
+    input_files: tuple[Path, ...],
+    config_path: Optional[Path],
+    lib_roots: tuple[Path, ...],
+    output_path: Optional[Path],
+    compact: bool,
+) -> None:
+    """Emit dependency-graph JSON."""
+    diagnostics: List[Diagnostic] = []
+    try:
+        from asdl.docs import (
+            build_dependency_graph,
+            dependency_graph_to_jsonable,
+            dump_dependency_graph,
+        )
+    except Exception as exc:  # pragma: no cover - defensive: missing optional deps
+        diagnostics.append(
+            _diagnostic(
+                CLI_IMPORT_ERROR,
+                f"Failed to load dependency-graph helpers: {exc}",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    if not input_files:
+        diagnostics.append(
+            _diagnostic(
+                CLI_SCHEMA_ERROR,
+                "Provide at least one input file.",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    combined_roots: list[Path] = []
+    seen_roots: set[Path] = set()
+    for input_file in input_files:
+        resolved_roots, _backend_config = _resolve_rc_settings(
+            input_file,
+            config_path,
+            lib_roots,
+            diagnostics,
+        )
+        for root in resolved_roots:
+            if root in seen_roots:
+                continue
+            seen_roots.add(root)
+            combined_roots.append(root)
+
+    graph, dep_diags = build_dependency_graph(input_files, lib_roots=combined_roots)
+    diagnostics.extend(dep_diags)
+    if graph is None or _has_error_diagnostics(diagnostics):
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    if compact:
+        output_text = json.dumps(
+            dependency_graph_to_jsonable(graph),
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    else:
+        output_text = dump_dependency_graph(graph)
+
+    if output_path is None:
+        click.echo(output_text, nl=False)
+    else:
+        try:
+            output_path.write_text(output_text, encoding="utf-8")
+        except OSError as exc:
+            diagnostics.append(
+                _diagnostic(
+                    CLI_WRITE_ERROR,
+                    f"Failed to write dependency graph to '{output_path}': {exc}",
+                )
+            )
+            _emit_diagnostics(diagnostics)
+            raise click.exceptions.Exit(1)
+
+    _emit_diagnostics(diagnostics)
+
+
 @cli.command("visualizer-dump")
 @click.argument(
     "input_files",
