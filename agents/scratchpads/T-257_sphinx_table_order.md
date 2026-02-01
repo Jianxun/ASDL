@@ -16,4 +16,9 @@
 - Run verify command.
 
 # Progress log
-- 
+- 2026-02-01 02:43 — Task intake and scope confirmed (T-257); reviewed workflow/docs; next step update task status and branch.
+- 2026-02-01 02:43 — Set T-257 status to in_progress and ran lint; files touched: agents/context/tasks_state.yaml; next step create feature branch.
+- 2026-02-01 02:43 — Created feature branch feature/T-257-sphinx-table-order; next step inspect Sphinx render tables/tests.
+- 2026-02-01 02:44 — Updated Sphinx render tests to expect interface headers without kind/direction and assert patterns section ordering; file touched: tests/unit_tests/docs/test_sphinx_render.py; next step adjust renderer.
+- 2026-02-01 02:44 — Moved patterns section ahead of other module tables and trimmed interface headers/rows; file touched: src/asdl/docs/sphinx_render.py; next step run unit tests.
+- 2026-02-01 02:45 — Ran ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v; result: passed; next step commit changes.

@@ -8,7 +8,7 @@ T-256:
   pr: 275
   merged: true
 T-257:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-258:
