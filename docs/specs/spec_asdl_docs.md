@@ -91,8 +91,9 @@ nets:
 ## Documentation layout (recommended)
 
 ### Document
-- Title (file name or top module name)
+- Title (file stem)
 - Overview (file docstring or top module docstring)
+- Top module (entry module, if present)
 - Imports (table: alias, path, docstring)
 - Modules (one section per module)
 

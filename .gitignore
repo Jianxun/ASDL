@@ -57,6 +57,7 @@ Thumbs.db
 # Docs builds
 examples/docs/_build/
 examples/docs/libs/
+examples/docs/_generated/
 
 designs
 #examples
