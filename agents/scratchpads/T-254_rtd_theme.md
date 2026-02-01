@@ -29,6 +29,11 @@
 - 2026-01-31 22:50 — Installed docs requirements to pull sphinx-rtd-theme; ran sphinx-build (html) with warnings about missing _static and missing gf180mcu imports; build exited 0; next update verification notes and closeout.
 - 2026-01-31 22:52 — Opened PR https://github.com/Jianxun/ASDL/pull/271; set T-254 to ready_for_review with pr 271 and linted tasks state; next push final updates.
 - 2026-01-31 22:53 — Committed scratchpad/task state updates (07d0caf); next push final updates.
+- 2026-01-31 22:55 — Review intake; set T-254 to review_in_progress; next verify changes, scope, and checks.
+- 2026-01-31 22:56 — Verified PR base is main and logs show sphinx-build run; did not re-run locally; next scope check vs DoD.
+- 2026-01-31 22:56 — Scope check complete; changes limited to conf, requirements, README as required; next record decision and comment.
+- 2026-01-31 22:56 — Review clean decision; posted PR comment; next update status to review_clean and proceed to merge/closeout.
+- 2026-01-31 22:57 — Set T-254 to review_clean and linted tasks state; next commit review updates and merge/closeout.
 
 # Patch summary
 - Switched Sphinx HTML theme to `sphinx_rtd_theme`.
