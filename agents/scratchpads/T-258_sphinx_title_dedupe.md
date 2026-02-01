@@ -26,6 +26,10 @@
 - 2026-02-01 00:07 — Committed scratchpad log updates (3febfc5); files touched: agents/scratchpads/T-258_sphinx_title_dedupe.md; next step open PR.
 - 2026-02-01 00:08 — Opened PR https://github.com/Jianxun/ASDL/pull/277; next step set task ready_for_review.
 - 2026-02-01 00:09 — Set T-258 ready_for_review in tasks_state.yaml and linted tasks_state; next step finalize scratchpad summary.
+- 2026-02-01 00:10 — Review started; set status review_in_progress and linted tasks_state; next step inspect PR changes/tests/scope.
+- 2026-02-01 00:11 — Scope review complete against T-258 DoD/links.spec (none present); changes limited to Sphinx render/domain + tests + task metadata; next step verify logs and inspect implementation details.
+- 2026-02-01 00:12 — Verified provided test log (./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v); no CI checks reported; next step finalize review decision.
+- 2026-02-01 00:13 — Review decision: clean; PR comment posted; status set to review_clean; next step merge and closeout.
 
 # Patch summary
 - Use file-stem document titles in Sphinx render/domain and add a "Top module" section before imports.
