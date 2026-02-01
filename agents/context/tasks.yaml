@@ -1,106 +1,81 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-250
-    title: Build ASDL dependency graph model + JSON export
+  - id: T-255
+    title: Load .asdlrc for Sphinx docs build
     owner: Executor
     dod: >
-      Implement a dependency-graph builder that uses the import resolver to
-      produce module/instance edges from one or more entry ASDL files. Define
-      a stable JSON schema (files, modules, instances, edges, unresolved) and
-      provide serialization helpers. Module identifiers must be
-      `name__hash8` where `hash8 = sha1(file_id)[:8]`; use `module_id` for
-      tooling/anchors while keeping `name` for display. Include focused unit
-      coverage for graph construction and edge resolution using a small
-      fixture. Do not touch unrelated style docs (e.g.,
-      docs/code_styles/docstrings_comments.md).
+      Update the Sphinx ASDL domain to discover `.asdlrc` for project builds
+      (default to the project manifest directory, allow explicit config path
+      override). Load lib_roots/env via `asdl.cli.config`, merge env values
+      without overwriting existing OS variables, and pass resolved lib_roots
+      into dependency-graph building. Add unit coverage that exercises a
+      manifest + `.asdlrc` fixture and asserts import resolution succeeds
+      without AST-010 errors. Update examples/docs/README.md to note that docs
+      builds honor `.asdlrc` lib_roots/env. Do not touch unrelated style docs
+      (e.g., docs/code_styles/docstrings_comments.md).
     verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_depgraph.py -v
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_asdlrc.py -v
     links:
-      scratchpad: agents/scratchpads/T-250_depgraph_model.md
+      scratchpad: agents/scratchpads/T-255_sphinx_asdlrc.md
     files:
-      - src/asdl/docs/depgraph.py
-      - tests/unit_tests/docs/test_depgraph.py
-  - id: T-251
-    title: Add asdlc depgraph-dump command
+      - src/asdl/docs/sphinx_domain.py
+      - tests/unit_tests/docs/test_sphinx_asdlrc.py
+      - examples/docs/README.md
+  - id: T-256
+    title: Auto-expand Sphinx project manifest entries via import graph
     owner: Executor
     depends_on:
-      - T-250
+      - T-255
     dod: >
-      Add an `asdlc depgraph-dump` CLI command that accepts one or more entry
-      ASDL files, builds the dependency graph, and writes JSON to a user-
-      supplied path (stdout if omitted). Command must surface diagnostics and
-      exit non-zero on errors. Include a CLI test that asserts output schema,
-      including presence of `module_id` fields. Do not touch unrelated style
-      docs (e.g., docs/code_styles/docstrings_comments.md).
+      Update the Sphinx project manifest workflow so each entry file expands
+      to the full resolved import graph (entries + imported files). Generated
+      stub pages and the project toctree must include all resolved files in
+      deterministic order, with duplicates removed. Import resolution must use
+      the same lib_roots/.asdlrc handling as depgraph builds. Add unit coverage
+      to assert auto-expansion from a minimal manifest that only lists a top
+      file, and that imported files appear in the generated list. Do not touch
+      unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
     verify:
-      - ./venv/bin/pytest tests/unit_tests/cli/test_depgraph_dump.py -v
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_project_pages.py -v
     links:
-      scratchpad: agents/scratchpads/T-251_depgraph_cli.md
+      scratchpad: agents/scratchpads/T-256_sphinx_manifest_expand.md
     files:
-      - src/asdl/cli/__init__.py
-      - tests/unit_tests/cli/test_depgraph_dump.py
-  - id: T-252
-    title: Generate per-file Sphinx pages from project manifest
+      - src/asdl/docs/sphinx_domain.py
+      - tests/unit_tests/docs/test_sphinx_project_pages.py
+  - id: T-257
+    title: Clean up module tables in Sphinx render
     owner: Executor
-    depends_on:
-      - T-250
     dod: >
-      Add a project manifest (examples/docs/project.yaml) listing entry ASDL
-      files. Implement a Sphinx build hook that generates per-file stub pages
-      under examples/docs/_generated and a toctree that includes them. Each
-      stub must render exactly one ASDL file via `asdl:document`. Add a small
-      test that verifies deterministic stub ordering. Do not touch unrelated
+      Update Sphinx doc rendering to (1) remove `kind` and `direction` columns
+      from the Interface/Ports table, leaving only `name` and `description`,
+      and (2) move the Patterns section above other module tables so pattern
+      definitions appear first. Add or update unit coverage to assert the
+      interface table headers and section ordering. Do not touch unrelated
       style docs (e.g., docs/code_styles/docstrings_comments.md).
     verify:
-      - ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v
     links:
-      scratchpad: agents/scratchpads/T-252_sphinx_project_pages.md
-    files:
-      - src/asdl/docs/sphinx_domain.py
-      - examples/docs/index.rst
-      - examples/docs/project.yaml
-      - tests/unit_tests/docs/test_sphinx_project_pages.py
-  - id: T-253
-    title: Add instance cross-links + Used-by sections
-    owner: Executor
-    depends_on:
-      - T-250
-      - T-252
-    dod: >
-      Extend the docutils renderer to link instance refs to module definitions
-      when resolvable and to emit a "Used by" section listing parent modules
-      based on the dependency graph. Use graph lookups from the Sphinx env and
-      degrade to plain text when unresolved. Anchor targets should use
-      `module_id`; display module names without hash. When collisions are
-      present in the current page scope, disambiguate with the relative file
-      path (not the hash). Add unit coverage for links and used-by rendering.
-      Do not touch unrelated style docs (e.g.,
-      docs/code_styles/docstrings_comments.md).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render_used_by.py -v
-    links:
-      scratchpad: agents/scratchpads/T-253_sphinx_used_by.md
+      scratchpad: agents/scratchpads/T-257_sphinx_table_order.md
     files:
       - src/asdl/docs/sphinx_render.py
-      - src/asdl/docs/sphinx_domain.py
-      - tests/unit_tests/docs/test_sphinx_render_used_by.py
-  - id: T-254
-    title: Switch examples/docs to RTD theme
+      - tests/unit_tests/docs/test_sphinx_render.py
+  - id: T-258
+    title: Use file-stem titles and demote top module in Sphinx docs
     owner: Executor
-    depends_on:
-      - T-252
     dod: >
-      Update Sphinx config to use Read the Docs theme and add the dependency
-      to examples/docs/requirements.txt. Update examples/docs/README.md to
-      mention the theme. Do not touch unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
+      Always use the ASDL file stem as the page title (do not promote
+      `document.top` or single-module names). Render `top` as a separate
+      document-level "Top module" section placed after Overview and before
+      Imports so it is visible without duplicating module titles. Update unit
+      coverage to assert title selection and top-section rendering. Do not
+      touch unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
     verify:
-      - ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v
     links:
-      scratchpad: agents/scratchpads/T-254_rtd_theme.md
+      scratchpad: agents/scratchpads/T-258_sphinx_title_dedupe.md
     files:
-      - examples/docs/conf.py
-      - examples/docs/requirements.txt
-      - examples/docs/README.md
+      - src/asdl/docs/sphinx_render.py
+      - tests/unit_tests/docs/test_sphinx_render.py
 
 backlog: []

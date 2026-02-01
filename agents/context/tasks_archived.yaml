@@ -1,6 +1,11 @@
 schema_version: 1
 
 archive:
+  - T-254: {completed_on: 2026-01-31, owner: Executor, scratchpad: agents/scratchpads/T-254_rtd_theme.md, pr: 271}
+  - T-253: {completed_on: 2026-02-01, owner: Executor, scratchpad: agents/scratchpads/T-253_sphinx_used_by.md, pr: 269}
+  - T-252: {completed_on: 2026-01-31, owner: Executor, scratchpad: agents/scratchpads/T-252_sphinx_project_pages.md, pr: 268}
+  - T-251: {completed_on: 2026-02-01, owner: Executor, scratchpad: agents/scratchpads/T-251_depgraph_cli.md, pr: 267}
+  - T-250: {completed_on: 2026-01-31, owner: Executor, scratchpad: agents/scratchpads/T-250_depgraph_model.md, pr: 266}
   - T-249: {completed_on: 2026-02-01, owner: Executor, scratchpad: agents/scratchpads/T-249_sphinx_library_directive.md, pr: 264}
   - T-248: {completed_on: 2026-02-01, owner: Executor, scratchpad: agents/scratchpads/T-248_sphinx_document_directive.md, pr: 263}
   - T-247: {completed_on: 2026-02-01, owner: Executor, scratchpad: agents/scratchpads/T-247_sphinx_render.md, pr: 262}

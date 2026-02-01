@@ -1,15 +1,19 @@
+# MOSbius v1 Devices: Inverter
+# Inverter with split NMOS and PMOS gate inputs.
+# Sized to 16x standard MOSbius unit devices.
 
 imports:
-  gf: gf180mcu.asdl
+  gf: gf180mcu.asdl # gf180mcu pdk library
 
 modules:
+  #Inverter module
   inv:
     instances:
-      mn: gf.nfet_03v3 L=0.5u W=5u NF=6 m=16
-      mp: gf.pfet_03v3 L=0.5u W=5u NF=6 m=3*16
+      mn: gf.nfet_03v3 L=0.5u W=5u NF=6 m=16 #NMOS 16x
+      mp: gf.pfet_03v3 L=0.5u W=5u NF=6 m=3*16 #PMOS 16x, P:N ratio 3:1
     nets:
-      $inp: [mp.g]
-      $inn: [mn.g]
-      $out: [mn.d, mp.d]
-      $vss: [mn.<s|b>]
-      $vdd: [mp.<s|b>]
+      $inp: [mp.g] #PMOS gate input
+      $inn: [mn.g] #NMOS gate input
+      $out: [mn.d, mp.d] #Output
+      $vss: [mn.<s|b>] #VSS
+      $vdd: [mp.<s|b>] #VDD, nominal 3.3V
