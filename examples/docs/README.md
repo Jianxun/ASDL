@@ -19,3 +19,7 @@ Install the docs requirements (see `examples/docs/requirements.txt`), then build
 ```bash
 ./venv/bin/sphinx-build -b html examples/docs examples/docs/_build/html
 ```
+
+## Theme
+
+The docs use the Read the Docs Sphinx theme (`sphinx-rtd-theme`) for HTML output.
