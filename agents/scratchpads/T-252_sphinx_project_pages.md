@@ -54,3 +54,10 @@ Ready for review.
 
 # Next steps
 - Await review feedback.
+- 2026-01-31 21:57 — Review intake: PR targets main, scratchpad + verify logs present; set T-252 to review_in_progress and ran task state linter; next step: inspect diff + scope.
+- 2026-01-31 21:59 — Scope review complete against T-252 DoD/links.spec (none present); changes limited to Sphinx domain, examples docs, manifest, and unit test; next step: verify logs and inspect implementation.
+- 2026-01-31 21:59 — Verified executor logs for pytest + sphinx-build in scratchpad; no reruns; next step: finalize implementation review.
+- 2026-01-31 21:59 — Implementation review complete: manifest parsing + stub/toctree generation align with DoD; no issues found; next step: post PR comment and set review_clean.
+- 2026-01-31 22:00 — Posted PR review comment, set T-252 review_clean, and ran task state linter; next step: merge and closeout.
+- 2026-01-31 22:00 — Set T-252 status to done (merged true) and ran task state linter; next step: commit review metadata and merge PR.
+- 2026-01-31 22:01 — Merged PR 268, deleted remote/local branch, pruned refs, and synced main; task closed.
