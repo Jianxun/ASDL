@@ -20,9 +20,7 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - `venv/bin/python -m py_compile src/asdl/emit/netlist/*.py`
 
 ## Next steps (1-3)
-1. T-255: Load .asdlrc for Sphinx docs build (lib_roots/env for depgraph).
-2. T-256: Auto-expand Sphinx project manifest entries via import graph.
-3. T-257: Clean up Sphinx module tables (interface columns + patterns order).
+1. T-259: Align Sphinx document structure with file/module semantics.
 
 ## Risks / unknowns
 - Module name collisions across files must be disambiguated in tooling without exposing hash IDs to users.

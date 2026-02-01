@@ -91,9 +91,8 @@ nets:
 ## Documentation layout (recommended)
 
 ### Document
-- Title (file stem)
-- Overview (file docstring or top module docstring)
-- Top module (entry module, if present)
+- Title (file name with extension, e.g., `inv.asdl`)
+- Overview (file-level docstring only)
 - Imports (table: alias, path, docstring)
 - Modules (one section per module)
 
@@ -120,8 +119,8 @@ nets:
   - For each net: `name`, `endpoints`, `description`
 - Patterns / Arrays (if present)
   - List pattern definitions and their docstrings.
-- Notes / Specs
-  - Freeform specs or constraints captured in module-level comments.
+- Notes
+  - Module-level overview/specs captured in module-level comments.
 
 ## Build modes
 

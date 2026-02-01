@@ -77,5 +77,23 @@ current_sprint:
     files:
       - src/asdl/docs/sphinx_render.py
       - tests/unit_tests/docs/test_sphinx_render.py
+  - id: T-259
+    title: Align Sphinx document structure with file/module semantics
+    owner: Executor
+    dod: >
+      Render document titles as the ASDL file name with extension (e.g.,
+      `inv.asdl`) and treat Imports as a file-level section. Ensure the file
+      Overview uses only file-level docstrings. Module-level overviews must be
+      labeled "Notes" (not "Overview") to avoid confusion with file-level
+      Overview. Update unit coverage to assert title selection and section
+      ordering. Do not touch unrelated style docs (e.g.,
+      docs/code_styles/docstrings_comments.md).
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v
+    links:
+      scratchpad: agents/scratchpads/T-259_sphinx_doc_structure.md
+    files:
+      - src/asdl/docs/sphinx_render.py
+      - tests/unit_tests/docs/test_sphinx_render.py
 
 backlog: []

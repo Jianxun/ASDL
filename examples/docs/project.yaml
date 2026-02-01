@@ -1,5 +1,3 @@
 entries:
   - ../libs/mosbius_devices/top_mosbius_devices_v1_nmos/top_mosbius_devices_v1_nmos.asdl
-#  - ../libs/mosbius_devices/inv/inv.asdl
-#  - ../libs/mosbius_devices/ota_nmos/ota_nmos.asdl
-#  - ../libs/sw_matrix/swmatrix_Tgate/swmatrix_Tgate_doc.asdl
+  - ../libs/sw_matrix/full_switch_matrix_130_by_25/full_switch_matrix_130_by_25.asdl

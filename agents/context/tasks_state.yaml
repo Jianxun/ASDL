@@ -15,3 +15,7 @@ T-258:
   status: done
   pr: 277
   merged: true
+T-259:
+  status: ready
+  pr: null
+  merged: false
