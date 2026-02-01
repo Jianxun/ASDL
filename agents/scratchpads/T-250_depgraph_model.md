@@ -25,6 +25,7 @@
 - 2026-01-31 21:19 — Committed depgraph model + tests (c83c522); next step update scratchpad summary and proceed to closeout.
 - 2026-01-31 21:20 — Opened PR https://github.com/Jianxun/ASDL/pull/266; next step set task status ready_for_review.
 - 2026-01-31 21:20 — Set T-250 status to ready_for_review (PR 266) and ran tasks_state linter; next step finalize scratchpad closeout.
+- 2026-01-31 21:21 — Committed status + scratchpad updates (20e76c5); next step push branch updates.
 
 # Patch summary
 - Added dependency graph model, builder, and JSON serialization helpers with module_id hashing and unresolved tracking.
