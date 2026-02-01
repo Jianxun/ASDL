@@ -40,6 +40,8 @@
 - 2026-02-01 02:13 — Ran verify command `./venv/bin/pytest tests/unit_tests/docs/test_sphinx_asdlrc.py -v`; result: pass; next step scope/implementation review.
 - 2026-02-01 02:14 — Scope review complete against T-255 DoD/links.spec (none present); changes limited to Sphinx domain config, example docs note, tests, and task metadata; next step finalize implementation review/decision.
 - 2026-02-01 02:14 — Review decision: clean; posted PR comment with test results; next step update status to review_clean and proceed to merge/closeout.
+- 2026-02-01 02:15 — Set T-255 status to review_clean and linted tasks_state; next step proceed with merge/closeout.
+- 2026-02-01 02:16 — Set T-255 status to done (merged true) and linted tasks_state; next step merge PR and close out branch.
 
 # Patch summary
 - Added Sphinx .asdlrc-aware config path resolution, env merge, and lib_roots propagation for depgraph builds.
