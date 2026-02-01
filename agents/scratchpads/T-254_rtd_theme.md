@@ -34,6 +34,8 @@
 - 2026-01-31 22:56 — Scope check complete; changes limited to conf, requirements, README as required; next record decision and comment.
 - 2026-01-31 22:56 — Review clean decision; posted PR comment; next update status to review_clean and proceed to merge/closeout.
 - 2026-01-31 22:57 — Set T-254 to review_clean and linted tasks state; next commit review updates and merge/closeout.
+- 2026-01-31 22:58 — Merged PR https://github.com/Jianxun/ASDL/pull/271 and deleted remote branch; next update tasks_state to done and complete closeout steps.
+- 2026-01-31 22:58 — Set T-254 to done with merged=true and linted tasks state; next commit/push closeout updates, delete local branch, and sync main.
 
 # Patch summary
 - Switched Sphinx HTML theme to `sphinx_rtd_theme`.
