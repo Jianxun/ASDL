@@ -17,3 +17,31 @@
 
 # Progress log
 - 
+- 2026-02-01 02:20 — Task intake and context review (contract/lessons/tasks/project status); set T-256 to in_progress and linted tasks_state; created feature branch `feature/T-256-sphinx-manifest-expand`; next: inspect Sphinx manifest handling.
+- 2026-02-01 02:26 — Added unit test for manifest import expansion; files: tests/unit_tests/docs/test_sphinx_project_pages.py; next: implement manifest expansion in Sphinx domain.
+- 2026-02-01 02:26 — Commit c1d005a: add manifest import expansion test.
+- 2026-02-01 02:26 — Implemented manifest entry expansion using dependency graph + lib_roots; updated project page generation to pass lib_roots; files: src/asdl/docs/sphinx_domain.py; next: run targeted tests.
+- 2026-02-01 02:26 — Commit 4e94d0d: expand Sphinx manifest entries via depgraph.
+- 2026-02-01 02:26 — Verification: ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_project_pages.py -v (passed).
+
+# Patch summary
+- Added project manifest unit test for import graph expansion.
+- Expanded manifest entries using dependency graph resolution with lib_roots and manifest-relative path mapping; project pages now pass lib_roots.
+
+# PR URL
+- https://github.com/Jianxun/ASDL/pull/275
+
+# Verification
+- ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_project_pages.py -v
+
+# Status request
+- Done (ready_for_review)
+
+# Blockers / Questions
+- None.
+
+# Next steps
+- Open PR, update task state to ready_for_review.
+- 2026-02-01 02:34 — Opened PR https://github.com/Jianxun/ASDL/pull/275; next: update tasks_state and lint.
+- 2026-02-01 02:34 — Set T-256 status to ready_for_review with PR 275; next: run lint_tasks_state.
+- 2026-02-01 02:34 — Ran ./venv/bin/python scripts/lint_tasks_state.py (ok).
