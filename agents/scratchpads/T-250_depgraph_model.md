@@ -31,6 +31,7 @@
 - 2026-01-31 21:25 — Scope + verification review: changes match DoD/spec; verify command logged in scratchpad (not re-run); next step finalize decision + PR comment.
 - 2026-01-31 21:25 — Review decision: clean; set status to review_clean; next step post PR comment and proceed to merge/closeout.
 - 2026-01-31 21:26 — Posted PR review comment marking clean review; next step merge and closeout.
+- 2026-01-31 21:26 — Set T-250 status to done (merged true) and ran tasks_state linter; next step merge PR and cleanup branches.
 
 # Patch summary
 - Added dependency graph model, builder, and JSON serialization helpers with module_id hashing and unresolved tracking.
