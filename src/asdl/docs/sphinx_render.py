@@ -279,7 +279,7 @@ def _make_module_link(module: DepGraphModule, context: RenderContext) -> nodes.N
 
 def _document_title(document: AsdlDocument, file_path: Optional[Path]) -> str:
     if file_path is not None:
-        return file_path.stem
+        return file_path.name
     return "ASDL Document"
 
 
@@ -316,17 +316,6 @@ def _document_overview(
 ) -> tuple[Optional[str], Optional[str]]:
     if docstrings.file_docstring:
         return docstrings.file_docstring, None
-
-    module_name = None
-    if document.top:
-        module_name = document.top
-    elif document.modules and len(document.modules) == 1:
-        module_name = next(iter(document.modules.keys()))
-
-    if module_name:
-        module_doc = _docstring_text(docstrings, ("modules", module_name))
-        if module_doc:
-            return module_doc, module_name
 
     return None, None
 
