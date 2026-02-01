@@ -12,6 +12,6 @@ T-257:
   pr: 276
   merged: true
 T-258:
-  status: review_clean
+  status: done
   pr: 277
-  merged: false
+  merged: true

@@ -30,6 +30,7 @@
 - 2026-02-01 00:11 — Scope review complete against T-258 DoD/links.spec (none present); changes limited to Sphinx render/domain + tests + task metadata; next step verify logs and inspect implementation details.
 - 2026-02-01 00:12 — Verified provided test log (./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v); no CI checks reported; next step finalize review decision.
 - 2026-02-01 00:13 — Review decision: clean; PR comment posted; status set to review_clean; next step merge and closeout.
+- 2026-02-01 00:14 — Set T-258 status to done (merged true) and linted tasks_state; next step merge PR and clean up branches.
 
 # Patch summary
 - Use file-stem document titles in Sphinx render/domain and add a "Top module" section before imports.
