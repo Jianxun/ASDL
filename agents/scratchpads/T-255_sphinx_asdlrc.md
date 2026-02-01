@@ -16,5 +16,16 @@
 - Update examples/docs README with .asdlrc usage note.
 - Run verify command.
 
+# Understanding
+- Ensure Sphinx ASDL domain uses `.asdlrc` (auto-discover near project manifest or explicit override) to load lib_roots/env via `asdl.cli.config`, merge env vars without clobbering existing OS env, and pass resulting lib_roots into depgraph so imports resolve without AST-010. Add fixture-backed unit test and doc note.
+
+# Todo
+- [ ] Locate Sphinx domain depgraph build and config plumbing.
+- [ ] Implement `.asdlrc` discovery + config merge + lib_roots propagation.
+- [ ] Add/adjust unit test fixture for manifest + `.asdlrc` import resolution.
+- [ ] Update examples/docs/README.md note.
+- [ ] Run verify command.
+
 # Progress log
-- 
+- 2026-02-01 09:00 — Task intake and scope reviewed; read context/contract/task docs; next step set task status and branch.
+- 2026-02-01 09:02 — Set T-255 status to in_progress and linted tasks_state; created feature branch; next step inspect Sphinx domain code.
