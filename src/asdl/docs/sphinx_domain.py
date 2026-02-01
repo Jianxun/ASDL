@@ -184,6 +184,7 @@ def collect_asdl_project_entries(
     *,
     srcdir: Optional[Path] = None,
     generated_dirname: str = ASDL_PROJECT_GENERATED_DIR,
+    lib_roots: Optional[Iterable[Path]] = None,
 ) -> list[AsdlProjectEntry]:
     """Load ASDL project manifest entries in deterministic order.
 
@@ -192,12 +193,19 @@ def collect_asdl_project_entries(
         srcdir: Sphinx source directory used to resolve entry paths. Defaults to
             the manifest parent directory.
         generated_dirname: Directory name under ``srcdir`` where stub pages live.
+        lib_roots: Optional library roots for import resolution when expanding
+            manifest entries.
 
     Returns:
         Ordered list of project entries with computed stub metadata.
     """
     srcdir = srcdir or manifest_path.parent
     entries = _load_asdl_project_manifest(manifest_path)
+    entries = _expand_project_manifest_entries(
+        entries,
+        srcdir=srcdir,
+        lib_roots=lib_roots,
+    )
     return [
         _build_project_entry(entry, srcdir, generated_dirname)
         for entry in entries
@@ -287,6 +295,47 @@ def _load_asdl_project_manifest(manifest_path: Path) -> list[str]:
     return sorted(normalized)
 
 
+def _expand_project_manifest_entries(
+    entries: Sequence[str],
+    *,
+    srcdir: Path,
+    lib_roots: Optional[Iterable[Path]] = None,
+) -> list[str]:
+    """Expand manifest entries using the resolved import graph.
+
+    Args:
+        entries: Normalized manifest entry strings.
+        srcdir: Sphinx source directory used for relative path conversion.
+        lib_roots: Optional library roots for import resolution.
+
+    Returns:
+        Ordered list of entry strings including imported files.
+    """
+    if not entries:
+        return []
+
+    entry_paths = [
+        _resolve_project_entry_path(srcdir, entry)
+        for entry in entries
+    ]
+    graph, _diagnostics = build_dependency_graph(
+        entry_paths,
+        lib_roots=lib_roots,
+    )
+    if graph is None:
+        return list(entries)
+
+    expanded: list[str] = []
+    seen: set[str] = set()
+    for file_entry in graph.files:
+        entry = _path_to_manifest_entry(srcdir, Path(file_entry.file_id))
+        if entry in seen:
+            continue
+        seen.add(entry)
+        expanded.append(entry)
+    return expanded
+
+
 def _build_project_entry(
     entry: str,
     srcdir: Path,
@@ -314,6 +363,15 @@ def _resolve_project_entry_path(srcdir: Path, entry: str) -> Path:
     if not candidate.is_absolute():
         candidate = srcdir / candidate
     return candidate.resolve(strict=False)
+
+
+def _path_to_manifest_entry(srcdir: Path, entry_path: Path) -> str:
+    """Convert an absolute entry path to a manifest-relative path string."""
+    try:
+        relative = entry_path.relative_to(srcdir)
+    except ValueError:
+        relative = Path(os.path.relpath(entry_path, srcdir))
+    return relative.as_posix()
 
 
 def _entry_to_stub_relpath(entry: str) -> Path:
@@ -650,6 +708,7 @@ if SPHINX_AVAILABLE:
                 manifest_path,
                 srcdir=srcdir,
                 generated_dirname=generated_dirname,
+                lib_roots=lib_roots,
             )
         except AsdlDomainError as exc:
             _LOGGER.error(str(exc))
