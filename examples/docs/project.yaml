@@ -1,0 +1,4 @@
+entries:
+  - ../libs/mosbius_devices/inv/inv.asdl
+  - ../libs/mosbius_devices/ota_nmos/ota_nmos.asdl
+  - ../libs/sw_matrix/swmatrix_Tgate/swmatrix_Tgate_doc.asdl
