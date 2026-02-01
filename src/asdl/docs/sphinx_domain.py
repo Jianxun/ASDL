@@ -16,6 +16,7 @@ from asdl.ast.parser import parse_file
 from asdl.diagnostics import Diagnostic, Severity
 from asdl.diagnostics.renderers import render_text
 
+from .depgraph import build_dependency_graph, module_identifier
 from .docstrings import extract_docstrings_from_file
 
 ASDL_DOMAIN_NAME = "asdl"
@@ -33,6 +34,7 @@ ASDL_OBJECT_TYPES = (
 ASDL_PROJECT_MANIFEST = "project.yaml"
 ASDL_PROJECT_GENERATED_DIR = "_generated"
 ASDL_PROJECT_TOC_FILENAME = "project.rst"
+ASDL_DEPGRAPH_ENV_KEY = "asdl_dependency_graph"
 
 
 @dataclass(frozen=True)
@@ -554,6 +556,7 @@ if SPHINX_AVAILABLE:
             docstrings,
             file_path=file_path,
             title=doc_title,
+            sphinx_env=domain.env,
         )
         for section in rendered.findall(nodes.section):
             if not section.get("ids"):
@@ -561,6 +564,23 @@ if SPHINX_AVAILABLE:
         for target in rendered.findall(nodes.target):
             state_document.note_explicit_target(target)
         return rendered
+
+    def _store_dependency_graph(
+        app: "Sphinx",
+        entries: Sequence[AsdlProjectEntry],
+    ) -> None:
+        """Build and store the ASDL dependency graph on the Sphinx environment."""
+        if not hasattr(app, "env"):
+            return
+
+        graph = None
+        if entries:
+            graph, diagnostics = build_dependency_graph(
+                [entry.source_path for entry in entries]
+            )
+            if diagnostics:
+                _report_diagnostics(diagnostics)
+        setattr(app.env, ASDL_DEPGRAPH_ENV_KEY, graph)
 
     def _generate_project_pages(app: "Sphinx") -> None:
         """Generate per-file ASDL stub pages from the project manifest."""
@@ -572,6 +592,7 @@ if SPHINX_AVAILABLE:
 
         if not manifest_path.exists():
             _LOGGER.info("ASDL project manifest not found: %s", manifest_path)
+            _store_dependency_graph(app, [])
             return
 
         try:
@@ -582,10 +603,12 @@ if SPHINX_AVAILABLE:
             )
         except AsdlDomainError as exc:
             _LOGGER.error(str(exc))
+            _store_dependency_graph(app, [])
             return
 
         if not entries:
             _LOGGER.warning("ASDL project manifest is empty: %s", manifest_path)
+            _store_dependency_graph(app, [])
             return
 
         output_dir = srcdir / generated_dirname
@@ -594,6 +617,7 @@ if SPHINX_AVAILABLE:
             output_dir=output_dir,
             toc_filename=toc_filename,
         )
+        _store_dependency_graph(app, entries)
 
     def _register_document_objects(
         domain: "AsdlDomain",
@@ -614,6 +638,10 @@ if SPHINX_AVAILABLE:
         doc_ref_name = _document_ref_name(doc_title, file_path)
         domain.note_object("doc", doc_ref_name, display_name=doc_title)
 
+        file_id = None
+        if file_path is not None:
+            file_id = str(file_path.resolve(strict=False))
+
         for alias in (document.imports or {}).keys():
             domain.note_object(
                 "import",
@@ -622,7 +650,10 @@ if SPHINX_AVAILABLE:
             )
 
         for module_name, module in (document.modules or {}).items():
-            domain.note_object("module", module_name, display_name=module_name)
+            module_key = module_name
+            if file_id is not None:
+                module_key = module_identifier(module_name, file_id)
+            domain.note_object("module", module_key, display_name=module_name)
             nets = module.nets or {}
             for port_name in _module_port_names(module):
                 domain.note_object(
