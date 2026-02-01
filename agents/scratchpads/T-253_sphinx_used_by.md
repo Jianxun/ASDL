@@ -50,6 +50,7 @@ Verify:
 - 2026-02-01 10:35 — Implementation review complete; no blockers found; next step: post review comment and set review_clean.
 - 2026-02-01 10:40 — Posted PR review comment (clean), set T-253 review_clean, and ran task state linter; next step: merge and closeout.
 - 2026-02-01 10:45 — Set T-253 done (merged true) and ran task state linter; next step: commit/push, merge PR, and cleanup branches.
+- 2026-02-01 10:55 — Merged PR 269, deleted remote branch, pruned refs, and synced main; task closed.
 
 # Patch summary
 - Added depgraph helpers for module/instance identifiers and stored dependency graphs in Sphinx env from the project manifest.
