@@ -57,6 +57,7 @@ def test_sphinx_render_links_used_by_and_disambiguation(tmp_path: Path) -> None:
         "  Top:\n"
         "    instances:\n"
         "      u_child: \"lib1.Child\"\n"
+        "      u_child2: \"lib1.Child\"\n"
         "      u_dup1: \"lib1.Dup\"\n"
         "      u_dup2: \"lib2.Dup\"\n"
         "      u_local: \"Local\"\n"
@@ -101,5 +102,6 @@ def test_sphinx_render_links_used_by_and_disambiguation(tmp_path: Path) -> None:
 
     used_by_refs = list(used_by_section.findall(addnodes.pending_xref))
     assert used_by_refs
+    assert len(used_by_refs) == 1
     assert used_by_refs[0].get("reftarget") == top_id
     assert used_by_refs[0].astext() == "Top"
