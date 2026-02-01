@@ -4,9 +4,9 @@ T-250:
   pr: 266
   merged: true
 T-251:
-  status: ready_for_review
+  status: done
   pr: 267
-  merged: false
+  merged: true
 T-252:
   status: ready
   pr: null

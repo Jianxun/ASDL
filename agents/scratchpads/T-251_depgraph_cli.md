@@ -30,6 +30,13 @@
 - 2026-01-31 21:35 — Opened PR https://github.com/Jianxun/ASDL/pull/267.
 - 2026-01-31 21:35 — Set T-251 status to ready_for_review and ran scripts/lint_tasks_state.py.
 - 2026-01-31 21:35 — Commit 09644b0: "chore: update T-251 status and scratchpad".
+- 2026-02-01 10:05 — Review intake; confirmed PR #267 targets main and verify logs present; next step: mark review_in_progress.
+- 2026-02-01 10:06 — Set T-251 status to review_in_progress and linted tasks_state; next step: run required checks.
+- 2026-02-01 10:08 — Ran ./venv/bin/pytest tests/unit_tests/cli/test_depgraph_dump.py -v; passed; next step: scope review.
+- 2026-02-01 10:10 — Scope review against T-251 DoD and task links; changes confined to CLI/test/task metadata; next step: finalize review decision.
+- 2026-02-01 10:12 — Review clean; posted PR comment; next step: mark review_clean and proceed to merge/closeout.
+- 2026-02-01 10:13 — Set T-251 status to review_clean and linted tasks_state; next step: merge and close out.
+- 2026-02-01 10:15 — Set T-251 status to done (merged true) and linted tasks_state; next step: commit/push and merge PR.
 
 ## Patch summary
 - Added depgraph-dump CLI command with rc/lib resolution, JSON output, and diagnostics handling.
