@@ -330,6 +330,7 @@ export function App() {
           hubData.netId ??
           node.id
         const existing =
+          moduleLayout.net_hubs[layoutKey] ??
           existingModule?.net_hubs?.[layoutKey] ??
           existingModule?.net_hubs?.[hubData.netId]
         const normalized = normalizeNetHubEntry(existing)
