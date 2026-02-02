@@ -24,6 +24,10 @@
 - 2026-02-01 20:25 — Opened PR https://github.com/Jianxun/ASDL/pull/280 after pushing branch; next step update task state and scratchpad.
 - 2026-02-01 20:25 — Set T-261 status to ready_for_review with PR 280 and ran lint_tasks_state.py; files touched: agents/context/tasks_state.yaml; next step final commit/push.
 - 2026-02-01 20:27 — Review intake: confirmed PR targets main, task ID present, scratchpad + verification note included; next step set review_in_progress and inspect spec changes.
+- 2026-02-01 20:28 — Verified checks: no required verify commands; docs-only skip recorded; next step scope review.
+- 2026-02-01 20:28 — Scope review complete; spec updates align DoD for net_hubs schema, net_groups mapping, and MST/trunk routing; next step decide review outcome.
+- 2026-02-01 20:29 — Posted PR review comment with review-clean decision and non-blocking trunk note; next step set review_clean status.
+- 2026-02-01 20:29 — Set T-261 status to review_clean; next step closeout (set done, merge, cleanup).
 
 # Patch summary
 - Documented net_hubs topology schema with defaults/legacy shape and hub group ordering rules.
