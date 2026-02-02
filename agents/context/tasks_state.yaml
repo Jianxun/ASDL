@@ -20,9 +20,9 @@ T-259:
   pr: 278
   merged: true
 T-260:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 279
+  merged: true
 T-261:
   status: backlog
   pr: null
