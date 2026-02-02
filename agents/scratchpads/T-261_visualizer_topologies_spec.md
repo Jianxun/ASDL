@@ -21,18 +21,23 @@
 - 2026-02-01 20:23 — Updated visualizer spec with net_hubs topology schema, hub group mapping, and routing topology rules; files touched: docs/specs/spec_asdl_visualizer.md; next step commit changes.
 - 2026-02-01 20:24 — Committed spec updates; commit 223cbb1; next step verification/polish scratchpad.
 - 2026-02-01 20:24 — Recorded patch summary and verification skip note (docs-only); next step update task state/PR.
+- 2026-02-01 20:25 — Opened PR https://github.com/Jianxun/ASDL/pull/280 after pushing branch; next step update task state and scratchpad.
+- 2026-02-01 20:25 — Set T-261 status to ready_for_review with PR 280 and ran lint_tasks_state.py; files touched: agents/context/tasks_state.yaml; next step final commit/push.
 
 # Patch summary
 - Documented net_hubs topology schema with defaults/legacy shape and hub group ordering rules.
 - Added per-group routing topology definitions for star/mst/trunk (including Manhattan MST + deterministic tie-breaker and trunk orientation rules).
 
 # PR URL
+- https://github.com/Jianxun/ASDL/pull/280
 
 # Verification
 - Not run (docs-only changes; no verify command listed).
 
 # Status request (Done / Blocked / In Progress)
+- Ready for review
 
 # Blockers / Questions
 
 # Next steps
+- Update tasks_state to ready_for_review with PR number.
