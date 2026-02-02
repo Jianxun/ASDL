@@ -17,19 +17,24 @@
 - Run verify command.
 
 # Progress log
+- 2026-02-01 20:32 — Task intake: reviewed role, tasks, contract, status; created scratchpad; set T-262 in_progress; next step inspect visualizer extension types/layout.
+- 2026-02-01 20:39 — Updated extension layout/types for topology + schematic hints; adjusted net_hubs merge normalization and defaults; next step update dev payload generator.
+- 2026-02-01 20:39 — Updated build-dev-payload graph + layout merge to emit new net_hubs shape and schematic_hints passthrough; next step review diff and commit.
+- 2026-02-01 20:40 — Commit f92b852 (start T-262 layout schema support); files: agents/context/tasks_state.yaml, agents/scratchpads/T-262_visualizer_layout_topology.md, extensions/asdl-visualizer/src/extension/{types.ts,layout.ts,symbols.ts}; next step update dev payload generator.
+- 2026-02-01 20:40 — Commit b0481f1 (update dev payload net hub shape); files: extensions/asdl-visualizer/scripts/build-dev-payload.mjs, agents/scratchpads/T-262_visualizer_layout_topology.md; next step run verification.
+- 2026-02-01 20:40 — Verification: npm --prefix extensions/asdl-visualizer run build:extension (pass).
 
 # Patch summary
+- Updated visualizer extension payload types and layout merge logic to normalize net_hubs entries, apply default star topology, and carry schematic_hints net_groups/hub_group_index.
+- Adjusted dev payload generation to pass schematic_hints through and emit net_hubs entries in the new topology/hubs shape.
 
 # PR URL
 
 # Verification
+- npm --prefix extensions/asdl-visualizer run build:extension (pass)
 
 # Status request (Done / Blocked / In Progress)
 
 # Blockers / Questions
 
 # Next steps
-- 2026-02-01 20:32 — Task intake: reviewed role, tasks, contract, status; created scratchpad; set T-262 in_progress; next step inspect visualizer extension types/layout.
-- 2026-02-01 20:39 — Updated extension layout/types for topology + schematic hints; adjusted net_hubs merge normalization and defaults; next step update dev payload generator.
-- 2026-02-01 20:39 — Updated build-dev-payload graph + layout merge to emit new net_hubs shape and schematic_hints passthrough; next step review diff and commit.
-- 2026-02-01 20:40 — Commit f92b852 (start T-262 layout schema support); files: agents/context/tasks_state.yaml, agents/scratchpads/T-262_visualizer_layout_topology.md, extensions/asdl-visualizer/src/extension/{types.ts,layout.ts,symbols.ts}; next step update dev payload generator.
