@@ -108,7 +108,7 @@ Schema (outline):
 Module layout definition:
 - `grid_size`: number (optional, default 16)
 - `instances`: mapping of `inst_name` -> placement data
-- `net_hubs`: mapping of `net_name` -> `{hub_name: placement}`
+- `net_hubs`: mapping of `net_name` -> net hub entry (see below)
 
 Placement data:
 - `x`, `y`: grid coordinates in **grid units**.
@@ -118,14 +118,28 @@ Placement data:
   `MXR90`, `MYR90`)
 - `label`: optional display label
 
-Net hub placement data:
-- Hub placement mapping: `{ hub_name: placement }`.
-  - Hub `x,y` are **center** coordinates in grid units.
-  - `orient` rotates the hub’s launch direction for routed edges.
+Net hub entry (v0):
+- Preferred shape: `{ topology?, hubs }`
+  - `topology`: `star | mst | trunk` (optional, default `star`)
+  - `hubs`: mapping of `hub_name` -> placement
+- Legacy shape (still accepted): `{ hub_name: placement }`
+  - Interpreted as `{ topology: star, hubs: <legacy map> }`
+If a net has no `net_hubs` entry, the visualizer uses default hub placement
+and `star` topology for that net.
 
-Hub order MUST align with `registries.schematic_hints.net_groups` emitted by
-the compiler (derived from net endpoint list-of-lists). If the registry has no
-groups, a single hub is assumed. User-defined extra hubs are not supported.
+Net hub placement data:
+- Hub placement mapping: `{ hub_name: placement }` (either the legacy map or
+  the value of `hubs`).
+  - Hub `x,y` are **center** coordinates in grid units.
+  - `orient` rotates the hub’s launch direction for routed edges (see trunk
+    routing). Missing `orient` defaults to `R0`; missing hub placement uses
+    the default layout placement rules.
+
+Hub group order MUST align with `registries.schematic_hints.net_groups` emitted
+by the compiler (derived from net endpoint list-of-lists). The hub group order
+is the YAML map order of the hub placement mapping (`hubs` or the legacy map).
+If the registry has no groups, a single hub group is assumed. User-defined
+extra hubs are not supported.
 
 Layout keys use instance/net display names. If names collide, the visualizer
 uses `${name}#${id}` to disambiguate. Legacy layouts keyed by `inst_id` or
@@ -134,8 +148,32 @@ uses `${name}#${id}` to disambiguate. Legacy layouts keyed by `inst_id` or
 ## Derived visualizer graph
 The renderer builds an explicit node+edge graph:
 - Nodes: instances, net hubs, optional port/junction helpers.
-- Edges: one per endpoint, connecting instance pin handles to net hub handles.
+- Edges: topology-specific routed edges (see "Routing topologies").
 - Handle IDs: pin names for instance/port pins; `hub` for net hubs.
+
+### Routing topologies (per net group)
+Topology selection is per net and applies independently to each hub group. If
+`schematic_hints.net_groups` is present for a net, endpoints are partitioned
+into groups; group index maps to hub group index based on hub order. Each group
+uses the same `topology` value and the corresponding hub placement.
+
+Topologies:
+- `star` (default): connect each endpoint directly to the hub with a single
+  rectilinear segment (pin-to-hub).
+- `mst`: build a Manhattan minimum spanning tree over the endpoint nodes plus
+  the hub (the hub is an MST node). Edge weights are Manhattan distances
+  between node positions. Use a deterministic tie-breaker so routing is stable:
+  sort candidate edges by `(distance, node_key_a, node_key_b)` where node keys
+  follow the stable endpoint order (net group order, then endpoint order within
+  the group) and the hub sorts first. Any valid deterministic MST algorithm is
+  acceptable (e.g., Kruskal with the ordered edges).
+- `trunk`: create a rectilinear trunk through the hub center and branch to
+  endpoints with orthogonal drops. Trunk orientation follows the hub
+  orientation: horizontal for `R0`, `R180`, `MX`, `MY`; vertical for `R90`,
+  `R270`, `MXR90`, `MYR90`. If hub placement is missing, default to horizontal.
+  The trunk spans from the minimum to maximum endpoint projection along its
+  axis. Each endpoint connects to the trunk at its orthogonal projection,
+  creating a junction node where the branch meets the trunk.
 
 ### Connection labeling (numeric patterns)
 For numeric patterns, the visualizer stays compact (no instance explosion) and
