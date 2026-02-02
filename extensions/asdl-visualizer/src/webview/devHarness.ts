@@ -4,6 +4,7 @@ type GraphPayload = {
   netHubs: Array<{ id: string; label: string; layoutKey?: string }>
   edges: Array<{ id: string; from: string; to: string; conn_label?: string }>
   symbols: Record<string, SymbolDefinition>
+  schematic_hints?: SchematicHints | null
 }
 
 type LayoutPayload = {
@@ -19,6 +20,17 @@ type LayoutPayload = {
 }
 
 type NetTopology = 'star' | 'mst' | 'trunk'
+
+type GroupSlice = {
+  start: number
+  count: number
+  label?: string | null
+}
+
+type SchematicHints = {
+  net_groups: Record<string, GroupSlice[]>
+  hub_group_index: number
+}
 
 type NetHubEntry = {
   topology?: NetTopology
@@ -118,17 +130,27 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
     moduleId: 'mock_top',
     instances: [
       { id: 'M1', label: 'M1', pins: ['D', 'G', 'S'], symbolKey, layoutKey: 'M1' },
-      { id: 'XBUF', label: 'XBUF', pins: ['IN', 'OUT'], symbolKey: moduleKey, layoutKey: 'XBUF' }
+      { id: 'M2', label: 'M2', pins: ['D', 'G', 'S'], symbolKey, layoutKey: 'M2' },
+      { id: 'M3', label: 'M3', pins: ['D', 'G', 'S'], symbolKey, layoutKey: 'M3' },
+      { id: 'XBUF', label: 'XBUF', pins: ['IN', 'OUT'], symbolKey: moduleKey, layoutKey: 'XBUF' },
+      { id: 'XBUF2', label: 'XBUF2', pins: ['IN', 'OUT'], symbolKey: moduleKey, layoutKey: 'XBUF2' }
     ],
     netHubs: [
       { id: 'net_in', label: 'IN', layoutKey: 'IN' },
-      { id: 'net_out', label: 'OUT', layoutKey: 'OUT' }
+      { id: 'net_mst', label: 'MID', layoutKey: 'MID' },
+      { id: 'net_trunk', label: 'BUS', layoutKey: 'BUS' }
     ],
     edges: [
       { id: 'e1', from: 'M1.G', to: 'net_in', conn_label: '<3>' },
-      { id: 'e2', from: 'M1.D', to: 'net_out', conn_label: '<3,1>' },
-      { id: 'e3', from: 'XBUF.IN', to: 'net_in' },
-      { id: 'e4', from: 'XBUF.OUT', to: 'net_out' }
+      { id: 'e2', from: 'XBUF.IN', to: 'net_in' },
+      { id: 'e3', from: 'M1.D', to: 'net_mst' },
+      { id: 'e4', from: 'M2.D', to: 'net_mst' },
+      { id: 'e5', from: 'XBUF.OUT', to: 'net_mst' },
+      { id: 'e6', from: 'XBUF2.IN', to: 'net_mst', conn_label: '<2>' },
+      { id: 'e7', from: 'M2.S', to: 'net_trunk' },
+      { id: 'e8', from: 'M3.S', to: 'net_trunk' },
+      { id: 'e9', from: 'XBUF2.OUT', to: 'net_trunk' },
+      { id: 'e10', from: 'M1.S', to: 'net_trunk' }
     ],
     symbols: {
       [symbolKey]: {
@@ -151,10 +173,19 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
       [moduleKey]: {
         body: { w: 8, h: 4 },
         pins: {
-          left: [{ name: 'IN', offset: 0, visible: true, connect_by_label: true }],
+          left: [{ name: 'IN', offset: 0, visible: true }],
           right: [{ name: 'OUT', offset: 0, visible: true }]
         }
       }
+    },
+    schematic_hints: {
+      net_groups: {
+        net_trunk: [
+          { start: 0, count: 2, label: 'A' },
+          { start: 2, count: 2, label: 'B' }
+        ]
+      },
+      hub_group_index: 0
     }
   }
 
@@ -165,11 +196,21 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
         grid_size: 20,
         instances: {
           M1: { x: 2, y: 2, orient: 'R0' },
-          XBUF: { x: 10, y: 2, orient: 'R0' }
+          M2: { x: 2, y: 6, orient: 'R0' },
+          M3: { x: 2, y: 10, orient: 'R0' },
+          XBUF: { x: 10, y: 2, orient: 'R0' },
+          XBUF2: { x: 10, y: 8, orient: 'R0' }
         },
         net_hubs: {
-          net_in: { topology: 'star', hubs: { hub1: { x: 6, y: 2 } } },
-          net_out: { topology: 'star', hubs: { hub1: { x: 14, y: 2 } } }
+          IN: { topology: 'star', hubs: { hub1: { x: 6, y: 2 } } },
+          MID: { topology: 'mst', hubs: { hub1: { x: 6, y: 6 } } },
+          BUS: {
+            topology: 'trunk',
+            hubs: {
+              hub1: { x: 14, y: 4, orient: 'R0' },
+              hub2: { x: 14, y: 10, orient: 'R90' }
+            }
+          }
         }
       }
     }

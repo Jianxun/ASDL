@@ -1,0 +1,89 @@
+{
+  "graph": {
+    "moduleId": "mock_top",
+    "instances": [
+      { "id": "M1", "label": "M1", "pins": ["D", "G", "S"], "symbolKey": "mock::device::nfet", "layoutKey": "M1" },
+      { "id": "M2", "label": "M2", "pins": ["D", "G", "S"], "symbolKey": "mock::device::nfet", "layoutKey": "M2" },
+      { "id": "M3", "label": "M3", "pins": ["D", "G", "S"], "symbolKey": "mock::device::nfet", "layoutKey": "M3" },
+      { "id": "XBUF", "label": "XBUF", "pins": ["IN", "OUT"], "symbolKey": "mock::module::buf", "layoutKey": "XBUF" },
+      { "id": "XBUF2", "label": "XBUF2", "pins": ["IN", "OUT"], "symbolKey": "mock::module::buf", "layoutKey": "XBUF2" }
+    ],
+    "netHubs": [
+      { "id": "net_in", "label": "IN", "layoutKey": "IN" },
+      { "id": "net_mst", "label": "MID", "layoutKey": "MID" },
+      { "id": "net_trunk", "label": "BUS", "layoutKey": "BUS" }
+    ],
+    "edges": [
+      { "id": "e1", "from": "M1.G", "to": "net_in", "conn_label": "<3>" },
+      { "id": "e2", "from": "XBUF.IN", "to": "net_in" },
+      { "id": "e3", "from": "M1.D", "to": "net_mst" },
+      { "id": "e4", "from": "M2.D", "to": "net_mst" },
+      { "id": "e5", "from": "XBUF.OUT", "to": "net_mst" },
+      { "id": "e6", "from": "XBUF2.IN", "to": "net_mst", "conn_label": "<2>" },
+      { "id": "e7", "from": "M2.S", "to": "net_trunk" },
+      { "id": "e8", "from": "M3.S", "to": "net_trunk" },
+      { "id": "e9", "from": "XBUF2.OUT", "to": "net_trunk" },
+      { "id": "e10", "from": "M1.S", "to": "net_trunk" }
+    ],
+    "symbols": {
+      "mock::device::nfet": {
+        "body": { "w": 6, "h": 4 },
+        "pins": {
+          "left": [
+            { "name": "G", "offset": 0, "visible": true }
+          ],
+          "right": [
+            { "name": "D", "offset": 0, "visible": true },
+            { "name": "S", "offset": 0, "visible": true }
+          ]
+        }
+      },
+      "mock::module::buf": {
+        "body": { "w": 8, "h": 4 },
+        "pins": {
+          "left": [
+            { "name": "IN", "offset": 0, "visible": true }
+          ],
+          "right": [
+            { "name": "OUT", "offset": 0, "visible": true }
+          ]
+        }
+      }
+    },
+    "schematic_hints": {
+      "net_groups": {
+        "net_trunk": [
+          { "start": 0, "count": 2, "label": "A" },
+          { "start": 2, "count": 2, "label": "B" }
+        ]
+      },
+      "hub_group_index": 0
+    }
+  },
+  "layout": {
+    "schema_version": 0,
+    "modules": {
+      "mock_top": {
+        "grid_size": 20,
+        "instances": {
+          "M1": { "x": 2, "y": 2, "orient": "R0" },
+          "M2": { "x": 2, "y": 6, "orient": "R0" },
+          "M3": { "x": 2, "y": 10, "orient": "R0" },
+          "XBUF": { "x": 10, "y": 2, "orient": "R0" },
+          "XBUF2": { "x": 10, "y": 8, "orient": "R0" }
+        },
+        "net_hubs": {
+          "IN": { "topology": "star", "hubs": { "hub1": { "x": 6, "y": 2 } } },
+          "MID": { "topology": "mst", "hubs": { "hub1": { "x": 6, "y": 6 } } },
+          "BUS": {
+            "topology": "trunk",
+            "hubs": {
+              "hub1": { "x": 14, "y": 4, "orient": "R0" },
+              "hub2": { "x": 14, "y": 10, "orient": "R90" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

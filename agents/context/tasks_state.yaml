@@ -8,6 +8,6 @@ T-262:
   pr: 281
   merged: true
 T-263:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 282
+  merged: true

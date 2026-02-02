@@ -32,12 +32,24 @@ type NetHubNode = {
   layoutKey?: string
 }
 
+type GroupSlice = {
+  start: number
+  count: number
+  label?: string | null
+}
+
+type SchematicHints = {
+  net_groups: Record<string, GroupSlice[]>
+  hub_group_index: number
+}
+
 type GraphPayload = {
   moduleId: string
   instances: InstanceNode[]
   netHubs: NetHubNode[]
   edges: Array<{ id: string; from: string; to: string; conn_label?: string }>
   symbols: Record<string, SymbolDefinition>
+  schematic_hints?: SchematicHints | null
 }
 
 type SymbolPins = {
@@ -115,7 +127,10 @@ const DEFAULT_GRID_SIZE = 16
 const DEFAULT_TOPOLOGY: NetTopology = 'star'
 const HUB_SIZE = 2
 const HUB_HANDLE_ID = 'hub'
+const JUNCTION_SIZE = 0.6
+const JUNCTION_HANDLE_ID = 'junction'
 const EDGE_STEP_OFFSET_UNITS = 0.8
+const EDGE_STYLE = { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' }
 const PIN_LABEL_INSET_RATIO = 0.6
 const PIN_LABEL_INSET_MIN_PX = 6
 const FALLBACK_SYMBOL: SymbolDefinition = {
@@ -136,9 +151,16 @@ type InstanceNodeData = {
 type HubNodeData = {
   label: string
   orient: string
+  netId: string
+  hubKey: string
+  layoutKey: string
 }
 
-type VisualNodeData = InstanceNodeData | HubNodeData
+type JunctionNodeData = {
+  kind: 'junction'
+}
+
+type VisualNodeData = InstanceNodeData | HubNodeData | JunctionNodeData
 
 type PinSide = 'top' | 'bottom' | 'left' | 'right'
 type Orient = 'R0' | 'R90' | 'R180' | 'R270' | 'MX' | 'MY' | 'MXR90' | 'MYR90'
@@ -151,6 +173,38 @@ type PinPosition = {
   y: number
   visible: boolean
   connectByLabel: boolean
+}
+
+type RoutedPin = {
+  x: number
+  y: number
+  side: PinSide
+  connectByLabel: boolean
+}
+
+type RoutedEndpoint = {
+  id: string
+  netId: string
+  instanceId: string
+  pinId: string
+  connLabel?: string
+  order: number
+  x: number
+  y: number
+  connectByLabel: boolean
+}
+
+type HubGroupInfo = {
+  nodeId: string
+  hubKey: string
+  layoutKey: string
+  orient: Orient
+  center: { x: number; y: number }
+}
+
+type NetHubInfo = {
+  topology: NetTopology
+  groups: HubGroupInfo[]
 }
 
 export function App() {
@@ -166,7 +220,8 @@ export function App() {
 
   const nodeTypes = useMemo<NodeTypes>(() => ({
     instance: InstanceNodeComponent,
-    hub: HubNodeComponent
+    hub: HubNodeComponent,
+    junction: JunctionNodeComponent
   }), [])
 
   useEffect(() => {
@@ -268,23 +323,30 @@ export function App() {
       }
       if (node.type === 'hub') {
         const { x, y } = centerFromNode(node, gridSize, HUB_SIZE, HUB_SIZE)
-        const layoutKey = hubLayoutKeys.get(node.id) ?? node.id
+        const hubData = node.data as HubNodeData
+        const layoutKey =
+          hubData.layoutKey ??
+          hubLayoutKeys.get(hubData.netId) ??
+          hubData.netId ??
+          node.id
         const existing =
-          existingModule?.net_hubs?.[layoutKey] ?? existingModule?.net_hubs?.[node.id]
+          moduleLayout.net_hubs[layoutKey] ??
+          existingModule?.net_hubs?.[layoutKey] ??
+          existingModule?.net_hubs?.[hubData.netId]
         const normalized = normalizeNetHubEntry(existing)
-        const entry = firstHubEntry(normalized.hubs)
-        const firstKey = entry?.key ?? 'hub1'
-        const firstHub = entry?.placement
-        const orient = normalizeOrient((node.data as HubNodeData).orient)
+        const fallbackEntry = firstHubEntry(normalized.hubs)
+        const hubKey = hubData.hubKey ?? fallbackEntry?.key ?? 'hub1'
+        const hubPlacement = normalized.hubs[hubKey] ?? fallbackEntry?.placement
+        const orient = normalizeOrient(hubData.orient)
         moduleLayout.net_hubs[layoutKey] = {
           topology: normalized.topology,
           hubs: {
             ...normalized.hubs,
-            [firstKey]: {
+            [hubKey]: {
               x,
               y,
               orient,
-              label: firstHub?.label
+              label: hubPlacement?.label
             }
           }
         }
@@ -328,11 +390,11 @@ export function App() {
               snapGrid={[gridSize, gridSize]}
               defaultEdgeOptions={{
                 type: 'smoothstep',
-                style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' },
+                style: EDGE_STYLE,
                 pathOptions: { offset: gridSize * EDGE_STEP_OFFSET_UNITS }
               }}
               connectionLineType={ConnectionLineType.Step}
-              connectionLineStyle={{ stroke: '#e2e8f0', strokeWidth: 2 }}
+              connectionLineStyle={EDGE_STYLE}
               className="reactflow"
             >
               <Background gap={gridSize} size={1} />
@@ -364,7 +426,7 @@ function buildReactFlowGraph(
   const netLabelById = new Map(
     graph.netHubs.map((hub) => [hub.id, hub.label || hub.id])
   )
-  const connectByLabelPins = new Map<string, Set<string>>()
+  const routedPins = new Map<string, Map<string, RoutedPin>>()
   const instances = graph.instances.map((inst, index) => {
     const layoutKey = inst.layoutKey ?? inst.id
     const placement =
@@ -375,16 +437,26 @@ function buildReactFlowGraph(
     const symbol = graph.symbols[inst.symbolKey] ?? FALLBACK_SYMBOL
     const body = normalizeSymbolBody(symbol.body)
     const pins = computePinPositions(symbol, body)
-    const pinLabelSet = new Set<string>()
-    pins.forEach((pin) => {
-      if (pin.connectByLabel) {
-        pinLabelSet.add(pin.id)
-      }
-    })
-    connectByLabelPins.set(inst.id, pinLabelSet)
     const netLabels = buildNetLabelMap(inst.id, pins, graph.edges, netLabelById)
     const pos = topLeftFromGrid(gridX, gridY, gridSize)
     const orientedBody = computeOrientData(body.w, body.h, orient)
+    const orientData = computeOrientData(body.w * gridSize, body.h * gridSize, orient)
+    const pinMap = new Map<string, RoutedPin>()
+    pins.forEach((pin) => {
+      const { x: ox, y: oy } = applyOrientPoint(
+        pin.x * gridSize,
+        pin.y * gridSize,
+        orientData
+      )
+      const side = mapPinSide(pin.side, orientData)
+      pinMap.set(pin.id, {
+        x: pos.x + ox,
+        y: pos.y + oy,
+        side,
+        connectByLabel: pin.connectByLabel
+      })
+    })
+    routedPins.set(inst.id, pinMap)
     return {
       id: inst.id,
       type: 'instance',
@@ -405,55 +477,486 @@ function buildReactFlowGraph(
     } as Node<InstanceNodeData>
   })
 
-  const hubs = graph.netHubs.map((hub, index) => {
+  const hubs: Array<Node<HubNodeData>> = []
+  const hubInfoByNet = new Map<string, NetHubInfo>()
+  let hubRowIndex = 0
+
+  graph.netHubs.forEach((hub, index) => {
     const layoutKey = hub.layoutKey ?? hub.id
-    const placement =
-      firstHubPlacement(moduleLayout?.net_hubs?.[layoutKey]) ??
-      firstHubPlacement(moduleLayout?.net_hubs?.[hub.id])
-    const gridX = placement?.x ?? (instances.length + 2) * 4
-    const gridY = placement?.y ?? index * 4
-    const pos = topLeftFromCenter(gridX, gridY, gridSize, HUB_SIZE, HUB_SIZE)
-    const orient = normalizeOrient(placement?.orient)
-    return {
-      id: hub.id,
-      type: 'hub',
-      position: pos,
-      data: { label: hub.label, orient },
-      style: {
-        width: HUB_SIZE * gridSize,
-        height: HUB_SIZE * gridSize
-      }
-    } as Node<HubNodeData>
+    const rawEntry =
+      moduleLayout?.net_hubs?.[layoutKey] ?? moduleLayout?.net_hubs?.[hub.id]
+    const normalized = normalizeNetHubEntry(rawEntry)
+    const groupSlices = graph.schematic_hints?.net_groups?.[hub.id]
+    const groupCount =
+      Array.isArray(groupSlices) && groupSlices.length > 0 ? groupSlices.length : 1
+    const hubEntries = Object.entries(normalized.hubs).slice(0, groupCount)
+    const groups: HubGroupInfo[] = []
+
+    for (let groupIndex = 0; groupIndex < groupCount; groupIndex += 1) {
+      const [hubKey, placement] = hubEntries[groupIndex] ?? [
+        `hub${groupIndex + 1}`,
+        undefined
+      ]
+      const gridX = placement?.x ?? (instances.length + 2) * 4
+      const gridY = placement?.y ?? (hubRowIndex + groupIndex) * 4
+      const pos = topLeftFromCenter(gridX, gridY, gridSize, HUB_SIZE, HUB_SIZE)
+      const orient = normalizeOrient(placement?.orient)
+      const nodeId = `${hub.id}::${hubKey}`
+      hubs.push({
+        id: nodeId,
+        type: 'hub',
+        position: pos,
+        data: { label: hub.label, orient, netId: hub.id, hubKey, layoutKey },
+        style: {
+          width: HUB_SIZE * gridSize,
+          height: HUB_SIZE * gridSize
+        }
+      })
+      groups.push({
+        nodeId,
+        hubKey,
+        layoutKey,
+        orient,
+        center: { x: gridX * gridSize, y: gridY * gridSize }
+      })
+    }
+    const topology = normalized.topology ?? DEFAULT_TOPOLOGY
+    hubInfoByNet.set(hub.id, { topology, groups })
+    hubRowIndex += groupCount
   })
 
-  const nodeIds = new Set([...instances.map((n) => n.id), ...hubs.map((n) => n.id)])
-  const edges = graph.edges
-    .map((edge) => {
-      const { nodeId: source, handleId: sourceHandle } = parseEndpoint(edge.from)
-      const target = edge.to
-      if (!nodeIds.has(source) || !nodeIds.has(target)) {
-        return null
+  const endpointsByNet = collectRoutedEndpoints(graph.edges, routedPins)
+  const junctionNodes: Array<Node<JunctionNodeData>> = []
+  const edges: Edge[] = []
+  let edgeIndex = 0
+  let junctionIndex = 0
+
+  const makeEdge = (
+    source: string,
+    target: string,
+    sourceHandle: string | undefined,
+    targetHandle: string | undefined
+  ) => ({
+    id: `edge-${edgeIndex++}`,
+    source,
+    target,
+    sourceHandle,
+    targetHandle,
+    type: 'smoothstep',
+    pathOptions: { offset: gridSize * EDGE_STEP_OFFSET_UNITS },
+    style: EDGE_STYLE
+  })
+
+  const makeJunctionNode = (centerX: number, centerY: number) => {
+    const nodeId = `junction-${junctionIndex++}`
+    const pos = topLeftFromCenter(
+      centerX / gridSize,
+      centerY / gridSize,
+      gridSize,
+      JUNCTION_SIZE,
+      JUNCTION_SIZE
+    )
+    junctionNodes.push({
+      id: nodeId,
+      type: 'junction',
+      position: pos,
+      data: { kind: 'junction' },
+      draggable: false,
+      selectable: false,
+      style: {
+        width: JUNCTION_SIZE * gridSize,
+        height: JUNCTION_SIZE * gridSize
       }
-      if (sourceHandle) {
-        const suppressed = connectByLabelPins.get(source)?.has(sourceHandle)
-        if (suppressed) {
-          return null
-        }
+    })
+    return nodeId
+  }
+
+  graph.netHubs.forEach((hub) => {
+    const netId = hub.id
+    const netInfo = hubInfoByNet.get(netId)
+    if (!netInfo || netInfo.groups.length === 0) {
+      return
+    }
+    const topology = netInfo.topology ?? DEFAULT_TOPOLOGY
+    const groupSlices = graph.schematic_hints?.net_groups?.[netId]
+    const groupCount = netInfo.groups.length
+    const groupedEndpoints = splitEndpointsByGroups(
+      endpointsByNet.get(netId) ?? [],
+      groupSlices,
+      groupCount
+    )
+
+    for (let groupIndex = 0; groupIndex < groupCount; groupIndex += 1) {
+      const hubGroup = netInfo.groups[groupIndex]
+      if (!hubGroup) {
+        continue
       }
-      return {
-        id: edge.id,
+      const groupEndpoints = groupedEndpoints[groupIndex] ?? []
+      const routable = groupEndpoints.filter((endpoint) => !endpoint.connectByLabel)
+      if (topology === 'mst') {
+        edges.push(
+          ...buildMstEdges(
+            routable,
+            hubGroup,
+            makeEdge
+          )
+        )
+        continue
+      }
+      if (topology === 'trunk') {
+        const trunkResult = buildTrunkEdges(
+          routable,
+          hubGroup,
+          makeEdge,
+          makeJunctionNode
+        )
+        edges.push(...trunkResult)
+        continue
+      }
+      edges.push(
+        ...routable.map((endpoint) =>
+          makeEdge(
+            endpoint.instanceId,
+            hubGroup.nodeId,
+            endpoint.pinId,
+            HUB_HANDLE_ID
+          )
+        )
+      )
+    }
+  })
+
+  return { nodes: [...instances, ...hubs, ...junctionNodes], edges }
+}
+
+function collectRoutedEndpoints(
+  edges: GraphPayload['edges'],
+  routedPins: Map<string, Map<string, RoutedPin>>
+): Map<string, RoutedEndpoint[]> {
+  const endpointsByNet = new Map<string, RoutedEndpoint[]>()
+  edges.forEach((edge) => {
+    const { nodeId, handleId } = parseEndpoint(edge.from)
+    if (!handleId) {
+      return
+    }
+    const pinMap = routedPins.get(nodeId)
+    const pin = pinMap?.get(handleId)
+    if (!pin) {
+      return
+    }
+    const netId = edge.to
+    const list = endpointsByNet.get(netId) ?? []
+    list.push({
+      id: edge.id,
+      netId,
+      instanceId: nodeId,
+      pinId: handleId,
+      connLabel: edge.conn_label,
+      order: list.length,
+      x: pin.x,
+      y: pin.y,
+      connectByLabel: pin.connectByLabel
+    })
+    endpointsByNet.set(netId, list)
+  })
+  return endpointsByNet
+}
+
+function splitEndpointsByGroups(
+  endpoints: RoutedEndpoint[],
+  groupSlices: GroupSlice[] | undefined,
+  groupCount: number
+): RoutedEndpoint[][] {
+  const groups = Array.from({ length: groupCount }, () => [] as RoutedEndpoint[])
+  if (!groupSlices || groupSlices.length === 0) {
+    if (groups.length > 0) {
+      groups[0] = endpoints.slice()
+    }
+    return groups
+  }
+
+  const used = new Set<number>()
+  groupSlices.forEach((slice, index) => {
+    if (index >= groupCount) {
+      return
+    }
+    if (!slice || typeof slice.start !== 'number' || typeof slice.count !== 'number') {
+      return
+    }
+    const start = Math.max(0, Math.floor(slice.start))
+    const count = Math.max(0, Math.floor(slice.count))
+    if (count === 0 || start >= endpoints.length) {
+      return
+    }
+    const end = Math.min(endpoints.length, start + count)
+    groups[index] = endpoints.slice(start, end)
+    for (let idx = start; idx < end; idx += 1) {
+      used.add(idx)
+    }
+  })
+
+  if (used.size < endpoints.length && groups.length > 0) {
+    const remainder = endpoints.filter((_, index) => !used.has(index))
+    if (remainder.length > 0) {
+      const targetIndex = Math.max(0, groups.length - 1)
+      groups[targetIndex] = [...groups[targetIndex], ...remainder]
+    }
+  }
+
+  return groups
+}
+
+type MstNode = {
+  kind: 'hub' | 'endpoint'
+  key: number
+  x: number
+  y: number
+  endpoint?: RoutedEndpoint
+}
+
+type MstCandidate = {
+  a: number
+  b: number
+  distance: number
+  keyA: number
+  keyB: number
+}
+
+function buildMstEdges(
+  endpoints: RoutedEndpoint[],
+  hub: HubGroupInfo,
+  makeEdge: (
+    source: string,
+    target: string,
+    sourceHandle: string | undefined,
+    targetHandle: string | undefined
+  ) => Edge
+): Edge[] {
+  if (endpoints.length === 0) {
+    return []
+  }
+  const nodes: MstNode[] = [
+    { kind: 'hub', key: 0, x: hub.center.x, y: hub.center.y }
+  ]
+  endpoints.forEach((endpoint, index) => {
+    nodes.push({
+      kind: 'endpoint',
+      key: index + 1,
+      x: endpoint.x,
+      y: endpoint.y,
+      endpoint
+    })
+  })
+
+  const candidates: MstCandidate[] = []
+  for (let i = 0; i < nodes.length; i += 1) {
+    for (let j = i + 1; j < nodes.length; j += 1) {
+      const nodeA = nodes[i]
+      const nodeB = nodes[j]
+      const distance = Math.abs(nodeA.x - nodeB.x) + Math.abs(nodeA.y - nodeB.y)
+      candidates.push({
+        a: i,
+        b: j,
+        distance,
+        keyA: nodeA.key,
+        keyB: nodeB.key
+      })
+    }
+  }
+
+  candidates.sort((left, right) => {
+    if (left.distance !== right.distance) {
+      return left.distance - right.distance
+    }
+    if (left.keyA !== right.keyA) {
+      return left.keyA - right.keyA
+    }
+    return left.keyB - right.keyB
+  })
+
+  const uf = new UnionFind(nodes.length)
+  const edges: Edge[] = []
+  candidates.forEach((candidate) => {
+    if (!uf.union(candidate.a, candidate.b)) {
+      return
+    }
+    const nodeA = nodes[candidate.a]
+    const nodeB = nodes[candidate.b]
+    if (nodeA.kind === 'hub' || nodeB.kind === 'hub') {
+      const endpointNode = nodeA.kind === 'hub' ? nodeB : nodeA
+      const endpoint = endpointNode.endpoint
+      if (!endpoint) {
+        return
+      }
+      edges.push(
+        makeEdge(
+          endpoint.instanceId,
+          hub.nodeId,
+          endpoint.pinId,
+          HUB_HANDLE_ID
+        )
+      )
+      return
+    }
+    const endpointA = nodeA.endpoint
+    const endpointB = nodeB.endpoint
+    if (!endpointA || !endpointB) {
+      return
+    }
+    const [source, target] =
+      endpointA.order <= endpointB.order ? [endpointA, endpointB] : [endpointB, endpointA]
+    edges.push(
+      makeEdge(
+        source.instanceId,
+        target.instanceId,
+        source.pinId,
+        target.pinId
+      )
+    )
+  })
+  return edges
+}
+
+function buildTrunkEdges(
+  endpoints: RoutedEndpoint[],
+  hub: HubGroupInfo,
+  makeEdge: (
+    source: string,
+    target: string,
+    sourceHandle: string | undefined,
+    targetHandle: string | undefined
+  ) => Edge,
+  makeJunctionNode: (centerX: number, centerY: number) => string
+): Edge[] {
+  if (endpoints.length === 0) {
+    return []
+  }
+  const horizontal = isHorizontalHubOrient(hub.orient)
+  const hubCoord = horizontal ? hub.center.x : hub.center.y
+  const fixedCoord = horizontal ? hub.center.y : hub.center.x
+  const projectionCoords = endpoints.map((endpoint) =>
+    horizontal ? endpoint.x : endpoint.y
+  )
+  const minCoord = Math.min(hubCoord, ...projectionCoords)
+  const maxCoord = Math.max(hubCoord, ...projectionCoords)
+
+  const coordByKey = new Map<number, number>()
+  const pushCoord = (value: number) => {
+    const key = Math.round(value * 1000)
+    if (!coordByKey.has(key)) {
+      coordByKey.set(key, value)
+    }
+  }
+
+  projectionCoords.forEach(pushCoord)
+  pushCoord(minCoord)
+  pushCoord(maxCoord)
+  pushCoord(hubCoord)
+
+  const hubKey = Math.round(hubCoord * 1000)
+  const sortedKeys = Array.from(coordByKey.entries()).sort((a, b) => a[0] - b[0])
+  const coordToNode = new Map<number, string>()
+  sortedKeys.forEach(([key, coord]) => {
+    if (key === hubKey) {
+      coordToNode.set(key, hub.nodeId)
+      return
+    }
+    const centerX = horizontal ? coord : fixedCoord
+    const centerY = horizontal ? fixedCoord : coord
+    coordToNode.set(key, makeJunctionNode(centerX, centerY))
+  })
+
+  const edges: Edge[] = []
+  for (let i = 0; i < sortedKeys.length - 1; i += 1) {
+    const fromKey = sortedKeys[i][0]
+    const toKey = sortedKeys[i + 1][0]
+    const fromNode = coordToNode.get(fromKey)
+    const toNode = coordToNode.get(toKey)
+    if (!fromNode || !toNode) {
+      continue
+    }
+    const [source, target] = orientTrunkEdge(fromNode, toNode, hub.nodeId)
+    edges.push(
+      makeEdge(
         source,
         target,
-        sourceHandle,
-        targetHandle: HUB_HANDLE_ID,
-        type: 'smoothstep',
-        pathOptions: { offset: gridSize * EDGE_STEP_OFFSET_UNITS },
-        style: { stroke: '#e2e8f0', strokeWidth: 2, strokeLinecap: 'round' }
-      } as Edge
-    })
-    .filter((edge): edge is Edge => Boolean(edge))
+        handleIdForTrunkNode(source, hub.nodeId),
+        handleIdForTrunkNode(target, hub.nodeId)
+      )
+    )
+  }
 
-  return { nodes: [...instances, ...hubs], edges }
+  endpoints.forEach((endpoint) => {
+    const projection = horizontal ? endpoint.x : endpoint.y
+    const key = Math.round(projection * 1000)
+    const targetNode = coordToNode.get(key) ?? hub.nodeId
+    edges.push(
+      makeEdge(
+        endpoint.instanceId,
+        targetNode,
+        endpoint.pinId,
+        handleIdForTrunkNode(targetNode, hub.nodeId)
+      )
+    )
+  })
+
+  return edges
+}
+
+function orientTrunkEdge(
+  nodeA: string,
+  nodeB: string,
+  hubNodeId: string
+): [string, string] {
+  if (nodeA === hubNodeId) {
+    return [nodeB, nodeA]
+  }
+  if (nodeB === hubNodeId) {
+    return [nodeA, nodeB]
+  }
+  return [nodeA, nodeB]
+}
+
+function handleIdForTrunkNode(nodeId: string, hubNodeId: string): string {
+  return nodeId === hubNodeId ? HUB_HANDLE_ID : JUNCTION_HANDLE_ID
+}
+
+function isHorizontalHubOrient(orient: Orient): boolean {
+  return orient === 'R0' || orient === 'R180' || orient === 'MX' || orient === 'MY'
+}
+
+class UnionFind {
+  private parent: number[]
+  private rank: number[]
+
+  constructor(size: number) {
+    this.parent = Array.from({ length: size }, (_, index) => index)
+    this.rank = Array.from({ length: size }, () => 0)
+  }
+
+  find(value: number): number {
+    if (this.parent[value] !== value) {
+      this.parent[value] = this.find(this.parent[value])
+    }
+    return this.parent[value]
+  }
+
+  union(a: number, b: number): boolean {
+    const rootA = this.find(a)
+    const rootB = this.find(b)
+    if (rootA === rootB) {
+      return false
+    }
+    if (this.rank[rootA] < this.rank[rootB]) {
+      this.parent[rootA] = rootB
+    } else if (this.rank[rootA] > this.rank[rootB]) {
+      this.parent[rootB] = rootA
+    } else {
+      this.parent[rootB] = rootA
+      this.rank[rootA] += 1
+    }
+    return true
+  }
 }
 
 function topLeftFromCenter(
@@ -768,7 +1271,7 @@ function buildNetLabelMap(
     if (numericLabel) {
       entry.numeric.push(numericLabel)
     } else {
-      const netLabel = netLabelById.get(edge.to)
+      const netLabel = netLabelById.get(edge.to) ?? edge.to
       if (netLabel) {
         entry.nets.push(netLabel)
       }
@@ -921,6 +1424,13 @@ function InstanceNodeComponent({ id, data }: NodeProps<InstanceNodeData>) {
               style={{ left: pin.x, top: pin.y, transform: 'translate(-50%, -50%)' }}
               className="pin-handle"
             />
+            <Handle
+              id={pin.id}
+              type="target"
+              position={position}
+              style={{ left: pin.x, top: pin.y, transform: 'translate(-50%, -50%)' }}
+              className="pin-handle pin-handle--target"
+            />
             {pin.nameText && pin.namePos && (
               <div
                 className={`pin-name pin-name--${pin.side}`}
@@ -961,6 +1471,27 @@ function HubNodeComponent({ data }: NodeProps<HubNodeData>) {
       />
       <div className="hub-dot" />
       <div className="hub-label">{data.label}</div>
+    </div>
+  )
+}
+
+function JunctionNodeComponent() {
+  return (
+    <div className="node junction-node">
+      <Handle
+        type="source"
+        id={JUNCTION_HANDLE_ID}
+        position={Position.Top}
+        style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+        className="junction-handle"
+      />
+      <Handle
+        type="target"
+        id={JUNCTION_HANDLE_ID}
+        position={Position.Top}
+        style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+        className="junction-handle"
+      />
     </div>
   )
 }
