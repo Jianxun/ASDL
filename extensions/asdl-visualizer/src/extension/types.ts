@@ -35,6 +35,7 @@ export type VisualizerDump = {
   }>
   registries?: {
     pattern_expressions?: Record<string, { raw?: string }> | null
+    schematic_hints?: SchematicHints | null
   }
   refs?: {
     modules?: VisualizerModule[]
@@ -91,6 +92,32 @@ export type GraphPayload = {
   netHubs: Array<{ id: string; label: string; layoutKey?: string }>
   edges: Array<{ id: string; from: string; to: string; conn_label?: string }>
   symbols: Record<string, SymbolDefinition>
+  schematic_hints?: SchematicHints | null
+}
+
+export type GroupSlice = {
+  start: number
+  count: number
+  label?: string | null
+}
+
+export type SchematicHints = {
+  net_groups: Record<string, GroupSlice[]>
+  hub_group_index: number
+}
+
+export type NetTopology = 'star' | 'mst' | 'trunk'
+
+export type HubPlacement = {
+  x: number
+  y: number
+  orient?: string
+  label?: string
+}
+
+export type NetHubEntry = {
+  topology?: NetTopology
+  hubs: Record<string, HubPlacement>
 }
 
 export type LayoutPayload = {
@@ -99,8 +126,8 @@ export type LayoutPayload = {
     string,
     {
       grid_size?: number
-      instances: Record<string, { x: number; y: number; orient?: string; label?: string }>
-      net_hubs: Record<string, Record<string, { x: number; y: number; orient?: string; label?: string }>>
+      instances: Record<string, HubPlacement>
+      net_hubs: Record<string, NetHubEntry>
     }
   >
 }

@@ -223,7 +223,8 @@ export function buildGraphFromDump(
     instances,
     netHubs,
     edges,
-    symbols
+    symbols,
+    schematic_hints: dump.registries?.schematic_hints ?? null
   }
 }
 

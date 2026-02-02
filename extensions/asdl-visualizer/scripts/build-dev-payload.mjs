@@ -272,7 +272,12 @@ function buildGraphFromDump(dump, symbols) {
         from = `${instId}.${pinName}`
       }
     }
-    return { id: endpoint.endpoint_id, from, to: endpoint.net_id }
+    return {
+      id: endpoint.endpoint_id,
+      from,
+      to: endpoint.net_id,
+      conn_label: endpoint.conn_label
+    }
   })
 
   return {
@@ -280,7 +285,8 @@ function buildGraphFromDump(dump, symbols) {
     instances,
     netHubs,
     edges,
-    symbols
+    symbols,
+    schematic_hints: dump.registries?.schematic_hints ?? null
   }
 }
 
@@ -319,10 +325,10 @@ function mergeLayoutModule(existing, graph) {
   moduleLayout.net_hubs = moduleLayout.net_hubs ?? {}
 
   const instIds = graph.instances.map((inst) => inst.id)
-  const hubIds = graph.netHubs.map((hub) => hub.id)
   const cols = Math.max(1, Math.ceil(Math.sqrt(instIds.length || 1)))
   const xStep = 4
   const yStep = 4
+  let hubRowIndex = 0
 
   instIds.forEach((instId, index) => {
     if (!moduleLayout.instances[instId]) {
@@ -334,21 +340,108 @@ function mergeLayoutModule(existing, graph) {
     }
   })
 
-  hubIds.forEach((hubId, index) => {
-    if (!moduleLayout.net_hubs[hubId]) {
-      moduleLayout.net_hubs[hubId] = {
-        groups: [
-          {
-            x: (cols + 2) * xStep,
-            y: index * yStep
-          }
-        ]
-      }
-    }
+  graph.netHubs.forEach((hub) => {
+    const hubId = hub.id
+    const existingHubRaw = moduleLayout.net_hubs[hubId]
+    const normalizedHub = normalizeNetHubEntry(existingHubRaw)
+    const groupCount = resolveHubGroupCount(graph, hubId)
+    const entry = ensureHubCount(
+      normalizedHub ?? { topology: DEFAULT_TOPOLOGY, hubs: {} },
+      groupCount,
+      (groupIndex) => ({
+        x: (cols + 2) * xStep,
+        y: (hubRowIndex + groupIndex) * yStep
+      })
+    )
+    moduleLayout.net_hubs[hubId] = entry
+    hubRowIndex += groupCount
   })
 
   moduleLayout.grid_size = gridSize
   return moduleLayout
+}
+
+const DEFAULT_TOPOLOGY = 'star'
+
+function resolveHubGroupCount(graph, netId) {
+  const groups = graph.schematic_hints?.net_groups?.[netId]
+  if (Array.isArray(groups) && groups.length > 0) {
+    return groups.length
+  }
+  return 1
+}
+
+function normalizeNetHubEntry(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+  const hasHubs = Object.prototype.hasOwnProperty.call(value, 'hubs')
+  const hasTopology = Object.prototype.hasOwnProperty.call(value, 'topology')
+  if (hasHubs || hasTopology) {
+    const hubs = toPlacementMap(hasHubs ? value.hubs : {}) ?? {}
+    return {
+      topology: normalizeTopology(value.topology),
+      hubs
+    }
+  }
+  const legacy = toPlacementMap(value)
+  if (!legacy) {
+    return null
+  }
+  return { topology: DEFAULT_TOPOLOGY, hubs: legacy }
+}
+
+function normalizeTopology(value) {
+  if (value === 'star' || value === 'mst' || value === 'trunk') {
+    return value
+  }
+  return DEFAULT_TOPOLOGY
+}
+
+function toPlacementMap(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+  const result = {}
+  for (const [key, entry] of Object.entries(value)) {
+    if (isPlacement(entry)) {
+      result[key] = entry
+    }
+  }
+  return result
+}
+
+function isPlacement(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
+  return Number.isFinite(value.x) && Number.isFinite(value.y)
+}
+
+function ensureHubCount(entry, desiredCount, makeDefault) {
+  const hubs = entry.hubs ?? {}
+  const existingKeys = Object.keys(hubs)
+  const used = new Set(existingKeys)
+  for (let index = existingKeys.length; index < desiredCount; index += 1) {
+    const hubName = nextHubName(used, index + 1)
+    hubs[hubName] = makeDefault(index)
+    used.add(hubName)
+  }
+  return {
+    topology: normalizeTopology(entry.topology),
+    hubs
+  }
+}
+
+function nextHubName(used, startIndex) {
+  let index = startIndex
+  while (true) {
+    const candidate = `hub${index}`
+    if (!used.has(candidate)) {
+      return candidate
+    }
+    index += 1
+  }
 }
 
 function collectFileIds(dump) {
