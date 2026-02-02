@@ -1,47 +1,44 @@
+# Transimssion gate analog switch for MOSbius V3 switch Matrix
+# Digital input `control` is bufferred and gated by `enable` before driving the Tgate switches. Hi-Z when disabled.
+# Analog terminals `T1` and `T2` are symmetric and support rail-to-rail swings. 
+# Specs:
+#   - Ron < 100 ohms @ 3.3V
 
 imports:
-  gf_std: gf180mcu_std.asdl
-  gf: gf180mcu.asdl
+  gf_std: gf180mcu_std.asdl  # GF180 standard cell library
+  gf: gf180mcu.asdl          # GF180 device library
 
 modules:
-  # Switch Matrix Tgate 
-  # power:
-  #   VDDd: nominal 3.3V
-  #   VSSd: nominal 0V
-  # digital:
-  #   inputs: 
-  #     - control: active high control signal to close the Tgate
-  #     - enable: active high enable signal shared by all Tgates
-  # analog:
-  #   T1, T2: symmetric analog terminals, rail-to-rail compliance.
-  # specs:
-  #   - Ron < 100 ohms @ 3.3V
-  #   - Cpar < 20fF
+  # Transmission-gate switch with control logic.
   swmatrix_Tgate:
+    # Device sizing for the pass devices and control chain.
     variables:
-      L: 0.28u
-      W: 8u
-      NF: 6
+      L: 0.28u  # gate length
+      W: 8u     # gate width
+      NF: 6     # fingers
     instances:
+      # Control logic
       inv1: gf_std.inv_1
       inv2: gf_std.inv_1
       nand2: gf_std.nand2_1
+
+      # Pass devices (complementary)
       mn: gf.nfet_03v3 L={L} W={W} NF={NF} m=1
       mp: gf.pfet_03v3 L={L} W={W} NF={NF} m=3 # PMOS/NMOS ratio is 3:1
     nets:
-
-
+      # Power
       $VDDd: [<inv1|inv2|nand2>.<VPWR|VNB>, mp.b] # nominal 3.3V
-      $VSSd: [<inv1|inv2|nand2>.<VPB|VGND>, mn.b]
+      $VSSd: [<inv1|inv2|nand2>.<VPB|VGND>, mn.b] # nominal 0V
 
+      # Digital inputs
       $control: [nand2.A] # active high control signal to close the Tgate
-      $enable: [nand2.B] 
+      $enable: [nand2.B]  # active high enable signal shared by all Tgates
 
+      # Internal control nodes
       net1: [nand2.Y, inv1.A] # intermediate node for control signal
-
       gated_control: [inv1.Y, inv2.A, mn.g]
       gated_controlb: [inv2.Y, mp.g]
 
+      # Analog terminals
       $T1: [<mn|mp>.d] # Tgate analog terminal 1
       $T2: [<mn|mp>.s] # Tgate analog terminal 2
-      
