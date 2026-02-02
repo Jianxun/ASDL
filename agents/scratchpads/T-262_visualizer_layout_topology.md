@@ -27,11 +27,14 @@
 # Patch summary
 - Updated visualizer extension payload types and layout merge logic to normalize net_hubs entries, apply default star topology, and carry schematic_hints net_groups/hub_group_index.
 - Adjusted dev payload generation to pass schematic_hints through and emit net_hubs entries in the new topology/hubs shape.
+- Updated webview layout handling to accept the topology/hubs net_hubs schema while preserving existing hub placements/topology on save.
+- Refreshed webview dev harness layout data to match the new net_hubs entry shape.
 
 # PR URL
 https://github.com/Jianxun/ASDL/pull/281
 
 # Verification
+- npm --prefix extensions/asdl-visualizer run build:extension (pass)
 - npm --prefix extensions/asdl-visualizer run build:extension (pass)
 
 # Status request (Done / Blocked / In Progress)
@@ -50,3 +53,7 @@ Await review.
 - 2026-02-02 09:17 — Scope check: changes align with T-262 DoD; noted webview still assumes legacy net_hubs shape; next step assess regression risk.
 - 2026-02-02 09:18 — Verification: executor log shows build:extension pass; no additional tests run; next step finalize review decision.
 - 2026-02-02 09:21 — Review decision: request_changes due to webview net_hubs schema mismatch causing hub placement loss; posted PR comment; next step await executor fixes.
+- 2026-02-02 10:00 — Updated webview net_hubs parsing/saving to accept topology/hubs entries and preserve existing hub placements; updated dev harness layout shape; next step re-run verification.
+- 2026-02-02 10:01 — Verification: npm --prefix extensions/asdl-visualizer run build:extension (pass).
+- 2026-02-02 10:02 — Commit d25da81 (fix webview net hubs schema); files: agents/context/tasks_state.yaml, extensions/asdl-visualizer/src/webview/app.tsx, extensions/asdl-visualizer/src/webview/devHarness.ts; next step update status + scratchpad.
+- 2026-02-02 10:03 — Status update: set T-262 ready_for_review with PR 281; next step push updates + respond to reviewer.
