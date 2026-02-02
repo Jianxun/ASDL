@@ -28,6 +28,12 @@
 - 2026-02-01 21:27 — Commit c1e8647 (feat: route nets with star mst trunk); files: extensions/asdl-visualizer/src/webview/app.tsx, extensions/asdl-visualizer/src/webview/styles.css; next step commit dev payload updates.
 - 2026-02-01 21:27 — Commit c4fb37a (chore: refresh dev harness payloads); files: extensions/asdl-visualizer/src/webview/devHarness.ts, extensions/asdl-visualizer/src/webview/public/dev_payload.json; next step run build:webview.
 - 2026-02-01 21:27 — Verification: npm --prefix extensions/asdl-visualizer run build:webview (pass); next step update scratchpad + prepare PR.
+- 2026-02-01 21:27 — Opened PR https://github.com/Jianxun/ASDL/pull/282; next step set task status to ready_for_review.
+- 2026-02-01 21:27 — Status update planned: set T-263 ready_for_review (pr 282); next step run lint_tasks_state and push.
+- 2026-02-01 21:33 — Review intake: confirmed PR base main, scratchpad and verify log present; next step set review_in_progress and lint tasks state.
+- 2026-02-01 21:33 — Set T-263 review_in_progress and ran lint_tasks_state.py (pass); next step review scope and implementation.
+- 2026-02-01 21:35 — Scope review: changes align with T-263 DoD and spec routing; next step inspect implementation for regressions.
+- 2026-02-01 21:36 — Review finding: onSave overwrites multi-hub placements; posted PR comment requesting fix (unable to request changes via GH review due to permission); next step set task status to request_changes.
 
 # Patch summary
 - Added topology-aware routing with MST/trunk + junction nodes, hub group mapping, and improved pin label handling in the webview.
@@ -35,14 +41,16 @@
 - Refreshed dev harness and dev payload fixture to exercise mst/trunk + grouped hubs.
 
 # PR URL
+https://github.com/Jianxun/ASDL/pull/282
 
 # Verification
 
 - npm --prefix extensions/asdl-visualizer run build:webview (pass)
 
 # Status request (Done / Blocked / In Progress)
-In Progress
+Done
 
 # Blockers / Questions
 
 # Next steps
+Await review.
