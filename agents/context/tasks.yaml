@@ -1,125 +1,6 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-255
-    title: Load .asdlrc for Sphinx docs build
-    owner: Executor
-    dod: >
-      Update the Sphinx ASDL domain to discover `.asdlrc` for project builds
-      (default to the project manifest directory, allow explicit config path
-      override). Load lib_roots/env via `asdl.cli.config`, merge env values
-      without overwriting existing OS variables, and pass resolved lib_roots
-      into dependency-graph building. Add unit coverage that exercises a
-      manifest + `.asdlrc` fixture and asserts import resolution succeeds
-      without AST-010 errors. Update examples/docs/README.md to note that docs
-      builds honor `.asdlrc` lib_roots/env. Do not touch unrelated style docs
-      (e.g., docs/code_styles/docstrings_comments.md).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_asdlrc.py -v
-    links:
-      scratchpad: agents/scratchpads/T-255_sphinx_asdlrc.md
-    files:
-      - src/asdl/docs/sphinx_domain.py
-      - tests/unit_tests/docs/test_sphinx_asdlrc.py
-      - examples/docs/README.md
-  - id: T-256
-    title: Auto-expand Sphinx project manifest entries via import graph
-    owner: Executor
-    depends_on:
-      - T-255
-    dod: >
-      Update the Sphinx project manifest workflow so each entry file expands
-      to the full resolved import graph (entries + imported files). Generated
-      stub pages and the project toctree must include all resolved files in
-      deterministic order, with duplicates removed. Import resolution must use
-      the same lib_roots/.asdlrc handling as depgraph builds. Add unit coverage
-      to assert auto-expansion from a minimal manifest that only lists a top
-      file, and that imported files appear in the generated list. Do not touch
-      unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_project_pages.py -v
-    links:
-      scratchpad: agents/scratchpads/T-256_sphinx_manifest_expand.md
-    files:
-      - src/asdl/docs/sphinx_domain.py
-      - tests/unit_tests/docs/test_sphinx_project_pages.py
-  - id: T-257
-    title: Clean up module tables in Sphinx render
-    owner: Executor
-    dod: >
-      Update Sphinx doc rendering to (1) remove `kind` and `direction` columns
-      from the Interface/Ports table, leaving only `name` and `description`,
-      and (2) move the Patterns section above other module tables so pattern
-      definitions appear first. Add or update unit coverage to assert the
-      interface table headers and section ordering. Do not touch unrelated
-      style docs (e.g., docs/code_styles/docstrings_comments.md).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v
-    links:
-      scratchpad: agents/scratchpads/T-257_sphinx_table_order.md
-    files:
-      - src/asdl/docs/sphinx_render.py
-      - tests/unit_tests/docs/test_sphinx_render.py
-  - id: T-258
-    title: Use file-stem titles and demote top module in Sphinx docs
-    owner: Executor
-    dod: >
-      Always use the ASDL file stem as the page title (do not promote
-      `document.top` or single-module names). Render `top` as a separate
-      document-level "Top module" section placed after Overview and before
-      Imports so it is visible without duplicating module titles. Update unit
-      coverage to assert title selection and top-section rendering. Do not
-      touch unrelated style docs (e.g., docs/code_styles/docstrings_comments.md).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v
-    links:
-      scratchpad: agents/scratchpads/T-258_sphinx_title_dedupe.md
-    files:
-      - src/asdl/docs/sphinx_render.py
-      - tests/unit_tests/docs/test_sphinx_render.py
-  - id: T-259
-    title: Align Sphinx document structure with file/module semantics
-    owner: Executor
-    dod: >
-      Render document titles as the ASDL file name with extension (e.g.,
-      `inv.asdl`) and treat Imports as a file-level section. Ensure the file
-      Overview uses only file-level docstrings. Module-level overviews must be
-      labeled "Notes" (not "Overview") to avoid confusion with file-level
-      Overview. Update unit coverage to assert title selection and section
-      ordering. Do not touch unrelated style docs (e.g.,
-      docs/code_styles/docstrings_comments.md).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py -v
-    links:
-      scratchpad: agents/scratchpads/T-259_sphinx_doc_structure.md
-    files:
-      - src/asdl/docs/sphinx_render.py
-      - tests/unit_tests/docs/test_sphinx_render.py
-  - id: T-260
-    title: Restructure Sphinx doc nav to match file/module tree
-    owner: Executor
-    dod: >
-      Update Sphinx rendering so ASDL file pages match the desired nav tree:
-      (1) project stub pages do not introduce an extra top-level title, so the
-      toctree shows the ASDL filename with extension directly under "ASDL
-      Project Files"; (2) document sections render in the order Overview,
-      Imports, Top module, Modules; (3) Modules is a parent section containing
-      per-module subsections; (4) module-level overviews render as "Overview"
-      sections; (5) module section titles are just the module name (no "Module"
-      prefix). Update unit coverage to assert the new section ordering/titles
-      and stub page title behavior. Do not touch unrelated style docs (e.g.,
-      docs/code_styles/docstrings_comments.md).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py tests/unit_tests/docs/test_sphinx_project_pages.py -v
-    links:
-      scratchpad: agents/scratchpads/T-260_sphinx_doc_nav.md
-    files:
-      - src/asdl/docs/sphinx_domain.py
-      - src/asdl/docs/sphinx_render.py
-      - tests/unit_tests/docs/test_sphinx_render.py
-      - tests/unit_tests/docs/test_sphinx_project_pages.py
-
-backlog:
   - id: T-261
     title: Define visualizer net topology strategies in spec
     owner: Executor
@@ -129,8 +10,10 @@ backlog:
       shape for net_hubs entries, defaults, and legacy map compatibility.
       Specify how schematic_hints.net_groups map to hub groups and how
       topology applies per group. Describe MST routing using Manhattan
-      endpoint distances with deterministic tie-breakers and trunk routing
-      using the hub-aligned trunk axis with branch drops.
+      endpoint distances with deterministic tie-breakers and include the hub
+      as an MST node. Specify trunk routing that follows hub orientation
+      (horizontal for R0/MX, vertical for R90/MXR90; default horizontal when
+      hub placement is missing) and branches to endpoints.
     verify: []
     links:
       scratchpad: agents/scratchpads/T-261_visualizer_topologies_spec.md
@@ -161,12 +44,14 @@ backlog:
     dod: >
       Build topology-aware edge generation in the webview: star connects
       endpoint pins to hubs; mst builds a deterministic Manhattan MST between
-      endpoints; trunk builds a hub-aligned rectilinear trunk with junction
-      nodes and branch drops. Use schematic_hints.net_groups (when present in
-      the payload) to split endpoints per hub group and map to hub order.
-      Ensure pin labels use net IDs/labels instead of hub IDs so mst/trunk
-      still label correctly, and keep connect_by_label suppression behavior.
-      Update dev harness and dev payload fixtures to exercise mst/trunk.
+      endpoints plus the hub as an MST node; trunk builds a hub-oriented
+      rectilinear trunk with junction nodes and branch drops (horizontal
+      default when no hub placement). Use schematic_hints.net_groups (when
+      present in the payload) to split endpoints per hub group and map to hub
+      order. Ensure pin labels use net IDs/labels instead of hub IDs so
+      mst/trunk still label correctly, and keep connect_by_label suppression
+      behavior. Update dev harness and dev payload fixtures to exercise
+      mst/trunk.
     verify:
       - npm --prefix extensions/asdl-visualizer run build:webview
     links:
@@ -177,3 +62,5 @@ backlog:
       - extensions/asdl-visualizer/scripts/build-dev-payload.mjs
       - extensions/asdl-visualizer/src/webview/devHarness.ts
       - extensions/asdl-visualizer/src/webview/public/dev_payload.json
+
+backlog: []

@@ -1,6 +1,12 @@
 schema_version: 1
 
 archive:
+  - T-260: {completed_on: 2026-02-02, owner: Executor, scratchpad: agents/scratchpads/T-260_sphinx_doc_nav.md, pr: 279}
+  - T-259: {completed_on: 2026-02-02, owner: Executor, scratchpad: agents/scratchpads/T-259_sphinx_doc_structure.md, pr: 278}
+  - T-258: {completed_on: 2026-02-02, owner: Executor, scratchpad: agents/scratchpads/T-258_sphinx_title_dedupe.md, pr: 277}
+  - T-257: {completed_on: 2026-02-02, owner: Executor, scratchpad: agents/scratchpads/T-257_sphinx_table_order.md, pr: 276}
+  - T-256: {completed_on: 2026-02-02, owner: Executor, scratchpad: agents/scratchpads/T-256_sphinx_manifest_expand.md, pr: 275}
+  - T-255: {completed_on: 2026-02-02, owner: Executor, scratchpad: agents/scratchpads/T-255_sphinx_asdlrc.md, pr: 274}
   - T-254: {completed_on: 2026-01-31, owner: Executor, scratchpad: agents/scratchpads/T-254_rtd_theme.md, pr: 271}
   - T-253: {completed_on: 2026-02-01, owner: Executor, scratchpad: agents/scratchpads/T-253_sphinx_used_by.md, pr: 269}
   - T-252: {completed_on: 2026-01-31, owner: Executor, scratchpad: agents/scratchpads/T-252_sphinx_project_pages.md, pr: 268}
