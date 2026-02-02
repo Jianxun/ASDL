@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from asdl.docs.sphinx_domain import collect_asdl_project_entries
+from asdl.docs.sphinx_domain import collect_asdl_project_entries, write_asdl_project_pages
 
 
 def test_collect_asdl_project_entries_orders_by_entry_path(tmp_path: Path) -> None:
@@ -49,3 +49,24 @@ def test_collect_asdl_project_entries_expands_import_graph(
 
     assert sources == ["lib/child.asdl", "top.asdl"]
     assert len(sources) == len(set(sources))
+
+
+def test_project_stub_uses_asdl_document_title(tmp_path: Path) -> None:
+    entry = tmp_path / "inv.asdl"
+    entry.write_text("modules:\n  inv: {}\n", encoding="utf-8")
+
+    manifest = tmp_path / "project.yaml"
+    manifest.write_text("entries:\n  - inv.asdl\n", encoding="utf-8")
+
+    entries = collect_asdl_project_entries(manifest, srcdir=tmp_path)
+    output_dir = tmp_path / "_generated"
+    write_asdl_project_pages(entries, output_dir=output_dir)
+
+    stub_path = output_dir / entries[0].stub_relpath
+    stub_text = stub_path.read_text(encoding="utf-8")
+    assert stub_text == (
+        "..\n"
+        "   Generated file. Do not edit directly.\n"
+        "\n"
+        ".. asdl:document:: inv.asdl\n"
+    )

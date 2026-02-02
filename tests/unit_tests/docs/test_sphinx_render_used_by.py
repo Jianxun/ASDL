@@ -95,7 +95,7 @@ def test_sphinx_render_links_used_by_and_disambiguation(tmp_path: Path) -> None:
     assert child_refs[0].astext() == "Child"
 
     rendered_lib1 = _render_docutils(lib1_path, env)
-    module_section = _find_section(rendered_lib1, "Module `Child`")
+    module_section = _find_section(rendered_lib1, "Child")
     assert module_section is not None
     used_by_section = _find_section(module_section, "Used by")
     assert used_by_section is not None

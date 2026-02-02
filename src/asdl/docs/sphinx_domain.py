@@ -347,7 +347,7 @@ def _build_project_entry(
     stub_docname = (
         Path(generated_dirname) / stub_relpath.with_suffix("")
     ).as_posix()
-    title = source_path.stem or stub_relpath.stem
+    title = source_path.name or stub_relpath.name
     return AsdlProjectEntry(
         source=entry,
         source_path=source_path,
@@ -406,14 +406,9 @@ def _prepare_generated_dir(output_dir: Path) -> None:
 
 def _render_project_stub(entry: AsdlProjectEntry) -> str:
     """Render a single stub page for a project entry."""
-    title = entry.title
-    underline = "=" * len(title)
     lines = [
         "..",
         "   Generated file. Do not edit directly.",
-        "",
-        title,
-        underline,
         "",
         f".. asdl:document:: {entry.source}",
         "",

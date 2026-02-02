@@ -51,22 +51,33 @@ def _find_section(node: nodes.Node, title: str) -> nodes.section | None:
     return None
 
 
+def _find_sections(node: nodes.Node, title: str) -> list[nodes.section]:
+    matches: list[nodes.section] = []
+    for section in node.findall(nodes.section):
+        if not section:
+            continue
+        if isinstance(section[0], nodes.title) and section[0].astext() == title:
+            matches.append(section)
+    return matches
+
+
 def test_sphinx_render_swmatrix_structure_and_content() -> None:
     rendered = _render_docutils(SWMATRIX_TGATE)
     titles = _section_titles(rendered)
 
     assert titles[0] == "swmatrix_Tgate.asdl"
     assert "Top module" not in titles
-    assert "Overview" not in titles
     assert "Imports" in titles
-    assert "Module `swmatrix_Tgate`" in titles
-    assert "Notes" in titles
+    assert "Modules" in titles
+    assert "swmatrix_Tgate" in titles
+    assert "Overview" in titles
     assert "Interface" in titles
     assert "Variables" in titles
     assert "Instances" in titles
     assert "Nets" in titles
-    assert titles.index("Imports") < titles.index("Module `swmatrix_Tgate`")
-    assert titles.index("Module `swmatrix_Tgate`") < titles.index("Notes")
+    assert titles.index("Imports") < titles.index("Modules")
+    assert titles.index("Modules") < titles.index("swmatrix_Tgate")
+    assert titles.index("swmatrix_Tgate") < titles.index("Overview")
 
     text = rendered.astext()
     assert "Switch Matrix Tgate" in text
@@ -90,10 +101,10 @@ def test_sphinx_render_full_switch_sections() -> None:
     assert titles[0] == "full_switch_matrix_130_by_25.asdl"
     assert "Top module" in titles
     assert "Overview" not in titles
-    assert titles.index("Top module") < titles.index("Imports")
-    assert titles.index("Imports") < titles.index(
-        "Module `full_switch_matrix_130_by_25_no_probes`"
-    )
+    assert "Modules" in titles
+    assert titles.index("Imports") < titles.index("Top module")
+    assert titles.index("Top module") < titles.index("Modules")
+    assert titles.index("Modules") < titles.index("full_switch_matrix_130_by_25_no_probes")
 
     patterns_index = titles.index("Patterns")
     assert patterns_index < titles.index("Interface")
@@ -113,3 +124,28 @@ def test_sphinx_render_full_switch_sections() -> None:
     top_section = _find_section(rendered, "Top module")
     assert top_section is not None
     assert "full_switch_matrix_130_by_25_no_probes" in top_section.astext()
+
+
+def test_sphinx_render_overview_preserves_line_breaks(tmp_path: Path) -> None:
+    path = tmp_path / "demo.asdl"
+    path.write_text(
+        "\n".join(
+            [
+                "# File line 1",
+                "# File line 2",
+                "modules:",
+                "  # Module line 1",
+                "  # Module line 2",
+                "  Foo:",
+                "    instances: {}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    rendered = _render_docutils(path)
+    overview_sections = _find_sections(rendered, "Overview")
+    assert len(overview_sections) == 2
+    for section in overview_sections:
+        assert list(section.findall(nodes.line))

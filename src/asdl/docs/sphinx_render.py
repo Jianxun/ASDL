@@ -88,7 +88,7 @@ def render_docutils(
         doc_title = title
     else:
         doc_title = _document_title(document, file_path)
-    overview, overview_module = _document_overview(document, docstrings)
+    overview = _document_overview(document, docstrings)
     file_namespace = _file_namespace(doc_title, file_path)
     doc_ref_name = _document_ref_name(doc_title, file_path)
     context = _build_render_context(document, file_path, sphinx_env)
@@ -99,25 +99,26 @@ def render_docutils(
 
     if overview:
         overview_section = _section("Overview")
-        _append_paragraphs(overview_section, overview)
+        _append_paragraphs(overview_section, overview, preserve_line_breaks=True)
         root += overview_section
+
+    if document.imports:
+        root += _render_imports(document.imports, docstrings, file_namespace=file_namespace)
 
     top_section = _render_top_module_section(document, context)
     if top_section is not None:
         root += top_section
 
-    if document.imports:
-        root += _render_imports(document.imports, docstrings, file_namespace=file_namespace)
-
     if document.modules:
+        modules_section = _section("Modules")
         for module_name, module in document.modules.items():
-            root += _render_module(
+            modules_section += _render_module(
                 module_name,
                 module,
                 docstrings,
-                skip_notes=overview_module == module_name,
                 context=context,
             )
+        root += modules_section
 
     return root
 
@@ -313,11 +314,10 @@ def _document_ref_name(doc_title: str, file_path: Optional[Path]) -> str:
 
 def _document_overview(
     document: AsdlDocument, docstrings: DocstringIndex
-) -> tuple[Optional[str], Optional[str]]:
+) -> Optional[str]:
     if docstrings.file_docstring:
-        return docstrings.file_docstring, None
-
-    return None, None
+        return docstrings.file_docstring
+    return None
 
 
 def _render_top_module_section(
@@ -381,18 +381,17 @@ def _render_module(
     module: ModuleDecl,
     docstrings: DocstringIndex,
     *,
-    skip_notes: bool,
     context: RenderContext,
 ) -> nodes.section:
-    section = _section(f"Module `{name}`")
+    section = _section(name)
     module_id = _resolve_module_id(name, context.file_id, context.graph_index) or name
     _append_targets(section, "module", [module_id])
 
     module_doc = _docstring_text(docstrings, ("modules", name))
-    if module_doc and not skip_notes:
-        notes = _section("Notes")
-        _append_paragraphs(notes, module_doc)
-        section += notes
+    if module_doc:
+        overview = _section("Overview")
+        _append_paragraphs(overview, module_doc, preserve_line_breaks=True)
+        section += overview
 
     pattern_rows = _build_pattern_rows(name, module, docstrings)
     if pattern_rows:
@@ -724,12 +723,23 @@ def _section(title: str) -> nodes.section:
     return section
 
 
-def _append_paragraphs(container: nodes.Element, text: str) -> None:
+def _append_paragraphs(
+    container: nodes.Element,
+    text: str,
+    *,
+    preserve_line_breaks: bool = False,
+) -> None:
     if text.strip() == "":
         container += nodes.paragraph(text="")
         return
     for chunk in text.strip().split("\n\n"):
-        container += nodes.paragraph(text=chunk)
+        if not preserve_line_breaks:
+            container += nodes.paragraph(text=chunk)
+            continue
+        line_block = nodes.line_block()
+        for line in chunk.split("\n"):
+            line_block += nodes.line(text=line)
+        container += line_block
 
 
 def _docstring_text(docstrings: DocstringIndex, path: DocPath) -> Optional[str]:

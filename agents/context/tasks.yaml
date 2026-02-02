@@ -95,5 +95,85 @@ current_sprint:
     files:
       - src/asdl/docs/sphinx_render.py
       - tests/unit_tests/docs/test_sphinx_render.py
+  - id: T-260
+    title: Restructure Sphinx doc nav to match file/module tree
+    owner: Executor
+    dod: >
+      Update Sphinx rendering so ASDL file pages match the desired nav tree:
+      (1) project stub pages do not introduce an extra top-level title, so the
+      toctree shows the ASDL filename with extension directly under "ASDL
+      Project Files"; (2) document sections render in the order Overview,
+      Imports, Top module, Modules; (3) Modules is a parent section containing
+      per-module subsections; (4) module-level overviews render as "Overview"
+      sections; (5) module section titles are just the module name (no "Module"
+      prefix). Update unit coverage to assert the new section ordering/titles
+      and stub page title behavior. Do not touch unrelated style docs (e.g.,
+      docs/code_styles/docstrings_comments.md).
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_render.py tests/unit_tests/docs/test_sphinx_project_pages.py -v
+    links:
+      scratchpad: agents/scratchpads/T-260_sphinx_doc_nav.md
+    files:
+      - src/asdl/docs/sphinx_domain.py
+      - src/asdl/docs/sphinx_render.py
+      - tests/unit_tests/docs/test_sphinx_render.py
+      - tests/unit_tests/docs/test_sphinx_project_pages.py
 
-backlog: []
+backlog:
+  - id: T-261
+    title: Define visualizer net topology strategies in spec
+    owner: Executor
+    dod: >
+      Update docs/specs/spec_asdl_visualizer.md to define per-net topology
+      selection (star | mst | trunk), including the updated .sch.yaml schema
+      shape for net_hubs entries, defaults, and legacy map compatibility.
+      Specify how schematic_hints.net_groups map to hub groups and how
+      topology applies per group. Describe MST routing using Manhattan
+      endpoint distances with deterministic tie-breakers and trunk routing
+      using the hub-aligned trunk axis with branch drops.
+    verify: []
+    links:
+      scratchpad: agents/scratchpads/T-261_visualizer_topologies_spec.md
+    files:
+      - docs/specs/spec_asdl_visualizer.md
+  - id: T-262
+    title: Extend visualizer layout sidecar schema for topology selection
+    owner: Executor
+    dod: >
+      Update the visualizer layout payload types and read/merge logic to
+      support per-net topology selection with backward-compatible parsing of
+      legacy net_hubs maps. Default missing topology to star and preserve
+      hub placement data for all groups. Extend VisualizerDump/GraphPayload
+      types to carry schematic_hints.net_groups/hub_group_index so the
+      webview can map endpoints to hub groups. Update dev payload generation
+      to emit the new net_hubs shape for sample layouts.
+    verify:
+      - npm --prefix extensions/asdl-visualizer run build:extension
+    links:
+      scratchpad: agents/scratchpads/T-262_visualizer_layout_topology.md
+    files:
+      - extensions/asdl-visualizer/src/extension/types.ts
+      - extensions/asdl-visualizer/src/extension/layout.ts
+      - extensions/asdl-visualizer/scripts/build-dev-payload.mjs
+  - id: T-263
+    title: Implement star/mst/trunk routing in visualizer webview
+    owner: Executor
+    dod: >
+      Build topology-aware edge generation in the webview: star connects
+      endpoint pins to hubs; mst builds a deterministic Manhattan MST between
+      endpoints; trunk builds a hub-aligned rectilinear trunk with junction
+      nodes and branch drops. Use schematic_hints.net_groups (when present in
+      the payload) to split endpoints per hub group and map to hub order.
+      Ensure pin labels use net IDs/labels instead of hub IDs so mst/trunk
+      still label correctly, and keep connect_by_label suppression behavior.
+      Update dev harness and dev payload fixtures to exercise mst/trunk.
+    verify:
+      - npm --prefix extensions/asdl-visualizer run build:webview
+    links:
+      scratchpad: agents/scratchpads/T-263_visualizer_net_routing.md
+    files:
+      - extensions/asdl-visualizer/src/webview/app.tsx
+      - extensions/asdl-visualizer/src/extension/symbols.ts
+      - extensions/asdl-visualizer/scripts/build-dev-payload.mjs
+      - extensions/asdl-visualizer/src/webview/devHarness.ts
+      - extensions/asdl-visualizer/src/webview/public/dev_payload.json
