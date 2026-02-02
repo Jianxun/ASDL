@@ -231,6 +231,12 @@ body {
   color: #e2e8f0;
 }
 
+.junction-node {
+  background: #334155;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px #475569;
+}
+
 .reactflow .react-flow__handle {
   width: 8px;
   height: 8px;
@@ -245,6 +251,10 @@ body {
 
 .reactflow .hub-handle {
   background: #fbbf24;
+}
+
+.reactflow .junction-handle {
+  background: #94a3b8;
 }
 
 .reactflow .react-flow__minimap {
