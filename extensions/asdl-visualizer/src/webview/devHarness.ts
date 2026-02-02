@@ -13,10 +13,19 @@ type LayoutPayload = {
     {
       grid_size?: number
       instances: Record<string, { x: number; y: number; orient?: string; label?: string }>
-      net_hubs: Record<string, Record<string, { x: number; y: number; orient?: string; label?: string }>>
+      net_hubs: Record<string, NetHubLayout>
     }
   >
 }
+
+type NetTopology = 'star' | 'mst' | 'trunk'
+
+type NetHubEntry = {
+  topology?: NetTopology
+  hubs: Record<string, { x: number; y: number; orient?: string; label?: string }>
+}
+
+type NetHubLayout = NetHubEntry | Record<string, { x: number; y: number; orient?: string; label?: string }>
 
 type SymbolDefinition = {
   body: { w: number; h: number }
@@ -159,8 +168,8 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
           XBUF: { x: 10, y: 2, orient: 'R0' }
         },
         net_hubs: {
-          net_in: { hub1: { x: 6, y: 2 } },
-          net_out: { hub1: { x: 14, y: 2 } }
+          net_in: { topology: 'star', hubs: { hub1: { x: 6, y: 2 } } },
+          net_out: { topology: 'star', hubs: { hub1: { x: 14, y: 2 } } }
         }
       }
     }

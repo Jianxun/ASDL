@@ -73,6 +73,15 @@ type Placement = {
   label?: string
 }
 
+type NetTopology = 'star' | 'mst' | 'trunk'
+
+type NetHubEntry = {
+  topology?: NetTopology
+  hubs: Record<string, Placement>
+}
+
+type NetHubLayout = NetHubEntry | Record<string, Placement>
+
 type LayoutPayload = {
   schema_version: number
   modules: Record<
@@ -80,7 +89,7 @@ type LayoutPayload = {
     {
       grid_size?: number
       instances: Record<string, Placement>
-      net_hubs: Record<string, Record<string, Placement>>
+      net_hubs: Record<string, NetHubLayout>
     }
   >
 }
@@ -103,6 +112,7 @@ type WebviewMessage = LoadGraphMessage | DiagnosticsMessage
 
 const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null
 const DEFAULT_GRID_SIZE = 16
+const DEFAULT_TOPOLOGY: NetTopology = 'star'
 const HUB_SIZE = 2
 const HUB_HANDLE_ID = 'hub'
 const EDGE_STEP_OFFSET_UNITS = 0.8
@@ -240,7 +250,7 @@ export function App() {
       grid_size: gridSize,
       instances: {},
       net_hubs: {}
-    }
+    } as LayoutPayload['modules'][string]
 
     nodes.forEach((node) => {
       if (node.type === 'instance') {
@@ -261,18 +271,21 @@ export function App() {
         const layoutKey = hubLayoutKeys.get(node.id) ?? node.id
         const existing =
           existingModule?.net_hubs?.[layoutKey] ?? existingModule?.net_hubs?.[node.id]
-        const sanitized = sanitizeHubLayout(existing)
-        const entry = firstHubEntry(sanitized)
+        const normalized = normalizeNetHubEntry(existing)
+        const entry = firstHubEntry(normalized.hubs)
         const firstKey = entry?.key ?? 'hub1'
         const firstHub = entry?.placement
         const orient = normalizeOrient((node.data as HubNodeData).orient)
         moduleLayout.net_hubs[layoutKey] = {
-          ...sanitized,
-          [firstKey]: {
-            x,
-            y,
-            orient,
-            label: firstHub?.label
+          topology: normalized.topology,
+          hubs: {
+            ...normalized.hubs,
+            [firstKey]: {
+              x,
+              y,
+              orient,
+              label: firstHub?.label
+            }
           }
         }
       }
@@ -498,19 +511,40 @@ function isPlacement(value: unknown): value is Placement {
   return Number.isFinite(candidate.x) && Number.isFinite(candidate.y)
 }
 
-function sanitizeHubLayout(
-  hubLayout: Record<string, Placement> | undefined
-): Record<string, Placement> {
-  if (!hubLayout) {
+function normalizeTopology(value: unknown): NetTopology {
+  if (value === 'star' || value === 'mst' || value === 'trunk') {
+    return value
+  }
+  return DEFAULT_TOPOLOGY
+}
+
+function toPlacementMap(value: unknown): Record<string, Placement> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return {}
   }
-  const sanitized: Record<string, Placement> = {}
-  for (const [key, placement] of Object.entries(hubLayout)) {
+  const placements: Record<string, Placement> = {}
+  for (const [key, placement] of Object.entries(value as Record<string, unknown>)) {
     if (isPlacement(placement)) {
-      sanitized[key] = placement
+      placements[key] = placement
     }
   }
-  return sanitized
+  return placements
+}
+
+function normalizeNetHubEntry(entry: NetHubLayout | undefined): NetHubEntry {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+    return { topology: DEFAULT_TOPOLOGY, hubs: {} }
+  }
+  const record = entry as Record<string, unknown>
+  const hasHubs = Object.prototype.hasOwnProperty.call(record, 'hubs')
+  const hasTopology = Object.prototype.hasOwnProperty.call(record, 'topology')
+  if (hasHubs || hasTopology) {
+    return {
+      topology: normalizeTopology(record.topology),
+      hubs: toPlacementMap(hasHubs ? record.hubs : {})
+    }
+  }
+  return { topology: DEFAULT_TOPOLOGY, hubs: toPlacementMap(record) }
 }
 
 function firstHubEntry(
@@ -527,8 +561,9 @@ function firstHubEntry(
   return undefined
 }
 
-function firstHubPlacement(hubLayout: Record<string, Placement> | undefined): Placement | undefined {
-  return firstHubEntry(hubLayout)?.placement
+function firstHubPlacement(hubLayout: NetHubLayout | undefined): Placement | undefined {
+  const entry = normalizeNetHubEntry(hubLayout)
+  return firstHubEntry(entry.hubs)?.placement
 }
 
 function normalizeSymbolBody(body: { w?: number; h?: number }) {

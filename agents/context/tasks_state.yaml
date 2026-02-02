@@ -4,7 +4,7 @@ T-261:
   pr: 280
   merged: true
 T-262:
-  status: request_changes
+  status: in_progress
   pr: 281
   merged: false
 T-263:
