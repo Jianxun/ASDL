@@ -1,8 +1,8 @@
 schema_version: 2
 T-261:
-  status: review_clean
+  status: done
   pr: 280
-  merged: false
+  merged: true
 T-262:
   status: ready
   pr: null

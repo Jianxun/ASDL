@@ -28,6 +28,7 @@
 - 2026-02-01 20:28 — Scope review complete; spec updates align DoD for net_hubs schema, net_groups mapping, and MST/trunk routing; next step decide review outcome.
 - 2026-02-01 20:29 — Posted PR review comment with review-clean decision and non-blocking trunk note; next step set review_clean status.
 - 2026-02-01 20:29 — Set T-261 status to review_clean; next step closeout (set done, merge, cleanup).
+- 2026-02-01 20:29 — Set T-261 status to done/merged=true ahead of merge; next step lint, commit, and push before merging.
 
 # Patch summary
 - Documented net_hubs topology schema with defaults/legacy shape and hub group ordering rules.
