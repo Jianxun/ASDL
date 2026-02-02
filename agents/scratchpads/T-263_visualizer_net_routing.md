@@ -30,6 +30,9 @@
 - 2026-02-01 21:27 — Verification: npm --prefix extensions/asdl-visualizer run build:webview (pass); next step update scratchpad + prepare PR.
 
 # Patch summary
+- Added topology-aware routing with MST/trunk + junction nodes, hub group mapping, and improved pin label handling in the webview.
+- Updated webview styling/handles to support junction nodes and bidirectional pin connections.
+- Refreshed dev harness and dev payload fixture to exercise mst/trunk + grouped hubs.
 
 # PR URL
 
@@ -38,6 +41,7 @@
 - npm --prefix extensions/asdl-visualizer run build:webview (pass)
 
 # Status request (Done / Blocked / In Progress)
+In Progress
 
 # Blockers / Questions
 
