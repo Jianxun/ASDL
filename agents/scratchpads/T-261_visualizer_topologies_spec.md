@@ -23,6 +23,7 @@
 - 2026-02-01 20:24 — Recorded patch summary and verification skip note (docs-only); next step update task state/PR.
 - 2026-02-01 20:25 — Opened PR https://github.com/Jianxun/ASDL/pull/280 after pushing branch; next step update task state and scratchpad.
 - 2026-02-01 20:25 — Set T-261 status to ready_for_review with PR 280 and ran lint_tasks_state.py; files touched: agents/context/tasks_state.yaml; next step final commit/push.
+- 2026-02-01 20:27 — Review intake: confirmed PR targets main, task ID present, scratchpad + verification note included; next step set review_in_progress and inspect spec changes.
 
 # Patch summary
 - Documented net_hubs topology schema with defaults/legacy shape and hub group ordering rules.
