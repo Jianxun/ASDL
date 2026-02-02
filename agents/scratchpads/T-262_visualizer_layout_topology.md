@@ -62,3 +62,4 @@ Await review.
 - 2026-02-02 10:34 — Scope check: changes align with T-262 DoD, including webview net_hubs preservation; next step finalize review decision.
 - 2026-02-02 10:36 — Review decision: review_clean; posted PR comment; next step merge/closeout.
 - 2026-02-02 10:37 — Status update: set T-262 review_clean; next step merge/closeout.
+- 2026-02-02 10:40 — Status update: set T-262 done (pr 281, merged true); next step merge PR and close out.
