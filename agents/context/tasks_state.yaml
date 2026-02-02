@@ -4,7 +4,7 @@ T-261:
   pr: 280
   merged: true
 T-262:
-  status: ready_for_review
+  status: review_clean
   pr: 281
   merged: false
 T-263:
