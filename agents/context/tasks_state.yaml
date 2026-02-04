@@ -12,9 +12,9 @@ T-270:
   pr: 285
   merged: true
 T-271:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 287
+  merged: true
 T-266:
   status: ready
   pr: null

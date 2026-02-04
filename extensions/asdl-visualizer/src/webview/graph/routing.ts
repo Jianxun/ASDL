@@ -224,9 +224,6 @@ export function buildTrunkEdges(
   const projectionCoords = endpoints.map((endpoint) =>
     horizontal ? endpoint.x : endpoint.y
   )
-  const minCoord = Math.min(hubCoord, ...projectionCoords)
-  const maxCoord = Math.max(hubCoord, ...projectionCoords)
-
   const coordByKey = new Map<number, number>()
   const pushCoord = (value: number) => {
     const key = Math.round(value * 1000)
@@ -235,12 +232,12 @@ export function buildTrunkEdges(
     }
   }
 
-  projectionCoords.forEach(pushCoord)
-  pushCoord(minCoord)
-  pushCoord(maxCoord)
-  pushCoord(hubCoord)
-
   const hubKey = Math.round(hubCoord * 1000)
+  projectionCoords.forEach(pushCoord)
+  if (!coordByKey.has(hubKey)) {
+    coordByKey.set(hubKey, hubCoord)
+  }
+
   const sortedKeys = Array.from(coordByKey.entries()).sort((a, b) => a[0] - b[0])
   const coordToNode = new Map<number, string>()
   sortedKeys.forEach(([key, coord]) => {

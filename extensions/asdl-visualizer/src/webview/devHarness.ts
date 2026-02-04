@@ -197,9 +197,9 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
         instances: {
           M1: { x: 2, y: 2, orient: 'R0' },
           M2: { x: 2, y: 6, orient: 'R0' },
-          M3: { x: 2, y: 10, orient: 'R0' },
+          M3: { x: 18, y: 10, orient: 'R0' },
           XBUF: { x: 10, y: 2, orient: 'R0' },
-          XBUF2: { x: 10, y: 8, orient: 'R0' }
+          XBUF2: { x: 10, y: 14, orient: 'R0' }
         },
         net_hubs: {
           IN: { topology: 'star', hubs: { hub1: { x: 6, y: 2 } } },
