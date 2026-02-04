@@ -134,3 +134,42 @@ backlog:
       scratchpad: agents/scratchpads/T-268_symbol_editor_scope.md
     files:
       - docs/specs/spec_asdl_visualizer.md
+  - id: T-272
+    title: Parse project manifest v1 + library expansion
+    owner: Executor
+    dod: >
+      Update the Sphinx ASDL domain to parse the v1 project manifest schema
+      (schema_version, project_name, readme, docs, entrances, libraries)
+      while preserving YAML list order. Library entries must expand all
+      .asdl files under each library root, honoring exclude globs relative
+      to the library root (no implicit filtering). Remove legacy manifest
+      entry sorting/expansion from the project flow. Add unit coverage for
+      parsing and exclude handling.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_project_manifest.py -v
+    links:
+      scratchpad: agents/scratchpads/T-272_sphinx_project_manifest_v1.md
+    files:
+      - src/asdl/docs/sphinx_domain.py
+      - tests/unit_tests/docs/test_sphinx_project_manifest.py
+      - tests/unit_tests/docs/fixtures/project_manifest_v1
+  - id: T-273
+    title: Render project nav page (README/docs/entrances/libraries)
+    owner: Executor
+    depends_on:
+      - T-272
+    dod: >
+      Generate a project nav page that orders entries as README, docs,
+      entrances, then libraries. README label uses project_name when set,
+      otherwise the document title. Entrances must render file+module
+      references with descriptions. Update the example Sphinx index to
+      include only the generated project page (no duplicate README entry).
+      Add unit coverage for nav ordering and entrance link rendering.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_project_manifest.py -v
+    links:
+      scratchpad: agents/scratchpads/T-273_sphinx_project_nav.md
+    files:
+      - src/asdl/docs/sphinx_domain.py
+      - tests/unit_tests/docs/test_sphinx_project_manifest.py
+      - examples/docs/index.rst
