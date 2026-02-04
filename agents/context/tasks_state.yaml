@@ -20,7 +20,7 @@ T-266:
   pr: 288
   merged: true
 T-267:
-  status: ready_for_review
+  status: review_in_progress
   pr: 289
   merged: false
 T-268:
