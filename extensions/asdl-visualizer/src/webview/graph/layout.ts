@@ -108,6 +108,7 @@ export function buildReactFlowGraph(
     const rawEntry =
       moduleLayout?.net_hubs?.[layoutKey] ?? moduleLayout?.net_hubs?.[hub.id]
     const normalized = normalizeNetHubEntry(rawEntry)
+    const topology = normalized.topology ?? DEFAULT_TOPOLOGY
     const groupSlices = graph.schematic_hints?.net_groups?.[hub.id]
     const groupCount =
       Array.isArray(groupSlices) && groupSlices.length > 0 ? groupSlices.length : 1
@@ -142,7 +143,6 @@ export function buildReactFlowGraph(
         center: { x: gridX * gridSize, y: gridY * gridSize }
       })
     }
-    const topology = normalized.topology ?? DEFAULT_TOPOLOGY
     hubInfoByNet.set(hub.id, { topology, groups })
     hubRowIndex += groupCount
   })
