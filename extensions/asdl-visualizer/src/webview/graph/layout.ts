@@ -12,6 +12,7 @@ import type {
   GraphPayload,
   HubGroupInfo,
   HubNodeData,
+  InstanceNodeData,
   LayoutPayload,
   NetHubEntry,
   NetHubInfo,
@@ -107,6 +108,7 @@ export function buildReactFlowGraph(
     const rawEntry =
       moduleLayout?.net_hubs?.[layoutKey] ?? moduleLayout?.net_hubs?.[hub.id]
     const normalized = normalizeNetHubEntry(rawEntry)
+    const topology = normalized.topology ?? DEFAULT_TOPOLOGY
     const groupSlices = graph.schematic_hints?.net_groups?.[hub.id]
     const groupCount =
       Array.isArray(groupSlices) && groupSlices.length > 0 ? groupSlices.length : 1
@@ -127,7 +129,7 @@ export function buildReactFlowGraph(
         id: nodeId,
         type: 'hub',
         position: pos,
-        data: { label: hub.label, orient, netId: hub.id, hubKey, layoutKey },
+        data: { label: hub.label, orient, netId: hub.id, hubKey, layoutKey, topology },
         style: {
           width: HUB_SIZE * gridSize,
           height: HUB_SIZE * gridSize
@@ -141,11 +143,116 @@ export function buildReactFlowGraph(
         center: { x: gridX * gridSize, y: gridY * gridSize }
       })
     }
-    const topology = normalized.topology ?? DEFAULT_TOPOLOGY
     hubInfoByNet.set(hub.id, { topology, groups })
     hubRowIndex += groupCount
   })
 
+  const { edges, junctionNodes } = buildRoutingGraph(
+    graph,
+    hubInfoByNet,
+    routedPins,
+    gridSize
+  )
+
+  return { nodes: [...instances, ...hubs, ...junctionNodes], edges }
+}
+
+export function recomputeRoutingGraph(
+  graph: GraphPayload,
+  nodes: Array<Node<VisualNodeData>>,
+  gridSize: number
+): { edges: Edge[]; junctionNodes: Array<Node<VisualNodeData>> } {
+  const routedPins = buildRoutedPinsFromNodes(nodes, gridSize)
+  const hubInfoByNet = buildHubInfoFromNodes(graph, nodes, gridSize)
+  return buildRoutingGraph(graph, hubInfoByNet, routedPins, gridSize)
+}
+
+function buildRoutedPinsFromNodes(
+  nodes: Array<Node<VisualNodeData>>,
+  gridSize: number
+): Map<string, Map<string, RoutedPin>> {
+  const routedPins = new Map<string, Map<string, RoutedPin>>()
+  nodes.forEach((node) => {
+    if (node.type !== 'instance') {
+      return
+    }
+    const data = node.data as InstanceNodeData
+    const orient = normalizeOrient(data.orient)
+    const orientData = computeOrientData(data.body.w * gridSize, data.body.h * gridSize, orient)
+    const pinMap = new Map<string, RoutedPin>()
+    data.pins.forEach((pin) => {
+      const { x: ox, y: oy } = applyOrientPoint(
+        pin.x * gridSize,
+        pin.y * gridSize,
+        orientData
+      )
+      const side = mapPinSide(pin.side, orientData)
+      pinMap.set(pin.id, {
+        x: node.position.x + ox,
+        y: node.position.y + oy,
+        side,
+        connectByLabel: pin.connectByLabel
+      })
+    })
+    routedPins.set(node.id, pinMap)
+  })
+  return routedPins
+}
+
+function buildHubInfoFromNodes(
+  graph: GraphPayload,
+  nodes: Array<Node<VisualNodeData>>,
+  gridSize: number
+): Map<string, NetHubInfo> {
+  const hubsByNet = new Map<string, Array<Node<HubNodeData>>>()
+  nodes.forEach((node) => {
+    if (node.type !== 'hub') {
+      return
+    }
+    const data = node.data as HubNodeData
+    const list = hubsByNet.get(data.netId) ?? []
+    list.push(node as Node<HubNodeData>)
+    hubsByNet.set(data.netId, list)
+  })
+
+  const hubInfoByNet = new Map<string, NetHubInfo>()
+  graph.netHubs.forEach((hub) => {
+    const hubNodes = hubsByNet.get(hub.id) ?? []
+    if (hubNodes.length === 0) {
+      return
+    }
+    const groupSlices = graph.schematic_hints?.net_groups?.[hub.id]
+    const groupCount =
+      Array.isArray(groupSlices) && groupSlices.length > 0 ? groupSlices.length : 1
+    const groups: HubGroupInfo[] = []
+    const groupLimit = Math.min(groupCount, hubNodes.length)
+    for (let index = 0; index < groupLimit; index += 1) {
+      const node = hubNodes[index]
+      const data = node.data as HubNodeData
+      groups.push({
+        nodeId: node.id,
+        hubKey: data.hubKey,
+        layoutKey: data.layoutKey,
+        orient: normalizeOrient(data.orient),
+        center: {
+          x: node.position.x + (HUB_SIZE * gridSize) / 2,
+          y: node.position.y + (HUB_SIZE * gridSize) / 2
+        }
+      })
+    }
+    const topology = hubNodes[0]?.data?.topology ?? DEFAULT_TOPOLOGY
+    hubInfoByNet.set(hub.id, { topology, groups })
+  })
+
+  return hubInfoByNet
+}
+
+function buildRoutingGraph(
+  graph: GraphPayload,
+  hubInfoByNet: Map<string, NetHubInfo>,
+  routedPins: Map<string, Map<string, RoutedPin>>,
+  gridSize: number
+): { edges: Edge[]; junctionNodes: Array<Node<VisualNodeData>> } {
   const endpointsByNet = collectRoutedEndpoints(graph.edges, routedPins)
   const junctionNodes: Array<Node<VisualNodeData>> = []
   const edges: Edge[] = []
@@ -244,7 +351,7 @@ export function buildReactFlowGraph(
     }
   })
 
-  return { nodes: [...instances, ...hubs, ...junctionNodes], edges }
+  return { edges, junctionNodes }
 }
 
 export function normalizeNetHubEntry(entry: NetHubLayout | undefined): NetHubEntry {

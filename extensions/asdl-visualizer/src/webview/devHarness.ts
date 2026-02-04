@@ -173,7 +173,7 @@ function buildDevPayload(): { graph: GraphPayload; layout: LayoutPayload } {
       [moduleKey]: {
         body: { w: 8, h: 4 },
         pins: {
-          left: [{ name: 'IN', offset: 0, visible: true }],
+          left: [{ name: 'IN', offset: 0, visible: true, connect_by_label: true }],
           right: [{ name: 'OUT', offset: 0, visible: true }]
         }
       }

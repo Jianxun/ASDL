@@ -118,6 +118,7 @@ export type HubNodeData = {
   netId: string
   hubKey: string
   layoutKey: string
+  topology: NetTopology
 }
 
 export type JunctionNodeData = {

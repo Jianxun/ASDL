@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useEdgesState, useNodesState, type Edge } from 'reactflow'
+import {
+  applyNodeChanges,
+  useEdgesState,
+  useNodesState,
+  type Edge,
+  type Node,
+  type NodeChange
+} from 'reactflow'
 import { DEFAULT_GRID_SIZE, HUB_SIZE } from '../constants'
 import type {
   GraphPayload,
@@ -9,7 +16,12 @@ import type {
   VisualNodeData,
   WebviewMessage
 } from '../types'
-import { buildReactFlowGraph, firstHubEntry, normalizeNetHubEntry } from '../graph/layout'
+import {
+  buildReactFlowGraph,
+  firstHubEntry,
+  normalizeNetHubEntry,
+  recomputeRoutingGraph
+} from '../graph/layout'
 import {
   centerFromNode,
   gridFromTopLeft,
@@ -25,7 +37,7 @@ export function useVisualizerState() {
   const [layout, setLayout] = useState<LayoutPayload | null>(null)
   const [diagnostics, setDiagnostics] = useState<string[]>([])
   const [gridSize, setGridSize] = useState<number>(DEFAULT_GRID_SIZE)
-  const [nodes, setNodes, onNodesChange] = useNodesState<VisualNodeData>([])
+  const [nodes, setNodes] = useNodesState<VisualNodeData>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [fitViewToken, setFitViewToken] = useState(0)
   const graphRef = useRef<GraphPayload | null>(null)
@@ -155,6 +167,29 @@ export function useVisualizerState() {
       }
     })
   }, [layout, graph, nodes, gridSize])
+
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      const shouldRecompute = changes.some(
+        (change) => change.type === 'position' || change.type === 'dimensions'
+      )
+      setNodes((prevNodes) => {
+        const nextNodes = applyNodeChanges(changes, prevNodes)
+        if (!shouldRecompute || !graphRef.current) {
+          return nextNodes
+        }
+        const baseNodes = nextNodes.filter((node) => node.type !== 'junction')
+        const { edges: nextEdges, junctionNodes } = recomputeRoutingGraph(
+          graphRef.current,
+          baseNodes,
+          gridSize
+        )
+        setEdges(nextEdges)
+        return [...baseNodes, ...junctionNodes] as Array<Node<VisualNodeData>>
+      })
+    },
+    [gridSize, setEdges, setNodes]
+  )
 
   return {
     graph,
