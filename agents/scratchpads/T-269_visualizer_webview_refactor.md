@@ -18,23 +18,26 @@
 - [ ] Update tests/build as needed; run verify command.
 
 ## Todo
-- [ ] Add shared types/constants modules.
-- [ ] Move geometry/layout/routing helpers.
-- [ ] Extract node components.
-- [ ] Add state/message hook and rewire `app.tsx`.
-- [ ] Run `build:webview` verify.
+- [x] Add shared types/constants modules.
+- [x] Move geometry/layout/routing helpers.
+- [x] Extract node components.
+- [x] Add state/message hook and rewire `app.tsx`.
+- [x] Run `build:webview` verify.
 
 ## Milestone notes
 - Intake: 2026-02-04
 
 ## Patch summary
-- TBD
+- Added shared webview constants/types modules.
+- Split geometry, layout, and routing helpers into dedicated graph modules.
+- Extracted instance/hub/junction node components.
+- Added `useVisualizerState` hook for message handling/state and rewired `app.tsx`.
 
 ## PR URL
 - TBD
 
 ## Verification
-- TBD
+- `npm --prefix extensions/asdl-visualizer run build:webview`
 
 ## Status request
 - In Progress
@@ -43,4 +46,4 @@
 - None.
 
 ## Next steps
-- Implement module extraction and update imports.
+- Prep PR and update task state.
