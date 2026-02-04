@@ -1,3 +1,21 @@
-entries:
-  - ../libs/mosbius_devices/top_mosbius_devices_v1_nmos/top_mosbius_devices_v1_nmos.asdl
-  - ../libs/sw_matrix/full_switch_matrix_130_by_25/full_switch_matrix_130_by_25.asdl
+schema_version: 1
+project_name: ASDL Documentation
+readme: README
+
+entrances:
+  - file: ../libs/mosbius_devices/top_mosbius_devices_v1_nmos/top_mosbius_devices_v1_nmos.asdl
+    module: top_mosbius_devices_v1_nmos
+    description: |
+      Top-level MOSbius devices library (NMOS only)
+  - file: ../libs/sw_matrix/full_switch_matrix_130_by_25/full_switch_matrix_130_by_25.asdl
+    module: full_switch_matrix_130_by_25
+    description: |
+      Full switch matrix (130x25)
+
+libraries:
+  - name: MOSbius Devices
+    path: ../libs/mosbius_devices
+    exclude:
+      - _archive/**
+  - name: Switch Matrix
+    path: ../libs/sw_matrix

@@ -132,8 +132,73 @@ nets:
 ### Tier 2 (Sphinx-native)
 - `asdl:document` renders a single ASDL file directly into a Sphinx page.
 - `asdl:library` renders all `.asdl` files under a directory.
-- Project manifests may list entry files to generate per-file pages.
+- Project manifests (`project.yaml`) define navigation and library coverage
+  for Sphinx builds (README, docs, entrances, libraries).
 - Instance links and "Used by" sections are driven by a dependency graph.
+
+## Project manifest (Sphinx)
+
+The Sphinx project manifest (`project.yaml`) defines the documentation
+navigation order and which ASDL files appear in library docs. Manifest order
+is preserved; no implicit sorting or filtering is applied.
+
+### Navigation order
+When present, the Sphinx output should follow this order:
+1. `<Project Name>` page (README)
+2. Docs (standalone documents)
+3. Entrances (top-level module entry points)
+4. Libraries (all ASDL files under each library root)
+
+If a section is missing (e.g., no docs), it is omitted from navigation.
+
+### Schema (v1)
+Top-level keys:
+- `schema_version` (int, required): Manifest schema version (current: `1`).
+- `project_name` (string, optional): Label used for the README entry in the
+  navigation list. If omitted, the README document title is used.
+- `readme` (string, optional): Path to the README document (rst/md), relative
+  to the Sphinx source directory. If omitted, no README entry is generated.
+- `docs` (list of string, optional): Paths to standalone docs (rst/md),
+  relative to the Sphinx source directory. Order is preserved.
+- `entrances` (list of mapping, optional): Curated top-level module entries.
+- `libraries` (list of mapping, optional): Library roots to fully document.
+
+`entrances` entry fields:
+- `file` (string, required): ASDL file path, relative to the Sphinx source
+  directory.
+- `module` (string, required): Module name within the file.
+- `description` (string, optional): Markdown/RST-friendly text shown on the
+  Entrances page.
+
+`libraries` entry fields:
+- `name` (string, required): Display name for the library.
+- `path` (string, required): Directory path, relative to the Sphinx source
+  directory. All `.asdl` files under this root are included.
+- `exclude` (list of string, optional): Glob patterns relative to the library
+  root. Matching files/directories are excluded. No default excludes exist;
+  `_archive` or testbench folders must be listed explicitly.
+
+### Example
+```yaml
+schema_version: 1
+project_name: ASDL Documentation
+readme: README
+docs:
+  - guides/build
+  - guides/usage
+entrances:
+  - file: ../libs/mosbius_devices/top_mosbius_devices_v1_nmos/top_mosbius_devices_v1_nmos.asdl
+    module: top_mosbius_devices_v1_nmos
+    description: |
+      Top-level MOSbius devices library (NMOS only)
+libraries:
+  - name: MOSbius Devices
+    path: ../libs/mosbius_devices
+    exclude:
+      - _archive/**
+  - name: Switch Matrix
+    path: ../libs/sw_matrix
+```
 
 ## Dependency graph (Tier 2)
 - The `asdlc depgraph-dump` command emits a resolved graph that maps module
