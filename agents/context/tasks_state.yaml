@@ -4,9 +4,9 @@ T-264:
   pr: 283
   merged: true
 T-269:
-  status: review_clean
+  status: done
   pr: 284
-  merged: false
+  merged: true
 T-270:
   status: ready
   pr: null
