@@ -8,7 +8,7 @@ T-269:
   pr: 284
   merged: true
 T-270:
-  status: request_changes
+  status: ready_for_review
   pr: 285
   merged: false
 T-271:
