@@ -19,9 +19,10 @@
 
 ## Milestone notes
 - Intake: 2026-02-04
+- Proposal drafted in `docs/specs/spec_asdl_visualizer.md`.
 
 ## Patch summary
-- TBD
+- Added symbol editor/generation proposal to visualizer spec.
 
 ## PR URL
 - TBD
