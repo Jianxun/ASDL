@@ -4,8 +4,8 @@ T-264:
   pr: 283
   merged: true
 T-269:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 284
   merged: false
 T-270:
   status: ready
