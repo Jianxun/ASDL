@@ -15,11 +15,14 @@ export function registerOpenVisualizerCommand(
   context: vscode.ExtensionContext
 ): vscode.Disposable {
   return vscode.commands.registerCommand('asdl.openVisualizer', async () => {
-    const asdlUri = resolveActiveAsdlUri()
-    if (!asdlUri) {
-      vscode.window.showErrorMessage('Open an .asdl file before launching the visualizer.')
+    const resolution = await resolveActiveAsdlUri()
+    if (!resolution.uri) {
+      vscode.window.showErrorMessage(
+        resolution.error ?? 'Open an .asdl or .sch.yaml file before launching the visualizer.'
+      )
       return
     }
+    const asdlUri = resolution.uri
 
     let activeModuleName: string | null = null
     const panel = vscode.window.createWebviewPanel(
