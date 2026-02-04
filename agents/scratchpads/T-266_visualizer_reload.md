@@ -20,12 +20,17 @@
 
 # Milestone notes
 - Intake complete.
+- Implemented reload message flow and webview control.
 
 # Patch summary
+- Added reload message handling with module reuse in the extension host.
+- Added reload toolbar control with viewport preservation in the webview.
+- Documented the reload affordance in the visualizer extension spec.
 
 # PR URL
 
 # Verification
+- npm --prefix extensions/asdl-visualizer run build
 
 # Status request
 - In Progress
