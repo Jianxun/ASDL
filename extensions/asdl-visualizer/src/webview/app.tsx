@@ -25,7 +25,10 @@ export function App() {
     onNodesChange,
     onEdgesChange,
     onSave,
-    fitViewToken
+    onReload,
+    fitViewToken,
+    restoreViewportToken,
+    viewportToRestore
   } = useVisualizerState()
   const reactFlowRef = useRef<ReactFlowInstance | null>(null)
 
@@ -49,13 +52,39 @@ export function App() {
     return () => cancelAnimationFrame(handle)
   }, [fitViewToken])
 
+  useEffect(() => {
+    if (restoreViewportToken === 0) {
+      return
+    }
+    const instance = reactFlowRef.current
+    if (!instance || !viewportToRestore) {
+      return
+    }
+    const handle = requestAnimationFrame(() => {
+      instance.setViewport(viewportToRestore)
+    })
+    return () => cancelAnimationFrame(handle)
+  }, [restoreViewportToken, viewportToRestore])
+
   return (
     <div className="app">
       <header className="toolbar">
         <div className="title">ASDL Visualizer — Phase C</div>
-        <button className="primary" onClick={onSave} disabled={!layout || !graph}>
-          Save Layout
-        </button>
+        <div className="toolbar-actions">
+          <button
+            className="secondary"
+            onClick={() => {
+              onReload(reactFlowRef.current?.getViewport() ?? null)
+            }}
+            disabled={!graph}
+            title="Reload .sym.yaml/.sch.yaml sidecars"
+          >
+            Reload
+          </button>
+          <button className="primary" onClick={onSave} disabled={!layout || !graph}>
+            Save Layout
+          </button>
+        </div>
       </header>
 
       <section className="content">

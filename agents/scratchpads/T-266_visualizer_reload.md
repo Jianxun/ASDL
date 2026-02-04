@@ -1,0 +1,43 @@
+# Task summary (DoD + verify)
+- DoD: Add a reload control in the visualizer webview that re-reads the companion .sym.yaml/.sch.yaml files and refreshes the rendered graph without closing the view. The action should request a reload from the extension host and preserve the current pan/zoom if possible. Document the reload affordance in the visualizer spec or extension README.
+- Verify: npm --prefix extensions/asdl-visualizer run build
+
+# Read (paths)
+- agents/context/lessons.md
+- agents/context/contract.md
+- agents/context/tasks.yaml
+- agents/context/tasks_state.yaml
+- agents/context/project_status.md
+
+# Plan
+- Review visualizer extension/webview message flow and current reload behavior.
+- Add reload control + message path to extension host and preserve pan/zoom.
+- Update documentation and run verify.
+- Todo:
+  - Implement reload messaging + module reuse in extension.
+  - Add reload control + viewport preservation in webview.
+  - Document reload affordance and verify build.
+
+# Milestone notes
+- Intake complete.
+- Implemented reload message flow and webview control.
+
+# Patch summary
+- Added reload message handling with module reuse in the extension host.
+- Added reload toolbar control with viewport preservation in the webview.
+- Documented the reload affordance in the visualizer extension spec.
+
+# PR URL
+https://github.com/Jianxun/ASDL/pull/288
+
+# Verification
+- npm --prefix extensions/asdl-visualizer run build
+
+# Status request
+- Ready for review
+
+# Blockers / Questions
+- None.
+
+# Next steps
+- Implement reload control + extension request, then document + verify.

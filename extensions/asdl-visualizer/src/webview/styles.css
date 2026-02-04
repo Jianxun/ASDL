@@ -44,6 +44,12 @@ body {
   letter-spacing: 0.02em;
 }
 
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .primary {
   background: var(--accent);
   color: #0d1219;
@@ -55,6 +61,21 @@ body {
 }
 
 .primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
