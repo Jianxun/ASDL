@@ -32,13 +32,13 @@
 - Tweaked dev harness/payload to include label-only pins for suppression checks.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/285
 
 ## Verification
 - `npm --prefix extensions/asdl-visualizer run build:webview`
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - None.
