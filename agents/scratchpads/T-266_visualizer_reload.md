@@ -28,12 +28,13 @@
 - Documented the reload affordance in the visualizer extension spec.
 
 # PR URL
+https://github.com/Jianxun/ASDL/pull/288
 
 # Verification
 - npm --prefix extensions/asdl-visualizer run build
 
 # Status request
-- In Progress
+- Ready for review
 
 # Blockers / Questions
 - None.
