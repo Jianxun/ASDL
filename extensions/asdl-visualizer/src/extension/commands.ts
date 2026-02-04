@@ -21,6 +21,7 @@ export function registerOpenVisualizerCommand(
       return
     }
 
+    let activeModuleName: string | null = null
     const panel = vscode.window.createWebviewPanel(
       VIEW_TYPE,
       'ASDL Visualizer',
@@ -33,36 +34,50 @@ export function registerOpenVisualizerCommand(
 
     panel.webview.html = await getWebviewHtml(panel.webview, context.extensionUri)
 
+    const postGraphPayload = async (preferredModuleName?: string | null) => {
+      try {
+        const result = await loadGraphPayload(
+          asdlUri,
+          panel.webview,
+          context.extensionUri,
+          preferredModuleName ?? undefined
+        )
+        activeModuleName = result.moduleName
+        panel.webview.postMessage({ type: 'loadGraph', payload: result.payload })
+        panel.webview.postMessage({
+          type: 'diagnostics',
+          payload: { items: result.payload.diagnostics }
+        })
+      } catch (error) {
+        const details = error instanceof Error ? error.message : String(error)
+        const diagnostics = error instanceof VisualizerDumpError ? error.diagnostics : []
+        const mergedDiagnostics =
+          diagnostics.length > 0 ? diagnostics : [`Failed to load visualizer dump: ${details}`]
+        panel.webview.postMessage({
+          type: 'loadGraph',
+          payload: {
+            graph: buildMockGraph(),
+            layout: buildMockLayout(),
+            diagnostics: mergedDiagnostics
+          }
+        })
+        panel.webview.postMessage({
+          type: 'diagnostics',
+          payload: { items: mergedDiagnostics }
+        })
+        vscode.window.showErrorMessage(`ASDL visualizer load failed: ${details}`)
+      }
+    }
+
     panel.webview.onDidReceiveMessage(async (message) => {
       if (message?.type === 'ready') {
-        try {
-          const payload = await loadGraphPayload(asdlUri, panel.webview, context.extensionUri)
-          panel.webview.postMessage({ type: 'loadGraph', payload })
-          panel.webview.postMessage({
-            type: 'diagnostics',
-            payload: { items: payload.diagnostics }
-          })
-        } catch (error) {
-          const details = error instanceof Error ? error.message : String(error)
-          const diagnostics = error instanceof VisualizerDumpError ? error.diagnostics : []
-          const mergedDiagnostics =
-            diagnostics.length > 0
-              ? diagnostics
-              : [`Failed to load visualizer dump: ${details}`]
-          panel.webview.postMessage({
-            type: 'loadGraph',
-            payload: {
-              graph: buildMockGraph(),
-              layout: buildMockLayout(),
-              diagnostics: mergedDiagnostics
-            }
-          })
-          panel.webview.postMessage({
-            type: 'diagnostics',
-            payload: { items: mergedDiagnostics }
-          })
-          vscode.window.showErrorMessage(`ASDL visualizer load failed: ${details}`)
-        }
+        await postGraphPayload(activeModuleName)
+      }
+
+      if (message?.type === 'reload') {
+        const requestedModule =
+          typeof message?.payload?.moduleId === 'string' ? message.payload.moduleId : null
+        await postGraphPayload(requestedModule ?? activeModuleName)
       }
 
       if (message?.type === 'saveLayout') {
@@ -82,12 +97,13 @@ export function registerOpenVisualizerCommand(
 async function loadGraphPayload(
   asdlUri: vscode.Uri,
   webview: vscode.Webview,
-  extensionUri: vscode.Uri
-): Promise<LoadGraphPayload> {
+  extensionUri: vscode.Uri,
+  preferredModuleName?: string
+): Promise<{ payload: LoadGraphPayload; moduleName: string }> {
   const diagnostics: string[] = []
   const moduleList = await loadVisualizerModuleList(asdlUri)
   diagnostics.push(...moduleList.diagnostics)
-  const selectedModule = await promptForModule(moduleList.modules)
+  const selectedModule = await resolveModule(moduleList.modules, preferredModuleName)
   const dumpResult = await loadVisualizerDump(asdlUri, selectedModule.name)
   diagnostics.push(...dumpResult.diagnostics)
   configureWebviewRoots(webview, extensionUri, dumpResult.dump)
@@ -95,7 +111,7 @@ async function loadGraphPayload(
   diagnostics.push(...symbolLibrary.diagnostics)
   const graph = buildGraphFromDump(dumpResult.dump, diagnostics, symbolLibrary.symbols)
   const layout = await readLayoutSidecar(asdlUri, graph, dumpResult.dump.module.name)
-  return { graph, layout, diagnostics }
+  return { payload: { graph, layout, diagnostics }, moduleName: selectedModule.name }
 }
 
 function configureWebviewRoots(
@@ -142,4 +158,20 @@ async function promptForModule(
     return modules[0]
   }
   return picked.module
+}
+
+async function resolveModule(
+  modules: VisualizerModule[],
+  preferredModuleName?: string
+): Promise<VisualizerModule> {
+  if (preferredModuleName) {
+    const match = modules.find((module) => module.name === preferredModuleName)
+    if (match) {
+      return match
+    }
+    vscode.window.showWarningMessage(
+      `Module "${preferredModuleName}" is no longer available. Select another module.`
+    )
+  }
+  return promptForModule(modules)
 }
