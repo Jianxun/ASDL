@@ -29,6 +29,7 @@
 - Documented launch behavior and hotkey in extension spec.
 
 # PR URL
+https://github.com/Jianxun/ASDL/pull/289
 
 # Verification
 - npm --prefix extensions/asdl-visualizer run build:extension
