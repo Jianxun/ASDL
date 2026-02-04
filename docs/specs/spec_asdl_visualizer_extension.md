@@ -6,6 +6,9 @@ The primary UI host is a VSCode extension with a webview-based editor.
 Responsibilities:
 - Resolve companion files for an ASDL source:
   - `design.asdl` -> `design.sym.yaml` and `design.sch.yaml`
+- Allow launching the visualizer from an active `.asdl` or `.sch.yaml` editor;
+  when a schematic sidecar is active, resolve the companion `.asdl` with the
+  same basename.
 - Read and write YAML sidecars in-place via the VSCode file system API.
 - Provide file watching or reload hooks when any of the inputs change.
 - Expose a bridge API for the webview to request load/save and report diagnostics.
@@ -47,6 +50,8 @@ Core responsibilities:
 - Resolve companion files (`.sym.yaml`, `.sch.yaml`) from the active ASDL file.
 - Read/write YAML files via `vscode.workspace.fs`.
 - Bridge messages between webview and extension: `load`, `saveLayout`, `diagnostics`.
+- Keybinding matches Markdown preview: Cmd+Shift+V (macOS) / Ctrl+Shift+V
+  (Windows/Linux), scoped to `.asdl` and `.sch.yaml` editors.
 
 ## Interaction (MVP)
 - Selecting an instance or hub exposes orientation controls:
