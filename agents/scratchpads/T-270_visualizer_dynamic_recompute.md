@@ -12,28 +12,30 @@
 - `agents/context/project_status.md`
 
 ## Plan
-- [ ] Inspect visualizer state management and routing flow post-refactor.
-- [ ] Implement routing recompute on node position changes (including MST) while preserving pin labels/connect_by_label suppression.
-- [ ] Update dev harness/payload fixtures for dynamic recompute coverage.
-- [ ] Run verify command.
+- [x] Inspect visualizer state management and routing flow post-refactor.
+- [x] Implement routing recompute on node position changes (including MST) while preserving pin labels/connect_by_label suppression.
+- [x] Update dev harness/payload fixtures for dynamic recompute coverage.
+- [x] Run verify command.
 
 ## Todo
-- [ ] Add routing recompute helpers based on live node positions.
-- [ ] Wire node-change handler to rebuild routing + junction nodes.
-- [ ] Update dev harness/payload fixtures for connect_by_label + recompute coverage.
-- [ ] Run `build:webview` verify.
+- [x] Add routing recompute helpers based on live node positions.
+- [x] Wire node-change handler to rebuild routing + junction nodes.
+- [x] Update dev harness/payload fixtures for connect_by_label + recompute coverage.
+- [x] Run `build:webview` verify.
 
 ## Milestone notes
 - Intake: 2026-02-04
 
 ## Patch summary
-- TBD
+- Added routing recompute helpers based on live node positions and hub centers.
+- Updated node-change handling to rebuild routing/junction nodes on drag.
+- Tweaked dev harness/payload to include label-only pins for suppression checks.
 
 ## PR URL
 - TBD
 
 ## Verification
-- TBD
+- `npm --prefix extensions/asdl-visualizer run build:webview`
 
 ## Status request
 - In Progress
