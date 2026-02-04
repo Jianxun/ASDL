@@ -1,6 +1,9 @@
 schema_version: 1
 
 archive:
+  - T-263: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-263_visualizer_net_routing.md, pr: 282}
+  - T-262: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-262_visualizer_layout_topology.md, pr: 281}
+  - T-261: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-261_visualizer_topologies_spec.md, pr: 280}
   - T-260: {completed_on: 2026-02-02, owner: Executor, scratchpad: agents/scratchpads/T-260_sphinx_doc_nav.md, pr: 279}
   - T-259: {completed_on: 2026-02-02, owner: Executor, scratchpad: agents/scratchpads/T-259_sphinx_doc_structure.md, pr: 278}
   - T-258: {completed_on: 2026-02-02, owner: Executor, scratchpad: agents/scratchpads/T-258_sphinx_title_dedupe.md, pr: 277}

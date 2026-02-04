@@ -1,66 +1,136 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-261
-    title: Define visualizer net topology strategies in spec
-    owner: Executor
+  - id: T-264
+    title: Update visualizer routing spec for dynamic MST and single-trunk
+    owner: Architect
     dod: >
-      Update docs/specs/spec_asdl_visualizer.md to define per-net topology
-      selection (star | mst | trunk), including the updated .sch.yaml schema
-      shape for net_hubs entries, defaults, and legacy map compatibility.
-      Specify how schematic_hints.net_groups map to hub groups and how
-      topology applies per group. Describe MST routing using Manhattan
-      endpoint distances with deterministic tie-breakers and include the hub
-      as an MST node. Specify trunk routing that follows hub orientation
-      (horizontal for R0/MX, vertical for R90/MXR90; default horizontal when
-      hub placement is missing) and branches to endpoints.
+      Refactor the visualizer spec into smaller files (overview index plus
+      symbols/layout/routing/extension specs). Document MST recomputation on
+      layout changes, MST including the hub as a node, and single-trunk
+      routing aligned to hub orientation. Specify that the trunk passes
+      through the hub, extends in both directions along the trunk axis, and
+      branches orthogonally to endpoints without intermediate anchors.
     verify: []
     links:
-      scratchpad: agents/scratchpads/T-261_visualizer_topologies_spec.md
+      scratchpad: agents/scratchpads/T-264_visualizer_trunk_spec.md
     files:
       - docs/specs/spec_asdl_visualizer.md
-  - id: T-262
-    title: Extend visualizer layout sidecar schema for topology selection
+      - docs/specs/spec_asdl_visualizer_symbols.md
+      - docs/specs/spec_asdl_visualizer_layout.md
+      - docs/specs/spec_asdl_visualizer_routing.md
+      - docs/specs/spec_asdl_visualizer_extension.md
+  - id: T-269
+    title: Refactor visualizer webview app module
     owner: Executor
     dod: >
-      Update the visualizer layout payload types and read/merge logic to
-      support per-net topology selection with backward-compatible parsing of
-      legacy net_hubs maps. Default missing topology to star and preserve
-      hub placement data for all groups. Extend VisualizerDump/GraphPayload
-      types to carry schematic_hints.net_groups/hub_group_index so the
-      webview can map endpoints to hub groups. Update dev payload generation
-      to emit the new net_hubs shape for sample layouts.
-    verify:
-      - npm --prefix extensions/asdl-visualizer run build:extension
-    links:
-      scratchpad: agents/scratchpads/T-262_visualizer_layout_topology.md
-    files:
-      - extensions/asdl-visualizer/src/extension/types.ts
-      - extensions/asdl-visualizer/src/extension/layout.ts
-      - extensions/asdl-visualizer/scripts/build-dev-payload.mjs
-  - id: T-263
-    title: Implement star/mst/trunk routing in visualizer webview
-    owner: Executor
-    dod: >
-      Build topology-aware edge generation in the webview: star connects
-      endpoint pins to hubs; mst builds a deterministic Manhattan MST between
-      endpoints plus the hub as an MST node; trunk builds a hub-oriented
-      rectilinear trunk with junction nodes and branch drops (horizontal
-      default when no hub placement). Use schematic_hints.net_groups (when
-      present in the payload) to split endpoints per hub group and map to hub
-      order. Ensure pin labels use net IDs/labels instead of hub IDs so
-      mst/trunk still label correctly, and keep connect_by_label suppression
-      behavior. Update dev harness and dev payload fixtures to exercise
-      mst/trunk.
+      Split extensions/asdl-visualizer/src/webview/app.tsx into smaller
+      modules without changing runtime behavior. Extract: (1) routing
+      algorithms (star/mst/trunk), (2) layout/geometry helpers (orient
+      transforms, pin placement, grid conversions), (3) node components
+      (instance/hub/junction), (4) message handling + state hooks, and
+      (5) shared constants/types. Keep ReactFlow wiring intact and update
+      imports/exports accordingly.
     verify:
       - npm --prefix extensions/asdl-visualizer run build:webview
     links:
-      scratchpad: agents/scratchpads/T-263_visualizer_net_routing.md
+      scratchpad: agents/scratchpads/T-269_visualizer_webview_refactor.md
     files:
       - extensions/asdl-visualizer/src/webview/app.tsx
-      - extensions/asdl-visualizer/src/extension/symbols.ts
-      - extensions/asdl-visualizer/scripts/build-dev-payload.mjs
+      - extensions/asdl-visualizer/src/webview/nodes/InstanceNode.tsx
+      - extensions/asdl-visualizer/src/webview/nodes/HubNode.tsx
+      - extensions/asdl-visualizer/src/webview/graph/routing.ts
+      - extensions/asdl-visualizer/src/webview/graph/layout.ts
+      - extensions/asdl-visualizer/src/webview/graph/geometry.ts
+      - extensions/asdl-visualizer/src/webview/state/useVisualizerState.ts
+  - id: T-270
+    title: Recompute routing on layout changes
+    owner: Executor
+    depends_on:
+      - T-269
+    dod: >
+      Update the visualizer webview so topology routing recomputes whenever
+      node positions change (drag/move), including MST. Ensure the updated
+      edge graph preserves pin label behavior and connect_by_label
+      suppression. Update dev harness/payload fixtures to exercise dynamic
+      recompute.
+    verify:
+      - npm --prefix extensions/asdl-visualizer run build:webview
+    links:
+      scratchpad: agents/scratchpads/T-270_visualizer_dynamic_recompute.md
+    files:
+      - extensions/asdl-visualizer/src/webview/app.tsx
       - extensions/asdl-visualizer/src/webview/devHarness.ts
       - extensions/asdl-visualizer/src/webview/public/dev_payload.json
+  - id: T-271
+    title: Implement single-trunk routing policy
+    owner: Executor
+    depends_on:
+      - T-269
+    dod: >
+      Update trunk routing to a single hub-aligned trunk through the hub that
+      extends in both directions along the trunk axis and connects each
+      endpoint with one orthogonal branch. Ensure endpoints behind the hub
+      are reachable and no intermediate anchors are introduced. Update dev
+      harness/payload fixtures to cover behind-hub endpoints.
+    verify:
+      - npm --prefix extensions/asdl-visualizer run build:webview
+    links:
+      scratchpad: agents/scratchpads/T-271_visualizer_trunk_policy.md
+    files:
+      - extensions/asdl-visualizer/src/webview/app.tsx
+      - extensions/asdl-visualizer/src/webview/devHarness.ts
+      - extensions/asdl-visualizer/src/webview/public/dev_payload.json
+  - id: T-266
+    title: Add visualizer reload action for .sch.yaml refresh
+    owner: Executor
+    depends_on:
+      - T-269
+    dod: >
+      Add a reload control in the visualizer webview that re-reads the
+      companion .sym.yaml/.sch.yaml files and refreshes the rendered graph
+      without closing the view. The action should request a reload from the
+      extension host and preserve the current pan/zoom if possible. Document
+      the reload affordance in the visualizer spec or extension README.
+    verify:
+      - npm --prefix extensions/asdl-visualizer run build
+    links:
+      scratchpad: agents/scratchpads/T-266_visualizer_reload.md
+    files:
+      - extensions/asdl-visualizer/src/extension/extension.ts
+      - extensions/asdl-visualizer/src/webview/app.tsx
+      - docs/specs/spec_asdl_visualizer.md
+  - id: T-267
+    title: Support launching visualizer from .sch.yaml with hotkey
+    owner: Executor
+    dod: >
+      Allow the visualizer command to launch when the active editor is either
+      a .asdl or .sch.yaml file, resolving the companion .asdl as needed.
+      Bind a keybinding matching Markdown preview (Cmd+Shift+V on macOS, and
+      the corresponding Ctrl+Shift+V on Windows/Linux) without conflicting
+      with existing ASDL commands. Update extension contribution metadata and
+      document the new launch behavior.
+    verify:
+      - npm --prefix extensions/asdl-visualizer run build:extension
+    links:
+      scratchpad: agents/scratchpads/T-267_visualizer_launch_hotkey.md
+    files:
+      - extensions/asdl-visualizer/package.json
+      - extensions/asdl-visualizer/src/extension/extension.ts
+      - docs/specs/spec_asdl_visualizer.md
 
-backlog: []
+backlog:
+  - id: T-268
+    title: Scope symbol sidecar generation/editor workflow
+    owner: Architect
+    dod: >
+      Provide a short proposal for generating and editing .sym.yaml files,
+      including whether to reuse the schematic visualizer (single-node mode)
+      or create a dedicated symbol editor. Identify the minimal UI/actions
+      needed to create/update symbols, how glyphs are positioned, and any
+      required schema changes or new commands.
+    verify: []
+    links:
+      scratchpad: agents/scratchpads/T-268_symbol_editor_scope.md
+    files:
+      - docs/specs/spec_asdl_visualizer.md
