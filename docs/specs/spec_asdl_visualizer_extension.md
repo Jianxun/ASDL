@@ -55,6 +55,9 @@ Core responsibilities:
   - **Mirror Y**: mirror across the Y axis (horizontal flip).
 - Orientation edits update the in-memory layout `orient` field and are saved to
   `design.sch.yaml` when the user clicks **Save Layout**.
+- The toolbar includes **Reload** to re-read `design.sym.yaml`/`design.sch.yaml`
+  and refresh the graph without closing the view, preserving the current
+  pan/zoom when possible.
 
 ## Validation
 - Layout entries MUST reference existing PatternedGraph IDs.
