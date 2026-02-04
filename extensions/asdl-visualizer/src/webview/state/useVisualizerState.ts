@@ -5,7 +5,8 @@ import {
   useNodesState,
   type Edge,
   type Node,
-  type NodeChange
+  type NodeChange,
+  type Viewport
 } from 'reactflow'
 import { DEFAULT_GRID_SIZE, HUB_SIZE } from '../constants'
 import type {
@@ -40,12 +41,18 @@ export function useVisualizerState() {
   const [nodes, setNodes] = useNodesState<VisualNodeData>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [fitViewToken, setFitViewToken] = useState(0)
+  const [restoreViewportToken, setRestoreViewportToken] = useState(0)
+  const [viewportToRestore, setViewportToRestore] = useState<Viewport | null>(null)
   const graphRef = useRef<GraphPayload | null>(null)
+  const pendingReloadRef = useRef(false)
+  const pendingViewportRef = useRef<Viewport | null>(null)
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent<WebviewMessage>) => {
       const message = event.data
       if (message.type === 'loadGraph') {
+        const forceReload = pendingReloadRef.current
+        pendingReloadRef.current = false
         const nextGraph = message.payload.graph
         const prevGraph = graphRef.current
         const isSameModule = prevGraph?.moduleId === nextGraph.moduleId
@@ -54,7 +61,7 @@ export function useVisualizerState() {
           prevGraph.instances.length === nextGraph.instances.length &&
           prevGraph.netHubs.length === nextGraph.netHubs.length &&
           prevGraph.edges.length === nextGraph.edges.length
-        const shouldRebuild = !prevGraph || !isSameModule || !isSameShape
+        const shouldRebuild = forceReload || !prevGraph || !isSameModule || !isSameShape
 
         if (shouldRebuild) {
           setGraph(nextGraph)
@@ -70,8 +77,14 @@ export function useVisualizerState() {
           )
           setNodes(rfNodes)
           setEdges(rfEdges)
-          setFitViewToken((token) => token + 1)
+          if (pendingViewportRef.current) {
+            setViewportToRestore(pendingViewportRef.current)
+            setRestoreViewportToken((token) => token + 1)
+          } else {
+            setFitViewToken((token) => token + 1)
+          }
         }
+        pendingViewportRef.current = null
         if (message.payload.diagnostics) {
           setDiagnostics(message.payload.diagnostics)
         }
@@ -168,6 +181,15 @@ export function useVisualizerState() {
     })
   }, [layout, graph, nodes, gridSize])
 
+  const onReload = useCallback((viewport: Viewport | null) => {
+    pendingReloadRef.current = true
+    pendingViewportRef.current = viewport
+    vscode?.postMessage({
+      type: 'reload',
+      payload: { moduleId: graphRef.current?.moduleId ?? null }
+    })
+  }, [])
+
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const shouldRecompute = changes.some(
@@ -201,6 +223,9 @@ export function useVisualizerState() {
     onNodesChange,
     onEdgesChange,
     onSave,
-    fitViewToken
+    onReload,
+    fitViewToken,
+    restoreViewportToken,
+    viewportToRestore
   }
 }
