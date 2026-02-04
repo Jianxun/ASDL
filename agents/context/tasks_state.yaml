@@ -1,6 +1,6 @@
 schema_version: 2
 T-268:
-  status: review_in_progress
+  status: review_clean
   pr: 290
   merged: false
 T-272:
