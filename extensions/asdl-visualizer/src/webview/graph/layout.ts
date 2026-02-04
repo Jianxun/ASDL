@@ -290,7 +290,7 @@ function isPlacement(value: unknown): value is Placement {
   return Number.isFinite(candidate.x) && Number.isFinite(candidate.y)
 }
 
-function normalizeTopology(value: unknown) {
+function normalizeTopology(value: unknown): NetHubEntry['topology'] {
   if (value === 'star' || value === 'mst' || value === 'trunk') {
     return value
   }
