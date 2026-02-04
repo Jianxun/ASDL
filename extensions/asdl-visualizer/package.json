@@ -33,10 +33,18 @@
       "commandPalette": [
         {
           "command": "asdl.openVisualizer",
-          "when": "resourceExtname == .asdl || editorLangId == asdl"
+          "when": "resourceExtname == .asdl || editorLangId == asdl || resourceFilename =~ /\\.sch\\.yaml$/"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "asdl.openVisualizer",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "resourceExtname == .asdl || editorLangId == asdl || resourceFilename =~ /\\.sch\\.yaml$/"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
