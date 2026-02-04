@@ -17,14 +17,24 @@
 - Verify build.
 
 # Milestone notes
+- Todo:
+  - [x] Update visualizer launch resolution for .sch.yaml.
+  - [x] Add command palette/keybinding metadata.
+  - [x] Document launch behavior.
+  - [x] Run build:extension verification.
 
 # Patch summary
+- Updated visualizer launch logic to accept .sch.yaml editors with companion .asdl resolution.
+- Added Cmd/Ctrl+Shift+V keybinding and .sch.yaml palette visibility.
+- Documented launch behavior and hotkey in extension spec.
 
 # PR URL
 
 # Verification
+- npm --prefix extensions/asdl-visualizer run build:extension
 
 # Status request (Done / Blocked / In Progress)
+Done
 
 # Blockers / Questions
 
