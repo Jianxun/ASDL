@@ -1,6 +1,12 @@
 schema_version: 1
 
 archive:
+  - T-271: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-271_visualizer_trunk_policy.md, pr: 287}
+  - T-270: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-270_visualizer_dynamic_recompute.md, pr: 285}
+  - T-269: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-269_visualizer_webview_refactor.md, pr: 284}
+  - T-267: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-267_visualizer_launch_hotkey.md, pr: 289}
+  - T-266: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-266_visualizer_reload.md, pr: 288}
+  - T-264: {completed_on: 2026-02-04, owner: Architect, scratchpad: agents/scratchpads/T-264_visualizer_trunk_spec.md, pr: 283}
   - T-263: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-263_visualizer_net_routing.md, pr: 282}
   - T-262: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-262_visualizer_layout_topology.md, pr: 281}
   - T-261: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-261_visualizer_topologies_spec.md, pr: 280}
