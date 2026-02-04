@@ -1,8 +1,8 @@
 schema_version: 2
 T-264:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 283
+  merged: true
 T-269:
   status: ready
   pr: null
