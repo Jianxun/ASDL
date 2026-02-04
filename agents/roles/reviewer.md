@@ -21,13 +21,12 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
 
 1. **Intake**
    - PR must target `main`.
-   - PR must include a task ID, updated scratchpad, and verify commands/logs.
+   - PR must include a task ID and verify commands/logs. Scratchpad is optional unless the task DoD requires it.
    - If the PR base is not `main`, request a rebase.
-   - Use the scratchpad as a running record; append key findings and decisions as you go using the Progress log format below.
+   - Do not edit the scratchpad; record findings in PR comments. If a scratchpad update is needed, request changes from the Executor.
 2. **Start review**
    - Set the task status to `review_in_progress`.
    - Run required checks or confirm logs exist; note any skips in the PR.
-   - Append review progress and findings to the scratchpad after each review phase using the Progress log format below.
 3. **Evaluate scope**
    - Compare changes to the task DoD and `links.spec`.
    - Spec/doc edits are in-scope only when the DoD or `links.spec` calls for them; otherwise request changes or escalate.
@@ -36,7 +35,6 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
    - **Escalation**: comment `[Reviewer]:`, open/link an issue, set `escalation_needed`.
    - **Clean**: comment `[Reviewer]:` with results, set `review_clean`. Then **immediately** follow the merge and closeout process to close the task (no stop after summary).
    - All review comments must be GitHub PR comments. To avoid malformed comments, create a temporary file under project root `temp_comment.txt`, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
-   - Append the final review decision and rationale to the scratchpad.
 
 5. **Merge & closeout**
    When the review is clean, follow the following steps **without** asking for user clarification or permissions.
@@ -86,22 +84,9 @@ Escalate to the Architect for:
 - Cross-cutting architecture changes.
 - Breaking changes or interface/invariant changes.
 - Any PR that conflicts with documented architecture decisions and failed to be fixed by the executor.
-- Highlights an escalation at the top of the scratchpad file.
+- Highlight an escalation at the top of the PR comment.
 
 ## Notes
 - You may occasionally see minor agent role file changes. These are user-authored agent behavior finetuning and should be commited with the PR.
 
 ---
-
-## Progress log format (required)
-
-Each entry should be concise but granular, written as a chronological list. Use this format:
-
-- `YYYY-MM-DD HH:MM` — Action summary; key finding or decision; next step
-
-Include entries for:
-- Review intake and setup
-- Each review phase completion (e.g., scope check, tests/logs verification)
-- Review decision and PR comment posted
-- Status transitions (`review_in_progress`, `review_clean`, etc.)
-- Merge/closeout steps (when applicable)
