@@ -25,7 +25,7 @@
 - Added symbol editor/generation proposal to visualizer spec.
 
 ## PR URL
-- TBD
+- https://github.com/Jianxun/ASDL/pull/290
 
 ## Verification
 - Not run (no verify steps defined).
