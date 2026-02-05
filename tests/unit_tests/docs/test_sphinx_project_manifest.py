@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
 
+from asdl.docs.depgraph import module_identifier
 from asdl.docs.sphinx_domain import (
     collect_asdl_project_entries,
     load_asdl_project_manifest,
+    write_asdl_project_pages,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "project_manifest_v1"
@@ -66,3 +69,57 @@ def test_collect_asdl_project_entries_expands_libraries_with_excludes() -> None:
     assert alpha_indexes
     assert beta_indexes
     assert max(alpha_indexes) < min(beta_indexes)
+
+
+def test_project_nav_orders_sections(tmp_path: Path) -> None:
+    srcdir = tmp_path / "project"
+    shutil.copytree(FIXTURES, srcdir)
+    manifest_path = srcdir / "project.yaml"
+    manifest = load_asdl_project_manifest(manifest_path)
+    entries = collect_asdl_project_entries(manifest_path, srcdir=srcdir)
+
+    output_dir = srcdir / "_generated"
+    write_asdl_project_pages(
+        entries,
+        output_dir=output_dir,
+        manifest=manifest,
+        srcdir=srcdir,
+    )
+
+    nav_text = (output_dir / "project.rst").read_text(encoding="utf-8")
+    readme_index = nav_text.index("Test Project <../README>")
+    intro_index = nav_text.index("../docs/intro")
+    entrances_index = nav_text.index("Entrances")
+    libraries_index = nav_text.index("Libraries")
+
+    assert readme_index < intro_index < entrances_index < libraries_index
+
+
+def test_project_nav_renders_entrance_links(tmp_path: Path) -> None:
+    srcdir = tmp_path / "project"
+    shutil.copytree(FIXTURES, srcdir)
+    manifest_path = srcdir / "project.yaml"
+    manifest = load_asdl_project_manifest(manifest_path)
+    entries = collect_asdl_project_entries(manifest_path, srcdir=srcdir)
+
+    output_dir = srcdir / "_generated"
+    write_asdl_project_pages(
+        entries,
+        output_dir=output_dir,
+        manifest=manifest,
+        srcdir=srcdir,
+    )
+
+    nav_text = (output_dir / "project.rst").read_text(encoding="utf-8")
+    alpha_file = (srcdir / "libs" / "alpha" / "top.asdl").resolve(
+        strict=False
+    )
+    alpha_module_id = module_identifier("top_alpha", str(alpha_file))
+
+    assert (
+        f":asdl:module:`top_alpha <{alpha_module_id}>`" in nav_text
+    )
+    assert (
+        ":doc:`libs/alpha/top.asdl <libs/alpha/top>`" in nav_text
+    )
+    assert "Alpha entry" in nav_text
