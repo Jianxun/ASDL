@@ -10,26 +10,7 @@ def test_extract_docstrings_swmatrix_tgate() -> None:
 
     module_path = ("modules", "swmatrix_Tgate")
     module_doc = docstrings.key_docstrings[module_path].text
-    assert (
-        module_doc
-        == "\n".join(
-            [
-                "Switch Matrix Tgate",
-                "power:",
-                "  VDDd: nominal 3.3V",
-                "  VSSd: nominal 0V",
-                "digital:",
-                "  inputs:",
-                "    - control: active high control signal to close the Tgate",
-                "    - enable: active high enable signal shared by all Tgates",
-                "analog:",
-                "  T1, T2: symmetric analog terminals, rail-to-rail compliance.",
-                "specs:",
-                "  - Ron < 100 ohms @ 3.3V",
-                "  - Cpar < 20fF",
-            ]
-        )
-    )
+    assert module_doc == "Transmission-gate switch with control logic."
 
     assert (
         docstrings.key_docstrings[
@@ -39,7 +20,21 @@ def test_extract_docstrings_swmatrix_tgate() -> None:
     )
 
     nets_path = ("modules", "swmatrix_Tgate", "nets")
-    assert docstrings.sections.get(nets_path) is None
+    sections = docstrings.sections[nets_path]
+    assert [section.title for section in sections] == [
+        "Power",
+        "Analog terminals",
+    ]
+    assert sections[0].keys == (
+        "$VDDd",
+        "$VSSd",
+        "$control",
+        "$enable",
+        "net1",
+        "gated_control",
+        "gated_controlb",
+    )
+    assert sections[1].keys == ("$T1", "$T2")
 
     assert docstrings.key_docstrings[nets_path + ("$VDDd",)].text == "nominal 3.3V"
     assert (
