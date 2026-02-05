@@ -36,7 +36,10 @@ def _write_sphinx_project(tmp_path: Path) -> Path:
     )
 
     (srcdir / "project.yaml").write_text(
-        "entries:\n  - entry.asdl\n",
+        "schema_version: 1\n"
+        "libraries:\n"
+        "  - name: Project\n"
+        "    path: .\n",
         encoding="utf-8",
     )
 

@@ -77,10 +77,16 @@ def test_sphinx_render_swmatrix_structure_and_content() -> None:
     assert "Nets" in titles
     assert titles.index("Imports") < titles.index("Modules")
     assert titles.index("Modules") < titles.index("swmatrix_Tgate")
-    assert titles.index("swmatrix_Tgate") < titles.index("Overview")
+    overview_indices = [
+        index for index, title in enumerate(titles) if title == "Overview"
+    ]
+    assert len(overview_indices) >= 2
+    assert overview_indices[0] < titles.index("Imports")
+    assert titles.index("swmatrix_Tgate") < overview_indices[1]
 
     text = rendered.astext()
-    assert "Switch Matrix Tgate" in text
+    assert "Transimssion gate analog switch for MOSbius V3 switch Matrix" in text
+    assert "Transmission-gate switch with control logic." in text
     assert "nominal 3.3V" in text
     assert "PMOS/NMOS ratio is 3:1" in text
     assert "net1" in text

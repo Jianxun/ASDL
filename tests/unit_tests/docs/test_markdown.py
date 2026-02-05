@@ -16,11 +16,12 @@ def test_render_markdown_swmatrix_tgate() -> None:
 
     assert lines[0] == "# swmatrix_Tgate"
     assert "## Overview" in markdown
-    assert "Switch Matrix Tgate" in markdown
+    assert "Transimssion gate analog switch for MOSbius V3 switch Matrix" in markdown
     assert "### Interface" in markdown
     assert "| $VDDd |" in markdown
     assert "nominal 3.3V" in markdown
 
+    assert "Transmission-gate switch with control logic." in markdown
     assert "### Instances" in markdown
     assert "| mp | gf.pfet_03v3 | L={L} W={W} NF={NF} m=3 | PMOS/NMOS ratio is 3:1 |" in markdown
 
