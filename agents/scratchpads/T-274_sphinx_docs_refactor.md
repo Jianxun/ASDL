@@ -34,10 +34,10 @@
 - ./venv/bin/pytest tests/unit_tests/docs -v (fails: docstring/markdown expectations vs example file comments; project manifest schema missing `schema_version` in test fixture; see pytest output)
 
 # PR URL
-- (fill after PR creation)
+- https://github.com/Jianxun/ASDL/pull/294
 
 # Status request
-- In Progress
+- Ready for review
 
 # Blockers / Questions
 - Doc/markdown/unit tests expect outdated docstrings and manifest schema; confirm whether to update fixtures/tests or example file content.
