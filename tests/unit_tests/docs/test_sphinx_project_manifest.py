@@ -123,3 +123,62 @@ def test_project_nav_renders_entrance_links(tmp_path: Path) -> None:
         ":doc:`libs/alpha/top.asdl <libs/alpha/top>`" in nav_text
     )
     assert "Alpha entry" in nav_text
+
+
+def test_project_library_page_renders_module_table(tmp_path: Path) -> None:
+    srcdir = tmp_path / "project"
+    srcdir.mkdir()
+    libs_dir = srcdir / "libs" / "alpha"
+    nested_dir = libs_dir / "nested"
+    nested_dir.mkdir(parents=True)
+
+    file_a = libs_dir / "a.asdl"
+    file_b = nested_dir / "b.asdl"
+    file_a.write_text(
+        "modules:\n  # Alpha module.\n  Alpha: {}\n",
+        encoding="utf-8",
+    )
+    file_b.write_text(
+        "modules:\n  # Beta module.\n  Beta: {}\n",
+        encoding="utf-8",
+    )
+
+    manifest_path = srcdir / "project.yaml"
+    manifest_path.write_text(
+        "schema_version: 1\n"
+        "libraries:\n"
+        "  - name: Alpha Library\n"
+        "    path: libs/alpha\n",
+        encoding="utf-8",
+    )
+    manifest = load_asdl_project_manifest(manifest_path)
+    entries = collect_asdl_project_entries(manifest_path, srcdir=srcdir)
+
+    output_dir = srcdir / "_generated"
+    write_asdl_project_pages(
+        entries,
+        output_dir=output_dir,
+        manifest=manifest,
+        srcdir=srcdir,
+    )
+
+    pages = list((output_dir / "libraries").glob("*.rst"))
+    assert len(pages) == 1
+    text = pages[0].read_text(encoding="utf-8")
+
+    row_a = ":asdl:doc:`libs/alpha/a.asdl <a_doc>`"
+    row_b = ":asdl:doc:`libs/alpha/nested/b.asdl <b_doc>`"
+    assert text.index(row_a) < text.index(row_b)
+
+    file_a_id = str(file_a.resolve(strict=False))
+    file_b_id = str(file_b.resolve(strict=False))
+    assert (
+        f":asdl:module:`Alpha <{module_identifier('Alpha', file_a_id)}>`"
+        in text
+    )
+    assert (
+        f":asdl:module:`Beta <{module_identifier('Beta', file_b_id)}>`"
+        in text
+    )
+    assert "Alpha module." in text
+    assert "Beta module." in text

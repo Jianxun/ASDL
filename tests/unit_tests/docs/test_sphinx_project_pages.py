@@ -108,5 +108,7 @@ def test_project_stub_uses_asdl_document_title(tmp_path: Path) -> None:
         "..\n"
         "   Generated file. Do not edit directly.\n"
         "\n"
+        ":orphan:\n"
+        "\n"
         ".. asdl:document:: libs/inv.asdl\n"
     )

@@ -1,6 +1,9 @@
 schema_version: 1
 
 archive:
+  - T-273: {completed_on: 2026-02-05, owner: Executor, scratchpad: agents/scratchpads/T-273_sphinx_project_nav.md, pr: 293}
+  - T-272: {completed_on: 2026-02-05, owner: Executor, scratchpad: agents/scratchpads/T-272_sphinx_project_manifest_v1.md, pr: 291}
+  - T-268: {completed_on: 2026-02-05, owner: Architect, scratchpad: agents/scratchpads/T-268_symbol_editor_scope.md, pr: 290}
   - T-271: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-271_visualizer_trunk_policy.md, pr: 287}
   - T-270: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-270_visualizer_dynamic_recompute.md, pr: 285}
   - T-269: {completed_on: 2026-02-04, owner: Executor, scratchpad: agents/scratchpads/T-269_visualizer_webview_refactor.md, pr: 284}

@@ -110,6 +110,28 @@ class AsdlProjectLibrary:
 
 
 @dataclass(frozen=True)
+class AsdlProjectLibraryRow:
+    """Row entry for a library modules table."""
+
+    file_entry: str
+    module: str
+    module_id: str
+    file_doc_ref: str
+    description: str
+
+
+@dataclass(frozen=True)
+class AsdlProjectLibraryPage:
+    """Generated page metadata for a project library."""
+
+    name: str
+    path: str
+    stub_relpath: Path
+    docname: str
+    rows: Tuple[AsdlProjectLibraryRow, ...]
+
+
+@dataclass(frozen=True)
 class AsdlProjectManifest:
     """Parsed ASDL project manifest (schema v1).
 
@@ -305,7 +327,7 @@ def write_asdl_project_pages(
     srcdir: Optional[Path] = None,
     generated_dirname: str = ASDL_PROJECT_GENERATED_DIR,
 ) -> Path:
-    """Write stub pages and a toctree for the ASDL project entries.
+    """Write stub pages, library pages, and a toctree for ASDL project docs.
 
     Args:
         entries: Ordered project entries to render.
@@ -321,6 +343,7 @@ def write_asdl_project_pages(
     _prepare_generated_dir(output_dir)
 
     extra_entries: list[AsdlProjectEntry] = []
+    library_pages: list[AsdlProjectLibraryPage] = []
     toc_text = _render_project_toc(entries)
     if manifest is not None:
         if srcdir is None:
@@ -333,9 +356,14 @@ def write_asdl_project_pages(
             generated_dirname=generated_dirname,
         )
         extra_entries = entrance_entries
+        library_pages = _collect_project_library_pages(
+            manifest,
+            srcdir=srcdir,
+            generated_dirname=generated_dirname,
+        )
         toc_text = _render_project_nav(
             manifest,
-            entries,
+            library_pages,
             entrance_entries,
             generated_dirname=generated_dirname,
         )
@@ -345,6 +373,14 @@ def write_asdl_project_pages(
         stub_path.parent.mkdir(parents=True, exist_ok=True)
         stub_path.write_text(
             _render_project_stub(entry),
+            encoding="utf-8",
+        )
+
+    for page in library_pages:
+        page_path = output_dir / page.stub_relpath
+        page_path.parent.mkdir(parents=True, exist_ok=True)
+        page_path.write_text(
+            _render_project_library_page(page),
             encoding="utf-8",
         )
 
@@ -611,6 +647,11 @@ def _project_library_relative_path(root: Path, path: Path) -> str:
     return relative.as_posix()
 
 
+def _document_ref_name_for_path(file_path: Path) -> str:
+    """Build the doc reference name for an ASDL file."""
+    return f"{file_path.stem}_doc"
+
+
 def _matches_project_exclude(relative: str, patterns: Sequence[str]) -> bool:
     """Return True if a relative path matches any exclude glob.
 
@@ -626,6 +667,98 @@ def _matches_project_exclude(relative: str, patterns: Sequence[str]) -> bool:
         if fnmatch.fnmatchcase(relative, normalized):
             return True
     return False
+
+
+def _library_page_stub_relpath(library: AsdlProjectLibrary) -> Path:
+    """Compute the stub relative path for a library page."""
+    slug = _slugify(library.name)
+    digest = hashlib.sha1(
+        f"{library.name}:{library.path}".encode("utf-8")
+    ).hexdigest()[:8]
+    return Path("libraries") / f"{slug}-{digest}.rst"
+
+
+def _module_doc_summary(
+    docstrings: "DocstringIndex", module_name: str
+) -> str:
+    """Return a one-line summary for a module docstring."""
+    key_doc = docstrings.key_docstring(("modules", module_name))
+    if key_doc is None or not key_doc.text:
+        return ""
+    for line in key_doc.text.splitlines():
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return ""
+
+
+def _build_project_library_page(
+    library: AsdlProjectLibrary,
+    *,
+    srcdir: Path,
+    generated_dirname: str,
+) -> AsdlProjectLibraryPage:
+    """Build the library page metadata and module rows."""
+    library_root = _resolve_project_entry_path(srcdir, library.path)
+    stub_relpath = _library_page_stub_relpath(library)
+    docname = (
+        Path(generated_dirname) / stub_relpath.with_suffix("")
+    ).as_posix()
+
+    rows: list[AsdlProjectLibraryRow] = []
+    for path in collect_asdl_project_library_files(
+        library_root,
+        exclude=library.exclude,
+    ):
+        file_entry = _path_to_manifest_entry(srcdir, path)
+        file_doc_ref = _document_ref_name_for_path(path)
+        file_id = str(path.resolve(strict=False))
+        document, diagnostics = parse_file(str(path))
+        if diagnostics and SPHINX_AVAILABLE:
+            _report_diagnostics(diagnostics)
+        if document is None:
+            continue
+        docstrings = extract_docstrings_from_file(path)
+        for module_name in (document.modules or {}).keys():
+            module_id = module_identifier(module_name, file_id)
+            description = _module_doc_summary(docstrings, module_name)
+            rows.append(
+                AsdlProjectLibraryRow(
+                    file_entry=file_entry,
+                    module=module_name,
+                    module_id=module_id,
+                    file_doc_ref=file_doc_ref,
+                    description=description,
+                )
+            )
+
+    rows.sort(key=lambda row: row.file_entry)
+    return AsdlProjectLibraryPage(
+        name=library.name,
+        path=library.path,
+        stub_relpath=stub_relpath,
+        docname=docname,
+        rows=tuple(rows),
+    )
+
+
+def _collect_project_library_pages(
+    manifest: AsdlProjectManifest,
+    *,
+    srcdir: Path,
+    generated_dirname: str,
+) -> list[AsdlProjectLibraryPage]:
+    """Build generated library pages for the project manifest."""
+    pages: list[AsdlProjectLibraryPage] = []
+    for library in manifest.libraries:
+        pages.append(
+            _build_project_library_page(
+                library,
+                srcdir=srcdir,
+                generated_dirname=generated_dirname,
+            )
+        )
+    return pages
 
 
 def _expand_project_manifest_libraries(
@@ -812,6 +945,8 @@ def _render_project_stub(entry: AsdlProjectEntry) -> str:
         "..",
         "   Generated file. Do not edit directly.",
         "",
+        ":orphan:",
+        "",
         f".. asdl:document:: {entry.source}",
         "",
     ]
@@ -820,7 +955,7 @@ def _render_project_stub(entry: AsdlProjectEntry) -> str:
 
 def _render_project_nav(
     manifest: AsdlProjectManifest,
-    entries: Sequence[AsdlProjectEntry],
+    library_pages: Sequence[AsdlProjectLibraryPage],
     entrance_entries: Sequence[AsdlProjectEntry],
     *,
     generated_dirname: str,
@@ -841,7 +976,7 @@ def _render_project_nav(
         lines.extend(
             [
                 ".. toctree::",
-                "   :maxdepth: 2",
+                "   :maxdepth: 1",
                 "",
             ]
         )
@@ -893,21 +1028,65 @@ def _render_project_nav(
                 lines.append(base_line)
         lines.append("")
 
-    if entries:
+    if library_pages:
         lines.extend(
             [
                 "Libraries",
                 "-" * len("Libraries"),
                 "",
                 ".. toctree::",
-                "   :maxdepth: 2",
+                "   :maxdepth: 1",
                 "",
             ]
         )
-        for entry in entries:
-            lines.append(f"   {entry.stub_relpath.with_suffix('').as_posix()}")
+        for page in library_pages:
+            page_docname = page.stub_relpath.with_suffix("").as_posix()
+            lines.append(f"   {page.name} <{page_docname}>")
         lines.append("")
 
+    return "\n".join(lines)
+
+
+def _render_project_library_page(page: AsdlProjectLibraryPage) -> str:
+    """Render the generated page for a library module table."""
+    title = page.name
+    underline = "=" * len(title)
+    lines = [
+        "..",
+        "   Generated file. Do not edit directly.",
+        "",
+        title,
+        underline,
+        "",
+    ]
+
+    if not page.rows:
+        lines.append("No modules found.")
+        lines.append("")
+        return "\n".join(lines)
+
+    lines.extend(
+        [
+            ".. list-table::",
+            "   :header-rows: 1",
+            "   :widths: 45 25 30",
+            "",
+            "   * - ASDL file",
+            "     - Module",
+            "     - Summary",
+        ]
+    )
+    for row in page.rows:
+        file_link = f":asdl:doc:`{row.file_entry} <{row.file_doc_ref}>`"
+        module_link = f":asdl:module:`{row.module} <{row.module_id}>`"
+        lines.extend(
+            [
+                f"   * - {file_link}",
+                f"     - {module_link}",
+                f"     - {row.description}" if row.description else "     -",
+            ]
+        )
+    lines.append("")
     return "\n".join(lines)
 
 
