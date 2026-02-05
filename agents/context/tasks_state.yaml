@@ -8,6 +8,6 @@ T-272:
   pr: 291
   merged: true
 T-273:
-  status: review_in_progress
+  status: review_clean
   pr: 293
   merged: false
