@@ -270,6 +270,7 @@ def collect_asdl_project_entries(
     *,
     srcdir: Optional[Path] = None,
     generated_dirname: str = ASDL_PROJECT_GENERATED_DIR,
+    manifest: Optional[AsdlProjectManifest] = None,
 ) -> list[AsdlProjectEntry]:
     """Load ASDL project manifest entries in manifest order.
 
@@ -278,12 +279,13 @@ def collect_asdl_project_entries(
         srcdir: Sphinx source directory used to resolve entry paths. Defaults to
             the manifest parent directory.
         generated_dirname: Directory name under ``srcdir`` where stub pages live.
+        manifest: Optional pre-parsed manifest to reuse.
 
     Returns:
         Ordered list of project entries with computed stub metadata.
     """
     srcdir = srcdir or manifest_path.parent
-    manifest = load_asdl_project_manifest(manifest_path)
+    manifest = manifest or load_asdl_project_manifest(manifest_path)
     entries = _expand_project_manifest_libraries(
         manifest,
         srcdir=srcdir,
@@ -299,6 +301,9 @@ def write_asdl_project_pages(
     *,
     output_dir: Path,
     toc_filename: str = ASDL_PROJECT_TOC_FILENAME,
+    manifest: Optional[AsdlProjectManifest] = None,
+    srcdir: Optional[Path] = None,
+    generated_dirname: str = ASDL_PROJECT_GENERATED_DIR,
 ) -> Path:
     """Write stub pages and a toctree for the ASDL project entries.
 
@@ -306,13 +311,36 @@ def write_asdl_project_pages(
         entries: Ordered project entries to render.
         output_dir: Output directory for generated stubs.
         toc_filename: Filename for the generated toctree page.
+        manifest: Optional parsed manifest for nav rendering.
+        srcdir: Source directory for resolving entrance entries when needed.
+        generated_dirname: Generated directory name for entrance stubs.
 
     Returns:
         Path to the generated toctree page.
     """
     _prepare_generated_dir(output_dir)
 
-    for entry in entries:
+    extra_entries: list[AsdlProjectEntry] = []
+    toc_text = _render_project_toc(entries)
+    if manifest is not None:
+        if srcdir is None:
+            raise AsdlDomainError(
+                "ASDL project nav rendering requires a srcdir path"
+            )
+        entrance_entries = _collect_project_entrance_entries(
+            manifest,
+            srcdir=srcdir,
+            generated_dirname=generated_dirname,
+        )
+        extra_entries = entrance_entries
+        toc_text = _render_project_nav(
+            manifest,
+            entries,
+            entrance_entries,
+            generated_dirname=generated_dirname,
+        )
+
+    for entry in _merge_project_entries(entries, extra_entries):
         stub_path = output_dir / entry.stub_relpath
         stub_path.parent.mkdir(parents=True, exist_ok=True)
         stub_path.write_text(
@@ -322,7 +350,7 @@ def write_asdl_project_pages(
 
     toc_path = output_dir / toc_filename
     toc_path.write_text(
-        _render_project_toc(entries),
+        toc_text,
         encoding="utf-8",
     )
     return toc_path
@@ -679,6 +707,91 @@ def _entry_to_stub_relpath(entry: str) -> Path:
     return Path(*parts)
 
 
+def _normalize_project_docname(entry: str) -> str:
+    """Normalize a doc path into a Sphinx docname string.
+
+    Args:
+        entry: Manifest doc path (relative path or docname).
+
+    Returns:
+        Normalized docname without ``.rst`` or ``.md`` suffixes.
+    """
+    path = Path(entry)
+    if path.suffix in (".rst", ".md"):
+        path = path.with_suffix("")
+    return path.as_posix()
+
+
+def _project_nav_docname(entry: str, generated_dirname: str) -> str:
+    """Return a docname relative to the generated nav page location.
+
+    Args:
+        entry: Manifest doc path (relative path or docname).
+        generated_dirname: Directory name that holds generated pages.
+
+    Returns:
+        Relative docname suitable for use in the project nav toctree.
+    """
+    normalized = _normalize_project_docname(entry)
+    relative = Path(os.path.relpath(normalized, generated_dirname))
+    return relative.as_posix()
+
+
+def _collect_project_entrance_entries(
+    manifest: AsdlProjectManifest,
+    *,
+    srcdir: Path,
+    generated_dirname: str,
+) -> list[AsdlProjectEntry]:
+    """Build stub metadata for manifest entrances.
+
+    Args:
+        manifest: Parsed project manifest.
+        srcdir: Sphinx source directory for resolving entrance paths.
+        generated_dirname: Directory name for generated stub pages.
+
+    Returns:
+        Ordered list of entrance entries for stub generation.
+    """
+    return [
+        _build_project_entry(entrance.file, srcdir, generated_dirname)
+        for entrance in manifest.entrances
+    ]
+
+
+def _merge_project_entries(
+    entries: Sequence[AsdlProjectEntry],
+    extras: Sequence[AsdlProjectEntry],
+) -> list[AsdlProjectEntry]:
+    """Combine project entries while preserving first-seen order.
+
+    Args:
+        entries: Primary entry list.
+        extras: Additional entries to append if missing.
+
+    Returns:
+        Combined list without duplicate ``source`` values.
+    """
+    merged: list[AsdlProjectEntry] = []
+    seen: set[str] = set()
+    for entry in list(entries) + list(extras):
+        if entry.source in seen:
+            continue
+        seen.add(entry.source)
+        merged.append(entry)
+    return merged
+
+
+def _has_project_nav_content(manifest: AsdlProjectManifest) -> bool:
+    """Return True when the manifest contains any nav-visible content."""
+    return bool(
+        manifest.readme
+        or manifest.docs
+        or manifest.entrances
+        or manifest.libraries
+    )
+
+
 def _prepare_generated_dir(output_dir: Path) -> None:
     """Ensure the generated directory exists and remove old stub pages."""
     if output_dir.exists():
@@ -702,6 +815,99 @@ def _render_project_stub(entry: AsdlProjectEntry) -> str:
         f".. asdl:document:: {entry.source}",
         "",
     ]
+    return "\n".join(lines)
+
+
+def _render_project_nav(
+    manifest: AsdlProjectManifest,
+    entries: Sequence[AsdlProjectEntry],
+    entrance_entries: Sequence[AsdlProjectEntry],
+    *,
+    generated_dirname: str,
+) -> str:
+    """Render the project navigation page for manifest-backed docs."""
+    title = "ASDL Project"
+    underline = "=" * len(title)
+    lines = [
+        "..",
+        "   Generated file. Do not edit directly.",
+        "",
+        title,
+        underline,
+        "",
+    ]
+
+    if manifest.readme or manifest.docs:
+        lines.extend(
+            [
+                ".. toctree::",
+                "   :maxdepth: 2",
+                "",
+            ]
+        )
+        if manifest.readme:
+            readme_docname = _project_nav_docname(
+                manifest.readme, generated_dirname
+            )
+            if manifest.project_name:
+                lines.append(
+                    f"   {manifest.project_name} <{readme_docname}>"
+                )
+            else:
+                lines.append(f"   {readme_docname}")
+        for doc in manifest.docs:
+            lines.append(
+                f"   {_project_nav_docname(doc, generated_dirname)}"
+            )
+        lines.append("")
+
+    if manifest.entrances:
+        entry_map = {entry.source: entry for entry in entrance_entries}
+        lines.extend(
+            [
+                "Entrances",
+                "-" * len("Entrances"),
+                "",
+            ]
+        )
+        for entrance in manifest.entrances:
+            entry = entry_map.get(entrance.file)
+            if entry is None:
+                continue
+            module_id = module_identifier(
+                entrance.module, str(entry.source_path.resolve(strict=False))
+            )
+            module_ref = (
+                f":asdl:module:`{entrance.module} <{module_id}>`"
+            )
+            file_ref = (
+                f":doc:`{entrance.file} <{entry.stub_relpath.with_suffix('').as_posix()}>`"
+            )
+            base_line = f"- {module_ref} in {file_ref}"
+            if entrance.description:
+                desc_lines = entrance.description.splitlines()
+                lines.append(f"{base_line} - {desc_lines[0]}")
+                for continuation in desc_lines[1:]:
+                    lines.append(f"  {continuation}")
+            else:
+                lines.append(base_line)
+        lines.append("")
+
+    if entries:
+        lines.extend(
+            [
+                "Libraries",
+                "-" * len("Libraries"),
+                "",
+                ".. toctree::",
+                "   :maxdepth: 2",
+                "",
+            ]
+        )
+        for entry in entries:
+            lines.append(f"   {entry.stub_relpath.with_suffix('').as_posix()}")
+        lines.append("")
+
     return "\n".join(lines)
 
 
@@ -984,17 +1190,19 @@ if SPHINX_AVAILABLE:
         lib_roots = _resolve_project_lib_roots(manifest_path, config_path)
 
         try:
+            manifest = load_asdl_project_manifest(manifest_path)
             entries = collect_asdl_project_entries(
                 manifest_path,
                 srcdir=srcdir,
                 generated_dirname=generated_dirname,
+                manifest=manifest,
             )
         except AsdlDomainError as exc:
             _LOGGER.error(str(exc))
             _store_dependency_graph(app, [], lib_roots=lib_roots)
             return
 
-        if not entries:
+        if not _has_project_nav_content(manifest):
             _LOGGER.warning("ASDL project manifest is empty: %s", manifest_path)
             _store_dependency_graph(app, [], lib_roots=lib_roots)
             return
@@ -1004,8 +1212,17 @@ if SPHINX_AVAILABLE:
             entries,
             output_dir=output_dir,
             toc_filename=toc_filename,
+            manifest=manifest,
+            srcdir=srcdir,
+            generated_dirname=generated_dirname,
         )
-        _store_dependency_graph(app, entries, lib_roots=lib_roots)
+        entrance_entries = _collect_project_entrance_entries(
+            manifest,
+            srcdir=srcdir,
+            generated_dirname=generated_dirname,
+        )
+        stub_entries = _merge_project_entries(entries, entrance_entries)
+        _store_dependency_graph(app, stub_entries, lib_roots=lib_roots)
 
     def _register_document_objects(
         domain: "AsdlDomain",
