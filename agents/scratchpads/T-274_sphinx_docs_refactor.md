@@ -24,3 +24,23 @@
 - TODO: move project manifest parsing/page generation to project_manifest.py.
 - TODO: move sphinx_render helpers to render_helpers.py and update imports.
 - TODO: run docs unit tests and finalize.
+
+# Patch summary
+- Added `project_manifest.py` to house manifest parsing and project page generation helpers.
+- Trimmed `sphinx_domain.py` to domain + app hook logic while re-exporting manifest APIs.
+- Added `render_helpers.py` and slimmed `sphinx_render.py` to the public render entrypoint.
+
+# Verification
+- ./venv/bin/pytest tests/unit_tests/docs -v (fails: docstring/markdown expectations vs example file comments; project manifest schema missing `schema_version` in test fixture; see pytest output)
+
+# PR URL
+- (fill after PR creation)
+
+# Status request
+- In Progress
+
+# Blockers / Questions
+- Doc/markdown/unit tests expect outdated docstrings and manifest schema; confirm whether to update fixtures/tests or example file content.
+
+# Next steps
+- Decide whether to update docstring expectations or example file comments to match current outputs.
