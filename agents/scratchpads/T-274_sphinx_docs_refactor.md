@@ -18,3 +18,9 @@
 
 # Progress log
 - 2026-02-05 — Task created.
+- 2026-02-05 — Intake complete; status set to in_progress.
+
+# Milestone notes
+- TODO: move project manifest parsing/page generation to project_manifest.py.
+- TODO: move sphinx_render helpers to render_helpers.py and update imports.
+- TODO: run docs unit tests and finalize.
