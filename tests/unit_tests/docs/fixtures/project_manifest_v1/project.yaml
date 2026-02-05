@@ -1,0 +1,23 @@
+schema_version: 1
+project_name: Test Project
+readme: README
+
+docs:
+  - docs/intro
+  - docs/usage
+
+entrances:
+  - file: libs/alpha/top.asdl
+    module: top_alpha
+    description: Alpha entry
+  - file: libs/beta/top.asdl
+    module: top_beta
+
+libraries:
+  - name: Alpha Library
+    path: libs/alpha
+    exclude:
+      - _archive/**
+      - skip.asdl
+  - name: Beta Library
+    path: libs/beta

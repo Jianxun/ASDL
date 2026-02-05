@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import fnmatch
 import hashlib
 import os
 from pathlib import Path
@@ -36,6 +37,7 @@ ASDL_OBJECT_TYPES = (
 ASDL_PROJECT_MANIFEST = "project.yaml"
 ASDL_PROJECT_GENERATED_DIR = "_generated"
 ASDL_PROJECT_TOC_FILENAME = "project.rst"
+ASDL_PROJECT_MANIFEST_SCHEMA_VERSION = 1
 ASDL_DEPGRAPH_ENV_KEY = "asdl_dependency_graph"
 
 
@@ -75,6 +77,57 @@ class AsdlProjectEntry:
     stub_relpath: Path
     docname: str
     title: str
+
+
+@dataclass(frozen=True)
+class AsdlProjectEntrance:
+    """Manifest-defined top-level entry for the project navigation.
+
+    Args:
+        file: ASDL file path relative to the Sphinx source directory.
+        module: Module name defined within the ASDL file.
+        description: Optional description text for the entrance entry.
+    """
+
+    file: str
+    module: str
+    description: Optional[str]
+
+
+@dataclass(frozen=True)
+class AsdlProjectLibrary:
+    """Manifest-defined ASDL library root for project documentation.
+
+    Args:
+        name: Display name for the library in navigation.
+        path: Directory path relative to the Sphinx source directory.
+        exclude: Glob patterns relative to the library root to exclude.
+    """
+
+    name: str
+    path: str
+    exclude: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class AsdlProjectManifest:
+    """Parsed ASDL project manifest (schema v1).
+
+    Args:
+        schema_version: Manifest schema version (must be 1).
+        project_name: Optional project name override for the README label.
+        readme: Optional README doc path relative to the Sphinx source directory.
+        docs: Ordered list of standalone doc paths relative to the Sphinx source.
+        entrances: Ordered list of navigation entrances.
+        libraries: Ordered list of library roots to document.
+    """
+
+    schema_version: int
+    project_name: Optional[str]
+    readme: Optional[str]
+    docs: Tuple[str, ...]
+    entrances: Tuple[AsdlProjectEntrance, ...]
+    libraries: Tuple[AsdlProjectLibrary, ...]
 
 
 class AsdlDomainError(ValueError):
@@ -179,32 +232,61 @@ def collect_asdl_library_files(
     return sorted(candidates, key=lambda path: path.relative_to(root).as_posix())
 
 
+def collect_asdl_project_library_files(
+    root: Path,
+    *,
+    exclude: Sequence[str] = (),
+) -> list[Path]:
+    """Collect ASDL files for a project library root.
+
+    Args:
+        root: Directory (or file) to scan for ``.asdl`` sources.
+        exclude: Glob patterns relative to ``root`` that should be excluded.
+
+    Returns:
+        List of ``.asdl`` files under ``root`` with excludes applied.
+    """
+    if root.is_file():
+        candidates = [root] if root.suffix == ".asdl" else []
+    elif not root.exists():
+        return []
+    else:
+        candidates = [path for path in root.rglob("*.asdl") if path.is_file()]
+
+    if not exclude:
+        return candidates
+
+    filtered: list[Path] = []
+    for path in candidates:
+        rel = _project_library_relative_path(root, path)
+        if _matches_project_exclude(rel, exclude):
+            continue
+        filtered.append(path)
+    return filtered
+
+
 def collect_asdl_project_entries(
     manifest_path: Path,
     *,
     srcdir: Optional[Path] = None,
     generated_dirname: str = ASDL_PROJECT_GENERATED_DIR,
-    lib_roots: Optional[Iterable[Path]] = None,
 ) -> list[AsdlProjectEntry]:
-    """Load ASDL project manifest entries in deterministic order.
+    """Load ASDL project manifest entries in manifest order.
 
     Args:
         manifest_path: Path to the project manifest YAML file.
         srcdir: Sphinx source directory used to resolve entry paths. Defaults to
             the manifest parent directory.
         generated_dirname: Directory name under ``srcdir`` where stub pages live.
-        lib_roots: Optional library roots for import resolution when expanding
-            manifest entries.
 
     Returns:
         Ordered list of project entries with computed stub metadata.
     """
     srcdir = srcdir or manifest_path.parent
-    entries = _load_asdl_project_manifest(manifest_path)
-    entries = _expand_project_manifest_entries(
-        entries,
+    manifest = load_asdl_project_manifest(manifest_path)
+    entries = _expand_project_manifest_libraries(
+        manifest,
         srcdir=srcdir,
-        lib_roots=lib_roots,
     )
     return [
         _build_project_entry(entry, srcdir, generated_dirname)
@@ -246,17 +328,28 @@ def write_asdl_project_pages(
     return toc_path
 
 
-def _load_asdl_project_manifest(manifest_path: Path) -> list[str]:
-    """Parse the project manifest and normalize its entries.
+def load_asdl_project_manifest(manifest_path: Path) -> AsdlProjectManifest:
+    """Parse the ASDL project manifest (schema v1).
 
     Args:
         manifest_path: Path to the manifest YAML file.
 
     Returns:
-        Sorted list of manifest entry strings.
+        Parsed :class:`AsdlProjectManifest` data.
+
+    Raises:
+        AsdlDomainError: If the manifest is missing required fields or uses an
+            unsupported schema version.
     """
     if not manifest_path.exists():
-        return []
+        return AsdlProjectManifest(
+            schema_version=ASDL_PROJECT_MANIFEST_SCHEMA_VERSION,
+            project_name=None,
+            readme=None,
+            docs=(),
+            entrances=(),
+            libraries=(),
+        )
 
     yaml = YAML(typ="safe")
     try:
@@ -267,73 +360,269 @@ def _load_asdl_project_manifest(manifest_path: Path) -> list[str]:
         ) from exc
 
     if not data:
-        return []
+        raise AsdlDomainError("ASDL project manifest is empty")
     if not isinstance(data, dict):
         raise AsdlDomainError(
-            "ASDL project manifest must be a mapping with an 'entries' list"
+            "ASDL project manifest must be a mapping with schema keys"
         )
 
-    entries = data.get("entries", [])
-    if entries is None:
-        return []
-    if not isinstance(entries, list):
-        raise AsdlDomainError("ASDL project manifest 'entries' must be a list")
+    schema_version = data.get("schema_version")
+    if schema_version != ASDL_PROJECT_MANIFEST_SCHEMA_VERSION:
+        raise AsdlDomainError(
+            "Unsupported ASDL project manifest schema_version; expected 1."
+        )
 
-    normalized: list[str] = []
-    seen: set[str] = set()
-    for entry in entries:
-        if not isinstance(entry, str):
-            raise AsdlDomainError("ASDL project manifest entries must be strings")
-        cleaned = Path(entry.strip()).as_posix()
-        if not cleaned:
-            continue
-        if cleaned in seen:
-            continue
-        seen.add(cleaned)
-        normalized.append(cleaned)
+    project_name = _optional_manifest_string(
+        data.get("project_name"), "project_name"
+    )
+    readme = _optional_manifest_path(data.get("readme"), "readme")
+    docs = tuple(_load_manifest_path_list(data.get("docs"), "docs"))
+    entrances = tuple(_load_manifest_entrances(data.get("entrances")))
+    libraries = tuple(_load_manifest_libraries(data.get("libraries")))
 
-    return sorted(normalized)
+    return AsdlProjectManifest(
+        schema_version=schema_version,
+        project_name=project_name,
+        readme=readme,
+        docs=docs,
+        entrances=entrances,
+        libraries=libraries,
+    )
 
 
-def _expand_project_manifest_entries(
-    entries: Sequence[str],
-    *,
-    srcdir: Path,
-    lib_roots: Optional[Iterable[Path]] = None,
-) -> list[str]:
-    """Expand manifest entries using the resolved import graph.
+def _optional_manifest_string(value: object, field: str) -> Optional[str]:
+    """Normalize optional string fields from the project manifest.
 
     Args:
-        entries: Normalized manifest entry strings.
-        srcdir: Sphinx source directory used for relative path conversion.
-        lib_roots: Optional library roots for import resolution.
+        value: Raw manifest value.
+        field: Field name used for diagnostics.
 
     Returns:
-        Ordered list of entry strings including imported files.
+        Stripped string value, or ``None`` if the field is unset or empty.
     """
-    if not entries:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise AsdlDomainError(
+            f"ASDL project manifest '{field}' must be a string"
+        )
+    cleaned = value.strip()
+    return cleaned or None
+
+
+def _required_manifest_string(value: object, field: str) -> str:
+    """Normalize required string fields from the project manifest.
+
+    Args:
+        value: Raw manifest value.
+        field: Field name used for diagnostics.
+
+    Returns:
+        Stripped string value.
+
+    Raises:
+        AsdlDomainError: If the value is not a non-empty string.
+    """
+    if not isinstance(value, str):
+        raise AsdlDomainError(
+            f"ASDL project manifest '{field}' must be a string"
+        )
+    cleaned = value.strip()
+    if not cleaned:
+        raise AsdlDomainError(
+            f"ASDL project manifest '{field}' must be a non-empty string"
+        )
+    return cleaned
+
+
+def _optional_manifest_path(value: object, field: str) -> Optional[str]:
+    """Normalize optional path fields from the project manifest.
+
+    Args:
+        value: Raw manifest value.
+        field: Field name used for diagnostics.
+
+    Returns:
+        POSIX-style path string, or ``None`` if unset.
+    """
+    cleaned = _optional_manifest_string(value, field)
+    if cleaned is None:
+        return None
+    return Path(cleaned).as_posix()
+
+
+def _required_manifest_path(value: object, field: str) -> str:
+    """Normalize required path fields from the project manifest.
+
+    Args:
+        value: Raw manifest value.
+        field: Field name used for diagnostics.
+
+    Returns:
+        POSIX-style path string.
+
+    Raises:
+        AsdlDomainError: If the path is missing or empty.
+    """
+    cleaned = _required_manifest_string(value, field)
+    return Path(cleaned).as_posix()
+
+
+def _load_manifest_list(value: object, field: str) -> list[object]:
+    """Load a list field from the project manifest preserving order.
+
+    Args:
+        value: Raw manifest value.
+        field: Field name used for diagnostics.
+
+    Returns:
+        List of entries in manifest order.
+    """
+    if value is None:
         return []
+    if not isinstance(value, list):
+        raise AsdlDomainError(
+            f"ASDL project manifest '{field}' must be a list"
+        )
+    return list(value)
 
-    entry_paths = [
-        _resolve_project_entry_path(srcdir, entry)
-        for entry in entries
-    ]
-    graph, _diagnostics = build_dependency_graph(
-        entry_paths,
-        lib_roots=lib_roots,
-    )
-    if graph is None:
-        return list(entries)
 
-    expanded: list[str] = []
-    seen: set[str] = set()
-    for file_entry in graph.files:
-        entry = _path_to_manifest_entry(srcdir, Path(file_entry.file_id))
-        if entry in seen:
-            continue
-        seen.add(entry)
-        expanded.append(entry)
-    return expanded
+def _load_manifest_path_list(value: object, field: str) -> list[str]:
+    """Load a list of path strings from the project manifest.
+
+    Args:
+        value: Raw manifest value.
+        field: Field name used for diagnostics.
+
+    Returns:
+        List of normalized path strings in manifest order.
+    """
+    entries = _load_manifest_list(value, field)
+    normalized: list[str] = []
+    for entry in entries:
+        normalized.append(_required_manifest_path(entry, field))
+    return normalized
+
+
+def _load_manifest_entrances(value: object) -> list[AsdlProjectEntrance]:
+    """Load entrance entries from the project manifest.
+
+    Args:
+        value: Raw manifest value.
+
+    Returns:
+        List of parsed entrance entries in manifest order.
+    """
+    entries = _load_manifest_list(value, "entrances")
+    normalized: list[AsdlProjectEntrance] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise AsdlDomainError(
+                "ASDL project manifest 'entrances' must contain mappings"
+            )
+        file_value = _required_manifest_path(entry.get("file"), "entrances.file")
+        module_value = _required_manifest_string(
+            entry.get("module"), "entrances.module"
+        )
+        description_value = _optional_manifest_string(
+            entry.get("description"), "entrances.description"
+        )
+        normalized.append(
+            AsdlProjectEntrance(
+                file=file_value,
+                module=module_value,
+                description=description_value,
+            )
+        )
+    return normalized
+
+
+def _load_manifest_libraries(value: object) -> list[AsdlProjectLibrary]:
+    """Load library entries from the project manifest.
+
+    Args:
+        value: Raw manifest value.
+
+    Returns:
+        List of parsed library entries in manifest order.
+    """
+    entries = _load_manifest_list(value, "libraries")
+    normalized: list[AsdlProjectLibrary] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise AsdlDomainError(
+                "ASDL project manifest 'libraries' must contain mappings"
+            )
+        name_value = _required_manifest_string(entry.get("name"), "libraries.name")
+        path_value = _required_manifest_path(entry.get("path"), "libraries.path")
+        exclude_value = _load_manifest_path_list(entry.get("exclude"), "libraries.exclude")
+        normalized.append(
+            AsdlProjectLibrary(
+                name=name_value,
+                path=path_value,
+                exclude=tuple(exclude_value),
+            )
+        )
+    return normalized
+
+
+def _project_library_relative_path(root: Path, path: Path) -> str:
+    """Compute the POSIX relative path from a library root to a file.
+
+    Args:
+        root: Library root path.
+        path: File path under the library root.
+
+    Returns:
+        POSIX relative path string from ``root`` to ``path``.
+    """
+    try:
+        relative = path.relative_to(root)
+    except ValueError:
+        relative = Path(os.path.relpath(path, root))
+    return relative.as_posix()
+
+
+def _matches_project_exclude(relative: str, patterns: Sequence[str]) -> bool:
+    """Return True if a relative path matches any exclude glob.
+
+    Args:
+        relative: POSIX relative path string.
+        patterns: Glob patterns relative to the library root.
+
+    Returns:
+        ``True`` if the path matches any pattern.
+    """
+    for pattern in patterns:
+        normalized = Path(pattern).as_posix()
+        if fnmatch.fnmatchcase(relative, normalized):
+            return True
+    return False
+
+
+def _expand_project_manifest_libraries(
+    manifest: AsdlProjectManifest,
+    *,
+    srcdir: Path,
+) -> list[str]:
+    """Expand manifest libraries into ASDL file entries.
+
+    Args:
+        manifest: Parsed project manifest data.
+        srcdir: Sphinx source directory used for relative path conversion.
+
+    Returns:
+        Ordered list of ASDL file entries derived from manifest libraries.
+    """
+    entries: list[str] = []
+    for library in manifest.libraries:
+        library_root = _resolve_project_entry_path(srcdir, library.path)
+        for path in collect_asdl_project_library_files(
+            library_root,
+            exclude=library.exclude,
+        ):
+            entries.append(_path_to_manifest_entry(srcdir, path))
+    return entries
 
 
 def _build_project_entry(
@@ -699,7 +988,6 @@ if SPHINX_AVAILABLE:
                 manifest_path,
                 srcdir=srcdir,
                 generated_dirname=generated_dirname,
-                lib_roots=lib_roots,
             )
         except AsdlDomainError as exc:
             _LOGGER.error(str(exc))
@@ -1017,13 +1305,18 @@ __all__ = [
     "AsdlDomainError",
     "AsdlObjectEntry",
     "AsdlProjectEntry",
+    "AsdlProjectEntrance",
+    "AsdlProjectLibrary",
+    "AsdlProjectManifest",
     "SPHINX_AVAILABLE",
     "ASDL_PROJECT_GENERATED_DIR",
     "ASDL_PROJECT_MANIFEST",
+    "ASDL_PROJECT_MANIFEST_SCHEMA_VERSION",
     "ASDL_PROJECT_TOC_FILENAME",
     "make_asdl_target_id",
     "register_asdl_object",
     "collect_asdl_project_entries",
+    "load_asdl_project_manifest",
     "write_asdl_project_pages",
     "setup",
 ]
