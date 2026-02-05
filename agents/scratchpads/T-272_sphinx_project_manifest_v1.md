@@ -15,20 +15,27 @@
 - Update tests/fixtures for v1 manifest parsing + excludes; run targeted pytest.
 
 # Todo
-- [ ] Update manifest parsing/expansion to v1 schema without legacy sorting.
-- [ ] Add fixtures + tests for manifest parsing and exclude handling.
-- [ ] Run targeted pytest verify command.
+- [x] Update manifest parsing/expansion to v1 schema without legacy sorting.
+- [x] Add fixtures + tests for manifest parsing and exclude handling.
+- [x] Run targeted pytest verify command.
 
 # Milestone notes
 - Intake complete.
+- Implemented manifest v1 parsing + library expansion; added fixtures/tests.
 
 # Patch summary
+- Added v1 project manifest parsing with ordered lists and library expansion.
+- Added manifest fixtures + tests for parsing order and exclude globs; updated project page tests.
 
 # PR URL
+- TBD
 
 # Verification
+- ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_project_manifest.py -v
+- ./venv/bin/pytest tests/unit_tests/docs/test_sphinx_project_pages.py -v
 
 # Status request (Done / Blocked / In Progress)
+- In Progress
 
 # Blockers / Questions
 
