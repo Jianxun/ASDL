@@ -11,5 +11,4 @@ Build docs with:
    :maxdepth: 2
    :caption: ASDL Library Docs
 
-   README
    _generated/project
