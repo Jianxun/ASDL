@@ -50,7 +50,9 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "compile-tests": "tsc -p ./tsconfig.tests.json",
+    "test": "npm run compile && npm run compile-tests && node --test .test-out/tests/*.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
