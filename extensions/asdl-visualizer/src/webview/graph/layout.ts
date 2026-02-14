@@ -263,7 +263,8 @@ function buildRoutingGraph(
     source: string,
     target: string,
     sourceHandle: string | undefined,
-    targetHandle: string | undefined
+    targetHandle: string | undefined,
+    options?: { offsetUnits?: number }
   ) => ({
     id: `edge-${edgeIndex++}`,
     source,
@@ -271,9 +272,19 @@ function buildRoutingGraph(
     sourceHandle,
     targetHandle,
     type: 'smoothstep',
-    pathOptions: { offset: gridSize * EDGE_STEP_OFFSET_UNITS },
+    pathOptions: {
+      offset: gridSize * (options?.offsetUnits ?? EDGE_STEP_OFFSET_UNITS)
+    },
     style: EDGE_STYLE
   })
+
+  const makeTrunkEdge = (
+    source: string,
+    target: string,
+    sourceHandle: string | undefined,
+    targetHandle: string | undefined
+  ) =>
+    makeEdge(source, target, sourceHandle, targetHandle, { offsetUnits: 0 })
 
   const makeJunctionNode = (centerX: number, centerY: number) => {
     const nodeId = `junction-${junctionIndex++}`
@@ -335,7 +346,7 @@ function buildRoutingGraph(
         const trunkResult = buildTrunkEdges(
           routable,
           hubGroup,
-          makeEdge,
+          makeTrunkEdge,
           makeJunctionNode
         )
         edges.push(...trunkResult)
