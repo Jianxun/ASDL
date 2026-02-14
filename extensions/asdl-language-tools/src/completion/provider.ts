@@ -32,9 +32,7 @@ export class CompletionProviderCore {
     try {
       await this.workerClient.updateDocument(document.uri, document.version, text)
       const items = await this.workerClient.complete(document.uri, position.line, position.character)
-      if (items.length > 0) {
-        return mapWorkerItems(items)
-      }
+      return mapWorkerItems(items)
     } catch {
       // Worker path failed; use local fallback completions.
     }

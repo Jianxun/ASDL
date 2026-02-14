@@ -12,6 +12,6 @@ T-276:
   pr: 297
   merged: true
 T-277:
-  status: request_changes
+  status: ready_for_review
   pr: 298
   merged: false

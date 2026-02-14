@@ -76,6 +76,17 @@ test('CompletionProviderCore falls back when worker is unavailable', async () =>
   assert.ok(items.some((item) => item.insertText === 'param='))
 })
 
+test('CompletionProviderCore does not fall back when worker returns empty completions', async () => {
+  const provider = new CompletionProviderCore(new StubWorkerClient([]))
+
+  const items = await provider.provideCompletions(
+    documentFromText('modules:\n  top:\n    instances:\n      X1: lib.dev \n'),
+    { line: 3, character: '      X1: lib.dev '.length },
+  )
+
+  assert.deepEqual(items, [])
+})
+
 test('fallbackCompletions returns endpoint placeholder for endpoint list items', () => {
   const items = fallbackCompletions('modules:\n  top:\n    nets:\n      $OUT:\n        - \n', {
     line: 4,
