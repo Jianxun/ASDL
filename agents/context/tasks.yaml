@@ -21,5 +21,67 @@ current_sprint:
       - src/asdl/docs/project_manifest.py
       - src/asdl/docs/render_helpers.py
       - tests/unit_tests/docs/test_sphinx_render.py
+  - id: T-275
+    title: Scaffold fresh asdl-language-tools extension with net-first syntax grammar
+    owner: Executor
+    dod: >
+      Create a new standalone extension under `extensions/asdl-language-tools/`
+      (do not depend on legacy extension code), register ASDL language
+      contributions, and implement a net-first grammar/snippet baseline aligned
+      with `docs/specs/spec_asdl_language_tools_extension.md`.
+    verify:
+      - cd extensions/asdl-language-tools && npm run compile
+    links:
+      scratchpad: agents/scratchpads/T-275_asdl_language_tools_scaffold.md
+      spec: docs/specs/spec_asdl_language_tools_extension.md
+    files:
+      - extensions/asdl-language-tools/package.json
+      - extensions/asdl-language-tools/src/extension.ts
+      - extensions/asdl-language-tools/syntaxes/asdl.tmLanguage.json
+      - extensions/asdl-language-tools/snippets/asdl.json
+      - extensions/asdl-language-tools/README.md
+  - id: T-276
+    title: Build Python completion worker reusing ASDL parser/import/config internals
+    owner: Executor
+    depends_on:
+      - T-275
+    dod: >
+      Implement a long-lived Python worker for completion requests (`initialize`,
+      `update_document`, `complete`, `shutdown`) that reuses `src/asdl/ast/*`,
+      `src/asdl/imports/*`, and `.asdlrc` config loading for endpoint, imported
+      symbol, and `param=` completion candidates.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/tools/test_completion_worker.py -v
+    links:
+      scratchpad: agents/scratchpads/T-276_completion_worker_core.md
+      adr: agents/adr/ADR-0030-asdl-language-tools-extension.md
+      spec: docs/specs/spec_asdl_language_tools_extension.md
+    files:
+      - extensions/asdl-language-tools/python/worker.py
+      - src/asdl/tools/completion/engine.py
+      - src/asdl/tools/completion/context.py
+      - tests/unit_tests/tools/test_completion_worker.py
+      - tests/unit_tests/tools/test_completion_engine.py
+  - id: T-277
+    title: Integrate extension completion provider with Python worker and fallback
+    owner: Executor
+    depends_on:
+      - T-276
+    dod: >
+      Wire VS Code completion provider in `asdl-language-tools` to the Python
+      worker protocol, support document sync and completion request routing, and
+      implement graceful fallback structural/snippet completion when worker is
+      unavailable.
+    verify:
+      - cd extensions/asdl-language-tools && npm test
+    links:
+      scratchpad: agents/scratchpads/T-277_extension_worker_integration.md
+      spec: docs/specs/spec_asdl_language_tools_extension.md
+    files:
+      - extensions/asdl-language-tools/src/extension.ts
+      - extensions/asdl-language-tools/src/completion/provider.ts
+      - extensions/asdl-language-tools/src/completion/workerClient.ts
+      - extensions/asdl-language-tools/tests/completion.provider.test.ts
+      - extensions/asdl-language-tools/tests/workerClient.test.ts
 
 backlog: []

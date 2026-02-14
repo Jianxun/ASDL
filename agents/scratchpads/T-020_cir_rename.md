@@ -40,7 +40,7 @@
 - `src/asdl/ir/converter.py`: restored from T-012 baseline.
 - `tests/unit_tests/ir/test_converter.py`: restored from T-012 baseline.
 - `tests/unit_tests/ir/test_dialect.py`: restored from T-012 baseline.
-- `agents/context/codebase_map.md`: reflect `src/asdl/ir` and remove deleted `syntax-highlighter`.
+- `agents/context/codebase_map.md`: reflect `src/asdl/ir` and remove deleted legacy editor extension entry.
 - `src/asdl/__init__.py`: update active refactor surface note.
 
 ## PR URL
