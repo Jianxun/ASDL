@@ -49,7 +49,7 @@ devices:
         model: pfet_03v3
         template: 'M{name} {ports} {model} L={L} W={m}*{NF}*{W}'
 
-  gf180mcu_models:
+  models:
     backends:
       sim.ngspice:
         template: |- 

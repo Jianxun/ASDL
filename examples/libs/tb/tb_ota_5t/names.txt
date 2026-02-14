@@ -1,0 +1,23 @@
+HEADER
+	0	          in
+	1	v_vsrc_in_branch
+	2	v_vsrc_vss_branch
+	3	m:xota:xmn_in_n:0_drainprime
+	4	m:xota:xmn_in_n:0_sourceprime
+	5	m:xota:xmn_in_p:0_drainprime
+	6	m:xota:xmn_in_p:0_sourceprime
+	7	   xota:tail
+	8	         vss
+	9	         out
+	10	      xota:d
+	11	m:xota:xmn_diode:0_drainprime
+	12	m:xota:xmn_diode:0_sourceprime
+	13	m:xota:xmn_tail:0_drainprime
+	14	m:xota:xmn_tail:0_sourceprime
+	15	v_vsrc_vdd_branch
+	16	m:xota:xmp_cs:0_drainprime
+	17	m:xota:xmp_cs:0_sourceprime
+	18	m:xota:xmp_ref:0_drainprime
+	19	m:xota:xmp_ref:0_sourceprime
+	20	         vbn
+	21	         vdd

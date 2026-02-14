@@ -1,0 +1,35 @@
+top: tb
+
+
+imports:
+  gf: gf180mcu.asdl
+  inv: ./inv.asdl
+  ana: analoglib.asdl
+  sim: simulation.xyce.asdl
+  
+modules:
+  tb:
+    variables:
+      VDD: 3.3
+    instances:
+      inv1: inv.inv
+      inv2: inv.inv
+
+
+
+      vsrc_vdd: ana.vdc dc=3.3
+      vsrc_vss: ana.vdc dc=0
+      vsrc_in: ana.vsin offset=1.5 amp=1 freq=1e6 
+
+      models: gf.models
+      tran1: sim.tran from=0 to=10u step=1n
+      save: sim.save_tran signals=V(*)
+
+
+    nets:
+      in: [vsrc_in.p, inv1.<inp|inn>]
+      a: [inv1.out, inv2.<inp|inn>]
+      out: [inv2.out]
+      vdd: [vsrc_vdd.p, inv<1|2>.vdd]
+      vss: [vsrc_vss.p, vsrc_<vdd|in>.n, inv<1|2>.vss]
+      '0': [vsrc_vss.n]

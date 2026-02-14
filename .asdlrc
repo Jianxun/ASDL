@@ -8,5 +8,5 @@ env:
   PDK: gf180mcu
   PDK_PATH: ${ASDLRC_DIR}/examples/pdks/${PDK}
   PDK_ASDL_PATH: ${PDK_PATH}/asdl
-  ASDL_DESIGN_LIBS_PATH: ${ASDLRC_DIR}/libs
+  ASDL_DESIGN_LIBS_PATH: ${ASDLRC_DIR}/examples/libs_common:${ASDLRC_DIR}/examples/libs
   ASDL_LIB_PATH: ${PDK_ASDL_PATH}:${ASDL_DESIGN_LIBS_PATH}

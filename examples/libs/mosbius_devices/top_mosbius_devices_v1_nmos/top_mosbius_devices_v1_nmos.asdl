@@ -8,6 +8,8 @@ imports:
 
 modules:
 
+  # MOSbius V1 NMOS device bank
+  # All devices are exposed to chip pads directly.
   top_mosbius_devices_v1_nmos:
     instances:
       nmos_ota: ota.ota_nmos

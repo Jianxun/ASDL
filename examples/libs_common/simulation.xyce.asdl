@@ -1,19 +1,38 @@
 devices:
-  sim_dc:
+  dc:
     parameters:
-      source: ''
+      vsrc: ''
       from: 0
       to: 1
       step: 0.01
     backends:
       sim.xyce:
         template: |
-          .DC {source} {from} {to} {step}
+          .DC V_{vsrc} {from} {to} {step}
 
-  code_block:
+  tran:
     parameters:
-      code: ''
+      from: 0
+      to: 1e-6
+      step: 1e-9
     backends:
       sim.xyce:
         template: |
-          {code}
+          .TRAN {from} {to} {step}
+
+  save_dc:
+    parameters:
+      signals: ''
+    backends:
+      sim.xyce:
+        template: |
+          .PRINT DC {signals}
+
+  save_tran:
+    parameters:
+      signals: ''
+      format: CSV
+    backends:
+      sim.xyce:
+        template: |
+          .PRINT TRAN FORMAT={format} {signals}

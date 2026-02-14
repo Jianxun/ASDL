@@ -1,0 +1,33 @@
+top: tb
+
+
+imports:
+  gf: gf180mcu.asdl
+  ota: ./ota_nmos.asdl
+  ana: analoglib.asdl
+  sim: simulation.xyce.asdl
+  
+modules:
+  tb:
+    variables:
+      VDD: 3.3
+    instances:
+      ota: ota.ota_nmos
+      vsrc_vdd: ana.vdc dc=3.3
+      vsrc_vss: ana.vdc dc=0
+      vsrc_in: ana.vdc dc=1.5
+      isrc_bias: ana.idc dc=100e-6
+
+      models: gf.models
+      dc1: sim.dc vsrc=vsrc_in from=0 to=2.5 step=0.01
+      save: sim.save_dc signals='V(*)'
+      save2: sim.save_dc signals='I(*)'
+
+
+    nets:
+      in: [vsrc_in.p, ota.inp]
+      out: [ota.inn, ota.out]
+      vdd: [vsrc_vdd.p, ota.vdd, isrc_bias.p]
+      vss: [vsrc_vss.p, vsrc_<vdd|in>.n, ota.vss]
+      vbn: [isrc_bias.n, ota.vbn]
+      '0': [vsrc_vss.n]

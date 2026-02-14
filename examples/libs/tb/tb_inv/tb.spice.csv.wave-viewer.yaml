@@ -1,0 +1,25 @@
+version: 2
+datasets:
+  - id: dataset-1
+    path: ./tb.spice.csv
+active_dataset: dataset-1
+active_plot: plot-1
+plots:
+  - id: plot-1
+    name: Plot 1
+    x:
+      dataset: dataset-1
+      signal: TIME
+    y:
+      - id: lane-1
+        signals:
+          trace-1:
+            dataset: dataset-1
+            signal: V(IN)
+          trace-2:
+            dataset: dataset-1
+            signal: V(OUT)
+          trace-3:
+            dataset: dataset-1
+            signal: V(A)
+        label: Voltage (V)
