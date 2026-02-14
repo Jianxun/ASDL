@@ -28,9 +28,13 @@ current_sprint:
       Create a new standalone extension under `extensions/asdl-language-tools/`
       (do not depend on legacy extension code), register ASDL language
       contributions, and implement a net-first grammar/snippet baseline aligned
-      with `docs/specs/spec_asdl_language_tools_extension.md`.
+      with `docs/specs/spec_asdl_language_tools_extension.md`. Treat ASDL as a
+      fully legal YAML dialect: grammar must inherit YAML lexical/indentation
+      behavior and only layer ASDL-specific scopes without redefining YAML
+      structure rules.
     verify:
       - cd extensions/asdl-language-tools && npm run compile
+      - ./venv/bin/python -c "import yaml, pathlib; yaml.safe_load(pathlib.Path('examples/pdks/gf180mcu/asdl/gf180mcu.asdl').read_text())"
     links:
       scratchpad: agents/scratchpads/T-275_asdl_language_tools_scaffold.md
       spec: docs/specs/spec_asdl_language_tools_extension.md
@@ -49,7 +53,9 @@ current_sprint:
       Implement a long-lived Python worker for completion requests (`initialize`,
       `update_document`, `complete`, `shutdown`) that reuses `src/asdl/ast/*`,
       `src/asdl/imports/*`, and `.asdlrc` config loading for endpoint, imported
-      symbol, and `param=` completion candidates.
+      symbol, and `param=` completion candidates. Completion context detection
+      must be YAML-structure-aware (mapping/sequence/indentation) and must not
+      assume non-YAML syntax.
     verify:
       - ./venv/bin/pytest tests/unit_tests/tools/test_completion_worker.py -v
     links:
@@ -71,7 +77,8 @@ current_sprint:
       Wire VS Code completion provider in `asdl-language-tools` to the Python
       worker protocol, support document sync and completion request routing, and
       implement graceful fallback structural/snippet completion when worker is
-      unavailable.
+      unavailable. Completion edits must preserve valid YAML structure (keys,
+      list items, indentation) and avoid inserts that violate YAML syntax.
     verify:
       - cd extensions/asdl-language-tools && npm test
     links:
