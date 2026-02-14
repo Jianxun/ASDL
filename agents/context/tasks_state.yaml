@@ -4,9 +4,9 @@ T-274:
   pr: 294
   merged: true
 T-275:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 296
+  merged: true
 T-276:
   status: ready
   pr: null

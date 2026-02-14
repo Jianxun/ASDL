@@ -1,0 +1,62 @@
+{
+  "name": "asdl-language-tools",
+  "displayName": "ASDL Language Tools",
+  "description": "Syntax highlighting and snippets for net-first ASDL authoring.",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "asdl",
+    "yaml",
+    "analog",
+    "circuit"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:asdl"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "asdl",
+        "aliases": [
+          "ASDL",
+          "asdl"
+        ],
+        "extensions": [
+          ".asdl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "asdl",
+        "scopeName": "source.asdl",
+        "path": "./syntaxes/asdl.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "asdl",
+        "path": "./snippets/asdl.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "@types/vscode": "^1.60.0",
+    "typescript": "^5.3.3"
+  },
+  "publisher": "asdl-project",
+  "license": "MIT"
+}

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ASDL",
+  "scopeName": "source.asdl",
+  "patterns": [
+    {
+      "include": "#top_level_keys"
+    },
+    {
+      "include": "#block_keys"
+    },
+    {
+      "include": "#pattern_tokens"
+    },
+    {
+      "include": "#endpoint_tokens"
+    },
+    {
+      "include": "source.yaml"
+    }
+  ],
+  "repository": {
+    "top_level_keys": {
+      "patterns": [
+        {
+          "name": "support.type.asdl.key.top-level",
+          "match": "^(\\s*)(top|imports|modules|devices)(?=\\s*:)"
+        }
+      ]
+    },
+    "block_keys": {
+      "patterns": [
+        {
+          "name": "support.type.asdl.key.block",
+          "match": "^(\\s*)(instances|nets|patterns|instance_defaults|exports|variables|ports|parameters|backends|template)(?=\\s*:)"
+        }
+      ]
+    },
+    "pattern_tokens": {
+      "patterns": [
+        {
+          "name": "keyword.operator.asdl.pattern.wildcard",
+          "match": "\\*"
+        },
+        {
+          "name": "entity.name.tag.asdl.pattern.named",
+          "match": "<@[A-Za-z_][A-Za-z0-9_]*>"
+        },
+        {
+          "name": "entity.name.tag.asdl.pattern.group",
+          "match": "<[A-Za-z0-9_][^>]*>"
+        }
+      ]
+    },
+    "endpoint_tokens": {
+      "patterns": [
+        {
+          "name": "variable.other.asdl.net.global",
+          "match": "(?<![A-Za-z0-9_])\\$[A-Za-z_][A-Za-z0-9_]*(?:<[A-Za-z0-9_][^>]*>)?"
+        },
+        {
+          "captures": {
+            "1": {
+              "name": "keyword.operator.logical.asdl.endpoint.negation"
+            },
+            "2": {
+              "name": "variable.other.asdl.endpoint.instance"
+            },
+            "3": {
+              "name": "punctuation.separator.asdl.endpoint"
+            },
+            "4": {
+              "name": "variable.parameter.asdl.endpoint.port"
+            }
+          },
+          "match": "(?<![A-Za-z0-9_])(!?)([A-Za-z_][A-Za-z0-9_]*)(\\.)([A-Za-z_][A-Za-z0-9_]*)"
+        }
+      ]
+    }
+  }
+}

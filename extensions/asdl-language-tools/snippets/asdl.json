@@ -1,0 +1,63 @@
+{
+  "ASDL Net-First File": {
+    "scope": "asdl",
+    "prefix": "asdlfile",
+    "description": "Baseline net-first ASDL file skeleton.",
+    "body": [
+      "top: ${1:top_module}",
+      "imports:",
+      "  - ${2:lib/common.asdl}",
+      "modules:",
+      "  ${1:top_module}:",
+      "    instances:",
+      "      - ${3:XM1}: ${4:nmos}(${5:L=180n}, ${6:W=1u})",
+      "    instance_defaults:",
+      "      ${4:nmos}:",
+      "        ${3:XM1}.D: ${7:vout}",
+      "        ${3:XM1}.G: ${8:vin}",
+      "        ${3:XM1}.S: ${9:vss}",
+      "        ${3:XM1}.B: ${9:vss}",
+      "    nets:",
+      "      ${7:vout}: [${3:XM1}.D]",
+      "      ${8:vin}: [${3:XM1}.G]",
+      "      ${9:vss}: [${3:XM1}.S, ${3:XM1}.B]",
+      "      $${10:vdd}: []"
+    ]
+  },
+  "Module Block": {
+    "scope": "asdl",
+    "prefix": "asdlmod",
+    "description": "Module scaffold with net-first sections.",
+    "body": [
+      "${1:module_name}:",
+      "  patterns:",
+      "    ${2:lane}: <0:3>",
+      "  instances:",
+      "    - ${3:XI<@lane>}: ${4:inv}()",
+      "  instance_defaults:",
+      "    ${4:inv}:",
+      "      ${3:XI<@lane>}.A: ${5:in<@lane>}",
+      "      ${3:XI<@lane>}.Y: ${6:out<@lane>}",
+      "  nets:",
+      "    ${5:in<@lane>}: [${3:XI<@lane>}.A]",
+      "    ${6:out<@lane>}: [${3:XI<@lane>}.Y]",
+      "    $${7:vdd}: []",
+      "    $${8:vss}: []"
+    ]
+  },
+  "Device Block": {
+    "scope": "asdl",
+    "prefix": "asdldev",
+    "description": "Device declaration scaffold.",
+    "body": [
+      "${1:nmos}:",
+      "  ports: [${2:D}, ${3:G}, ${4:S}, ${5:B}]",
+      "  parameters:",
+      "    ${6:L}: ${7:180n}",
+      "    ${8:W}: ${9:1u}",
+      "  backends:",
+      "    ${10:sim.ngspice}:",
+      "      template: \"${1:nmos} ${2:D} ${3:G} ${4:S} ${5:B} ${11:model} L={${6:L}} W={${8:W}}\""
+    ]
+  }
+}
