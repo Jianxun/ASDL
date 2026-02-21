@@ -182,3 +182,58 @@ def test_render_netlist_ir_module_reference_uses_file_id() -> None:
         ]
     )
     assert netlist == expected
+
+
+def test_render_netlist_ir_infers_top_from_entry_file_scope() -> None:
+    backend_config = _backend_config()
+
+    entry = NetlistModule(
+        name="ENTRY_TOP",
+        file_id="entry.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    imported = NetlistModule(
+        name="LIB_TOP",
+        file_id="lib.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    design = NetlistDesign(
+        modules=[entry, imported],
+        devices=[],
+        top=None,
+        entry_file_id="entry.asdl",
+    )
+
+    netlist, diagnostics = _emit(design, backend_config)
+
+    assert diagnostics == []
+    assert netlist is not None
+    assert netlist.splitlines()[0] == "* header ENTRY_TOP"
+
+
+def test_render_netlist_ir_requires_explicit_top_without_unique_entry_module() -> None:
+    backend_config = _backend_config()
+
+    imported = NetlistModule(
+        name="LIB_TOP",
+        file_id="lib.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    design = NetlistDesign(
+        modules=[imported],
+        devices=[],
+        top=None,
+        entry_file_id="entry.asdl",
+    )
+
+    netlist, diagnostics = _emit(design, backend_config)
+
+    assert netlist is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "EMIT-001"
