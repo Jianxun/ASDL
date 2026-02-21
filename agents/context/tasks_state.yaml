@@ -1,6 +1,6 @@
 schema_version: 2
 T-284:
-  status: ready_for_review
+  status: review_in_progress
   pr: 299
   merged: false
 T-278:
