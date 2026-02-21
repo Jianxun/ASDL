@@ -8,7 +8,7 @@ from typing import Optional
 from urllib.parse import unquote, urlparse
 
 from asdl.ast import AsdlDocument, DeviceDecl, ModuleDecl, parse_file, parse_string
-from asdl.ast.instance_expr import parse_inline_instance_expr
+from asdl.ast.instance_expr import parse_instance_value
 from asdl.cli.config import load_asdlrc
 from asdl.imports import NameEnv, ProgramDB, resolve_import_path
 
@@ -232,7 +232,7 @@ class CompletionEngine:
             return []
 
         expr = module.instances.get(context.instance_name)
-        if not isinstance(expr, str):
+        if expr is None:
             return []
 
         ref, _params = _parse_instance_expr(expr)
@@ -306,8 +306,8 @@ def _module_by_name(document: AsdlDocument, module_name: Optional[str]) -> Optio
     return document.modules.get(module_name)
 
 
-def _parse_instance_expr(expr: str) -> tuple[Optional[str], dict[str, str]]:
-    ref, params, error = parse_inline_instance_expr(expr, strict_params=False)
+def _parse_instance_expr(expr: object) -> tuple[Optional[str], dict[str, str]]:
+    ref, params, error = parse_instance_value(expr, strict_params=False)
     if error is not None or ref is None:
         return None, {}
     return ref, dict(params)

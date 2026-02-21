@@ -40,3 +40,29 @@ def test_render_markdown_full_switch_matrix_sections() -> None:
     section_index = markdown.index("#### buses and pins")
     assert "| $BUS<@BUS> |" in markdown[section_index:]
     assert "bus broadcast to all rows" in markdown
+
+
+def test_render_markdown_instance_params_support_inline_and_structured(tmp_path: Path) -> None:
+    asdl_file = tmp_path / "inst_forms.asdl"
+    asdl_file.write_text(
+        "modules:\n"
+        "  top:\n"
+        "    instances:\n"
+        "      x_inline: \"code cmd='.TRAN 0 10u' mode=tran\"\n"
+        "      x_struct:\n"
+        "        ref: code\n"
+        "        parameters:\n"
+        "          cmd: \".TRAN 0 10u\"\n"
+        "          mode: tran\n"
+        "devices:\n"
+        "  code:\n"
+        "    ports: [P]\n"
+        "    backends:\n"
+        "      sim.ngspice:\n"
+        "        template: \"X {ports}\"\n",
+        encoding="utf-8",
+    )
+
+    markdown = render_markdown_from_file(asdl_file)
+    assert "| x_inline | code | cmd='.TRAN 0 10u' mode=tran |  |" in markdown
+    assert "| x_struct | code | cmd='.TRAN 0 10u' mode=tran |  |" in markdown
