@@ -18,6 +18,7 @@ from .models import (
     AstBaseModel,
     DeviceBackendDecl,
     DeviceDecl,
+    InstanceDecl,
     InstanceDefaultsDecl,
     ModuleDecl,
     PatternDecl,
@@ -418,13 +419,32 @@ def _attach_module_entry_locations(
                     )
                 module._net_endpoint_locs[net_name] = endpoint_locs
     if module.instances:
-        for inst_name in module.instances.keys():
+        for inst_name, instance in module.instances.items():
             loc = location_index.lookup((*base_path, "instances", inst_name), prefer_key=True)
             if loc is not None:
                 module._instances_loc[inst_name] = loc
             value_loc = location_index.lookup((*base_path, "instances", inst_name))
             if value_loc is not None:
                 module._instance_expr_loc[inst_name] = value_loc
+            if isinstance(instance, InstanceDecl):
+                ref_loc = location_index.lookup((*base_path, "instances", inst_name, "ref"))
+                if ref_loc is not None:
+                    module._instance_ref_loc[inst_name] = ref_loc
+                parameters_loc = location_index.lookup(
+                    (*base_path, "instances", inst_name, "parameters")
+                )
+                if parameters_loc is not None:
+                    module._instance_parameters_loc[inst_name] = parameters_loc
+                if instance.parameters:
+                    param_value_locs: Dict[str, Locatable] = {}
+                    for param_name in instance.parameters.keys():
+                        param_loc = location_index.lookup(
+                            (*base_path, "instances", inst_name, "parameters", param_name)
+                        )
+                        if param_loc is not None:
+                            param_value_locs[param_name] = param_loc
+                    if param_value_locs:
+                        module._instance_parameter_value_locs[inst_name] = param_value_locs
 
 
 def _attach_instance_defaults_locations(

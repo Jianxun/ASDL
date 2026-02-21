@@ -1,4 +1,4 @@
-from asdl.ast import parse_string
+from asdl.ast import InstanceDecl, parse_string
 from asdl.diagnostics import Severity
 
 
@@ -92,6 +92,62 @@ def test_parse_string_accepts_patterns_and_instance_defaults() -> None:
     module = document.modules["top"]
     assert module.patterns == {"k": "<1|2>"}
     assert module.instance_defaults["mos"].bindings == {"B": "$VSS"}
+
+
+def test_parse_string_accepts_structured_instance_and_preserves_locations() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      XCODE:",
+            "        ref: code",
+            "        parameters:",
+            "          cmd: \".TRAN 0 10u\"",
+            "    nets:",
+            "      $OUT:",
+            "        - XCODE.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert diagnostics == []
+    assert document is not None
+    module = document.modules["top"]
+    value = module.instances["XCODE"]
+    assert isinstance(value, InstanceDecl)
+    assert value.ref == "code"
+    assert value.parameters == {"cmd": ".TRAN 0 10u"}
+    assert module._instance_expr_loc["XCODE"] is not None
+    assert module._instance_ref_loc["XCODE"] is not None
+    assert module._instance_parameters_loc["XCODE"] is not None
+    assert module._instance_parameter_value_locs["XCODE"]["cmd"] is not None
+
+
+def test_parse_string_rejects_structured_instance_params_alias() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      XCODE:",
+            "        ref: code",
+            "        params:",
+            "          cmd: bad",
+            "    nets:",
+            "      $OUT:",
+            "        - XCODE.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert "parameters" in diag.message
 
 
 def test_parse_string_accepts_imports() -> None:

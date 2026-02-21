@@ -73,7 +73,6 @@ def _reject_string_endpoint_list(value: object) -> object:
 
 EndpointListExpr = Annotated[List[StrictStr], BeforeValidator(_reject_string_endpoint_list)]
 ImportsBlock = Dict[StrictStr, StrictStr]
-InstancesBlock = Dict[str, InstanceExpr]
 NetsBlock = Dict[str, EndpointListExpr]
 PatternGroup = Annotated[StrictStr, BeforeValidator(_validate_pattern_group)]
 PatternTag = Annotated[StrictStr, BeforeValidator(_validate_pattern_tag)]
@@ -165,6 +164,25 @@ class InstanceDefaultsDecl(AstBaseModel):
 InstanceDefaultsBlock = Dict[str, InstanceDefaultsDecl]
 
 
+class InstanceDecl(AstBaseModel):
+    """Structured instance declaration with canonical parameters map."""
+
+    ref: StrictStr
+    parameters: Optional[Dict[str, ParamValue]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_params_alias(cls, data: object) -> object:
+        """Reject legacy params field for structured instance declarations."""
+        if isinstance(data, dict) and "params" in data:
+            raise ValueError("Use 'parameters' instead of 'params' for instances.")
+        return data
+
+
+InstanceValue = Union[InstanceDecl, InstanceExpr]
+InstancesBlock = Dict[str, InstanceValue]
+
+
 class ModuleDecl(AstBaseModel):
     """Module declaration with nets, instances, and defaults."""
 
@@ -175,6 +193,11 @@ class ModuleDecl(AstBaseModel):
     instance_defaults: Optional[InstanceDefaultsBlock] = None
     _instances_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
     _instance_expr_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+    _instance_ref_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+    _instance_parameters_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+    _instance_parameter_value_locs: Dict[str, Dict[str, "Locatable"]] = PrivateAttr(
+        default_factory=dict
+    )
     _nets_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
     _net_endpoint_locs: Dict[str, List[Optional["Locatable"]]] = PrivateAttr(
         default_factory=dict
@@ -265,6 +288,8 @@ class AsdlDocument(AstBaseModel):
 __all__ = [
     "ParamValue",
     "InstanceExpr",
+    "InstanceDecl",
+    "InstanceValue",
     "EndpointListExpr",
     "ImportsBlock",
     "InstancesBlock",
