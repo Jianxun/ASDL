@@ -7,6 +7,7 @@ from typing import Dict, List, Mapping, Optional, Tuple
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
 
+from .instance_expr import format_inline_param_token, tokenize_inline_instance_expr
 from .location import Locatable
 from .models import AsdlDocument, InstanceDefaultsDecl, ModuleDecl, PatternDecl
 
@@ -314,8 +315,8 @@ def _replace_instance_params(
     if "<@" not in expr:
         return expr, False
 
-    tokens = expr.split()
-    if not tokens:
+    tokens, token_error = tokenize_inline_instance_expr(expr)
+    if token_error is not None or not tokens:
         return expr, False
 
     new_tokens = [tokens[0]]
@@ -343,7 +344,7 @@ def _replace_instance_params(
             context=f"instance param '{key}'",
         )
         had_error = had_error or value_error
-        new_tokens.append(f"{key}={new_value}")
+        new_tokens.append(format_inline_param_token(key, new_value))
 
     return " ".join(new_tokens), had_error
 

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Mapping, Optional, Set, Tuple
 
 from asdl.ast import ModuleDecl
+from asdl.ast.instance_expr import parse_inline_instance_expr
 from asdl.ast.location import Locatable
 from asdl.core.graph_builder import PatternedGraphBuilder
 from asdl.core.registries import PatternExprKind
@@ -151,18 +152,10 @@ def _parse_instance_expr(expr: str) -> Tuple[Optional[str], Dict[str, str], Opti
     Returns:
         Tuple of (reference, params, error message).
     """
-    tokens = expr.split()
-    if not tokens:
-        return None, {}, "Instance expression must start with a model name"
-    ref = tokens[0]
-    params: Dict[str, str] = {}
-    for token in tokens[1:]:
-        if "=" not in token:
-            return None, {}, f"Invalid instance param token '{token}'; expected key=value"
-        key, value = token.split("=", 1)
-        if not key or not value:
-            return None, {}, f"Invalid instance param token '{token}'; expected key=value"
-        params[key] = value
+    ref, parsed_params, error = parse_inline_instance_expr(expr, strict_params=True)
+    if error is not None:
+        return None, {}, error
+    params: Dict[str, str] = dict(parsed_params)
     return ref, params, None
 
 

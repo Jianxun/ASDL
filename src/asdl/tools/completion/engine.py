@@ -8,6 +8,7 @@ from typing import Optional
 from urllib.parse import unquote, urlparse
 
 from asdl.ast import AsdlDocument, DeviceDecl, ModuleDecl, parse_file, parse_string
+from asdl.ast.instance_expr import parse_inline_instance_expr
 from asdl.cli.config import load_asdlrc
 from asdl.imports import NameEnv, ProgramDB, resolve_import_path
 
@@ -306,17 +307,10 @@ def _module_by_name(document: AsdlDocument, module_name: Optional[str]) -> Optio
 
 
 def _parse_instance_expr(expr: str) -> tuple[Optional[str], dict[str, str]]:
-    tokens = expr.split()
-    if not tokens:
+    ref, params, error = parse_inline_instance_expr(expr, strict_params=False)
+    if error is not None or ref is None:
         return None, {}
-    params: dict[str, str] = {}
-    for token in tokens[1:]:
-        if "=" not in token:
-            continue
-        key, value = token.split("=", 1)
-        if key and value:
-            params[key] = value
-    return tokens[0], params
+    return ref, dict(params)
 
 
 def _resolve_reference_decl(
