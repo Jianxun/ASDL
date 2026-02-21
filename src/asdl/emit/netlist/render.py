@@ -99,17 +99,6 @@ def _emit_netlist_ir_design(
     collector = DiagnosticCollector()
 
     entry_file_id = design.entry_file_id
-    if design.top is None and len(design.modules) == 1 and entry_file_id is not None:
-        if design.modules[0].file_id != entry_file_id:
-            collector.emit(
-                _diagnostic(
-                    MISSING_TOP,
-                    "Top module is required when entry file has no local modules",
-                    Severity.ERROR,
-                )
-            )
-            diagnostics.extend(collector.to_list())
-            return None, diagnostics
 
     index = _build_netlist_ir_index(design, collector)
     diagnostics.extend(collector.to_list())

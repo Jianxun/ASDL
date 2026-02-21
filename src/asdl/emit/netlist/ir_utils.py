@@ -87,6 +87,22 @@ def _resolve_netlist_ir_top_name(
     """
     top_name = design.top
     if top_name is None:
+        if design.entry_file_id is not None:
+            entry_modules = [
+                module
+                for module in modules
+                if module.file_id == design.entry_file_id
+            ]
+            if len(entry_modules) == 1:
+                return entry_modules[0].name
+            diagnostics.emit(
+                _diagnostic(
+                    MISSING_TOP,
+                    "Top module is required when entry file has zero or multiple modules",
+                    Severity.ERROR,
+                )
+            )
+            return None
         if len(modules) == 1:
             return modules[0].name
         diagnostics.emit(

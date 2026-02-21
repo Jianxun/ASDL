@@ -48,6 +48,7 @@ def run_netlist_ir_pipeline(
     """
     diagnostics: list[Diagnostic] = []
     top_module_id: Optional[str] = None
+    entry_file_id: Optional[str] = None
 
     if entry_file is not None:
         if document is not None:
@@ -69,10 +70,11 @@ def run_netlist_ir_pipeline(
         if _has_error_diagnostics(diagnostics):
             return None, diagnostics
         entry_doc = import_graph.documents.get(import_graph.entry_file)
+        entry_file_id = str(import_graph.entry_file)
         top_module_id = _resolve_top_module_id(
             graph,
             entry_doc.top if entry_doc is not None else None,
-            str(import_graph.entry_file),
+            entry_file_id,
         )
     else:
         if document is None:
@@ -87,6 +89,7 @@ def run_netlist_ir_pipeline(
         top_module_id = _resolve_top_module_id(
             graph, document.top, file_id
         )
+        entry_file_id = file_id
 
     if verify:
         atomized, atomized_diags = build_atomized_graph_and_verify(graph)
@@ -96,7 +99,11 @@ def run_netlist_ir_pipeline(
     if _has_error_diagnostics(diagnostics):
         return None, diagnostics
 
-    design = build_netlist_ir_design(atomized, top_module_id=top_module_id)
+    design = build_netlist_ir_design(
+        atomized,
+        top_module_id=top_module_id,
+        entry_file_id=entry_file_id,
+    )
     return design, diagnostics
 
 
