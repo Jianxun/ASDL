@@ -144,14 +144,14 @@ cases:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
   - code: IR-013
     case_dir: IR-013_recursive_module_variable
     args:
       - netlist
       - case.asdl
     expected_exit: 1
-    status: pending
+    status: ready
   - code: IR-020
     case_dir: IR-020_invalid_graphir_program
     args:

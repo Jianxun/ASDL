@@ -1,0 +1,21 @@
+top: top
+modules:
+  top:
+    variables:
+      a: "{b}"
+      b: "{a}"
+    instances:
+      R1: res r={a}
+    nets:
+      $IN:
+        - R1.P
+      $OUT:
+        - R1.N
+devices:
+  res:
+    ports: [P, N]
+    parameters:
+      r: 1k
+    backends:
+      sim.ngspice:
+        template: "{name} {ports} {params}"

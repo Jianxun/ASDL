@@ -40,6 +40,89 @@ def _pipeline_yaml() -> str:
     )
 
 
+def _module_variable_pipeline_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    variables:",
+            "      suffix: k",
+            "      r_value: 2{suffix}",
+            "    instances:",
+            "      R1: res r={r_value}",
+            "    nets:",
+            "      $IN:",
+            "        - R1.P",
+            "      $OUT:",
+            "        - R1.N",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    parameters:",
+            "      r: 1k",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports} {params}\"",
+        ]
+    )
+
+
+def _undefined_variable_pipeline_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    variables:",
+            "      known: 2k",
+            "    instances:",
+            "      R1: res r={missing}",
+            "    nets:",
+            "      $IN:",
+            "        - R1.P",
+            "      $OUT:",
+            "        - R1.N",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    parameters:",
+            "      r: 1k",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports} {params}\"",
+        ]
+    )
+
+
+def _recursive_variable_pipeline_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    variables:",
+            "      a: \"{b}\"",
+            "      b: \"{a}\"",
+            "    instances:",
+            "      R1: res r={a}",
+            "    nets:",
+            "      $IN:",
+            "        - R1.P",
+            "      $OUT:",
+            "        - R1.N",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    parameters:",
+            "      r: 1k",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports} {params}\"",
+        ]
+    )
+
+
 def _write_import_entry(path: Path, import_path: str) -> None:
     lines = [
         "imports:",
@@ -200,6 +283,21 @@ def test_cli_netlist_top_as_subckt_with_output_flag(
     assert output_path.read_text(encoding="utf-8") == _expected_netlist(True)
 
 
+def test_cli_netlist_substitutes_module_variables_in_output(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "vars.asdl"
+    input_path.write_text(_module_variable_pipeline_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["netlist", str(input_path)])
+
+    assert result.exit_code == 0
+    output_path = tmp_path / "vars.spice"
+    assert output_path.exists()
+    assert output_path.read_text(encoding="utf-8") == "R1 IN OUT r=2k\n.end"
+
+
 def test_cli_netlist_imports_with_lib_root(
     tmp_path: Path,
     backend_config: Path,
@@ -307,6 +405,36 @@ def test_cli_netlist_missing_input_file(tmp_path: Path) -> None:
     stderr = getattr(result, "stderr", "")
     combined = f"{result.output}{stderr}"
     assert "PARSE-004" in combined
+
+
+def test_cli_netlist_reports_undefined_module_variable(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "undefined_var.asdl"
+    input_path.write_text(_undefined_variable_pipeline_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["netlist", str(input_path)])
+
+    assert result.exit_code == 1
+    stderr = getattr(result, "stderr", "")
+    combined = f"{result.output}{stderr}"
+    assert "IR-012" in combined
+
+
+def test_cli_netlist_reports_recursive_module_variable(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "recursive_var.asdl"
+    input_path.write_text(_recursive_variable_pipeline_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["netlist", str(input_path)])
+
+    assert result.exit_code == 1
+    stderr = getattr(result, "stderr", "")
+    combined = f"{result.output}{stderr}"
+    assert "IR-013" in combined
 
 
 def test_cli_help() -> None:
