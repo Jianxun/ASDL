@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 
@@ -12,7 +13,10 @@ from asdl.diagnostics import Diagnostic, Severity, SourceSpan, format_code
 
 PATTERN_EXPANSION_ERROR = format_code("IR", 3)
 INVALID_ENDPOINT_EXPR = format_code("IR", 2)
+UNDEFINED_MODULE_VARIABLE = format_code("IR", 12)
+RECURSIVE_MODULE_VARIABLE = format_code("IR", 13)
 NO_SPAN_NOTE = "No source span available."
+_VAR_PLACEHOLDER_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
 @dataclass
@@ -86,6 +90,8 @@ class ModuleAtomizationContext:
     endpoint_keys: set[tuple[str, str]] = field(default_factory=set)
     net_name_to_id: Dict[str, str] = field(default_factory=dict)
     net_spans: Dict[str, Optional[SourceSpan]] = field(default_factory=dict)
+    resolved_module_variables: Dict[str, str] = field(default_factory=dict)
+    reported_recursive_chains: set[tuple[str, ...]] = field(default_factory=set)
 
 
 def _diagnostic(
@@ -132,3 +138,93 @@ def _entity_span(
     if source_spans is None:
         return None
     return source_spans.get(entity_id)
+
+
+def _substitute_module_variables(
+    context: ModuleAtomizationContext,
+    value: str,
+    *,
+    param_name: str,
+    param_span: Optional[SourceSpan],
+) -> Optional[str]:
+    """Substitute module variable placeholders in an instance parameter value.
+
+    Args:
+        context: Shared module atomization context.
+        value: Raw instance parameter expression value.
+        param_name: Instance parameter name for diagnostics.
+        param_span: Optional source span for the parameter expression.
+
+    Returns:
+        Substituted parameter value, or None when diagnostics were emitted.
+    """
+    module_vars = context.module.variables or {}
+    if "{" not in value:
+        return value
+
+    module_span = _entity_span(context.source_spans, context.module.module_id)
+    had_error = False
+
+    class _SubstitutionError(Exception):
+        """Sentinel exception to abort regex substitution on diagnostics."""
+
+    def resolve_variable(name: str, chain: tuple[str, ...]) -> str:
+        nonlocal had_error
+        cached = context.resolved_module_variables.get(name)
+        if cached is not None:
+            return cached
+
+        if name in chain:
+            cycle = chain + (name,)
+            if cycle not in context.reported_recursive_chains:
+                context.reported_recursive_chains.add(cycle)
+                context.diagnostics.append(
+                    _diagnostic(
+                        RECURSIVE_MODULE_VARIABLE,
+                        (
+                            "Recursive module variable substitution in module "
+                            f"'{context.module.name}': {' -> '.join(cycle)}."
+                        ),
+                        module_span or param_span,
+                    )
+                )
+            had_error = True
+            raise _SubstitutionError
+
+        raw_value = module_vars.get(name)
+        if raw_value is None:
+            context.diagnostics.append(
+                _diagnostic(
+                    UNDEFINED_MODULE_VARIABLE,
+                    (
+                        f"Instance param '{param_name}' in module "
+                        f"'{context.module.name}' references undefined module "
+                        f"variable '{name}'."
+                    ),
+                    param_span or module_span,
+                )
+            )
+            had_error = True
+            raise _SubstitutionError
+
+        raw_text = str(raw_value)
+        try:
+            resolved = _VAR_PLACEHOLDER_RE.sub(
+                lambda match: resolve_variable(match.group(1), chain + (name,)),
+                raw_text,
+            )
+        except _SubstitutionError as exc:
+            raise exc
+
+        context.resolved_module_variables[name] = resolved
+        return resolved
+
+    try:
+        substituted = _VAR_PLACEHOLDER_RE.sub(
+            lambda match: resolve_variable(match.group(1), ()),
+            value,
+        )
+    except _SubstitutionError:
+        return None
+
+    return None if had_error else substituted

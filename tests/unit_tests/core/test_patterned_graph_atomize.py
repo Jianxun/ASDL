@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asdl.core import PatternedGraphBuilder
+from asdl.diagnostics import SourcePos, SourceSpan
 from asdl.lowering import build_atomized_graph
 from asdl.patterns_refactor import NamedPattern, parse_pattern_expr
 
@@ -9,11 +10,24 @@ def _parse_expr(
     expression: str,
     *,
     named_patterns: dict[str, NamedPattern] | None = None,
+    span: SourceSpan | None = None,
 ):
-    expr, errors = parse_pattern_expr(expression, named_patterns=named_patterns)
+    expr, errors = parse_pattern_expr(
+        expression,
+        named_patterns=named_patterns,
+        span=span,
+    )
     assert errors == []
     assert expr is not None
     return expr
+
+
+def _span(file: str, line: int, col: int) -> SourceSpan:
+    return SourceSpan(
+        file=file,
+        start=SourcePos(line, col),
+        end=SourcePos(line, col + 1),
+    )
 
 
 def _endpoint_map(module_graph):
@@ -312,6 +326,93 @@ def test_patterned_graph_atomize_propagates_module_variables() -> None:
     assert diagnostics == []
     atomized_module = atomized.modules[module.module_id]
     assert atomized_module.variables == {"corner": "tt", "temp": 27}
+
+
+def test_patterned_graph_atomize_substitutes_module_variables_in_params() -> None:
+    builder = PatternedGraphBuilder()
+    module = builder.add_module(
+        "top",
+        "design.asdl",
+        variables={"suffix": "<0|1>", "w_expr": "W{suffix}"},
+    )
+    inst_expr_id = builder.add_expression(_parse_expr("U<0|1>"))
+    param_expr_id = builder.add_expression(_parse_expr("{w_expr}"))
+
+    builder.add_instance(
+        module.module_id,
+        inst_expr_id,
+        ref_kind="device",
+        ref_id="dev1",
+        ref_raw="nmos",
+        param_expr_ids={"W": param_expr_id},
+    )
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    assert diagnostics == []
+    module_graph = atomized.modules[module.module_id]
+    instances = list(module_graph.instances.values())
+    assert [inst.name for inst in instances] == ["U0", "U1"]
+    assert [inst.param_values for inst in instances] == [{"W": "W0"}, {"W": "W1"}]
+
+
+def test_patterned_graph_atomize_reports_undefined_module_variable() -> None:
+    builder = PatternedGraphBuilder()
+    module = builder.add_module("top", "design.asdl")
+    inst_expr_id = builder.add_expression(_parse_expr("U0"))
+    missing_span = _span("design.asdl", 12, 8)
+    param_expr_id = builder.add_expression(_parse_expr("W{missing}", span=missing_span))
+
+    builder.add_instance(
+        module.module_id,
+        inst_expr_id,
+        ref_kind="device",
+        ref_id="dev1",
+        ref_raw="nmos",
+        param_expr_ids={"W": param_expr_id},
+    )
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    undefined_diags = [diag for diag in diagnostics if diag.code == "IR-012"]
+    assert len(undefined_diags) == 1
+    assert "missing" in undefined_diags[0].message
+    assert undefined_diags[0].primary_span == missing_span
+    module_graph = atomized.modules[module.module_id]
+    assert list(module_graph.instances.values())[0].param_values is None
+
+
+def test_patterned_graph_atomize_reports_recursive_module_variable() -> None:
+    builder = PatternedGraphBuilder()
+    module_span = _span("design.asdl", 3, 1)
+    module = builder.add_module(
+        "top",
+        "design.asdl",
+        variables={"a": "{b}", "b": "{a}"},
+    )
+    builder.register_source_span(module.module_id, module_span)
+    inst_expr_id = builder.add_expression(_parse_expr("U0"))
+    param_expr_id = builder.add_expression(_parse_expr("{a}"))
+
+    builder.add_instance(
+        module.module_id,
+        inst_expr_id,
+        ref_kind="device",
+        ref_id="dev1",
+        ref_raw="nmos",
+        param_expr_ids={"W": param_expr_id},
+    )
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    recursive_diags = [diag for diag in diagnostics if diag.code == "IR-013"]
+    assert len(recursive_diags) == 1
+    assert recursive_diags[0].primary_span == module_span
+    module_graph = atomized.modules[module.module_id]
+    assert list(module_graph.instances.values())[0].param_values is None
 
 
 def test_patterned_graph_atomize_endpoint_uniqueness() -> None:
