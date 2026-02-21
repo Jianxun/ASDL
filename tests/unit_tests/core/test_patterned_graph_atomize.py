@@ -300,6 +300,20 @@ def test_patterned_graph_atomize_propagates_devices() -> None:
     assert atomized_device.attrs == {"kind": "mos"}
 
 
+def test_patterned_graph_atomize_propagates_module_variables() -> None:
+    builder = PatternedGraphBuilder()
+    builder.add_expression(_parse_expr("IN"))
+    module = builder.add_module("top", "design.asdl", variables={"corner": "tt", "temp": 27})
+    builder.set_ports(module.module_id, ["IN", "OUT"])
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    assert diagnostics == []
+    atomized_module = atomized.modules[module.module_id]
+    assert atomized_module.variables == {"corner": "tt", "temp": 27}
+
+
 def test_patterned_graph_atomize_endpoint_uniqueness() -> None:
     builder = PatternedGraphBuilder()
     module = builder.add_module("top", "design.asdl")
