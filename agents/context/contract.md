@@ -26,6 +26,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Backend config schema (`config/backends.yaml` or `ASDL_BACKEND_CONFIG`) must include per-backend `templates`, `extension` (verbatim output suffix), and `comment_prefix`.
 - Net-first authoring uses YAML map order for `nets:` when order matters; port order derives from `$`-prefixed net keys in `nets` first, then `$`-prefixed nets first-seen in `instance_defaults` bindings (deterministic order). The parser must preserve source order. Internal IR uses explicit lists; uniqueness is enforced by verification passes, not by dict key uniqueness.
 - Pattern definitions may be strings or `{expr, tag}` objects; `axis_id` derives from `tag` when present, otherwise the pattern name. Tags/axis_id are module-local and drive tagged-axis broadcast binding diagnostics.
+- Instance entries support dual authoring forms: inline shorthand string (`<ref> key=value ...`) and structured object (`ref`, optional `parameters`). Structured instances MUST use `parameters` (not `params`); inline shorthand remains backward compatible and must support quoted values containing spaces.
 - Diagnostic schema is centralized (code, severity, message, primary span, labels, notes, help, fix-its, source); locations use file + line/col spans; all pipeline stages emit diagnostics via this contract.
 - Deprecated: AST->NFIR converter returns `(DesignOp | None, diagnostics)`; invalid instance or endpoint tokens emit `IR-001`/`IR-002` with `Severity.ERROR` and return `None`. Retained for legacy/roundtrip use only.
 - Legacy CLI exposes `ir-dump` to emit GraphIR/IFIR textual IR (`--ir graphir|ifir`) for reference during migration; the refactor pipeline will provide NetlistIR/PatternedGraph dumps for debugging with deterministic output and stable ordering.
@@ -43,6 +44,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Converters MUST NOT silently drop endpoints, connections, or nets; any missing references must emit diagnostics.
 - Converters MUST NOT raise `ValueError` for malformed IR; emit diagnostics and return failure indicators instead.
 - Instance params must not introduce new device params; emit a warning and ignore unknown keys.
+- Instance parameter semantics MUST normalize to the same `(ref, parameters)` payload regardless of inline or structured authoring form.
 - System device names (prefixed `__`) are reserved; regular device names MUST NOT use this prefix.
 - Backend config file MUST define all required system devices; missing required system devices emit `MISSING_BACKEND` error and abort emission.
 - When `top_as_subckt` is false, netlist emission MUST NOT emit any top-level subckt wrapper lines.
@@ -95,6 +97,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - ADR-0028 (Proposed): Project `.asdlrc` discovery from entry-file directory upward with rc-defined env/lib roots.
 - ADR-0029 (Proposed): Visualizer symbol schema uses inline pin metadata, explicit glyph placement boxes, and Cadence-style orientation/label rules.
 - ADR-0030: Fresh `asdl-language-tools` extension under `extensions/` with TS host + long-lived Python completion worker; no runtime dependency on removed legacy extension code.
+- ADR-0031: Instance parameter syntax supports quote-aware inline shorthand plus structured `parameters` objects.
 
 - 2026-01-24: ADR-0024 -- Replace IFIR with NetlistIR dataclass model; remove xDSL from the refactor pipeline (supersedes ADR-0014).
 - 2026-01-23: ADR-0023 -- Core graphs include device definitions; modules/devices use `ports` lists (never None); backend templates stay outside core graphs.
@@ -105,6 +108,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-01-26: ADR-0028 (Proposed) -- `.asdlrc` discovery (entry-file dir upward), rc-defined env/lib roots, and config precedence.
 - 2026-01-26: ADR-0029 (Proposed) -- Visualizer symbol schema (inline pin metadata + glyph box) and Cadence-style orientation/label rules.
 - 2026-02-14: ADR-0030 -- New ASDL language-tools extension architecture (fresh package, Python worker protocol for semantic completion, no legacy highlighter reuse).
+- 2026-02-21: ADR-0031 -- Instance parameter syntax supports quoted inline shorthand and structured instance objects with canonical `parameters`.
 - 2026-02-01: Docs pipeline now supports Sphinx (Tier 1/2) for ASDL library documentation; Markdown generation remains supported but Sphinx-native rendering is in scope.
 
 - 2026-01-16: ADR-0014 -- GraphIR is the canonical semantic core with stable IDs; GraphIR defines program/module/device/net/instance/endpoint ops and module port_order; IFIR is a projection and NFIR is optional. (Superseded 2026-01-24, ADR-0024)

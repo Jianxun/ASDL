@@ -1,6 +1,10 @@
 schema_version: 1
 
 archive:
+  - T-277: {completed_on: 2026-02-14, owner: Executor, scratchpad: agents/scratchpads/T-277_extension_worker_integration.md, pr: 298}
+  - T-276: {completed_on: 2026-02-14, owner: Executor, scratchpad: agents/scratchpads/T-276_completion_worker_core.md, pr: 297}
+  - T-275: {completed_on: 2026-02-14, owner: Executor, scratchpad: agents/scratchpads/T-275_asdl_language_tools_scaffold.md, pr: 296}
+  - T-274: {completed_on: 2026-02-14, owner: Executor, scratchpad: agents/scratchpads/T-274_sphinx_docs_refactor.md, pr: 294}
   - T-273: {completed_on: 2026-02-05, owner: Executor, scratchpad: agents/scratchpads/T-273_sphinx_project_nav.md, pr: 293}
   - T-272: {completed_on: 2026-02-05, owner: Executor, scratchpad: agents/scratchpads/T-272_sphinx_project_manifest_v1.md, pr: 291}
   - T-268: {completed_on: 2026-02-05, owner: Architect, scratchpad: agents/scratchpads/T-268_symbol_editor_scope.md, pr: 290}

@@ -1,94 +1,153 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-274
-    title: Refactor Sphinx docs modules (domain + render split)
+  - id: T-284
+    title: Fix imported-program top inference to respect entry-file module scope
     owner: Executor
     dod: >
-      Split Sphinx docs responsibilities so sphinx_domain.py only holds the
-      Sphinx domain/directives/app hooks, moving manifest parsing + project
-      page generation into a new module and rendering helpers from
-      sphinx_render.py into a dedicated helper module. Keep public APIs and
-      behavior stable (no doc output changes). Update imports/__all__ and
-      ensure doc tests still pass.
+      Preserve entry-file identity through NetlistIR lowering when `top` is
+      omitted, and resolve implicit top only from modules defined in the entry
+      file. Keep error behavior deterministic when the entry file has zero or
+      multiple modules without an explicit `top`, even if imported modules exist.
+      Add regression tests for import-driven entry builds that have one local
+      module and no explicit `top`.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/docs -v
+      - ./venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/cli/test_netlist.py -v
     links:
-      scratchpad: agents/scratchpads/T-274_sphinx_docs_refactor.md
+      scratchpad: agents/scratchpads/T-284_import_entry_top_resolution.md
+      spec: docs/specs/spec_netlist_emission.md
     files:
-      - src/asdl/docs/sphinx_domain.py
-      - src/asdl/docs/sphinx_render.py
-      - src/asdl/docs/project_manifest.py
-      - src/asdl/docs/render_helpers.py
-      - tests/unit_tests/docs/test_sphinx_render.py
-  - id: T-275
-    title: Scaffold fresh asdl-language-tools extension with net-first syntax grammar
+      - src/asdl/lowering/atomized_graph_to_netlist_ir.py
+      - src/asdl/lowering/__init__.py
+      - src/asdl/emit/netlist/ir_utils.py
+      - src/asdl/emit/netlist/render.py
+      - tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py
+      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
+      - tests/unit_tests/cli/test_netlist.py
+  - id: T-278
+    title: Add structured instance form with canonical `parameters` map
     owner: Executor
     dod: >
-      Create a new standalone extension under `extensions/asdl-language-tools/`
-      (do not depend on legacy extension code), register ASDL language
-      contributions, and implement a net-first grammar/snippet baseline aligned
-      with `docs/specs/spec_asdl_language_tools_extension.md`. Treat ASDL as a
-      fully legal YAML dialect: grammar must inherit YAML lexical/indentation
-      behavior and only layer ASDL-specific scopes without redefining YAML
-      structure rules.
+      Extend AST models/parsing to allow instance entries as either legacy inline
+      strings or structured objects with `ref` and optional `parameters`. Treat
+      `parameters` as canonical and reject `params` alias in structured instances.
+      Preserve source location metadata for structured instance values and keep
+      backward compatibility for existing inline strings.
     verify:
-      - cd extensions/asdl-language-tools && npm run compile
-      - ./venv/bin/python -c "import yaml, pathlib; yaml.safe_load(pathlib.Path('examples/pdks/gf180mcu/asdl/gf180mcu.asdl').read_text())"
+      - ./venv/bin/pytest tests/unit_tests/ast -v
     links:
-      scratchpad: agents/scratchpads/T-275_asdl_language_tools_scaffold.md
-      spec: docs/specs/spec_asdl_language_tools_extension.md
+      scratchpad: agents/scratchpads/T-278_structured_instance_parameters.md
+      adr: agents/adr/ADR-0031-instance-parameter-syntax.md
+      spec: docs/specs/spec_ast.md
     files:
-      - extensions/asdl-language-tools/package.json
-      - extensions/asdl-language-tools/src/extension.ts
-      - extensions/asdl-language-tools/syntaxes/asdl.tmLanguage.json
-      - extensions/asdl-language-tools/snippets/asdl.json
-      - extensions/asdl-language-tools/README.md
-  - id: T-276
-    title: Build Python completion worker reusing ASDL parser/import/config internals
+      - src/asdl/ast/models.py
+      - src/asdl/ast/parser.py
+      - tests/unit_tests/ast/test_models.py
+      - tests/unit_tests/ast/test_parser.py
+  - id: T-279
+    title: Make inline instance parsing quote-aware for whitespace parameter values
     owner: Executor
     depends_on:
-      - T-275
+      - T-278
     dod: >
-      Implement a long-lived Python worker for completion requests (`initialize`,
-      `update_document`, `complete`, `shutdown`) that reuses `src/asdl/ast/*`,
-      `src/asdl/imports/*`, and `.asdlrc` config loading for endpoint, imported
-      symbol, and `param=` completion candidates. Completion context detection
-      must be YAML-structure-aware (mapping/sequence/indentation) and must not
-      assume non-YAML syntax.
+      Replace whitespace-splitting instance token parsing with quote-aware
+      tokenization so inline shorthand supports values containing spaces (for
+      example `cmd='.TRAN 0 10u'`). Ensure lowering and named-pattern handling
+      keep stable behavior for existing syntax while supporting quoted values.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/tools/test_completion_worker.py -v
+      - ./venv/bin/pytest tests/unit_tests/lowering -v
     links:
-      scratchpad: agents/scratchpads/T-276_completion_worker_core.md
-      adr: agents/adr/ADR-0030-asdl-language-tools-extension.md
-      spec: docs/specs/spec_asdl_language_tools_extension.md
+      scratchpad: agents/scratchpads/T-279_inline_instance_quote_tokenization.md
+      adr: agents/adr/ADR-0031-instance-parameter-syntax.md
+      spec: docs/specs/spec_ast.md
     files:
-      - extensions/asdl-language-tools/python/worker.py
+      - src/asdl/lowering/ast_to_patterned_graph_instances.py
+      - src/asdl/ast/named_patterns.py
       - src/asdl/tools/completion/engine.py
-      - src/asdl/tools/completion/context.py
-      - tests/unit_tests/tools/test_completion_worker.py
-      - tests/unit_tests/tools/test_completion_engine.py
-  - id: T-277
-    title: Integrate extension completion provider with Python worker and fallback
+      - tests/unit_tests/lowering/test_ast_to_patterned_graph_instances.py
+  - id: T-280
+    title: Unify docs/completion parsing and add pass-through parameter coverage
     owner: Executor
     depends_on:
-      - T-276
+      - T-279
     dod: >
-      Wire VS Code completion provider in `asdl-language-tools` to the Python
-      worker protocol, support document sync and completion request routing, and
-      implement graceful fallback structural/snippet completion when worker is
-      unavailable. Completion edits must preserve valid YAML structure (keys,
-      list items, indentation) and avoid inserts that violate YAML syntax.
+      Update docs/depgraph/completion helpers to consume the shared dual-form
+      instance parsing behavior and add regression tests/examples covering
+      pass-through command-style parameters with spaces (including structured
+      `parameters` and quoted shorthand forms).
     verify:
-      - cd extensions/asdl-language-tools && npm test
+      - ./venv/bin/pytest tests/unit_tests/docs tests/unit_tests/tools -v
     links:
-      scratchpad: agents/scratchpads/T-277_extension_worker_integration.md
-      spec: docs/specs/spec_asdl_language_tools_extension.md
+      scratchpad: agents/scratchpads/T-280_instance_parameter_docs_completion.md
+      adr: agents/adr/ADR-0031-instance-parameter-syntax.md
+      spec: docs/specs/spec_ast.md
     files:
-      - extensions/asdl-language-tools/src/extension.ts
-      - extensions/asdl-language-tools/src/completion/provider.ts
-      - extensions/asdl-language-tools/src/completion/workerClient.ts
-      - extensions/asdl-language-tools/tests/completion.provider.test.ts
-      - extensions/asdl-language-tools/tests/workerClient.test.ts
+      - src/asdl/docs/depgraph.py
+      - src/asdl/docs/render_helpers.py
+      - src/asdl/docs/markdown.py
+      - tests/unit_tests/docs/test_depgraph.py
+      - tests/unit_tests/tools/test_completion_engine.py
+  - id: T-281
+    title: Propagate module variables through graph models and lowering pipeline
+    owner: Executor
+    depends_on:
+      - T-279
+    dod: >
+      Preserve `module.variables` beyond AST parsing by threading module variable
+      maps through PatternedGraph/AtomizedGraph data models and lowering paths so
+      later substitution stages can consume them deterministically.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/core tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py -v
+    links:
+      scratchpad: agents/scratchpads/T-281_module_variables_pipeline.md
+      adr: agents/adr/ADR-0016-variables.md
+      spec: docs/specs/spec_ast.md
+    files:
+      - src/asdl/core/graph.py
+      - src/asdl/core/atomized_graph.py
+      - src/asdl/core/graph_builder.py
+      - src/asdl/lowering/ast_to_patterned_graph.py
+      - src/asdl/lowering/patterned_graph_to_atomized.py
+  - id: T-282
+    title: Implement module variable substitution with IR-012 and IR-013 diagnostics
+    owner: Executor
+    depends_on:
+      - T-281
+    dod: >
+      Implement `{var}` substitution for module variables in instance parameter
+      values before parameter pattern expansion, including diagnostics for
+      undefined variables (`IR-012`) and recursive variable references (`IR-013`)
+      with source spans where available.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/lowering tests/unit_tests/netlist -v
+    links:
+      scratchpad: agents/scratchpads/T-282_module_variable_substitution.md
+      adr: agents/adr/ADR-0016-variables.md
+      spec: docs/specs/spec_diagnostic_codes.md
+    files:
+      - src/asdl/lowering/patterned_graph_to_atomized_instances.py
+      - src/asdl/lowering/patterned_graph_to_atomized_context.py
+      - src/asdl/emit/netlist/verify.py
+      - tests/unit_tests/lowering/test_patterned_graph_to_atomized.py
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+  - id: T-283
+    title: Add end-to-end coverage for module variables in examples and diagnostics
+    owner: Executor
+    depends_on:
+      - T-282
+    dod: >
+      Add regression coverage proving module variables substitute correctly in
+      emitted netlists and add executable diagnostics cases for `IR-012`/`IR-013`
+      so undefined and recursive module-variable failures are continuously tested.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/e2e/test_pipeline_mvp.py tests/unit_tests/cli/test_netlist.py -v
+    links:
+      scratchpad: agents/scratchpads/T-283_module_variable_e2e.md
+      spec: docs/specs/spec_netlist_emission.md
+    files:
+      - examples/libs/sw_matrix/swmatrix_Tgate/swmatrix_Tgate.asdl
+      - tests/unit_tests/e2e/test_pipeline_mvp.py
+      - tests/unit_tests/cli/test_netlist.py
+      - tests/e2e/diagnostics/manifest.yaml
 
 backlog: []
