@@ -40,7 +40,11 @@ def build_patterned_graph(
 
     module_graphs: Dict[str, str] = {}
     for name, module in (document.modules or {}).items():
-        module_graph = builder.add_module(name, _resolve_file_id(file_id, module))
+        module_graph = builder.add_module(
+            name,
+            _resolve_file_id(file_id, module),
+            variables=module.variables,
+        )
         module_graphs[name] = module_graph.module_id
         _register_span(builder, module_graph.module_id, getattr(module, "_loc", None))
 
@@ -84,7 +88,11 @@ def build_patterned_graph_from_import_graph(
             continue
         module_ids: Dict[str, str] = {}
         for name, module in (document.modules or {}).items():
-            module_graph = builder.add_module(name, str(file_id))
+            module_graph = builder.add_module(
+                name,
+                str(file_id),
+                variables=module.variables,
+            )
             module_ids[name] = module_graph.module_id
             _register_span(builder, module_graph.module_id, getattr(module, "_loc", None))
         module_ids_by_file[file_id] = module_ids

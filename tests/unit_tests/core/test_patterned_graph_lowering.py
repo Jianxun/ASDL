@@ -214,6 +214,25 @@ def test_build_patterned_graph_port_order_appends_default_ports() -> None:
     assert module_graph.port_order == ["A", "B", "CTRL", "VDD"]
 
 
+def test_build_patterned_graph_preserves_module_variables() -> None:
+    module = ModuleDecl.model_construct(
+        variables={"corner": "tt", "temp": 27},
+        instances={},
+        nets={},
+    )
+    document = AsdlDocument.model_construct(
+        modules={"top": module},
+        devices={},
+        top="top",
+    )
+
+    graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert diagnostics == []
+    module_graph = next(iter(graph.modules.values()))
+    assert module_graph.variables == {"corner": "tt", "temp": 27}
+
+
 def test_build_patterned_graph_spliced_default_port_emits_ir003() -> None:
     module = ModuleDecl.model_construct(
         instances={"U1": "nmos"},

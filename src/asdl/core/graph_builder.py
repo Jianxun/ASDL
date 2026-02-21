@@ -75,18 +75,30 @@ class PatternedGraphBuilder:
         self._net_groups: Dict[GraphId, list[GroupSlice]] = {}
         self._annotations: AnnotationIndex = {}
 
-    def add_module(self, name: str, file_id: str) -> ModuleGraph:
+    def add_module(
+        self,
+        name: str,
+        file_id: str,
+        *,
+        variables: Optional[Dict[str, object]] = None,
+    ) -> ModuleGraph:
         """Create a module graph and register it in the program.
 
         Args:
             name: Module name.
             file_id: Source file identifier.
+            variables: Optional variable metadata.
 
         Returns:
             Newly created ModuleGraph instance.
         """
         module_id = self._id_allocator.next("m")
-        module = ModuleGraph(module_id=module_id, name=name, file_id=file_id)
+        module = ModuleGraph(
+            module_id=module_id,
+            name=name,
+            file_id=file_id,
+            variables=variables or None,
+        )
         self._modules[module_id] = module
         return module
 

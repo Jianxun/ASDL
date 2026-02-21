@@ -70,6 +70,7 @@ def build_atomized_graph(
             name=module.name,
             file_id=module.file_id,
             ports=[],
+            variables=module.variables,
             patterned_module_id=module.module_id,
         )
         atomized.modules[module_id] = atomized_module

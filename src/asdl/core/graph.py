@@ -103,6 +103,7 @@ class ModuleGraph:
         name: Module name.
         file_id: Source file identifier.
         ports: Ordered port list (empty list allowed).
+        variables: Optional mapping of variable defaults or metadata.
         nets: Net bundles keyed by net ID.
         instances: Instance bundles keyed by instance ID.
         endpoints: Endpoint bundles keyed by endpoint ID.
@@ -112,6 +113,7 @@ class ModuleGraph:
     name: str
     file_id: str
     ports: list[str] = field(default_factory=list)
+    variables: Optional[Dict[str, object]] = None
     nets: Dict[NetId, NetBundle] = field(default_factory=dict)
     instances: Dict[InstId, InstanceBundle] = field(default_factory=dict)
     endpoints: Dict[EndpointId, EndpointBundle] = field(default_factory=dict)
