@@ -8,9 +8,9 @@ T-278:
   pr: 300
   merged: true
 T-279:
-  status: review_clean
+  status: done
   pr: 302
-  merged: false
+  merged: true
 T-280:
   status: ready
   pr: null
