@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl, parse_string
+from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, InstanceDecl, ModuleDecl, parse_string
 
 
 def test_document_requires_modules_or_devices() -> None:
@@ -71,6 +71,29 @@ def test_device_backend_rejects_params_field() -> None:
 def test_module_instances_require_string_values() -> None:
     with pytest.raises(ValidationError):
         ModuleDecl.model_validate({"instances": {"M1": 123}})
+
+
+def test_module_instances_accept_structured_values() -> None:
+    module = ModuleDecl.model_validate(
+        {
+            "instances": {
+                "M0": "nfet m=2",
+                "X0": {"ref": "code", "parameters": {"cmd": ".TRAN 0 10u"}},
+            }
+        }
+    )
+
+    assert module.instances is not None
+    assert module.instances["M0"] == "nfet m=2"
+    structured = module.instances["X0"]
+    assert isinstance(structured, InstanceDecl)
+    assert structured.ref == "code"
+    assert structured.parameters == {"cmd": ".TRAN 0 10u"}
+
+
+def test_module_instances_reject_structured_params_alias() -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"instances": {"X0": {"ref": "code", "params": {"cmd": "x"}}}})
 
 
 def test_module_rejects_extra_fields() -> None:
