@@ -16,8 +16,8 @@ T-280:
   pr: 303
   merged: true
 T-281:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 304
   merged: false
 T-282:
   status: ready
