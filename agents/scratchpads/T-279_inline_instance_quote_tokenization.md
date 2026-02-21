@@ -33,6 +33,12 @@
 - Named-pattern instance-param rewriting now tokenizes quote-aware and preserves
   whitespace-bearing values by re-quoting updated values when needed.
 - Added tests covering quoted inline values in graph lowering and completion.
+- Follow-up on PR #302 reviewer blocker: strict inline parser rejected empty
+  quoted values (`key=''`, `key=""`) as malformed tokens.
+- Updated strict token validation to allow empty values while still rejecting
+  empty keys, restoring pre-refactor token acceptance behavior.
+- Added regressions covering empty quoted inline values in lowering/completion
+  paths to prevent recurrence.
 
 ## Patch summary
 - Added `src/asdl/ast/instance_expr.py` with:
@@ -47,23 +53,33 @@
 - Added regressions in:
   - `tests/unit_tests/core/test_patterned_graph_lowering.py`
   - `tests/unit_tests/tools/test_completion_engine.py`
+- Follow-up fix:
+  - `src/asdl/ast/instance_expr.py` now treats only missing keys as malformed
+    param tokens in strict mode (`key=` is valid; `=value` is invalid).
+- Added follow-up regression coverage:
+  - `tests/unit_tests/core/test_patterned_graph_lowering.py` verifies quoted
+    empty-value tokens no longer trip `IR-001` parsing failures.
+  - `tests/unit_tests/tools/test_completion_engine.py` verifies completion still
+    resolves params after `cmd=''` and `cmd=""`.
 
 ## PR URL
-- Pending PR creation
+- https://github.com/Jianxun/ASDL/pull/302
 
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/lowering -v` -> passed (4 tests)
-- `./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v` -> passed (15 tests)
-- `./venv/bin/pytest tests/unit_tests/tools/test_completion_engine.py -v` -> passed (3 tests)
+- `./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v` -> passed (16 tests)
+- `./venv/bin/pytest tests/unit_tests/tools/test_completion_engine.py -v` -> passed (4 tests)
 - `./venv/bin/python scripts/lint_tasks_state.py` -> passed
+- `./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -k "quoted_inline_instance_param_values or empty_quoted_inline_instance_param_tokens" -v` -> passed (2 selected)
+- `./venv/bin/pytest tests/unit_tests/tools/test_completion_engine.py -k "quoted_inline_values or empty_quoted_inline_values" -v` -> passed (2 selected)
+- `./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py -v` -> passed (16 tests)
+- `./venv/bin/pytest tests/unit_tests/tools/test_completion_engine.py -v` -> passed (4 tests)
 
 ## Status request
-- In Progress (ready for PR creation and final task-state update)
+- Ready for Review
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-1. Push branch and open PR to `main`.
-2. Update `agents/context/tasks_state.yaml` to `ready_for_review` with PR number.
-3. Run `scripts/lint_tasks_state.py` and push final metadata commit.
+1. Wait for reviewer re-check on PR #302.

@@ -172,3 +172,64 @@ def test_engine_param_completion_with_quoted_inline_values(tmp_path: Path) -> No
     )
     assert any(item.insert_text == "cmd=" for item in param_items)
     assert any(item.insert_text == "mode=" for item in param_items)
+
+
+def test_engine_param_completion_with_empty_quoted_inline_values(tmp_path: Path) -> None:
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+
+    _write(
+        workspace / "lib.asdl",
+        "\n".join(
+            [
+                "devices:",
+                "  code:",
+                "    ports: [P]",
+                "    parameters:",
+                "      cmd: noop",
+                "      mode: transient",
+                "    backends:",
+                "      sim.ngspice:",
+                "        template: \"X{inst} {P} {model} cmd={cmd}\"",
+            ]
+        )
+        + "\n",
+    )
+
+    entry_text = "\n".join(
+        [
+            "imports:",
+            "  lib: ./lib.asdl",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      X1: lib.code cmd='' ",
+            "      X2: lib.code cmd=\"\" ",
+            "    nets:",
+            "      $OUT1:",
+            "        - X1.P",
+            "      $OUT2:",
+            "        - X2.P",
+        ]
+    ) + "\n"
+    entry_file = workspace / "top.asdl"
+    _write(entry_file, entry_text)
+
+    engine = CompletionEngine()
+    engine.update_document(uri=entry_file.as_uri(), version=1, text=entry_text)
+
+    single_quote_items = engine.complete(
+        uri=entry_file.as_uri(),
+        line=5,
+        character=len("      X1: lib.code cmd='' "),
+    )
+    assert any(item.insert_text == "cmd=" for item in single_quote_items)
+    assert any(item.insert_text == "mode=" for item in single_quote_items)
+
+    double_quote_items = engine.complete(
+        uri=entry_file.as_uri(),
+        line=6,
+        character=len("      X2: lib.code cmd=\"\" "),
+    )
+    assert any(item.insert_text == "cmd=" for item in double_quote_items)
+    assert any(item.insert_text == "mode=" for item in double_quote_items)

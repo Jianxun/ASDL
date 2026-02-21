@@ -57,7 +57,7 @@ def parse_inline_instance_expr(
                 )
             continue
         key, value = token.split("=", 1)
-        if not key or not value:
+        if not key:
             if strict_params:
                 return None, OrderedDict(), (
                     f"Invalid instance param token '{token}'; expected key=value"
@@ -72,4 +72,3 @@ def format_inline_param_token(key: str, value: str) -> str:
     if any(ch.isspace() for ch in value):
         return f"{key}={shlex.quote(value)}"
     return f"{key}={value}"
-

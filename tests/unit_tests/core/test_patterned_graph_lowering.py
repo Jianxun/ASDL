@@ -613,3 +613,36 @@ def test_build_patterned_graph_named_patterns_are_stable_inside_quoted_instance_
     assert exprs is not None
     cmd_expr_id = inst.param_expr_ids["cmd"]
     assert exprs[cmd_expr_id].raw == "echo <@step> done"
+
+
+def test_build_patterned_graph_accepts_empty_quoted_inline_instance_param_tokens() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={
+                    "XEMPTY_SINGLE": "code cmd=''",
+                    "XEMPTY_DOUBLE": 'code cmd=""',
+                },
+                nets={
+                    "$OUTA": ["XEMPTY_SINGLE.P"],
+                    "$OUTB": ["XEMPTY_DOUBLE.P"],
+                },
+            )
+        },
+        devices={
+            "code": DeviceDecl(
+                ports=["P"],
+                parameters={"cmd": ""},
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="X")},
+            )
+        },
+        top="top",
+    )
+
+    graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    # Empty values remain invalid pattern expressions (IR-003), but the
+    # token parser must not reject `key=''`/`key=""` as malformed tokens (IR-001).
+    assert not any(diag.code == "IR-001" for diag in diagnostics)
+    assert any(diag.code == "IR-003" for diag in diagnostics)
