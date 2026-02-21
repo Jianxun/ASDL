@@ -233,3 +233,56 @@ def test_engine_param_completion_with_empty_quoted_inline_values(tmp_path: Path)
     )
     assert any(item.insert_text == "cmd=" for item in double_quote_items)
     assert any(item.insert_text == "mode=" for item in double_quote_items)
+
+
+def test_engine_completion_with_structured_instance_parameters(tmp_path: Path) -> None:
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+
+    _write(
+        workspace / "lib.asdl",
+        "\n".join(
+            [
+                "devices:",
+                "  code:",
+                "    ports: [P]",
+                "    parameters:",
+                "      cmd: noop",
+                "      mode: transient",
+                "    backends:",
+                "      sim.ngspice:",
+                "        template: \"X{inst} {P} {model} cmd={cmd}\"",
+            ]
+        )
+        + "\n",
+    )
+
+    entry_text = "\n".join(
+        [
+            "imports:",
+            "  lib: ./lib.asdl",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      X1:",
+            "        ref: lib.code",
+            "        parameters:",
+            "          cmd: \".TRAN 0 10u\"",
+            "          mode: transient",
+            "    nets:",
+            "      $OUT:",
+            "        - X1.P",
+        ]
+    ) + "\n"
+    entry_file = workspace / "top.asdl"
+    _write(entry_file, entry_text)
+
+    engine = CompletionEngine()
+    engine.update_document(uri=entry_file.as_uri(), version=1, text=entry_text)
+
+    endpoint_items = engine.complete(
+        uri=entry_file.as_uri(),
+        line=12,
+        character=len("        - X1."),
+    )
+    assert any(item.insert_text == "X1.P" for item in endpoint_items)

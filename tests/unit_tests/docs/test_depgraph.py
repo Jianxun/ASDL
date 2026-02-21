@@ -96,3 +96,46 @@ def test_depgraph_build_and_edges(tmp_path: Path) -> None:
     unresolved = {item["instance_id"]: item for item in payload["unresolved"]}
     assert unresolved[f"{top_id}:u_device"]["reason"] == UNRESOLVED_DEVICE_REFERENCE
     assert unresolved[f"{top_id}:u_missing"]["reason"] == UNRESOLVED_UNKNOWN_SYMBOL
+
+
+def test_depgraph_accepts_inline_quoted_and_structured_instances(tmp_path: Path) -> None:
+    entry_path = tmp_path / "entry.asdl"
+    entry_path.write_text(
+        "top: top\n"
+        "modules:\n"
+        "  child: {}\n"
+        "  top:\n"
+        "    instances:\n"
+        "      x_inline: \"child cmd='.TRAN 0 10u' mode=tran\"\n"
+        "      x_struct:\n"
+        "        ref: child\n"
+        "        parameters:\n"
+        "          cmd: \".TRAN 0 10u\"\n"
+        "          mode: tran\n"
+        "devices:\n"
+        "  code:\n"
+        "    ports: [P]\n"
+        "    backends:\n"
+        "      sim.ngspice:\n"
+        "        template: \"X {ports}\"\n",
+        encoding="utf-8",
+    )
+
+    graph, diagnostics = build_dependency_graph([entry_path])
+    assert diagnostics == []
+    assert graph is not None
+
+    payload = dependency_graph_to_jsonable(graph)
+    entry_id = str(entry_path.absolute())
+    top_id = _module_id("top", entry_id)
+    child_id = _module_id("child", entry_id)
+
+    instances_by_id = {inst["instance_id"]: inst for inst in payload["instances"]}
+    assert instances_by_id[f"{top_id}:x_inline"]["ref"] == "child"
+    assert instances_by_id[f"{top_id}:x_struct"]["ref"] == "child"
+
+    edge_targets = {
+        edge["instance_id"]: edge["to_module_id"] for edge in payload["edges"]
+    }
+    assert edge_targets[f"{top_id}:x_inline"] == child_id
+    assert edge_targets[f"{top_id}:x_struct"] == child_id
