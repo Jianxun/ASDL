@@ -31,6 +31,27 @@ def _write_backend_config(tmp_path: Path) -> Path:
     return config_path
 
 
+def _write_lvs_backend_config(tmp_path: Path) -> Path:
+    config_path = tmp_path / "backends_lvs.yaml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "lvs.klayout:",
+                '  extension: ".spice"',
+                '  comment_prefix: "*"',
+                "  templates:",
+                '    __subckt_header__: ".subckt {name} {ports}"',
+                '    __subckt_footer__: ".ends {name}"',
+                '    __subckt_call__: "X{name} {ports} {ref}"',
+                '    __netlist_header__: ""',
+                '    __netlist_footer__: ".end"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return config_path
+
+
 @pytest.fixture()
 def backend_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     config_path = _write_backend_config(tmp_path)
@@ -130,6 +151,34 @@ def _missing_conn_yaml() -> str:
             "    backends:",
             "      sim.ngspice:",
             "        template: \"{name} {ports}\"",
+        ]
+    )
+
+
+def _module_variable_pipeline_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    variables:",
+            "      suffix: k",
+            "      r_value: 2{suffix}",
+            "    instances:",
+            "      R1: res r={r_value}",
+            "    nets:",
+            "      $IN:",
+            "        - R1.P",
+            "      $OUT:",
+            "        - R1.N",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    parameters:",
+            "      r: 1k",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports} {params}\"",
         ]
     )
 
@@ -261,6 +310,64 @@ def test_pipeline_atomizes_patterns_before_emission() -> None:
         for inst in instances
     }
     assert conns == {"UP": [("P", "OUTP")], "UN": [("P", "OUTN")]}
+
+
+def test_pipeline_substitutes_module_variables_in_emitted_netlist(
+    backend_config: Path,
+) -> None:
+    document, diagnostics = parse_string(_module_variable_pipeline_yaml())
+
+    assert diagnostics == []
+    assert document is not None
+
+    design, pipeline_diags = run_netlist_ir_pipeline(document)
+    assert pipeline_diags == []
+    assert design is not None
+
+    netlist, emit_diags = emit_netlist(design)
+    assert emit_diags == []
+    assert netlist is not None
+
+    lines = netlist.splitlines()
+    assert lines[0] == "R1 IN OUT r=2k"
+    assert lines[1] == ".end"
+
+
+def test_pipeline_example_swmatrix_substitutes_module_variables_in_emit(
+    tmp_path: Path,
+) -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    entry_file = (
+        repo_root
+        / "examples"
+        / "libs"
+        / "sw_matrix"
+        / "swmatrix_Tgate"
+        / "swmatrix_Tgate.asdl"
+    )
+    pdk_lib_root = repo_root / "examples" / "pdks" / "gf180mcu" / "asdl"
+
+    assert entry_file.exists()
+    assert pdk_lib_root.exists()
+
+    design, pipeline_diags = run_netlist_ir_pipeline(
+        entry_file=entry_file,
+        lib_roots=[pdk_lib_root],
+    )
+    assert pipeline_diags == []
+    assert design is not None
+
+    backend_config_path = _write_lvs_backend_config(tmp_path)
+    netlist, emit_diags = emit_netlist(
+        design,
+        backend_name="lvs.klayout",
+        backend_config_path=backend_config_path,
+    )
+    assert emit_diags == []
+    assert netlist is not None
+
+    assert "Mmn T1 gated_control T2 VSSd nfet_03v3 L=0.28u W=1*6*8u" in netlist
+    assert "Mmp T1 gated_controlb T2 VDDd pfet_03v3 L=0.28u W=3*6*8u" in netlist
 
 
 def test_pipeline_import_graph_success(
