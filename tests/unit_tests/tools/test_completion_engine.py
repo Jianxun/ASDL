@@ -122,3 +122,53 @@ def test_engine_uses_updated_document_text_for_context(tmp_path: Path) -> None:
         character=len("      M1: dev "),
     )
     assert isinstance(items, list)
+
+
+def test_engine_param_completion_with_quoted_inline_values(tmp_path: Path) -> None:
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+
+    _write(
+        workspace / "lib.asdl",
+        "\n".join(
+            [
+                "devices:",
+                "  code:",
+                "    ports: [P]",
+                "    parameters:",
+                "      cmd: noop",
+                "      mode: transient",
+                "    backends:",
+                "      sim.ngspice:",
+                "        template: \"X{inst} {P} {model} cmd={cmd}\"",
+            ]
+        )
+        + "\n",
+    )
+
+    entry_text = "\n".join(
+        [
+            "imports:",
+            "  lib: ./lib.asdl",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      X1: lib.code cmd='.TRAN 0 10u' ",
+            "    nets:",
+            "      $OUT:",
+            "        - X1.P",
+        ]
+    ) + "\n"
+    entry_file = workspace / "top.asdl"
+    _write(entry_file, entry_text)
+
+    engine = CompletionEngine()
+    engine.update_document(uri=entry_file.as_uri(), version=1, text=entry_text)
+
+    param_items = engine.complete(
+        uri=entry_file.as_uri(),
+        line=5,
+        character=len("      X1: lib.code cmd='.TRAN 0 10u' "),
+    )
+    assert any(item.insert_text == "cmd=" for item in param_items)
+    assert any(item.insert_text == "mode=" for item in param_items)

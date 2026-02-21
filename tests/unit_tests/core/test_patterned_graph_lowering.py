@@ -550,3 +550,66 @@ def test_build_patterned_graph_missing_qualified_symbol_emits_ir010(
     _, diagnostics = build_patterned_graph_from_import_graph(import_graph)
 
     assert any(diag.code == "IR-010" for diag in diagnostics)
+
+
+def test_build_patterned_graph_parses_quoted_inline_instance_param_values() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"XCODE": "code cmd='.TRAN 0 10u'"},
+                nets={"$OUT": ["XCODE.P"]},
+            )
+        },
+        devices={
+            "code": DeviceDecl(
+                ports=["P"],
+                parameters={"cmd": ""},
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="X")},
+            )
+        },
+        top="top",
+    )
+
+    graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert diagnostics == []
+    module_graph = next(iter(graph.modules.values()))
+    inst = next(iter(module_graph.instances.values()))
+    assert inst.param_expr_ids is not None
+    exprs = graph.registries.pattern_expressions
+    assert exprs is not None
+    cmd_expr_id = inst.param_expr_ids["cmd"]
+    assert exprs[cmd_expr_id].raw == ".TRAN 0 10u"
+
+
+def test_build_patterned_graph_named_patterns_are_stable_inside_quoted_instance_values() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                patterns={"step": PatternDecl(expr="<A|B>")},
+                instances={"XCODE": "code cmd='echo <@step> done'"},
+                nets={"$OUT": ["XCODE.P"]},
+            )
+        },
+        devices={
+            "code": DeviceDecl(
+                ports=["P"],
+                parameters={"cmd": ""},
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="X")},
+            )
+        },
+        top="top",
+    )
+
+    graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert diagnostics == []
+    module_graph = next(iter(graph.modules.values()))
+    inst = next(iter(module_graph.instances.values()))
+    assert inst.param_expr_ids is not None
+    exprs = graph.registries.pattern_expressions
+    assert exprs is not None
+    cmd_expr_id = inst.param_expr_ids["cmd"]
+    assert exprs[cmd_expr_id].raw == "echo <@step> done"
