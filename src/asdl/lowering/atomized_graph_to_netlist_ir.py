@@ -91,12 +91,14 @@ def build_netlist_ir_design(
     program: AtomizedProgramGraph,
     *,
     top_module_id: Optional[str] = None,
+    entry_file_id: Optional[str] = None,
 ) -> NetlistDesign:
     """Lower an AtomizedGraph program into a NetlistIR design.
 
     Args:
         program: Atomized program graph to lower.
         top_module_id: Optional module ID to use as the design top.
+        entry_file_id: Optional entry file ID used for implicit top inference.
 
     Returns:
         NetlistIR design for the atomized program.
@@ -104,6 +106,14 @@ def build_netlist_ir_design(
     top_module = None
     if top_module_id is not None:
         top_module = program.modules.get(top_module_id)
+    elif entry_file_id is not None:
+        entry_modules = [
+            module
+            for module in program.modules.values()
+            if module.file_id == entry_file_id
+        ]
+        if len(entry_modules) == 1:
+            top_module = entry_modules[0]
     elif len(program.modules) == 1:
         top_module = next(iter(program.modules.values()))
 
@@ -116,11 +126,15 @@ def build_netlist_ir_design(
         for device in program.devices.values()
     ]
 
+    resolved_entry_file_id = entry_file_id
+    if resolved_entry_file_id is None and top_module is not None:
+        resolved_entry_file_id = top_module.file_id
+
     return NetlistDesign(
         modules=modules,
         devices=devices,
         top=top_module.name if top_module is not None else None,
-        entry_file_id=top_module.file_id if top_module is not None else None,
+        entry_file_id=resolved_entry_file_id,
     )
 
 

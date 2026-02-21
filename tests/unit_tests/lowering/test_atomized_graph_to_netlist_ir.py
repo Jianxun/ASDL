@@ -241,3 +241,24 @@ def test_build_netlist_ir_design_preserves_origin_on_kind_mismatch() -> None:
     assert origin.expression_id == "expr_net"
     assert origin.base_name == "V"
     assert origin.pattern_parts == ["IN"]
+
+
+def test_build_netlist_ir_design_infers_top_from_entry_file_scope() -> None:
+    program = AtomizedProgramGraph()
+    program.modules["m_entry"] = AtomizedModuleGraph(
+        module_id="m_entry",
+        name="entry_top",
+        file_id="entry.asdl",
+        ports=[],
+    )
+    program.modules["m_import"] = AtomizedModuleGraph(
+        module_id="m_import",
+        name="lib_leaf",
+        file_id="lib.asdl",
+        ports=[],
+    )
+
+    design = build_netlist_ir_design(program, entry_file_id="entry.asdl")
+
+    assert design.top == "entry_top"
+    assert design.entry_file_id == "entry.asdl"

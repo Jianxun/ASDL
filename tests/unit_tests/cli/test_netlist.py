@@ -58,6 +58,37 @@ def _write_import_entry(path: Path, import_path: str) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def _write_import_entry_without_top(path: Path, import_path: str) -> None:
+    lines = [
+        "imports:",
+        f"  lib: {import_path}",
+        "modules:",
+        "  top:",
+        "    instances:",
+        "      U1: lib.leaf",
+        "    nets:",
+        "      $IN:",
+        "        - U1.IN",
+        "      $OUT:",
+        "        - U1.OUT",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_import_entry_without_top_and_modules(path: Path, import_path: str) -> None:
+    lines = [
+        "imports:",
+        f"  lib: {import_path}",
+        "devices:",
+        "  cap:",
+        "    ports: [P, N]",
+        "    backends:",
+        "      sim.ngspice:",
+        "        template: \"C{name} {ports}\"",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def _write_import_library(path: Path) -> None:
     lines = [
         "top: leaf",
@@ -214,6 +245,56 @@ def test_cli_netlist_imports_with_env_fallback(
     output_path = tmp_path / "entry.spice"
     assert output_path.exists()
     assert output_path.read_text(encoding="utf-8") == _expected_netlist(False)
+
+
+def test_cli_netlist_imports_without_top_uses_entry_module(
+    tmp_path: Path,
+    backend_config: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    lib_root = tmp_path / "lib"
+    lib_root.mkdir()
+    lib_file = lib_root / "lib.asdl"
+    _write_import_library(lib_file)
+    entry_file = tmp_path / "entry.asdl"
+    _write_import_entry_without_top(entry_file, "lib.asdl")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["netlist", str(entry_file), "--lib", str(lib_root)],
+    )
+
+    assert result.exit_code == 0
+    output_path = tmp_path / "entry.spice"
+    assert output_path.exists()
+    assert output_path.read_text(encoding="utf-8") == _expected_netlist(False)
+
+
+def test_cli_netlist_imports_without_top_and_without_entry_modules_errors(
+    tmp_path: Path,
+    backend_config: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    lib_root = tmp_path / "lib"
+    lib_root.mkdir()
+    lib_file = lib_root / "lib.asdl"
+    _write_import_library(lib_file)
+    entry_file = tmp_path / "entry.asdl"
+    _write_import_entry_without_top_and_modules(entry_file, "lib.asdl")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["netlist", str(entry_file), "--lib", str(lib_root)],
+    )
+
+    assert result.exit_code == 1
+    stderr = getattr(result, "stderr", "")
+    combined = f"{result.output}{stderr}"
+    assert "EMIT-001" in combined
 
 
 def test_cli_netlist_missing_input_file(tmp_path: Path) -> None:
