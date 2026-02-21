@@ -15,6 +15,7 @@ from .patterned_graph_to_atomized_context import (
     ModuleAtomizationContext,
     _diagnostic,
     _entity_span,
+    _substitute_module_variables,
 )
 from .patterned_graph_to_atomized_patterns import (
     _expand_pattern_atoms,
@@ -128,6 +129,7 @@ def _expand_port_order(
 
 def _expand_instance_params(
     inst_bundle: InstanceBundle,
+    context: ModuleAtomizationContext,
     expr_registry: PatternExpressionRegistry,
     inst_atoms: list[str],
     *,
@@ -139,6 +141,7 @@ def _expand_instance_params(
 
     Args:
         inst_bundle: Patterned instance bundle.
+        context: Shared per-module atomization context.
         expr_registry: Pattern expression registry.
         inst_atoms: Expanded instance names.
         diagnostics: Diagnostic collection to append to.
@@ -162,6 +165,32 @@ def _expand_instance_params(
             diagnostics=diagnostics,
         )
         if param_expr is None:
+            had_error = True
+            continue
+        substituted_param = _substitute_module_variables(
+            context,
+            param_expr.raw,
+            param_name=param_name,
+            param_span=fallback_span or param_expr.span,
+        )
+        if substituted_param is None:
+            had_error = True
+            continue
+        param_expr, errors = parse_pattern_expr(
+            substituted_param,
+            span=fallback_span or param_expr.span,
+        )
+        if param_expr is None or errors:
+            diagnostics.extend(
+                _pattern_error_diagnostics(
+                    errors
+                    or [PatternError("Failed to parse substituted instance parameter.")],
+                    context=(
+                        f"instance param '{param_name}' in module '{module_name}'"
+                    ),
+                    fallback_span=fallback_span,
+                )
+            )
             had_error = True
             continue
         param_atoms = _expand_pattern(
@@ -240,6 +269,7 @@ def atomize_instances(context: ModuleAtomizationContext) -> None:
 
         param_values = _expand_instance_params(
             inst_bundle,
+            context,
             expr_registry,
             inst_atom_names,
             diagnostics=diagnostics,
