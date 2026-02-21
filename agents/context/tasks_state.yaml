@@ -20,7 +20,7 @@ T-281:
   pr: 304
   merged: true
 T-282:
-  status: ready_for_review
+  status: review_clean
   pr: 305
   merged: false
 T-283:
