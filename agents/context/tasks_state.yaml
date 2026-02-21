@@ -12,7 +12,7 @@ T-279:
   pr: 302
   merged: true
 T-280:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-281:
