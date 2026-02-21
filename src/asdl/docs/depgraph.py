@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 from asdl.ast import AsdlDocument
+from asdl.ast.instance_expr import parse_instance_value
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.imports import ImportGraph, NameEnv, ProgramDB, resolve_import_graph
 
@@ -387,21 +388,19 @@ def _build_instances(
     return instances, edges, unresolved
 
 
-def _parse_instance_expr(expr: str) -> tuple[str, str]:
-    """Split an instance expression into a reference and parameter string.
+def _parse_instance_expr(expr: object) -> tuple[str, str]:
+    """Split an instance value into a reference and parameter string.
 
     Args:
-        expr: Raw instance expression string.
+        expr: Raw instance value from the AST.
 
     Returns:
         Tuple of (ref, params).
     """
-    tokens = expr.split()
-    if not tokens:
+    ref, _params, error = parse_instance_value(expr, strict_params=False)
+    if error is not None or ref is None:
         return "", ""
-    ref = tokens[0]
-    params = " ".join(tokens[1:])
-    return ref, params
+    return ref, ""
 
 
 def _resolve_module_ref(

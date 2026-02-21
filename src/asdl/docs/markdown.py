@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 from asdl.ast.models import AsdlDocument, ModuleDecl, PatternDecl
+from asdl.ast.instance_expr import format_instance_params, parse_instance_value
 from asdl.ast.parser import parse_file
 from asdl.diagnostics.renderers import render_text
 
@@ -480,13 +481,11 @@ def _docstring_text(docstrings: DocstringIndex, path: DocPath) -> Optional[str]:
     return text or None
 
 
-def _parse_instance_expr(expr: str) -> tuple[str, str]:
-    tokens = expr.split()
-    if not tokens:
+def _parse_instance_expr(expr: object) -> tuple[str, str]:
+    ref, params, error = parse_instance_value(expr, strict_params=False)
+    if error is not None or ref is None:
         return "", ""
-    ref = tokens[0]
-    params = " ".join(tokens[1:])
-    return ref, params
+    return ref, format_instance_params(params)
 
 
 def _stringify_value(value: object) -> str:
