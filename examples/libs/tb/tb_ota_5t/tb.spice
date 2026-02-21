@@ -3,17 +3,16 @@
 Xota in out out vbn vdd vss ota_nmos
 V_vsrc_vdd vdd vss DC 3.3
 V_vsrc_vss vss 0 DC 0
-V_vsrc_in in vss DC 1.5
+V_vsrc_in in vss DC 1.5 AC 1 0
 I_isrc_bias vdd vbn DC 100e-6
 * GF180MCU Model Card:
 .include /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/xyce/design.xyce
 .lib /Users/jianxunzhu/Documents/GitHub/osic-suite/ASDL/examples/pdks/gf180mcu/xyce/sm141064.xyce typical
-.DC V_vsrc_in 0 2.5 0.01
+.AC DEC 100 1 1e9
 
-*.PRINT DC I(xota:xmn_in_n)
-*.PRINT DC FORMAT=CSV V(in) V(out) I(v_vsrc_vdd)
-*.PRINT DC FORMAT=CSV ID(xota:xmn_diode:M0)
-.PRINT DC FORMAT=CSV V(*)
+.PRINT AC FORMAT=RAW V(*)
+
+*.PRINT DC 'I(*)'
 
 * ===============================================
 * ota_nmos

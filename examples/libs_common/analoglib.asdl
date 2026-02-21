@@ -12,7 +12,23 @@ devices:
         template: '{name} ({ports}) DC {dc}'
       lvs.klayout:
         template: ''
-  
+
+  vac:
+    ports: [p, n]
+    parameters:
+      dc: 0
+      ac_mag: 1
+      ac_phase: 0
+    backends:
+      sim.ngspice:
+        template: 'V_{name} {ports} DC {dc} AC {ac_mag} {ac_phase}'
+      sim.xyce:
+        template: 'V_{name} {ports} DC {dc} AC {ac_mag} {ac_phase}'
+      sim.spectre:
+        template: '{name} ({ports}) DC {dc} AC {ac_mag} {ac_phase}'
+      lvs.klayout:
+        template: ''  
+
   vsin:
     ports: [p, n]
     parameters:

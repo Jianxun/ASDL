@@ -1,0 +1,22 @@
+version: 2
+datasets:
+  - id: dataset-1
+    path: ./tb.spice.from_raw.csv
+active_dataset: dataset-1
+active_plot: plot-1
+plots:
+  - id: plot-1
+    name: Plot 1
+    x:
+      dataset: dataset-1
+      signal: sweep
+    y:
+      - id: lane-1
+        signals:
+          trace-1:
+            dataset: dataset-1
+            signal: V(OUT)
+          trace-2:
+            dataset: dataset-1
+            signal: V(IN)
+        label: Voltage (V)
