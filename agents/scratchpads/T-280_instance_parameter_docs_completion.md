@@ -36,20 +36,28 @@
 - `./venv/bin/pytest tests/unit_tests/docs tests/unit_tests/tools -v`
 
 ## Patch summary
-- Pending
+- Added `parse_instance_value` + `format_instance_params` in `src/asdl/ast/instance_expr.py`
+  to normalize inline shorthand and structured `InstanceDecl` forms.
+- Updated docs helpers (`depgraph`, `markdown`, and Sphinx `render_helpers`) to use
+  shared parsing and quote-aware parameter formatting.
+- Updated completion engine instance parsing to support both string and structured
+  instance entries when resolving refs for endpoint/parameter suggestions.
+- Added regression tests for:
+  - depgraph handling of quoted inline and structured forms
+  - markdown rendering parity across both forms
+  - completion endpoint suggestions for structured instance declarations
 
 ## PR URL
-- Pending
+- https://github.com/Jianxun/ASDL/pull/303
 
 ## Verification
-- Pending
+- `./venv/bin/pytest tests/unit_tests/docs tests/unit_tests/tools -v` (passed; 32 tests)
 
 ## Status request
-- In Progress
+- Done
 
 ## Blockers / Questions
 - None
 
 ## Next steps
-- Commit implementation and test changes.
-- Push branch and open PR.
+- Await reviewer feedback on PR #303.
