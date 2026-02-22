@@ -8,8 +8,8 @@ T-288:
   pr: 311
   merged: true
 T-289:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 312
   merged: false
 T-290:
   status: ready
