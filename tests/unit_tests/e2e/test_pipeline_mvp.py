@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from asdl.ast import parse_string
+from asdl.ast import AsdlDocument, DeviceBackendDecl, DeviceDecl, ModuleDecl, parse_string
 from asdl.diagnostics import Severity
 from asdl.emit.netlist import emit_netlist
 from asdl.lowering import run_netlist_ir_pipeline
@@ -130,6 +130,32 @@ def _invalid_instance_yaml() -> str:
             "    backends:",
             "      sim.ngspice:",
             "        template: \"{name} {ports}\"",
+        ]
+    )
+
+
+def _structured_instance_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      R1:",
+            "        ref: res",
+            "        parameters:",
+            "          r: 2k",
+            "    nets:",
+            "      N1:",
+            "        - R1.P",
+            "devices:",
+            "  res:",
+            "    ports: [P]",
+            "    parameters:",
+            "      r: 1k",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports} {params}\"",
         ]
     )
 
@@ -331,6 +357,54 @@ def test_pipeline_substitutes_module_variables_in_emitted_netlist(
     lines = netlist.splitlines()
     assert lines[0] == "R1 IN OUT r=2k"
     assert lines[1] == ".end"
+
+
+def test_pipeline_accepts_structured_instance_declarations(
+    backend_config: Path,
+) -> None:
+    document, diagnostics = parse_string(_structured_instance_yaml())
+
+    assert diagnostics == []
+    assert document is not None
+
+    design, pipeline_diags = run_netlist_ir_pipeline(document)
+    assert pipeline_diags == []
+    assert design is not None
+
+    netlist, emit_diags = emit_netlist(design)
+    assert emit_diags == []
+    assert netlist is not None
+
+    lines = netlist.splitlines()
+    assert lines[0] == "R1 N1 r=2k"
+    assert lines[1] == ".end"
+
+
+def test_pipeline_malformed_structured_instance_emits_diagnostic_not_exception() -> None:
+    document = AsdlDocument.model_construct(
+        modules={
+            "top": ModuleDecl.model_construct(
+                instances={
+                    "R1": {"parameters": {"r": "2k"}},
+                },
+                nets={"N1": ["R1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                parameters={"r": "1k"},
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="R")},
+            )
+        },
+        top="top",
+    )
+
+    design, pipeline_diags = run_netlist_ir_pipeline(document)
+
+    assert design is None
+    assert any(diag.code == "IR-001" for diag in pipeline_diags)
 
 
 def test_pipeline_example_swmatrix_substitutes_module_variables_in_emit(

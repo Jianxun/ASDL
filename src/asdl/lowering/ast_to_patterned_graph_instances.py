@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Mapping, Optional, Set, Tuple
 
 from asdl.ast import ModuleDecl
-from asdl.ast.instance_expr import parse_inline_instance_expr
+from asdl.ast.instance_expr import parse_instance_value
 from asdl.ast.location import Locatable
 from asdl.core.graph_builder import PatternedGraphBuilder
 from asdl.core.registries import PatternExprKind
@@ -143,16 +143,16 @@ def _lower_instances(
     return instance_refs
 
 
-def _parse_instance_expr(expr: str) -> Tuple[Optional[str], Dict[str, str], Optional[str]]:
+def _parse_instance_expr(expr: object) -> Tuple[Optional[str], Dict[str, str], Optional[str]]:
     """Parse instance expressions into a reference and params.
 
     Args:
-        expr: Instance expression string.
+        expr: Instance expression value (inline string or structured object).
 
     Returns:
         Tuple of (reference, params, error message).
     """
-    ref, parsed_params, error = parse_inline_instance_expr(expr, strict_params=True)
+    ref, parsed_params, error = parse_instance_value(expr, strict_params=True)
     if error is not None:
         return None, {}, error
     params: Dict[str, str] = dict(parsed_params)

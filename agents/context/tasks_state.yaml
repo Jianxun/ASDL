@@ -1,8 +1,8 @@
 schema_version: 2
 T-285:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 307
+  merged: true
 T-286:
   status: ready
   pr: null

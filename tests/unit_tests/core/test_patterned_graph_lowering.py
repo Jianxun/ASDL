@@ -6,6 +6,7 @@ from asdl.ast import (
     AsdlDocument,
     DeviceBackendDecl,
     DeviceDecl,
+    InstanceDecl,
     InstanceDefaultsDecl,
     ModuleDecl,
     PatternDecl,
@@ -665,3 +666,40 @@ def test_build_patterned_graph_accepts_empty_quoted_inline_instance_param_tokens
     # token parser must not reject `key=''`/`key=""` as malformed tokens (IR-001).
     assert not any(diag.code == "IR-001" for diag in diagnostics)
     assert any(diag.code == "IR-003" for diag in diagnostics)
+
+
+def test_build_patterned_graph_accepts_structured_instance_declaration() -> None:
+    document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={
+                    "R1": InstanceDecl(
+                        ref="res",
+                        parameters={"r": "2k", "enabled": True},
+                    )
+                },
+                nets={"$OUT": ["R1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                parameters={"r": "1k", "enabled": False},
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="R")},
+            )
+        },
+        top="top",
+    )
+
+    graph, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert diagnostics == []
+    module_graph = next(iter(graph.modules.values()))
+    inst = next(iter(module_graph.instances.values()))
+    assert inst.ref_raw == "res"
+    assert inst.param_expr_ids is not None
+    exprs = graph.registries.pattern_expressions
+    assert exprs is not None
+    assert exprs[inst.param_expr_ids["r"]].raw == "2k"
+    assert exprs[inst.param_expr_ids["enabled"]].raw == "true"
