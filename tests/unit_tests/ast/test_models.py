@@ -25,6 +25,12 @@ def test_document_allows_imports() -> None:
     assert document.imports == {"gf": "lib.asdl"}
 
 
+@pytest.mark.parametrize("name", ["@view", "cell@", "cell@view@extra"])
+def test_document_rejects_malformed_module_symbol_names(name: str) -> None:
+    with pytest.raises(ValidationError):
+        AsdlDocument.model_validate({"modules": {name: {}}})
+
+
 def test_document_rejects_non_string_import_paths() -> None:
     with pytest.raises(ValidationError):
         AsdlDocument.model_validate({"imports": {"gf": 123}, "modules": {"top": {}}})
@@ -94,6 +100,18 @@ def test_module_instances_accept_structured_values() -> None:
 def test_module_instances_reject_structured_params_alias() -> None:
     with pytest.raises(ValidationError):
         ModuleDecl.model_validate({"instances": {"X0": {"ref": "code", "params": {"cmd": "x"}}}})
+
+
+@pytest.mark.parametrize("ref", ["@view", "cell@", "cell@view@extra"])
+def test_module_instances_reject_malformed_structured_refs(ref: str) -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"instances": {"X0": {"ref": ref}}})
+
+
+@pytest.mark.parametrize("expr", ["@view m=1", "cell@ m=1", "cell@view@extra m=1"])
+def test_module_instances_reject_malformed_inline_refs(expr: str) -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"instances": {"X0": expr}})
 
 
 def test_module_rejects_extra_fields() -> None:

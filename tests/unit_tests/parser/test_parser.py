@@ -276,6 +276,74 @@ def test_parse_string_rejects_invalid_pattern_group() -> None:
     assert "group token" in diag.message
 
 
+def test_parse_string_rejects_malformed_decorated_module_symbol() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  \"@view\":",
+            "    nets:",
+            "      $OUT:",
+            "        - I1.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert "module symbol" in diag.message
+    assert "cell token" in diag.message
+
+
+def test_parse_string_rejects_structured_instance_ref_with_bad_decorated_symbol() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      X1:",
+            "        ref: cell@",
+            "    nets:",
+            "      $OUT:",
+            "        - X1.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert "module symbol" in diag.message
+    assert "view token" in diag.message
+
+
+def test_parse_string_rejects_inline_instance_ref_with_extra_at_symbols() -> None:
+    yaml_content = "\n".join(
+        [
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      X1: cell@view@extra m=2",
+            "    nets:",
+            "      $OUT:",
+            "        - X1.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert "module symbol" in diag.message
+    assert "@' separator" in diag.message
+
+
 def test_parse_string_rejects_instance_defaults_missing_bindings() -> None:
     yaml_content = "\n".join(
         [
