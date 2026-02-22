@@ -247,11 +247,12 @@ class ModuleDecl(AstBaseModel):
             return value
         for instance in value.values():
             if isinstance(instance, str):
-                ref = instance.split(maxsplit=1)[0]
-                if not ref:
+                tokens = instance.split(maxsplit=1)
+                if not tokens:
                     raise ValueError(
                         "Instance expressions must start with an instance reference token."
                     )
+                ref = tokens[0]
                 _validate_module_symbol(ref)
         return value
 

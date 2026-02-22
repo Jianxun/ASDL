@@ -114,6 +114,12 @@ def test_module_instances_reject_malformed_inline_refs(expr: str) -> None:
         ModuleDecl.model_validate({"instances": {"X0": expr}})
 
 
+@pytest.mark.parametrize("expr", ["", "   "])
+def test_module_instances_reject_blank_inline_expression(expr: str) -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"instances": {"X0": expr}})
+
+
 def test_module_rejects_extra_fields() -> None:
     with pytest.raises(ValidationError):
         ModuleDecl.model_validate({"exports": {"A": "B"}})
