@@ -190,63 +190,11 @@ def _recursive_variable_pipeline_yaml() -> str:
     )
 
 
-def _view_binding_pipeline_yaml() -> str:
-    return "\n".join(
-        [
-            "top: top",
-            "modules:",
-            "  top:",
-            "    instances:",
-            "      U1: leaf",
-            "    nets:",
-            "      $IN:",
-            "        - U1.IN",
-            "      $OUT:",
-            "        - U1.OUT",
-            "  leaf:",
-            "    instances:",
-            "      R1: res r=2k",
-            "    nets:",
-            "      $IN:",
-            "        - R1.P",
-            "      $OUT:",
-            "        - R1.N",
-            "  leaf@behave:",
-            "    instances:",
-            "      R2: res r=4k",
-            "    nets:",
-            "      $IN:",
-            "        - R2.P",
-            "      $OUT:",
-            "        - R2.N",
-            "devices:",
-            "  res:",
-            "    ports: [P, N]",
-            "    parameters:",
-            "      r: 1k",
-            "    backends:",
-            "      sim.ngspice:",
-            "        template: \"{name} {ports} {params}\"",
-        ]
-    )
-
-
 def _view_config_yaml(view_order: str) -> str:
     return "\n".join(
         [
             "profile_a:",
             f"  view_order: [{view_order}]",
-        ]
-    )
-
-
-def _view_config_two_profiles_yaml() -> str:
-    return "\n".join(
-        [
-            "profile_default:",
-            "  view_order: [default, behave]",
-            "profile_behave:",
-            "  view_order: [behave, default]",
         ]
     )
 
@@ -604,16 +552,9 @@ def test_cli_netlist_reports_recursive_module_variable(
     assert "IR-013" in combined
 
 
-def test_cli_netlist_view_config_profile_writes_binding_sidecar(
+def test_cli_netlist_view_fixture_config_profile_writes_binding_sidecar(
     tmp_path: Path, backend_config: Path
 ) -> None:
-    input_path = tmp_path / "view_binding.asdl"
-    input_path.write_text(_view_binding_pipeline_yaml(), encoding="utf-8")
-    view_config_path = tmp_path / "view_config.yaml"
-    view_config_path.write_text(
-        _view_config_yaml("behave, default"),
-        encoding="utf-8",
-    )
     sidecar_path = tmp_path / "bindings.json"
 
     runner = CliRunner()
@@ -621,11 +562,11 @@ def test_cli_netlist_view_config_profile_writes_binding_sidecar(
         cli,
         [
             "netlist",
-            str(input_path),
+            str(VIEW_FIXTURE_ASDL),
             "--view-config",
-            str(view_config_path),
+            str(VIEW_FIXTURE_CONFIG),
             "--view-profile",
-            "profile_a",
+            "config_1",
             "--binding-sidecar",
             str(sidecar_path),
         ],
@@ -634,14 +575,47 @@ def test_cli_netlist_view_config_profile_writes_binding_sidecar(
     assert result.exit_code == 0
     assert sidecar_path.exists()
     payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
-    assert payload == [
-        {
-            "path": "top",
-            "instance": "U1",
-            "resolved": "leaf@behave",
-            "rule_id": None,
-        }
+    expected = [
+        {"path": "tb", "instance": "dut", "resolved": "row"},
+        {"path": "tb.dut", "instance": "SR_row", "resolved": "shift_row@behave"},
+        {"path": "tb.dut", "instance": "Tgate1", "resolved": "sw_tgate@behave"},
+        {"path": "tb.dut", "instance": "Tgate2", "resolved": "sw_tgate@behave"},
+        {"path": "tb.dut", "instance": "Tgate_dbg", "resolved": "sw_tgate@behave"},
     ]
+    assert [{k: entry[k] for k in ("path", "instance", "resolved")} for entry in payload] == expected
+    assert all(entry["rule_id"] is None for entry in payload)
+
+
+def test_cli_netlist_view_fixture_scoped_override_changes_emitted_refs(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    output_path = tmp_path / "view_fixture_config2.spice"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "netlist",
+            str(VIEW_FIXTURE_ASDL),
+            "--view-config",
+            str(VIEW_FIXTURE_CONFIG),
+            "--view-profile",
+            "config_2",
+            "-o",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert output_path.exists()
+    call_refs = [
+        line.rsplit(" ", 1)[-1]
+        for line in output_path.read_text(encoding="utf-8").splitlines()
+        if line.startswith("X")
+    ]
+    assert "shift_row_behave" in call_refs
+    assert "sw_tgate" in call_refs
+    assert "sw_tgate_behave" in call_refs
 
 
 def test_cli_netlist_view_fixture_sidecar_and_mixed_view_emission(
@@ -713,16 +687,9 @@ def test_cli_netlist_view_resolution_failure_exits_nonzero(
     assert "Unable to resolve baseline view" in combined
 
 
-def test_cli_netlist_view_binding_profiles_change_emitted_instance_refs(
+def test_cli_netlist_view_fixture_binding_profiles_change_emitted_instance_refs(
     tmp_path: Path, backend_config: Path
 ) -> None:
-    input_path = tmp_path / "view_binding.asdl"
-    input_path.write_text(_view_binding_pipeline_yaml(), encoding="utf-8")
-    view_config_path = tmp_path / "view_config.yaml"
-    view_config_path.write_text(
-        _view_config_two_profiles_yaml(),
-        encoding="utf-8",
-    )
     default_output = tmp_path / "profile_default.spice"
     behave_output = tmp_path / "profile_behave.spice"
 
@@ -731,11 +698,11 @@ def test_cli_netlist_view_binding_profiles_change_emitted_instance_refs(
         cli,
         [
             "netlist",
-            str(input_path),
+            str(VIEW_FIXTURE_ASDL),
             "--view-config",
-            str(view_config_path),
+            str(VIEW_FIXTURE_CONFIG),
             "--view-profile",
-            "profile_default",
+            "config_2",
             "-o",
             str(default_output),
         ],
@@ -744,11 +711,11 @@ def test_cli_netlist_view_binding_profiles_change_emitted_instance_refs(
         cli,
         [
             "netlist",
-            str(input_path),
+            str(VIEW_FIXTURE_ASDL),
             "--view-config",
-            str(view_config_path),
+            str(VIEW_FIXTURE_CONFIG),
             "--view-profile",
-            "profile_behave",
+            "config_1",
             "-o",
             str(behave_output),
         ],
@@ -768,8 +735,10 @@ def test_cli_netlist_view_binding_profiles_change_emitted_instance_refs(
         if line.startswith("X")
     ]
     assert default_refs != behave_refs
-    assert "leaf" in default_refs
-    assert "leaf_behave" in behave_refs
+    assert "shift_row_behave" in default_refs
+    assert "shift_row_behave" in behave_refs
+    assert "sw_tgate" in default_refs
+    assert "sw_tgate_behave" in behave_refs
 
 
 def test_cli_help() -> None:
