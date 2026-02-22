@@ -4,6 +4,6 @@ T-285:
   pr: 307
   merged: true
 T-286:
-  status: review_clean
+  status: done
   pr: 308
-  merged: false
+  merged: true
