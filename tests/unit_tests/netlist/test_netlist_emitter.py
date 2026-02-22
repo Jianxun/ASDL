@@ -1036,3 +1036,96 @@ def test_emit_netlist_hashes_duplicate_module_names() -> None:
             f"FOOTER {entry_name}",
         ]
     )
+
+
+def test_emit_netlist_realizes_view_symbols_and_hashes_duplicate_realizations() -> None:
+    backend_config = _backend_config(
+        {
+            "__subckt_header__": ".subckt {name} {ports}",
+            "__subckt_footer__": ".ends {name}",
+            "__subckt_call__": "X{name} {ports} {ref}",
+            "__netlist_header__": "HEADER {top}",
+            "__netlist_footer__": "FOOTER {top}",
+        }
+    )
+    entry_file_id = "entry.asdl"
+    default_file_id = "lib_default.asdl"
+    behave_file_id = "lib_behave.asdl"
+    behave_hash = hashlib.sha1(behave_file_id.encode("utf-8")).hexdigest()[:8]
+    explicit_default_hash = hashlib.sha1(default_file_id.encode("utf-8")).hexdigest()[:8]
+
+    default_module = ModuleOp(
+        name="amp",
+        port_order=["A"],
+        file_id=entry_file_id,
+        region=[NetOp(name="A")],
+    )
+    explicit_default_module = ModuleOp(
+        name="amp@default",
+        port_order=["A"],
+        file_id=default_file_id,
+        region=[NetOp(name="A")],
+    )
+    behave_module = ModuleOp(
+        name="amp@behave",
+        port_order=["A"],
+        file_id=behave_file_id,
+        region=[NetOp(name="A")],
+    )
+    top = ModuleOp(
+        name="top",
+        port_order=["A"],
+        file_id="top.asdl",
+        region=[
+            NetOp(name="A"),
+            InstanceOp(
+                name="U0",
+                ref="amp",
+                ref_file_id=entry_file_id,
+                conns=[ConnAttr(StringAttr("A"), StringAttr("A"))],
+            ),
+            InstanceOp(
+                name="U1",
+                ref="amp@default",
+                ref_file_id=default_file_id,
+                conns=[ConnAttr(StringAttr("A"), StringAttr("A"))],
+            ),
+            InstanceOp(
+                name="U2",
+                ref="amp@behave",
+                ref_file_id=behave_file_id,
+                conns=[ConnAttr(StringAttr("A"), StringAttr("A"))],
+            ),
+        ],
+    )
+    design = DesignOp(
+        region=[top, default_module, explicit_default_module, behave_module],
+        top="top",
+        entry_file_id="top.asdl",
+    )
+
+    netlist, diagnostics = _emit_from_graphir(
+        design,
+        backend_name="test.backend",
+        backend_config=backend_config,
+        top_as_subckt=True,
+    )
+
+    assert diagnostics == []
+    assert netlist == "\n".join(
+        [
+            "HEADER top",
+            ".subckt top A",
+            "XU0 A amp",
+            f"XU1 A amp__{explicit_default_hash}",
+            f"XU2 A amp_behave__{behave_hash}",
+            ".ends top",
+            ".subckt amp A",
+            ".ends amp",
+            f".subckt amp__{explicit_default_hash} A",
+            f".ends amp__{explicit_default_hash}",
+            f".subckt amp_behave__{behave_hash} A",
+            f".ends amp_behave__{behave_hash}",
+            "FOOTER top",
+        ]
+    )
