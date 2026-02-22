@@ -1,0 +1,15 @@
+- path: tb
+  instance: dut
+  resolved: swmatrix_row_25_w_clkbuf
+- path: tb.dut
+  instance: SR_row
+  resolved: ShiftReg_row_25
+- path: tb.dut
+  instance: Tgate2
+  resolved: swmatrix_Tgate
+- path: tb.dut
+  instance: Tgate1
+  resolved: swmatrix_Tgate@behave
+- path: tb.dut
+  instance: Tgate_dbg
+  resolved: swmatrix_Tgate@behave
