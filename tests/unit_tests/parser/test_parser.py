@@ -346,6 +346,69 @@ def test_parse_string_rejects_inline_instance_ref_with_extra_at_symbols() -> Non
     assert "@' separator" in diag.message
 
 
+def test_parse_string_accepts_qualified_instance_refs_with_decorated_symbols() -> None:
+    yaml_content = "\n".join(
+        [
+            "imports:",
+            "  lib: lib.asdl",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      X_INLINE: lib.cell@view m=2",
+            "      X_STRUCT:",
+            "        ref: lib.cell",
+            "    nets:",
+            "      $OUT:",
+            "        - X_INLINE.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert diagnostics == []
+    assert document is not None
+    module = document.modules["top"]
+    assert module.instances["X_INLINE"] == "lib.cell@view m=2"
+    structured = module.instances["X_STRUCT"]
+    assert isinstance(structured, InstanceDecl)
+    assert structured.ref == "lib.cell"
+
+
+@pytest.mark.parametrize(
+    ("expr", "expected_fragment"),
+    [
+        ("lib.@view m=2", "cell token"),
+        ("lib.cell@ m=2", "view token"),
+        ("lib.cell@view@extra m=2", "@' separator"),
+    ],
+)
+def test_parse_string_rejects_malformed_decorated_qualified_instance_refs(
+    expr: str, expected_fragment: str
+) -> None:
+    yaml_content = "\n".join(
+        [
+            "imports:",
+            "  lib: lib.asdl",
+            "modules:",
+            "  top:",
+            "    instances:",
+            f"      X1: {expr}",
+            "    nets:",
+            "      $OUT:",
+            "        - X1.P",
+        ]
+    )
+
+    document, diagnostics = parse_string(yaml_content)
+
+    assert document is None
+    assert diagnostics
+    diag = diagnostics[0]
+    assert diag.code == "PARSE-003"
+    assert "module symbol" in diag.message
+    assert expected_fragment in diag.message
+
+
 @pytest.mark.parametrize("expr", ['""', '"   "'])
 def test_parse_string_rejects_blank_inline_instance_expression(expr: str) -> None:
     yaml_content = "\n".join(

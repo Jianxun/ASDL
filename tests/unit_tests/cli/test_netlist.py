@@ -272,6 +272,38 @@ def _write_import_library(path: Path) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def _write_import_library_with_view(path: Path) -> None:
+    lines = [
+        "top: leaf",
+        "modules:",
+        "  leaf:",
+        "    instances:",
+        "      R1: res r=2k",
+        "    nets:",
+        "      $IN:",
+        "        - R1.P",
+        "      $OUT:",
+        "        - R1.N",
+        "  leaf@behave:",
+        "    instances:",
+        "      R2: res r=3k",
+        "    nets:",
+        "      $IN:",
+        "        - R2.P",
+        "      $OUT:",
+        "        - R2.N",
+        "devices:",
+        "  res:",
+        "    ports: [P, N]",
+        "    parameters:",
+        "      r: 1k",
+        "    backends:",
+        "      sim.ngspice:",
+        "        template: \"{name} {ports} {params}\"",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def _expected_netlist(top_as_subckt: bool) -> str:
     lines = []
     if top_as_subckt:
@@ -458,6 +490,53 @@ def test_cli_netlist_imports_with_env_fallback(
     output_path = tmp_path / "entry.spice"
     assert output_path.exists()
     assert output_path.read_text(encoding="utf-8") == _expected_netlist(False)
+
+
+def test_cli_netlist_imports_with_qualified_decorated_ref(
+    tmp_path: Path,
+    backend_config: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("ASDL_LIB_PATH", raising=False)
+    lib_root = tmp_path / "lib"
+    lib_root.mkdir()
+    lib_file = lib_root / "lib.asdl"
+    _write_import_library_with_view(lib_file)
+    entry_file = tmp_path / "entry.asdl"
+    entry_file.write_text(
+        "\n".join(
+            [
+                "imports:",
+                "  lib: lib.asdl",
+                "top: top",
+                "modules:",
+                "  top:",
+                "    instances:",
+                "      U1: lib.leaf@behave",
+                "    nets:",
+                "      $IN:",
+                "        - U1.IN",
+                "      $OUT:",
+                "        - U1.OUT",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["netlist", str(entry_file), "--lib", str(lib_root)],
+    )
+
+    assert result.exit_code == 0
+    output_path = tmp_path / "entry.spice"
+    assert output_path.exists()
+    output = output_path.read_text(encoding="utf-8")
+    assert "XU1 IN OUT leaf_behave" in output
+    assert ".subckt leaf_behave IN OUT" in output
+    assert "R2 IN OUT r=3k" in output
 
 
 def test_cli_netlist_imports_without_top_uses_entry_module(
