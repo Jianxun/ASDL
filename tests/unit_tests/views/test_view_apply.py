@@ -77,3 +77,52 @@ def test_apply_resolved_view_bindings_rewrites_emission_refs() -> None:
         "Tgate2": "swmatrix_Tgate",
     }
 
+
+def test_apply_resolved_view_bindings_supports_non_uniform_shared_module_rewrites() -> None:
+    """Apply pass specializes shared modules when descendant rewrites diverge by path."""
+    design = NetlistDesign(
+        modules=[
+            NetlistModule(
+                name="tb",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="A1", ref="branch", ref_file_id="file://tb"),
+                    NetlistInstance(name="A2", ref="branch", ref_file_id="file://tb"),
+                ],
+            ),
+            NetlistModule(
+                name="branch",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="core", ref="leaf", ref_file_id="file://tb"),
+                ],
+            ),
+            NetlistModule(name="leaf", file_id="file://tb"),
+            NetlistModule(name="leaf@alt", file_id="file://tb"),
+            NetlistModule(name="leaf@dbg", file_id="file://tb"),
+        ],
+        top="tb",
+    )
+    resolved = (
+        ResolvedViewBindingEntry(path="tb", instance="A1", resolved="branch", rule_id=None),
+        ResolvedViewBindingEntry(path="tb.A1", instance="core", resolved="leaf@alt", rule_id="r1"),
+        ResolvedViewBindingEntry(path="tb", instance="A2", resolved="branch", rule_id=None),
+        ResolvedViewBindingEntry(path="tb.A2", instance="core", resolved="leaf@dbg", rule_id="r2"),
+    )
+
+    updated = apply_resolved_view_bindings(design, resolved)
+
+    tb_module = [module for module in updated.modules if module.name == "tb"][0]
+    a1_ref = [instance.ref for instance in tb_module.instances if instance.name == "A1"][0]
+    a2_ref = [instance.ref for instance in tb_module.instances if instance.name == "A2"][0]
+    assert a1_ref != a2_ref
+    assert a1_ref.startswith("branch__occ_")
+    assert a2_ref.startswith("branch__occ_")
+
+    a1_module = [module for module in updated.modules if module.name == a1_ref][0]
+    a2_module = [module for module in updated.modules if module.name == a2_ref][0]
+    assert [instance.ref for instance in a1_module.instances] == ["leaf@alt"]
+    assert [instance.ref for instance in a2_module.instances] == ["leaf@dbg"]
+
+    base_branch = [module for module in updated.modules if module.name == "branch"][0]
+    assert [instance.ref for instance in base_branch.instances] == ["leaf"]

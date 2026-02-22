@@ -199,6 +199,104 @@ def _view_config_yaml(view_order: str) -> str:
     )
 
 
+def _divergent_view_reuse_yaml() -> str:
+    return "\n".join(
+        [
+            "top: tb",
+            "modules:",
+            "  tb:",
+            "    instances:",
+            "      L: left",
+            "      R: right",
+            "    nets:",
+            "      $INL:",
+            "        - L.IN",
+            "      $OUTL:",
+            "        - L.OUT",
+            "      $INR:",
+            "        - R.IN",
+            "      $OUTR:",
+            "        - R.OUT",
+            "  left:",
+            "    instances:",
+            "      U: stage",
+            "    nets:",
+            "      $IN:",
+            "        - U.IN",
+            "      $OUT:",
+            "        - U.OUT",
+            "  right:",
+            "    instances:",
+            "      U: stage",
+            "    nets:",
+            "      $IN:",
+            "        - U.IN",
+            "      $OUT:",
+            "        - U.OUT",
+            "  stage:",
+            "    instances:",
+            "      core: leaf",
+            "    nets:",
+            "      $IN:",
+            "        - core.IN",
+            "      $OUT:",
+            "        - core.OUT",
+            "  leaf:",
+            "    instances:",
+            "      R0: res r=1k",
+            "    nets:",
+            "      $IN:",
+            "        - R0.P",
+            "      $OUT:",
+            "        - R0.N",
+            "  leaf@alt:",
+            "    instances:",
+            "      R1: res r=2k",
+            "    nets:",
+            "      $IN:",
+            "        - R1.P",
+            "      $OUT:",
+            "        - R1.N",
+            "  leaf@dbg:",
+            "    instances:",
+            "      R2: res r=3k",
+            "    nets:",
+            "      $IN:",
+            "        - R2.P",
+            "      $OUT:",
+            "        - R2.N",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    parameters:",
+            "      r: 1k",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"R{name} {ports} {params}\"",
+        ]
+    )
+
+
+def _divergent_view_reuse_config_yaml() -> str:
+    return "\n".join(
+        [
+            "profile_divergent:",
+            "  view_order: [default]",
+            "  rules:",
+            "    - id: left_alt",
+            "      match:",
+            "        path: tb.L.U",
+            "        instance: core",
+            "      bind: leaf@alt",
+            "    - id: right_dbg",
+            "      match:",
+            "        path: tb.R.U",
+            "        instance: core",
+            "      bind: leaf@dbg",
+        ]
+    )
+
+
 def _write_import_entry(path: Path, import_path: str) -> None:
     lines = [
         "imports:",
@@ -821,6 +919,56 @@ def test_cli_netlist_view_fixture_binding_profiles_change_emitted_instance_refs(
     assert "shift_row_behave" in behave_refs
     assert "sw_tgate" in default_refs
     assert "sw_tgate_behave" in behave_refs
+
+
+def test_cli_netlist_view_config_scoped_override_divergent_reused_module_occurrences(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "divergent_view_reuse.asdl"
+    config_path = tmp_path / "divergent_view_reuse.yaml"
+    sidecar_path = tmp_path / "divergent_view_reuse.bindings.json"
+    output_path = tmp_path / "divergent_view_reuse.spice"
+    input_path.write_text(_divergent_view_reuse_yaml(), encoding="utf-8")
+    config_path.write_text(_divergent_view_reuse_config_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "netlist",
+            str(input_path),
+            "--view-config",
+            str(config_path),
+            "--view-profile",
+            "profile_divergent",
+            "--binding-sidecar",
+            str(sidecar_path),
+            "-o",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    sidecar_payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    expected = [
+        {"path": "tb", "instance": "L", "resolved": "left"},
+        {"path": "tb.L", "instance": "U", "resolved": "stage"},
+        {"path": "tb.L.U", "instance": "core", "resolved": "leaf@alt"},
+        {"path": "tb", "instance": "R", "resolved": "right"},
+        {"path": "tb.R", "instance": "U", "resolved": "stage"},
+        {"path": "tb.R.U", "instance": "core", "resolved": "leaf@dbg"},
+    ]
+    assert [
+        {k: entry[k] for k in ("path", "instance", "resolved")} for entry in sidecar_payload
+    ] == expected
+
+    call_refs = [
+        line.rsplit(" ", 1)[-1]
+        for line in output_path.read_text(encoding="utf-8").splitlines()
+        if line.startswith("X")
+    ]
+    assert "leaf_alt" in call_refs
+    assert "leaf_dbg" in call_refs
 
 
 def test_cli_help() -> None:
