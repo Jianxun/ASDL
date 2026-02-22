@@ -28,8 +28,8 @@ T-293:
   pr: 316
   merged: true
 T-294:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 317
   merged: false
 T-295:
   status: ready
