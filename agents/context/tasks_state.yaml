@@ -4,6 +4,6 @@ T-297:
   pr: 320
   merged: true
 T-298:
-  status: ready_for_review
+  status: review_clean
   pr: 321
   merged: false
