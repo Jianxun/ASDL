@@ -28,9 +28,9 @@ T-293:
   pr: 316
   merged: true
 T-294:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 317
+  merged: true
 T-295:
   status: ready
   pr: null

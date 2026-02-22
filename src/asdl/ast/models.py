@@ -17,7 +17,6 @@ from pydantic import (
 )
 
 ParamValue = Union[int, float, bool, str]
-InstanceExpr = StrictStr
 
 _TAG_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -71,11 +70,42 @@ def _reject_string_endpoint_list(value: object) -> object:
     return value
 
 
+def _validate_module_symbol(value: object) -> object:
+    """Validate `cell` / `cell@view` symbol grammar."""
+    if not isinstance(value, str):
+        raise ValueError("Module symbols must be strings.")
+    if not value:
+        raise ValueError("Invalid module symbol: cell token is required.")
+
+    at_count = value.count("@")
+    if at_count > 1:
+        raise ValueError(
+            "Invalid module symbol: '@' separator may appear at most once in 'cell@view'."
+        )
+
+    if at_count == 0:
+        if not _TAG_NAME_RE.fullmatch(value):
+            raise ValueError("Invalid module symbol: cell token must be a valid identifier.")
+        return value
+
+    cell, view = value.split("@", 1)
+    if not cell:
+        raise ValueError("Invalid module symbol: cell token before '@' is required.")
+    if not _TAG_NAME_RE.fullmatch(cell):
+        raise ValueError("Invalid module symbol: cell token must be a valid identifier.")
+    if not view:
+        raise ValueError("Invalid module symbol: view token after '@' is required.")
+    if not _TAG_NAME_RE.fullmatch(view):
+        raise ValueError("Invalid module symbol: view token must be a valid identifier.")
+    return value
+
+
 EndpointListExpr = Annotated[List[StrictStr], BeforeValidator(_reject_string_endpoint_list)]
 ImportsBlock = Dict[StrictStr, StrictStr]
 NetsBlock = Dict[str, EndpointListExpr]
 PatternGroup = Annotated[StrictStr, BeforeValidator(_validate_pattern_group)]
 PatternTag = Annotated[StrictStr, BeforeValidator(_validate_pattern_tag)]
+ModuleSymbol = Annotated[StrictStr, BeforeValidator(_validate_module_symbol)]
 
 
 class AstBaseModel(BaseModel):
@@ -167,7 +197,7 @@ InstanceDefaultsBlock = Dict[str, InstanceDefaultsDecl]
 class InstanceDecl(AstBaseModel):
     """Structured instance declaration with canonical parameters map."""
 
-    ref: StrictStr
+    ref: ModuleSymbol
     parameters: Optional[Dict[str, ParamValue]] = None
 
     @model_validator(mode="before")
@@ -179,6 +209,7 @@ class InstanceDecl(AstBaseModel):
         return data
 
 
+InstanceExpr = StrictStr
 InstanceValue = Union[InstanceDecl, InstanceExpr]
 InstancesBlock = Dict[str, InstanceValue]
 
@@ -205,6 +236,25 @@ class ModuleDecl(AstBaseModel):
     _patterns_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
     _pattern_value_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
     _pattern_tag_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)
+
+    @field_validator("instances")
+    @classmethod
+    def validate_inline_instance_refs(
+        cls, value: Optional[InstancesBlock]
+    ) -> Optional[InstancesBlock]:
+        """Validate inline instance expression references against module symbol grammar."""
+        if value is None:
+            return value
+        for instance in value.values():
+            if isinstance(instance, str):
+                tokens = instance.split(maxsplit=1)
+                if not tokens:
+                    raise ValueError(
+                        "Instance expressions must start with an instance reference token."
+                    )
+                ref = tokens[0]
+                _validate_module_symbol(ref)
+        return value
 
     def pattern_axis_id(self, name: str) -> Optional[str]:
         """Resolve the axis identifier for a named pattern.
@@ -263,7 +313,7 @@ class AsdlDocument(AstBaseModel):
 
     imports: Optional[ImportsBlock] = None
     top: Optional[StrictStr] = None
-    modules: Optional[Dict[str, ModuleDecl]] = None
+    modules: Optional[Dict[ModuleSymbol, ModuleDecl]] = None
     devices: Optional[Dict[str, DeviceDecl]] = None
 
     @model_validator(mode="after")
@@ -287,6 +337,7 @@ class AsdlDocument(AstBaseModel):
 
 __all__ = [
     "ParamValue",
+    "ModuleSymbol",
     "InstanceExpr",
     "InstanceDecl",
     "InstanceValue",
