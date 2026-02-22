@@ -556,6 +556,7 @@ def test_cli_netlist_view_fixture_config_profile_writes_binding_sidecar(
     tmp_path: Path, backend_config: Path
 ) -> None:
     sidecar_path = tmp_path / "bindings.json"
+    output_path = tmp_path / "view_fixture_config1.spice"
 
     runner = CliRunner()
     result = runner.invoke(
@@ -569,6 +570,8 @@ def test_cli_netlist_view_fixture_config_profile_writes_binding_sidecar(
             "config_1",
             "--binding-sidecar",
             str(sidecar_path),
+            "-o",
+            str(output_path),
         ],
     )
 
