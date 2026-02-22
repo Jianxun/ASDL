@@ -12,6 +12,9 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 - Ordered mappings preserve source order when it matters (notably `nets` and `exports`).
 - Literal names must match `[A-Za-z_][A-Za-z0-9_]*`; pattern delimiters (`<`, `>`, `|`, `:`, `;`)
   are reserved and forbidden in literals.
+- Module declaration keys may additionally use view-decorated form
+  `cell@view` per `docs/specs/spec_asdl_views.md`, where both `cell` and
+  `view` follow the literal-name regex.
 - Qualified references may use `ns.symbol` in inline instance expressions only;
   both `ns` and `symbol` must match the literal name regex.
 - Names are raw strings; semantic validation is deferred to verification passes.
@@ -27,9 +30,12 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
   - Namespaces must match `[A-Za-z_][A-Za-z0-9_]*`.
 - `top: Optional[str]`
   - Entry module name.
+  - When decorated symbols are present, `top` refers to logical `cell` name
+    (view selection is deferred to binding resolution).
   - Required if **multiple modules** exist; otherwise optional.
 - `modules: Optional[Dict[str, ModuleDecl]]`
-  - Map of module name → module definition.
+  - Map of module symbol → module definition.
+  - Module symbol may be `cell` or `cell@view` (single `@` max).
 - `devices: Optional[Dict[str, DeviceDecl]]`
   - Map of device name → device definition.
 

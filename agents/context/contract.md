@@ -98,6 +98,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - ADR-0029 (Proposed): Visualizer symbol schema uses inline pin metadata, explicit glyph placement boxes, and Cadence-style orientation/label rules.
 - ADR-0030: Fresh `asdl-language-tools` extension under `extensions/` with TS host + long-lived Python completion worker; no runtime dependency on removed legacy extension code.
 - ADR-0031: Instance parameter syntax supports quote-aware inline shorthand plus structured `parameters` objects.
+- ADR-0032: View-decorated module symbols use `cell@view` and emission supports mixed-view realizations with deterministic emitted names.
+- ADR-0033: View-binding config uses profile `view_order` plus ordered rule overrides and emits resolved binding sidecars.
 
 - 2026-01-24: ADR-0024 -- Replace IFIR with NetlistIR dataclass model; remove xDSL from the refactor pipeline (supersedes ADR-0014).
 - 2026-01-23: ADR-0023 -- Core graphs include device definitions; modules/devices use `ports` lists (never None); backend templates stay outside core graphs.
@@ -109,6 +111,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-01-26: ADR-0029 (Proposed) -- Visualizer symbol schema (inline pin metadata + glyph box) and Cadence-style orientation/label rules.
 - 2026-02-14: ADR-0030 -- New ASDL language-tools extension architecture (fresh package, Python worker protocol for semantic completion, no legacy highlighter reuse).
 - 2026-02-21: ADR-0031 -- Instance parameter syntax supports quoted inline shorthand and structured instance objects with canonical `parameters`.
+- 2026-02-22: ADR-0032 -- Module symbols may use `cell@view` for selectable implementation variants; emission supports one realized subckt per resolved `(cell, view)` using deterministic names (default `cell`, otherwise `cell_<view>`).
+- 2026-02-22: ADR-0033 -- View-binding config resolves instances via `view_order` baseline plus ordered rules (later wins), with optional rule IDs (default `rule<k>`) and inspectable sidecar entries using full resolved module symbols.
 - 2026-02-01: Docs pipeline now supports Sphinx (Tier 1/2) for ASDL library documentation; Markdown generation remains supported but Sphinx-native rendering is in scope.
 
 - 2026-01-16: ADR-0014 -- GraphIR is the canonical semantic core with stable IDs; GraphIR defines program/module/device/net/instance/endpoint ops and module port_order; IFIR is a projection and NFIR is optional. (Superseded 2026-01-24, ADR-0024)

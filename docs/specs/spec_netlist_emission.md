@@ -20,6 +20,9 @@ canonical connectivity.
   `pattern_expression_table`) for presentation formatting. Module variable
   substitution occurs earlier; NetlistIR carries substituted instance parameter
   values.
+- When a design uses view-decorated module variants (`cell@view`), emission is
+  realization-based: emit one subckt/module per resolved `(cell, view)` used in
+  the design.
 
 ---
 
@@ -27,6 +30,19 @@ canonical connectivity.
 - If `design.top` is set, emit that module.
 - If `design.top` is absent and only one module exists, emit that module.
 - If multiple modules exist and `design.top` is absent, emit an error diagnostic.
+
+---
+
+## View-decorated module names
+- View decoration is an authoring/resolution concern (see
+  `docs/specs/spec_asdl_views.md`).
+- Emission consumes already-resolved module selections.
+- Emit one realization per unique resolved `(cell, view)`:
+  - default/undecorated realization name: `cell`
+  - non-default realization name: `cell_<view>` (deterministic, sanitized)
+- Instance calls must reference the resolved realization name.
+- Emitters must not leak internal `@view` tokens directly into `.subckt` names,
+  module call refs, or top placeholders.
 
 ---
 
