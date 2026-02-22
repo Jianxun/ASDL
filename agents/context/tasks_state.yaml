@@ -23,3 +23,19 @@ T-292:
   status: done
   pr: 315
   merged: true
+T-293:
+  status: ready
+  pr: null
+  merged: false
+T-294:
+  status: ready
+  pr: null
+  merged: false
+T-295:
+  status: ready
+  pr: null
+  merged: false
+T-296:
+  status: ready
+  pr: null
+  merged: false

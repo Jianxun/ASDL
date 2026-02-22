@@ -62,6 +62,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Architect direct-to-main is allowed only for commits that touch files under `agents/` and/or `docs/` exclusively; all other changes require a PR.
 - Public Python modules/classes/functions and non-trivial private helpers MUST include PEP 257 docstrings using Google-style sections; docstrings capture purpose, inputs/outputs, side effects, and relevant invariants or ordering rules for agent readability.
 - Comments MUST explain intent, rationale, or tricky logic (not restate code) and remain accurate; prefer docstrings over inline comments for API-level behavior.
+- Regression tests for compiler behavior MUST use stable, self-contained fixtures under `tests/` and MUST NOT depend on mutable `examples/` content.
 
 ## Verification protocol
 - Manual check: `agents/context` contains lessons.md, contract.md, tasks.yaml, tasks_state.yaml, tasks_icebox.yaml, tasks_archived.yaml, project_status.md, codebase_map.md.
@@ -113,6 +114,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-02-21: ADR-0031 -- Instance parameter syntax supports quoted inline shorthand and structured instance objects with canonical `parameters`.
 - 2026-02-22: ADR-0032 -- Module symbols may use `cell@view` for selectable implementation variants; emission supports one realized subckt per resolved `(cell, view)` using deterministic names (default `cell`, otherwise `cell_<view>`).
 - 2026-02-22: ADR-0033 -- View-binding config resolves instances via `view_order` baseline plus ordered rules (later wins), with optional rule IDs (default `rule<k>`) and inspectable sidecar entries using full resolved module symbols.
+- 2026-02-22: View-binding regressions must use stable test fixtures under `tests/` rather than `examples/` because examples are experimental and can change independently of compiler contracts.
 - 2026-02-01: Docs pipeline now supports Sphinx (Tier 1/2) for ASDL library documentation; Markdown generation remains supported but Sphinx-native rendering is in scope.
 
 - 2026-01-16: ADR-0014 -- GraphIR is the canonical semantic core with stable IDs; GraphIR defines program/module/device/net/instance/endpoint ops and module port_order; IFIR is a projection and NFIR is optional. (Superseded 2026-01-24, ADR-0024)

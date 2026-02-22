@@ -47,3 +47,11 @@
 - `config/backends.yaml`: backend configuration file with system device templates (created in T-047)
 - `tests/unit_tests/emit/`: emission tests (backend config loading, system device validation)
 - `tests/unit_tests/netlist/`: netlist emission tests (device instances, module instantiation, end-to-end)
+
+## Quick Reference: View Binding
+- `src/asdl/views/models.py`: view config/profile schema validators.
+- `src/asdl/views/config.py`: YAML loading + validation diagnostics.
+- `src/asdl/views/instance_index.py`: deterministic hierarchy indexing + rule matching scope.
+- `src/asdl/views/resolver.py`: baseline + ordered-rule resolution and sidecar entries.
+- `src/asdl/views/api.py`: public config/profile APIs and sidecar serialization hooks used by CLI.
+- `tests/unit_tests/views/`: unit tests and stable fixtures for view config/index/resolver behavior.
