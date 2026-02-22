@@ -36,6 +36,6 @@ T-295:
   pr: 318
   merged: true
 T-296:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 319
+  merged: true
