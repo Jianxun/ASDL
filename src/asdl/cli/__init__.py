@@ -555,7 +555,12 @@ def netlist(
     resolved_bindings = None
     if view_config_path is not None and view_profile is not None:
         try:
-            from asdl.views.api import resolve_design_view_bindings, view_sidecar_to_jsonable
+            from asdl.views.api import (
+                VIEW_APPLY_ERROR,
+                apply_resolved_view_bindings,
+                resolve_design_view_bindings,
+                view_sidecar_to_jsonable,
+            )
         except Exception as exc:  # pragma: no cover - defensive: missing optional deps
             diagnostics.append(
                 _diagnostic(
@@ -572,6 +577,12 @@ def netlist(
         )
         diagnostics.extend(view_diags)
         if resolved_bindings is None or _has_error_diagnostics(diagnostics):
+            _emit_diagnostics(diagnostics)
+            raise click.exceptions.Exit(1)
+        try:
+            design = apply_resolved_view_bindings(design, resolved_bindings)
+        except ValueError as exc:
+            diagnostics.append(_diagnostic(VIEW_APPLY_ERROR, str(exc)))
             _emit_diagnostics(diagnostics)
             raise click.exceptions.Exit(1)
 

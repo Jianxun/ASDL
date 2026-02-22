@@ -1,8 +1,10 @@
 """ASDL view-binding configuration APIs and models."""
 
 from .api import (
+    VIEW_APPLY_ERROR,
     VIEW_PROFILE_NOT_FOUND_ERROR,
     VIEW_RESOLUTION_ERROR,
+    apply_resolved_view_bindings,
     resolve_design_view_bindings,
     view_sidecar_to_jsonable,
 )
@@ -24,8 +26,10 @@ __all__ = [
     "ViewProfile",
     "ViewRule",
     "ResolvedViewBindingEntry",
+    "VIEW_APPLY_ERROR",
     "VIEW_PROFILE_NOT_FOUND_ERROR",
     "VIEW_RESOLUTION_ERROR",
+    "apply_resolved_view_bindings",
     "build_instance_index",
     "load_view_config",
     "match_index_entries",
