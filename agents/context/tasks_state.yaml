@@ -36,6 +36,6 @@ T-295:
   pr: 318
   merged: true
 T-296:
-  status: ready_for_review
+  status: done
   pr: 319
-  merged: false
+  merged: true
