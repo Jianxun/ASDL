@@ -100,12 +100,40 @@ def _validate_module_symbol(value: object) -> object:
     return value
 
 
+def _validate_instance_ref(value: object) -> object:
+    """Validate instance refs as `symbol` or import-qualified `ns.symbol`."""
+    if not isinstance(value, str):
+        raise ValueError("Instance references must be strings.")
+    if not value:
+        raise ValueError("Invalid instance reference: symbol token is required.")
+
+    symbol = value
+    if "." in value:
+        namespace, symbol = value.split(".", 1)
+        if not namespace:
+            raise ValueError(
+                "Invalid instance reference: namespace token before '.' is required."
+            )
+        if not _TAG_NAME_RE.fullmatch(namespace):
+            raise ValueError(
+                "Invalid instance reference: namespace token must be a valid identifier."
+            )
+        if not symbol:
+            raise ValueError(
+                "Invalid instance reference: symbol token after '.' is required."
+            )
+
+    _validate_module_symbol(symbol)
+    return value
+
+
 EndpointListExpr = Annotated[List[StrictStr], BeforeValidator(_reject_string_endpoint_list)]
 ImportsBlock = Dict[StrictStr, StrictStr]
 NetsBlock = Dict[str, EndpointListExpr]
 PatternGroup = Annotated[StrictStr, BeforeValidator(_validate_pattern_group)]
 PatternTag = Annotated[StrictStr, BeforeValidator(_validate_pattern_tag)]
 ModuleSymbol = Annotated[StrictStr, BeforeValidator(_validate_module_symbol)]
+InstanceRef = Annotated[StrictStr, BeforeValidator(_validate_instance_ref)]
 
 
 class AstBaseModel(BaseModel):
@@ -197,7 +225,7 @@ InstanceDefaultsBlock = Dict[str, InstanceDefaultsDecl]
 class InstanceDecl(AstBaseModel):
     """Structured instance declaration with canonical parameters map."""
 
-    ref: ModuleSymbol
+    ref: InstanceRef
     parameters: Optional[Dict[str, ParamValue]] = None
 
     @model_validator(mode="before")
@@ -253,7 +281,7 @@ class ModuleDecl(AstBaseModel):
                         "Instance expressions must start with an instance reference token."
                     )
                 ref = tokens[0]
-                _validate_module_symbol(ref)
+                _validate_instance_ref(ref)
         return value
 
     def pattern_axis_id(self, name: str) -> Optional[str]:
@@ -338,6 +366,7 @@ class AsdlDocument(AstBaseModel):
 __all__ = [
     "ParamValue",
     "ModuleSymbol",
+    "InstanceRef",
     "InstanceExpr",
     "InstanceDecl",
     "InstanceValue",
