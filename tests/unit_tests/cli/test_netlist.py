@@ -40,6 +40,66 @@ def _pipeline_yaml() -> str:
     )
 
 
+def _structured_pipeline_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      U1: leaf",
+            "    nets:",
+            "      $IN:",
+            "        - U1.IN",
+            "      $OUT:",
+            "        - U1.OUT",
+            "  leaf:",
+            "    instances:",
+            "      R1:",
+            "        ref: res",
+            "        parameters:",
+            "          r: 2k",
+            "    nets:",
+            "      $IN:",
+            "        - R1.P",
+            "      $OUT:",
+            "        - R1.N",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    parameters:",
+            "      r: 1k",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports} {params}\"",
+        ]
+    )
+
+
+def _malformed_structured_pipeline_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      R1:",
+            "        ref: res",
+            "        params:",
+            "          r: 2k",
+            "    nets:",
+            "      $OUT:",
+            "        - R1.P",
+            "devices:",
+            "  res:",
+            "    ports: [P]",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"R{name} {ports}\"",
+        ]
+    )
+
+
 def _module_variable_pipeline_yaml() -> str:
     return "\n".join(
         [
@@ -296,6 +356,45 @@ def test_cli_netlist_substitutes_module_variables_in_output(
     output_path = tmp_path / "vars.spice"
     assert output_path.exists()
     assert output_path.read_text(encoding="utf-8") == "R1 IN OUT r=2k\n.end"
+
+
+def test_cli_netlist_structured_instances_match_inline_output(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    inline_path = tmp_path / "inline.asdl"
+    structured_path = tmp_path / "structured.asdl"
+    inline_path.write_text(_pipeline_yaml(), encoding="utf-8")
+    structured_path.write_text(_structured_pipeline_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    inline_result = runner.invoke(cli, ["netlist", str(inline_path)])
+    structured_result = runner.invoke(cli, ["netlist", str(structured_path)])
+
+    assert inline_result.exit_code == 0
+    assert structured_result.exit_code == 0
+    inline_output = tmp_path / "inline.spice"
+    structured_output = tmp_path / "structured.spice"
+    assert inline_output.exists()
+    assert structured_output.exists()
+    assert structured_output.read_text(encoding="utf-8") == inline_output.read_text(
+        encoding="utf-8"
+    )
+
+
+def test_cli_netlist_malformed_structured_instance_reports_parse_diagnostic(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "malformed_structured.asdl"
+    input_path.write_text(_malformed_structured_pipeline_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["netlist", str(input_path)])
+
+    assert result.exit_code == 1
+    stderr = getattr(result, "stderr", "")
+    combined = f"{result.output}{stderr}"
+    assert "PARSE-003" in combined
+    assert "parameters" in combined
 
 
 def test_cli_netlist_imports_with_lib_root(
