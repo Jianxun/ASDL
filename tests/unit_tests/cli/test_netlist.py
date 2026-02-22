@@ -8,9 +8,10 @@ from click.testing import CliRunner
 
 from asdl.cli import cli
 
-SWMATRIX_ASDL = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl")
-SWMATRIX_CONFIG = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.config.yaml")
-SWMATRIX_BINDING = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.binding.yaml")
+VIEW_FIXTURE_DIR = Path(__file__).parent.parent / "views" / "fixtures"
+VIEW_FIXTURE_ASDL = VIEW_FIXTURE_DIR / "view_binding_fixture.asdl"
+VIEW_FIXTURE_CONFIG = VIEW_FIXTURE_DIR / "view_binding_fixture.config.yaml"
+VIEW_FIXTURE_BINDING = VIEW_FIXTURE_DIR / "view_binding_fixture.config_3.binding.yaml"
 
 
 def _pipeline_yaml() -> str:
@@ -643,21 +644,21 @@ def test_cli_netlist_view_config_profile_writes_binding_sidecar(
     ]
 
 
-def test_cli_netlist_swmatrix_fixture_sidecar_and_mixed_view_emission(
+def test_cli_netlist_view_fixture_sidecar_and_mixed_view_emission(
     tmp_path: Path, backend_config: Path
 ) -> None:
-    sidecar_path = tmp_path / "swmatrix_bindings.json"
-    output_path = tmp_path / "swmatrix.spice"
-    expected = yaml.safe_load(SWMATRIX_BINDING.read_text(encoding="utf-8"))
+    sidecar_path = tmp_path / "view_fixture_bindings.json"
+    output_path = tmp_path / "view_fixture.spice"
+    expected = yaml.safe_load(VIEW_FIXTURE_BINDING.read_text(encoding="utf-8"))
 
     runner = CliRunner()
     result = runner.invoke(
         cli,
         [
             "netlist",
-            str(SWMATRIX_ASDL),
+            str(VIEW_FIXTURE_ASDL),
             "--view-config",
-            str(SWMATRIX_CONFIG),
+            str(VIEW_FIXTURE_CONFIG),
             "--view-profile",
             "config_3",
             "--binding-sidecar",
@@ -678,8 +679,8 @@ def test_cli_netlist_swmatrix_fixture_sidecar_and_mixed_view_emission(
         for line in output_path.read_text(encoding="utf-8").splitlines()
         if line.startswith("X")
     ]
-    assert "swmatrix_Tgate" in call_refs
-    assert "swmatrix_Tgate_behave" in call_refs
+    assert "sw_tgate" in call_refs
+    assert "sw_tgate_behave" in call_refs
 
 
 def test_cli_netlist_view_resolution_failure_exits_nonzero(

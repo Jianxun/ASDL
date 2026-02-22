@@ -1,0 +1,67 @@
+top: tb
+modules:
+  tb:
+    instances:
+      dut: row
+    nets:
+      $IN:
+        - dut.IN
+      $OUT:
+        - dut.OUT
+  row:
+    instances:
+      SR_row: shift_row
+      Tgate1: sw_tgate
+      Tgate2: sw_tgate
+      Tgate_dbg: sw_tgate@behave
+    nets:
+      $IN:
+        - SR_row.IN
+        - Tgate1.IN
+        - Tgate2.IN
+        - Tgate_dbg.IN
+      $OUT:
+        - SR_row.OUT
+        - Tgate1.OUT
+        - Tgate2.OUT
+        - Tgate_dbg.OUT
+  shift_row:
+    instances:
+      R1: res r=1k
+    nets:
+      $IN:
+        - R1.P
+      $OUT:
+        - R1.N
+  shift_row@behave:
+    instances:
+      R2: res r=2k
+    nets:
+      $IN:
+        - R2.P
+      $OUT:
+        - R2.N
+  sw_tgate:
+    instances:
+      R3: res r=3k
+    nets:
+      $IN:
+        - R3.P
+      $OUT:
+        - R3.N
+  sw_tgate@behave:
+    instances:
+      R4: res r=4k
+    nets:
+      $IN:
+        - R4.P
+      $OUT:
+        - R4.N
+devices:
+  res:
+    ports: [P, N]
+    parameters:
+      r: 1k
+    backends:
+      sim.ngspice:
+        template: "{name} {ports} {params}"

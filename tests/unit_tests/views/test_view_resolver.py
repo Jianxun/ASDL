@@ -11,20 +11,21 @@ from asdl.views.config import load_view_config
 from asdl.views.models import ViewProfile
 from asdl.views.resolver import resolve_view_bindings
 
-SWMATRIX_ASDL = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl")
-SWMATRIX_CONFIG = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.config.yaml")
-SWMATRIX_BINDING = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.binding.yaml")
+FIXTURE_DIR = Path(__file__).parent / "fixtures"
+VIEW_FIXTURE_ASDL = FIXTURE_DIR / "view_binding_fixture.asdl"
+VIEW_FIXTURE_CONFIG = FIXTURE_DIR / "view_binding_fixture.config.yaml"
+VIEW_FIXTURE_BINDING = FIXTURE_DIR / "view_binding_fixture.config_3.binding.yaml"
 
 
-def _swmatrix_design() -> NetlistDesign:
-    design, diagnostics = run_netlist_ir_pipeline(entry_file=SWMATRIX_ASDL, verify=True)
+def _fixture_design() -> NetlistDesign:
+    design, diagnostics = run_netlist_ir_pipeline(entry_file=VIEW_FIXTURE_ASDL, verify=True)
     assert diagnostics == []
     assert design is not None
     return design
 
 
-def _swmatrix_profile(name: str) -> ViewProfile:
-    config, diagnostics = load_view_config(SWMATRIX_CONFIG)
+def _fixture_profile(name: str) -> ViewProfile:
+    config, diagnostics = load_view_config(VIEW_FIXTURE_CONFIG)
     assert diagnostics == []
     assert config is not None
     return config.profiles[name]
@@ -190,36 +191,36 @@ def test_resolve_view_bindings_raises_for_unknown_match_path() -> None:
         resolve_view_bindings(design, profile)
 
 
-def test_resolve_view_bindings_swmatrix_global_module_substitution() -> None:
-    """Global module match rewrites all root-scoped swmatrix_Tgate instances."""
-    resolved = resolve_view_bindings(_swmatrix_design(), _swmatrix_profile("config_1"))
+def test_resolve_view_bindings_fixture_baseline_selection() -> None:
+    """Fixture profile config_1 selects behave variants via baseline view order."""
+    resolved = resolve_view_bindings(_fixture_design(), _fixture_profile("config_1"))
 
     assert [(entry.path, entry.instance, entry.resolved) for entry in resolved] == [
-        ("tb", "dut", "swmatrix_row_25_w_clkbuf"),
-        ("tb.dut", "SR_row", "ShiftReg_row_25"),
-        ("tb.dut", "Tgate2", "swmatrix_Tgate@behave"),
-        ("tb.dut", "Tgate1", "swmatrix_Tgate@behave"),
-        ("tb.dut", "Tgate_dbg", "swmatrix_Tgate@behave"),
+        ("tb", "dut", "row"),
+        ("tb.dut", "SR_row", "shift_row@behave"),
+        ("tb.dut", "Tgate1", "sw_tgate@behave"),
+        ("tb.dut", "Tgate2", "sw_tgate@behave"),
+        ("tb.dut", "Tgate_dbg", "sw_tgate@behave"),
     ]
 
 
-def test_resolve_view_bindings_swmatrix_scoped_path_override() -> None:
-    """Scoped path+instance override rewrites only SR_row under tb.dut."""
-    resolved = resolve_view_bindings(_swmatrix_design(), _swmatrix_profile("config_2"))
+def test_resolve_view_bindings_fixture_scoped_path_override() -> None:
+    """Fixture profile config_2 rewrites only SR_row under tb.dut."""
+    resolved = resolve_view_bindings(_fixture_design(), _fixture_profile("config_2"))
 
     assert [(entry.path, entry.instance, entry.resolved) for entry in resolved] == [
-        ("tb", "dut", "swmatrix_row_25_w_clkbuf"),
-        ("tb.dut", "SR_row", "ShiftReg_row_25@behave"),
-        ("tb.dut", "Tgate2", "swmatrix_Tgate"),
-        ("tb.dut", "Tgate1", "swmatrix_Tgate"),
-        ("tb.dut", "Tgate_dbg", "swmatrix_Tgate@behave"),
+        ("tb", "dut", "row"),
+        ("tb.dut", "SR_row", "shift_row@behave"),
+        ("tb.dut", "Tgate1", "sw_tgate"),
+        ("tb.dut", "Tgate2", "sw_tgate"),
+        ("tb.dut", "Tgate_dbg", "sw_tgate@behave"),
     ]
 
 
-def test_resolve_view_bindings_swmatrix_later_rule_precedence_matches_fixture() -> None:
-    """Later rules override earlier ones and match checked-in binding expectations."""
-    resolved = resolve_view_bindings(_swmatrix_design(), _swmatrix_profile("config_3"))
-    expected = yaml.safe_load(SWMATRIX_BINDING.read_text(encoding="utf-8"))
+def test_resolve_view_bindings_fixture_later_rule_precedence_matches_fixture() -> None:
+    """Fixture profile config_3 proves later rule precedence via checked-in sidecar."""
+    resolved = resolve_view_bindings(_fixture_design(), _fixture_profile("config_3"))
+    expected = yaml.safe_load(VIEW_FIXTURE_BINDING.read_text(encoding="utf-8"))
 
     assert [(entry.path, entry.instance, entry.resolved) for entry in resolved] == [
         (record["path"], record["instance"], record["resolved"]) for record in expected
