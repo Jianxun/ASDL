@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -179,6 +180,56 @@ def _recursive_variable_pipeline_yaml() -> str:
             "    backends:",
             "      sim.ngspice:",
             "        template: \"{name} {ports} {params}\"",
+        ]
+    )
+
+
+def _view_binding_pipeline_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      U1: leaf",
+            "    nets:",
+            "      $IN:",
+            "        - U1.IN",
+            "      $OUT:",
+            "        - U1.OUT",
+            "  leaf:",
+            "    instances:",
+            "      R1: res r=2k",
+            "    nets:",
+            "      $IN:",
+            "        - R1.P",
+            "      $OUT:",
+            "        - R1.N",
+            "  leaf@behave:",
+            "    instances:",
+            "      R2: res r=4k",
+            "    nets:",
+            "      $IN:",
+            "        - R2.P",
+            "      $OUT:",
+            "        - R2.N",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    parameters:",
+            "      r: 1k",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"{name} {ports} {params}\"",
+        ]
+    )
+
+
+def _view_config_yaml(view_order: str) -> str:
+    return "\n".join(
+        [
+            "profile_a:",
+            f"  view_order: [{view_order}]",
         ]
     )
 
@@ -534,6 +585,76 @@ def test_cli_netlist_reports_recursive_module_variable(
     stderr = getattr(result, "stderr", "")
     combined = f"{result.output}{stderr}"
     assert "IR-013" in combined
+
+
+def test_cli_netlist_view_config_profile_writes_binding_sidecar(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "view_binding.asdl"
+    input_path.write_text(_view_binding_pipeline_yaml(), encoding="utf-8")
+    view_config_path = tmp_path / "view_config.yaml"
+    view_config_path.write_text(
+        _view_config_yaml("behave, default"),
+        encoding="utf-8",
+    )
+    sidecar_path = tmp_path / "bindings.json"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "netlist",
+            str(input_path),
+            "--view-config",
+            str(view_config_path),
+            "--view-profile",
+            "profile_a",
+            "--binding-sidecar",
+            str(sidecar_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert sidecar_path.exists()
+    payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    assert payload == [
+        {
+            "path": "top",
+            "instance": "U1",
+            "resolved": "leaf@behave",
+            "rule_id": None,
+        }
+    ]
+
+
+def test_cli_netlist_view_resolution_failure_exits_nonzero(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "view_binding.asdl"
+    input_path.write_text(_pipeline_yaml(), encoding="utf-8")
+    view_config_path = tmp_path / "view_config.yaml"
+    view_config_path.write_text(
+        _view_config_yaml("behave"),
+        encoding="utf-8",
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "netlist",
+            str(input_path),
+            "--view-config",
+            str(view_config_path),
+            "--view-profile",
+            "profile_a",
+        ],
+    )
+
+    assert result.exit_code == 1
+    stderr = getattr(result, "stderr", "")
+    combined = f"{result.output}{stderr}"
+    assert "Unable to resolve baseline view" in combined
 
 
 def test_cli_help() -> None:
