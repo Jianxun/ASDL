@@ -184,6 +184,85 @@ def test_render_netlist_ir_module_reference_uses_file_id() -> None:
     assert netlist == expected
 
 
+def test_render_netlist_ir_realizes_view_decorated_modules() -> None:
+    backend_config = _backend_config()
+
+    top = NetlistModule(
+        name="TOP",
+        file_id="top.asdl",
+        ports=[],
+        nets=[],
+        instances=[
+            NetlistInstance(
+                name="U0",
+                ref="LEAF",
+                ref_file_id="lib_default.asdl",
+                conns=[],
+            ),
+            NetlistInstance(
+                name="U1",
+                ref="LEAF@behave",
+                ref_file_id="lib_behave.asdl",
+                conns=[],
+            ),
+            NetlistInstance(
+                name="U2",
+                ref="LEAF@sim-fast",
+                ref_file_id="lib_fast.asdl",
+                conns=[],
+            ),
+        ],
+    )
+    leaf_default = NetlistModule(
+        name="LEAF",
+        file_id="lib_default.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    leaf_behave = NetlistModule(
+        name="LEAF@behave",
+        file_id="lib_behave.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    leaf_fast = NetlistModule(
+        name="LEAF@sim-fast",
+        file_id="lib_fast.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+
+    design = NetlistDesign(
+        modules=[top, leaf_default, leaf_behave, leaf_fast],
+        devices=[],
+        top="TOP",
+        entry_file_id="top.asdl",
+    )
+
+    netlist, diagnostics = _emit(design, backend_config)
+
+    assert diagnostics == []
+    expected = "\n".join(
+        [
+            "* header TOP",
+            "XU0 LEAF",
+            "XU1 LEAF_behave",
+            "XU2 LEAF_sim_fast",
+            ".subckt LEAF",
+            ".ends LEAF",
+            ".subckt LEAF_behave",
+            ".ends LEAF_behave",
+            ".subckt LEAF_sim_fast",
+            ".ends LEAF_sim_fast",
+            ".end",
+        ]
+    )
+    assert netlist == expected
+
+
 def test_render_netlist_ir_infers_top_from_entry_file_scope() -> None:
     backend_config = _backend_config()
 
