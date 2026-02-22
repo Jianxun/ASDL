@@ -703,3 +703,95 @@ def test_build_patterned_graph_accepts_structured_instance_declaration() -> None
     assert exprs is not None
     assert exprs[inst.param_expr_ids["r"]].raw == "2k"
     assert exprs[inst.param_expr_ids["enabled"]].raw == "true"
+
+
+def test_build_patterned_graph_structured_instances_match_inline_semantics() -> None:
+    inline_document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={"R1": "res r=2k enabled=true"},
+                nets={"$OUT": ["R1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                parameters={"r": "1k", "enabled": False},
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="R")},
+            )
+        },
+        top="top",
+    )
+    structured_document = AsdlDocument(
+        modules={
+            "top": ModuleDecl(
+                instances={
+                    "R1": InstanceDecl(
+                        ref="res",
+                        parameters={"r": "2k", "enabled": True},
+                    )
+                },
+                nets={"$OUT": ["R1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                parameters={"r": "1k", "enabled": False},
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="R")},
+            )
+        },
+        top="top",
+    )
+
+    inline_graph, inline_diags = build_patterned_graph(inline_document, file_id="design.asdl")
+    structured_graph, structured_diags = build_patterned_graph(
+        structured_document,
+        file_id="design.asdl",
+    )
+
+    assert inline_diags == []
+    assert structured_diags == []
+    inline_module = next(iter(inline_graph.modules.values()))
+    structured_module = next(iter(structured_graph.modules.values()))
+    inline_inst = next(iter(inline_module.instances.values()))
+    structured_inst = next(iter(structured_module.instances.values()))
+    assert inline_inst.ref_raw == structured_inst.ref_raw == "res"
+    assert inline_inst.param_expr_ids is not None
+    assert structured_inst.param_expr_ids is not None
+    inline_exprs = inline_graph.registries.pattern_expressions
+    structured_exprs = structured_graph.registries.pattern_expressions
+    assert inline_exprs is not None
+    assert structured_exprs is not None
+    assert inline_exprs[inline_inst.param_expr_ids["r"]].raw == "2k"
+    assert structured_exprs[structured_inst.param_expr_ids["r"]].raw == "2k"
+    assert inline_exprs[inline_inst.param_expr_ids["enabled"]].raw == "true"
+    assert structured_exprs[structured_inst.param_expr_ids["enabled"]].raw == "true"
+
+
+def test_build_patterned_graph_malformed_structured_instance_emits_ir001() -> None:
+    document = AsdlDocument.model_construct(
+        modules={
+            "top": ModuleDecl.model_construct(
+                instances={
+                    "R1": {"ref": "res", "parameters": {"r": "2k"}},
+                },
+                nets={"$OUT": ["R1.P"]},
+            )
+        },
+        devices={
+            "res": DeviceDecl(
+                ports=["P"],
+                parameters={"r": "1k"},
+                variables=None,
+                backends={"sim.ngspice": DeviceBackendDecl(template="R")},
+            )
+        },
+        top="top",
+    )
+
+    _, diagnostics = build_patterned_graph(document, file_id="design.asdl")
+
+    assert any(diag.code == "IR-001" for diag in diagnostics)
