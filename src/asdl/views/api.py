@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 from pathlib import Path
 from typing import Optional
@@ -93,7 +94,7 @@ def apply_resolved_view_bindings(
 
     Raises:
         ValueError: If sidecar entries do not match design hierarchy paths or
-            if shared module definitions would require non-uniform rewrites.
+            if top resolution fails while applying bindings.
     """
     index = build_instance_index(design)
     if not index.entries:
@@ -132,63 +133,96 @@ def apply_resolved_view_bindings(
     if top_module is None:
         raise ValueError("Unable to resolve top module for applying view bindings")
 
-    path_to_module_key: dict[str, tuple[Optional[str], str]] = {
-        top_module.name: (top_module.file_id, top_module.name)
-    }
-    overrides_by_module_key: dict[tuple[Optional[str], str], dict[str, str]] = {}
+    child_entries_by_parent: dict[str, list[ViewInstanceIndexEntry]] = {}
     for index_entry in index.entries:
-        parent_key = path_to_module_key.get(index_entry.path)
-        if parent_key is None:
-            raise ValueError(
-                "Resolved sidecar path mapping is incomplete for "
-                f"parent path '{index_entry.path}'"
-            )
-        resolved_symbol = resolved_by_path[index_entry.full_path]
-        module_overrides = overrides_by_module_key.setdefault(parent_key, {})
-        existing = module_overrides.get(index_entry.instance)
-        if existing is None:
-            module_overrides[index_entry.instance] = resolved_symbol
-        elif existing != resolved_symbol:
-            raise ValueError(
-                "Resolved sidecar requires non-uniform rewrite for shared module "
-                f"'{parent_key[1]}' instance '{index_entry.instance}' "
-                f"({existing} vs {resolved_symbol})"
-            )
+        child_entries_by_parent.setdefault(index_entry.path, []).append(index_entry)
 
-        child_module = _select_module(
-            modules_by_name,
-            modules_by_key,
-            index_entry,
-        )
-        if child_module is not None:
-            path_to_module_key[index_entry.full_path] = (
-                child_module.file_id,
-                child_module.name,
-            )
+    used_module_keys = {(module.file_id, module.name) for module in design.modules}
+    specialized_modules: list[NetlistModule] = []
+    top_override: Optional[NetlistModule] = None
+    specialized_ref_by_path: dict[str, str] = {}
 
-    rewritten_modules: list[NetlistModule] = []
-    for module in design.modules:
-        module_key = (module.file_id, module.name)
-        instance_overrides = overrides_by_module_key.get(module_key)
-        if instance_overrides is None:
-            rewritten_modules.append(module)
-            continue
+    def _specialize_occurrence(path: str, module: NetlistModule, *, is_top: bool) -> str:
+        nonlocal top_override
+        cached = specialized_ref_by_path.get(path)
+        if cached is not None:
+            return cached
 
+        child_entries = child_entries_by_parent.get(path, [])
+        if not child_entries:
+            specialized_ref_by_path[path] = module.name
+            return module.name
+
+        child_entries_by_instance = {
+            child_entry.instance: child_entry for child_entry in child_entries
+        }
         rewritten_instances = []
         changed = False
         for instance in module.instances:
-            resolved_ref = instance_overrides.get(instance.name)
-            if resolved_ref is None or resolved_ref == instance.ref:
+            child_entry = child_entries_by_instance.get(instance.name)
+            if child_entry is None:
                 rewritten_instances.append(instance)
                 continue
-            rewritten_instances.append(replace(instance, ref=resolved_ref))
+
+            resolved_symbol = resolved_by_path[child_entry.full_path]
+            child_module = _select_module(
+                modules_by_name,
+                modules_by_key,
+                name=resolved_symbol,
+                file_id=child_entry.ref_file_id,
+            )
+            rewritten_ref = resolved_symbol
+            rewritten_ref_file_id = instance.ref_file_id
+            if child_module is not None:
+                rewritten_ref = _specialize_occurrence(
+                    child_entry.full_path, child_module, is_top=False
+                )
+                if child_module.file_id is not None:
+                    rewritten_ref_file_id = child_module.file_id
+
+            if rewritten_ref == instance.ref and rewritten_ref_file_id == instance.ref_file_id:
+                rewritten_instances.append(instance)
+                continue
+
+            rewritten_instances.append(
+                replace(instance, ref=rewritten_ref, ref_file_id=rewritten_ref_file_id)
+            )
             changed = True
 
-        if changed:
-            rewritten_modules.append(replace(module, instances=rewritten_instances))
+        if not changed:
+            specialized_ref_by_path[path] = module.name
+            return module.name
+
+        rewritten_module = replace(module, instances=rewritten_instances)
+        if is_top:
+            top_override = rewritten_module
+            specialized_ref_by_path[path] = rewritten_module.name
+            return rewritten_module.name
+
+        specialized_name = _build_occurrence_module_name(
+            module.name,
+            path,
+            file_id=module.file_id,
+            used_module_keys=used_module_keys,
+        )
+        specialized_module = replace(rewritten_module, name=specialized_name)
+        specialized_modules.append(specialized_module)
+        used_module_keys.add((specialized_module.file_id, specialized_module.name))
+        modules_by_key[(specialized_module.file_id, specialized_module.name)] = specialized_module
+        modules_by_name.setdefault(specialized_module.name, []).append(specialized_module)
+        specialized_ref_by_path[path] = specialized_module.name
+        return specialized_module.name
+
+    _specialize_occurrence(top_module.name, top_module, is_top=True)
+
+    rewritten_modules: list[NetlistModule] = []
+    top_key = (top_module.file_id, top_module.name)
+    for module in design.modules:
+        if top_override is not None and (module.file_id, module.name) == top_key:
+            rewritten_modules.append(top_override)
         else:
             rewritten_modules.append(module)
-
+    rewritten_modules.extend(specialized_modules)
     return replace(design, modules=rewritten_modules)
 
 
@@ -220,20 +254,40 @@ def _resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
 def _select_module(
     modules_by_name: dict[str, list[NetlistModule]],
     modules_by_key: dict[tuple[Optional[str], str], NetlistModule],
-    index_entry: ViewInstanceIndexEntry,
+    *,
+    name: str,
+    file_id: Optional[str],
 ) -> Optional[NetlistModule]:
-    """Select the module target for one index entry's authored reference."""
-    ref_name = index_entry.ref
-    ref_file_id = index_entry.ref_file_id
-    if ref_file_id is not None:
-        return modules_by_key.get((ref_file_id, ref_name))
+    """Select one module by symbol name with optional file-id disambiguation."""
+    if file_id is not None:
+        exact = modules_by_key.get((file_id, name))
+        if exact is not None:
+            return exact
 
-    candidates = modules_by_name.get(ref_name, [])
+    candidates = modules_by_name.get(name, [])
     if len(candidates) == 1:
         return candidates[0]
     if candidates:
         return candidates[-1]
     return None
+
+
+def _build_occurrence_module_name(
+    module_name: str,
+    path: str,
+    *,
+    file_id: Optional[str],
+    used_module_keys: set[tuple[Optional[str], str]],
+) -> str:
+    """Build a deterministic, collision-safe module symbol for one occurrence."""
+    digest = hashlib.sha1(path.encode("utf-8")).hexdigest()[:8]
+    base_name = f"{module_name}__occ_{digest}"
+    candidate = base_name
+    suffix = 1
+    while (file_id, candidate) in used_module_keys:
+        candidate = f"{base_name}_{suffix}"
+        suffix += 1
+    return candidate
 
 
 def _diagnostic(code: str, message: str) -> Diagnostic:
