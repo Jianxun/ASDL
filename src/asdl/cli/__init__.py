@@ -468,6 +468,24 @@ def visualizer_dump(
     default=False,
     help="Emit top module as a .subckt block.",
 )
+@click.option(
+    "--view-config",
+    "view_config_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="View-binding config YAML path.",
+)
+@click.option(
+    "--view-profile",
+    "view_profile",
+    type=str,
+    help="View-binding profile name from --view-config.",
+)
+@click.option(
+    "--binding-sidecar",
+    "binding_sidecar_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Optional output path for resolved binding sidecar JSON.",
+)
 def netlist(
     input_file: Path,
     config_path: Optional[Path],
@@ -476,6 +494,9 @@ def netlist(
     backend: str,
     lib_roots: tuple[Path, ...],
     top_as_subckt: bool,
+    view_config_path: Optional[Path],
+    view_profile: Optional[str],
+    binding_sidecar_path: Optional[Path],
 ) -> None:
     """Generate a netlist from ASDL.
 
@@ -497,6 +518,27 @@ def netlist(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
+    if view_config_path is None and (
+        view_profile is not None or binding_sidecar_path is not None
+    ):
+        diagnostics.append(
+            _diagnostic(
+                CLI_SCHEMA_ERROR,
+                "--view-profile and --binding-sidecar require --view-config.",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+    if view_config_path is not None and view_profile is None:
+        diagnostics.append(
+            _diagnostic(
+                CLI_SCHEMA_ERROR,
+                "--view-config requires --view-profile.",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
     resolved_lib_roots, backend_config_path = _resolve_rc_settings(
         input_file, config_path, lib_roots, diagnostics
     )
@@ -509,6 +551,29 @@ def netlist(
     if design is None or _has_error_diagnostics(diagnostics):
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
+
+    resolved_bindings = None
+    if view_config_path is not None and view_profile is not None:
+        try:
+            from asdl.views.api import resolve_design_view_bindings, view_sidecar_to_jsonable
+        except Exception as exc:  # pragma: no cover - defensive: missing optional deps
+            diagnostics.append(
+                _diagnostic(
+                    CLI_IMPORT_ERROR,
+                    f"Failed to load view-binding dependencies: {exc}",
+                )
+            )
+            _emit_diagnostics(diagnostics)
+            raise click.exceptions.Exit(1)
+        resolved_bindings, view_diags = resolve_design_view_bindings(
+            design,
+            config_path=view_config_path,
+            profile_name=view_profile,
+        )
+        diagnostics.extend(view_diags)
+        if resolved_bindings is None or _has_error_diagnostics(diagnostics):
+            _emit_diagnostics(diagnostics)
+            raise click.exceptions.Exit(1)
 
     backend_config, backend_diags = load_backend(
         backend, backend_config_path=backend_config_path
@@ -543,6 +608,21 @@ def netlist(
         )
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
+
+    if binding_sidecar_path is not None:
+        sidecar_payload = view_sidecar_to_jsonable(resolved_bindings or ())
+        sidecar_text = json.dumps(sidecar_payload, indent=2) + "\n"
+        try:
+            binding_sidecar_path.write_text(sidecar_text, encoding="utf-8")
+        except OSError as exc:
+            diagnostics.append(
+                _diagnostic(
+                    CLI_WRITE_ERROR,
+                    f"Failed to write binding sidecar to '{binding_sidecar_path}': {exc}",
+                )
+            )
+            _emit_diagnostics(diagnostics)
+            raise click.exceptions.Exit(1)
 
     _emit_diagnostics(diagnostics)
 

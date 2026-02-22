@@ -12,9 +12,9 @@ T-289:
   pr: 312
   merged: true
 T-290:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 313
+  merged: true
 T-291:
   status: ready
   pr: null
