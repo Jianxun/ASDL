@@ -29,6 +29,9 @@
   sidecar entries (`path`, `instance`, `resolved`, `rule_id`) in index order.
 - Exported resolver APIs from `asdl.views` and validated focused + full views
   test coverage.
+- Reviewer follow-up: added strict validation that each rule `match.path`
+  resolves to an existing hierarchy node and now fail fast on unknown paths.
+- Added resolver regression coverage for unknown `match.path` behavior.
 
 ## Patch summary
 - Added `tests/unit_tests/views/test_view_resolver.py`:
@@ -36,11 +39,13 @@
   - later-rule precedence behavior
   - deterministic default `rule<k>` ID propagation into sidecar
   - baseline and rule-bind missing-symbol error behavior
+  - unknown `match.path` now raises a resolver error
 - Added `src/asdl/views/resolver.py`:
   - `ResolvedViewBindingEntry` sidecar dataclass
   - `resolve_view_bindings(design, profile)` implementing:
     - baseline selection from `view_order`
     - ordered rule overrides with later-rule precedence
+    - strict `match.path` hierarchy-node validation before rule application
     - final resolved-symbol existence checks
 - Updated `src/asdl/views/__init__.py` exports:
   - `ResolvedViewBindingEntry`
@@ -50,11 +55,12 @@
 - Pending PR creation.
 
 ## Verification
-- `./venv/bin/pytest tests/unit_tests/views/test_view_resolver.py -v` (pass, 4 passed)
+- `./venv/bin/pytest tests/unit_tests/views/test_view_resolver.py -v` (pass, 5 passed)
 - `./venv/bin/pytest tests/unit_tests/views/test_view_config.py tests/unit_tests/views/test_instance_index.py tests/unit_tests/views/test_view_resolver.py -v` (pass, 13 passed)
+- `./venv/bin/pytest tests/unit_tests/views/test_view_config.py tests/unit_tests/views/test_instance_index.py tests/unit_tests/views/test_view_resolver.py -v` (pass, 14 passed)
 
 ## Status request
-- In Progress
+- Ready for Review
 
 ## Blockers / Questions
 - None.

@@ -145,3 +145,23 @@ def test_resolve_view_bindings_raises_for_missing_rule_bind_symbol() -> None:
 
     with pytest.raises(ValueError, match="Resolved symbol 'swmatrix_Tgate@nonexistent'"):
         resolve_view_bindings(design, profile)
+
+
+def test_resolve_view_bindings_raises_for_unknown_match_path() -> None:
+    """Rules must fail when `match.path` does not resolve to a hierarchy node."""
+    design = _design_for_resolution()
+    profile = ViewProfile.model_validate(
+        {
+            "view_order": ["default"],
+            "rules": [
+                {
+                    "id": "bad_path",
+                    "match": {"path": "tb.missing", "instance": "x"},
+                    "bind": "TopCell",
+                }
+            ],
+        }
+    )
+
+    with pytest.raises(ValueError, match="match.path 'tb.missing'"):
+        resolve_view_bindings(design, profile)

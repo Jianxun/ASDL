@@ -7,7 +7,12 @@ from typing import Dict, List, Optional, Tuple
 
 from asdl.emit.netlist_ir import NetlistDesign
 
-from .instance_index import ViewInstanceIndexEntry, build_instance_index, match_index_entries
+from .instance_index import (
+    ViewInstanceIndex,
+    ViewInstanceIndexEntry,
+    build_instance_index,
+    match_index_entries,
+)
 from .models import ViewProfile
 
 
@@ -79,6 +84,11 @@ def resolve_view_bindings(
         sidecar.append(resolved_entry)
 
     for rule in profile.rules:
+        if rule.match.path is not None and not _index_has_hierarchy_path(index, rule.match.path):
+            raise ValueError(
+                f"Rule '{rule.id}' match.path '{rule.match.path}' does not resolve "
+                "to an existing hierarchy node"
+            )
         for matched_entry in match_index_entries(index, rule.match):
             position = sidecar_positions[matched_entry.full_path]
             sidecar[position] = ResolvedViewBindingEntry(
@@ -184,6 +194,13 @@ def _module_symbol_exists(
     if (file_id, symbol) in modules_by_key:
         return True
     return module_name_counts.get(symbol, 0) == 1
+
+
+def _index_has_hierarchy_path(index: ViewInstanceIndex, path: str) -> bool:
+    """Return whether `path` resolves to the index root or an instance node."""
+    if index.root_path == path:
+        return True
+    return any(entry.full_path == path for entry in index.entries)
 
 
 __all__ = ["ResolvedViewBindingEntry", "resolve_view_bindings"]
