@@ -32,7 +32,7 @@ T-294:
   pr: 317
   merged: true
 T-295:
-  status: ready_for_review
+  status: review_clean
   pr: 318
   merged: false
 T-296:
