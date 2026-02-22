@@ -41,6 +41,7 @@ class ViewInstanceIndex:
     """Deterministic hierarchical instance index used by view rule matching."""
 
     entries: tuple[ViewInstanceIndexEntry, ...]
+    root_path: Optional[str] = None
 
 
 def build_instance_index(design: NetlistDesign) -> ViewInstanceIndex:
@@ -57,7 +58,7 @@ def build_instance_index(design: NetlistDesign) -> ViewInstanceIndex:
     """
     top = _resolve_top_module(design)
     if top is None:
-        return ViewInstanceIndex(entries=())
+        return ViewInstanceIndex(entries=(), root_path=None)
 
     modules_by_key = {
         (module.file_id, module.name): module for module in design.modules
@@ -99,8 +100,8 @@ def build_instance_index(design: NetlistDesign) -> ViewInstanceIndex:
             _visit(target, child_parent_path, ancestry + (target_key,))
 
     top_key: Tuple[Optional[str], str] = (top.file_id, top.name)
-    _visit(top, "", (top_key,))
-    return ViewInstanceIndex(entries=tuple(entries))
+    _visit(top, top.name, (top_key,))
+    return ViewInstanceIndex(entries=tuple(entries), root_path=top.name)
 
 
 def match_index_entries(
@@ -118,16 +119,18 @@ def match_index_entries(
     return tuple(
         entry
         for entry in index.entries
-        if _entry_matches_scope(entry, match.path)
+        if _entry_matches_scope(entry, match.path, index.root_path)
         and (match.instance is None or entry.instance == match.instance)
         and (match.module is None or entry.module == match.module)
     )
 
 
-def _entry_matches_scope(entry: ViewInstanceIndexEntry, path: Optional[str]) -> bool:
+def _entry_matches_scope(
+    entry: ViewInstanceIndexEntry, path: Optional[str], root_path: Optional[str]
+) -> bool:
     """Apply scope semantics for optional path predicates."""
     if path is None:
-        return entry.path == ""
+        return root_path is not None and entry.path == root_path
 
     full_path = entry.full_path
     return full_path == path or full_path.startswith(f"{path}.")

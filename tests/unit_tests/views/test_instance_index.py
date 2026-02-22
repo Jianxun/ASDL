@@ -43,10 +43,10 @@ def test_build_instance_index_is_deterministic_preorder() -> None:
     index = build_instance_index(design)
 
     assert [(entry.path, entry.instance, entry.module) for entry in index.entries] == [
-        ("", "dut", "TopCell"),
-        ("dut", "SR_row", "ShiftReg_row_25"),
-        ("dut", "Tgate<25>", "swmatrix_Tgate"),
-        ("", "aux", "AuxCell"),
+        ("tb", "dut", "TopCell"),
+        ("tb.dut", "SR_row", "ShiftReg_row_25"),
+        ("tb.dut", "Tgate<25>", "swmatrix_Tgate"),
+        ("tb", "aux", "AuxCell"),
     ]
 
 
@@ -76,7 +76,7 @@ def test_match_index_entries_omitted_path_matches_root_scope_only() -> None:
 
     matches = match_index_entries(index, ViewMatch(instance="Xbuf"))
 
-    assert [(entry.path, entry.instance) for entry in matches] == [("", "Xbuf")]
+    assert [(entry.path, entry.instance) for entry in matches] == [("tb", "Xbuf")]
 
 
 def test_match_index_entries_path_scopes_to_subtree() -> None:
@@ -109,11 +109,11 @@ def test_match_index_entries_path_scopes_to_subtree() -> None:
     index = build_instance_index(design)
 
     matches = match_index_entries(
-        index, ViewMatch(path="dut", module="swmatrix_Tgate")
+        index, ViewMatch(path="tb.dut", module="swmatrix_Tgate")
     )
 
     assert [(entry.path, entry.instance, entry.module) for entry in matches] == [
-        ("dut", "Tgate<25>", "swmatrix_Tgate")
+        ("tb.dut", "Tgate<25>", "swmatrix_Tgate")
     ]
 
 
