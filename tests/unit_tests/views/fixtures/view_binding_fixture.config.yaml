@@ -1,0 +1,30 @@
+config_1:
+  view_order: [behave, default]
+
+config_2:
+  view_order: [default, behave]
+  rules:
+    - id: scoped_sr_row_behave
+      match:
+        path: tb.dut
+        instance: SR_row
+      bind: shift_row@behave
+
+config_3:
+  view_order: [default, behave]
+  rules:
+    - id: tgate1_behave
+      match:
+        path: tb.dut
+        instance: Tgate1
+      bind: sw_tgate@behave
+    - id: tgate2_behave
+      match:
+        path: tb.dut
+        instance: Tgate2
+      bind: sw_tgate@behave
+    - id: tgate1_default
+      match:
+        path: tb.dut
+        instance: Tgate1
+      bind: sw_tgate

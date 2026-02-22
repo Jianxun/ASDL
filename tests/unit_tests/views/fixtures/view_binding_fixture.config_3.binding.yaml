@@ -1,0 +1,15 @@
+- path: tb
+  instance: dut
+  resolved: row
+- path: tb.dut
+  instance: SR_row
+  resolved: shift_row
+- path: tb.dut
+  instance: Tgate1
+  resolved: sw_tgate
+- path: tb.dut
+  instance: Tgate2
+  resolved: sw_tgate@behave
+- path: tb.dut
+  instance: Tgate_dbg
+  resolved: sw_tgate@behave
