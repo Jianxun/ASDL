@@ -1,6 +1,14 @@
 # Architect Scratchpad
 
 ## Architecture notes (session summary; not yet ADRs)
+## Deferred follow-up (2026-02-22)
+- Deferred CLI hierarchy introspection (`asdlc hier`) to a later cycle.
+- Resume with subcommands oriented for agent/tooling use:
+  - `asdlc hier modules <entry.asdl>`
+  - `asdlc hier tree <entry.asdl> --top <module> [--depth N] [--json]`
+  - `asdlc hier refs <entry.asdl> --module <module> [--ref <regex>] [--json]`
+  - `asdlc hier paths <entry.asdl> --from <inst_path> --to <inst_path>`
+- Keep initial scope read-only and PatternedGraph-based (no query DSL in v1).
 ## Current status (2026-01-28)
 - Visualizer dev loop added on branch `feature/webview-harness`: webview dev harness,
   Playwright viewport test, and payload builder script for real .asdl fixtures.

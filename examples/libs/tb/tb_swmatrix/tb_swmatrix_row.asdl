@@ -1,0 +1,9 @@
+imports: 
+  swm_row: sw_matrix/swmatrix_row_25_w_clkbuf.asdl
+
+modules:
+  tb:
+    instances:
+      dut: swm_row.swmatrix_row_25_w_clkbuf
+
+  

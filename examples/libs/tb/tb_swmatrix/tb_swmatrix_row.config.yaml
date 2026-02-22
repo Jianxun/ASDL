@@ -1,0 +1,28 @@
+config_0:
+  description: Testbench for swmatrix row
+  view_order: [default, behave]
+
+config_1:
+  description: Testbench for swmatrix row, all behavioral models
+  view_order: [behave, default]
+
+config_2:
+  description: Testbench for swmatrix row, all default models
+  view_order: [default, behave]
+  rules:
+    - match: {path: tb.dut, instance: SR_row}
+      bind: ShiftReg_row_25@behave
+    - match: {path: tb.dut, module: swmatrix_Tgate}
+      bind: swmatrix_Tgate@behave
+
+
+config_3:
+  description: Testbench for swmatrix row, all default models
+  view_order: [default, behave]
+  rules:
+    - match: {path: tb.dut, instance: SR_row} # match the instance named `SR_row` under `tb.dut`
+      bind: ShiftReg_row_25@behave
+    - match: {module: swmatrix_Tgate} # no `path`, match all instances of `swmatrix_Tgate` in the design
+      bind: swmatrix_Tgate@behave
+    - match: {path: tb.dut, module: swmatrix_Tgate} # match all instances of `swmatrix_Tgate` under `tb.dut`
+      bind: swmatrix_Tgate@behave
