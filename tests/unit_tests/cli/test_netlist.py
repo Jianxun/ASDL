@@ -239,6 +239,17 @@ def _view_config_yaml(view_order: str) -> str:
     )
 
 
+def _view_config_two_profiles_yaml() -> str:
+    return "\n".join(
+        [
+            "profile_default:",
+            "  view_order: [default, behave]",
+            "profile_behave:",
+            "  view_order: [behave, default]",
+        ]
+    )
+
+
 def _write_import_entry(path: Path, import_path: str) -> None:
     lines = [
         "imports:",
@@ -699,6 +710,65 @@ def test_cli_netlist_view_resolution_failure_exits_nonzero(
     stderr = getattr(result, "stderr", "")
     combined = f"{result.output}{stderr}"
     assert "Unable to resolve baseline view" in combined
+
+
+def test_cli_netlist_view_binding_profiles_change_emitted_instance_refs(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "view_binding.asdl"
+    input_path.write_text(_view_binding_pipeline_yaml(), encoding="utf-8")
+    view_config_path = tmp_path / "view_config.yaml"
+    view_config_path.write_text(
+        _view_config_two_profiles_yaml(),
+        encoding="utf-8",
+    )
+    default_output = tmp_path / "profile_default.spice"
+    behave_output = tmp_path / "profile_behave.spice"
+
+    runner = CliRunner()
+    default_result = runner.invoke(
+        cli,
+        [
+            "netlist",
+            str(input_path),
+            "--view-config",
+            str(view_config_path),
+            "--view-profile",
+            "profile_default",
+            "-o",
+            str(default_output),
+        ],
+    )
+    behave_result = runner.invoke(
+        cli,
+        [
+            "netlist",
+            str(input_path),
+            "--view-config",
+            str(view_config_path),
+            "--view-profile",
+            "profile_behave",
+            "-o",
+            str(behave_output),
+        ],
+    )
+
+    assert default_result.exit_code == 0
+    assert behave_result.exit_code == 0
+
+    default_refs = [
+        line.rsplit(" ", 1)[-1]
+        for line in default_output.read_text(encoding="utf-8").splitlines()
+        if line.startswith("X")
+    ]
+    behave_refs = [
+        line.rsplit(" ", 1)[-1]
+        for line in behave_output.read_text(encoding="utf-8").splitlines()
+        if line.startswith("X")
+    ]
+    assert default_refs != behave_refs
+    assert "leaf" in default_refs
+    assert "leaf_behave" in behave_refs
 
 
 def test_cli_help() -> None:
