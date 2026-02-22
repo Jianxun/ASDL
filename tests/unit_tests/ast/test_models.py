@@ -114,6 +114,34 @@ def test_module_instances_reject_malformed_inline_refs(expr: str) -> None:
         ModuleDecl.model_validate({"instances": {"X0": expr}})
 
 
+@pytest.mark.parametrize("ref", ["lib.cell", "lib.cell@view"])
+def test_module_instances_accept_qualified_structured_refs(ref: str) -> None:
+    module = ModuleDecl.model_validate({"instances": {"X0": {"ref": ref}}})
+    assert isinstance(module.instances["X0"], InstanceDecl)
+    assert module.instances["X0"].ref == ref
+
+
+@pytest.mark.parametrize("expr", ["lib.cell m=1", "lib.cell@view m=1"])
+def test_module_instances_accept_qualified_inline_refs(expr: str) -> None:
+    module = ModuleDecl.model_validate({"instances": {"X0": expr}})
+    assert module.instances["X0"] == expr
+
+
+@pytest.mark.parametrize("ref", ["lib.@view", "lib.cell@", "lib.cell@view@extra"])
+def test_module_instances_reject_malformed_qualified_structured_refs(ref: str) -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"instances": {"X0": {"ref": ref}}})
+
+
+@pytest.mark.parametrize(
+    "expr",
+    ["lib.@view m=1", "lib.cell@ m=1", "lib.cell@view@extra m=1"],
+)
+def test_module_instances_reject_malformed_qualified_inline_refs(expr: str) -> None:
+    with pytest.raises(ValidationError):
+        ModuleDecl.model_validate({"instances": {"X0": expr}})
+
+
 @pytest.mark.parametrize("expr", ["", "   "])
 def test_module_instances_reject_blank_inline_expression(expr: str) -> None:
     with pytest.raises(ValidationError):
