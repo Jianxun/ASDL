@@ -1,7 +1,7 @@
 schema_version: 2
 T-287:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 310
   merged: false
 T-288:
   status: ready
