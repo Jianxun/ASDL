@@ -63,6 +63,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Public Python modules/classes/functions and non-trivial private helpers MUST include PEP 257 docstrings using Google-style sections; docstrings capture purpose, inputs/outputs, side effects, and relevant invariants or ordering rules for agent readability.
 - Comments MUST explain intent, rationale, or tricky logic (not restate code) and remain accurate; prefer docstrings over inline comments for API-level behavior.
 - Regression tests for compiler behavior MUST use stable, self-contained fixtures under `tests/` and MUST NOT depend on mutable `examples/` content.
+- Regression coverage is part of implementation DoD: feature/bugfix tasks MUST include or update self-contained regression tests in the same task, not as a deferred follow-up-only task.
 
 ## Verification protocol
 - Manual check: `agents/context` contains lessons.md, contract.md, tasks.yaml, tasks_state.yaml, tasks_icebox.yaml, tasks_archived.yaml, project_status.md, codebase_map.md.

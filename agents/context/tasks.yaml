@@ -1,226 +1,52 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-287
-    title: Implement view config parser and validation models
+  - id: T-297
+    title: Restore import-qualified instance refs with decorated-symbol validation
     owner: Executor
     dod: >
-      Add a new `asdl.views` config parser API for profile-based view binding
-      (`view_order`, ordered `rules`, typed `match`) and validate schema rules
-      from `spec_asdl_view_config.md`. Enforce `instance`/`module` mutual
-      exclusion, assign deterministic default rule IDs (`rule<k>`), and emit
-      deterministic diagnostics for malformed config payloads.
+      Fix AST instance-ref validation so import-qualified refs (`ns.symbol`) are
+      accepted again while preserving decorated view grammar checks for symbol
+      tokens (`cell` or `cell@view`). Keep module declaration-name validation
+      strict (`cell`/`cell@view` only) and ensure parser diagnostics remain
+      specific for malformed `@` usage. Include self-contained regressions under
+      `tests/` for valid qualified refs (`ns.symbol`, `ns.symbol@view`) and
+      malformed variants.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/views/test_view_config.py -v
+      - ./venv/bin/pytest tests/unit_tests/ast/test_models.py tests/unit_tests/parser/test_parser.py tests/unit_tests/cli/test_netlist.py -k "imports_with or malformed_decorated or module_symbol or qualified" -v
     links:
-      scratchpad: agents/scratchpads/T-287_view_config_parser.md
-      adr: agents/adr/ADR-0033-view-binding-config-and-sidecar.md
-      spec: docs/specs/spec_asdl_view_config.md
-    files:
-      - src/asdl/views/config.py
-      - src/asdl/views/models.py
-      - src/asdl/views/__init__.py
-      - tests/unit_tests/views/test_view_config.py
-  - id: T-288
-    title: Add deterministic hierarchical instance index for view binding
-    owner: Executor
-    depends_on:
-      - T-287
-    dod: >
-      Build a deterministic hierarchical instance index for binding resolution.
-      Index entries must include parent path (excluding leaf instance name),
-      instance leaf name, and referenced logical module symbol context needed by
-      resolver predicates. Match semantics must support missing `path` as
-      root-level scope.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/views/test_instance_index.py -v
-    links:
-      scratchpad: agents/scratchpads/T-288_view_instance_index.md
-      adr: agents/adr/ADR-0033-view-binding-config-and-sidecar.md
-      spec: docs/specs/spec_asdl_view_config.md
-    files:
-      - src/asdl/views/instance_index.py
-      - src/asdl/views/models.py
-      - tests/unit_tests/views/test_instance_index.py
-  - id: T-289
-    title: Implement view binding resolver and resolved sidecar entries
-    owner: Executor
-    depends_on:
-      - T-288
-    dod: >
-      Implement resolver logic that applies baseline `view_order` selection,
-      then ordered rule overrides with later-rule precedence. Resolver must
-      support `path`/`instance`/`module` predicates per spec and emit sidecar
-      entries containing `path`, `instance`, `resolved`, and `rule_id`.
-      `resolved` must use full module symbol form (`cell` or `cell@view`).
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/views/test_view_resolver.py -v
-    links:
-      scratchpad: agents/scratchpads/T-289_view_binding_resolver.md
-      adr: agents/adr/ADR-0033-view-binding-config-and-sidecar.md
-      spec: docs/specs/spec_asdl_view_config.md
-    files:
-      - src/asdl/views/resolver.py
-      - src/asdl/views/models.py
-      - src/asdl/views/instance_index.py
-      - tests/unit_tests/views/test_view_resolver.py
-  - id: T-290
-    title: Integrate view resolver into netlist CLI with sidecar output
-    owner: Executor
-    depends_on:
-      - T-289
-    dod: >
-      Add netlist CLI integration for view config/profile selection and optional
-      binding sidecar output. Introduce `--view-config`, `--view-profile`, and
-      `--binding-sidecar` options, run resolver before emission, and write
-      deterministic sidecar JSON when requested. Resolution failures must emit
-      diagnostics and terminate with non-zero exit.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/cli/test_netlist.py -v
-    links:
-      scratchpad: agents/scratchpads/T-290_cli_view_binding_integration.md
-      adr: agents/adr/ADR-0033-view-binding-config-and-sidecar.md
-      spec: docs/specs/spec_asdl_view_config.md
-    files:
-      - src/asdl/cli/__init__.py
-      - src/asdl/views/api.py
-      - src/asdl/views/config.py
-      - src/asdl/views/resolver.py
-      - tests/unit_tests/cli/test_netlist.py
-  - id: T-291
-    title: Emit mixed-view realization names from resolved module symbols
-    owner: Executor
-    depends_on:
-      - T-289
-    dod: >
-      Update netlist emission naming to support mixed view realizations by
-      deriving emitted module refs from resolved symbols:
-      default -> `cell`, non-default -> `cell_<view>` (sanitized). Preserve
-      deterministic behavior with existing duplicate-name disambiguation and
-      ensure instance calls reference realized emitted names.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/netlist/test_netlist_emitter.py -v
-    links:
-      scratchpad: agents/scratchpads/T-291_emit_mixed_view_realizations.md
-      adr: agents/adr/ADR-0032-view-decorated-module-symbols.md
-      spec: docs/specs/spec_netlist_emission.md
-    files:
-      - src/asdl/emit/netlist/render.py
-      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
-      - tests/unit_tests/netlist/test_netlist_emitter.py
-  - id: T-292
-    title: Add swmatrix regression coverage for config-driven view binding
-    owner: Executor
-    depends_on:
-      - T-290
-      - T-291
-    dod: >
-      Add regression coverage for global module substitution, scoped path
-      override, and later-rule precedence. Tests should be self-contained and
-      use stable fixtures under `tests/` (hypothetical ASDL modules/views are
-      allowed); do not depend on `examples/` assets. Verify sidecar payload
-      fields (`path`, `instance`, `resolved`) and at least one mixed-view
-      netlist emission that contains both default and non-default realization
-      names in output references.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/cli/test_netlist.py tests/unit_tests/views/test_view_resolver.py -v
-    links:
-      scratchpad: agents/scratchpads/T-292_swmatrix_view_binding_regressions.md
-      adr: agents/adr/ADR-0033-view-binding-config-and-sidecar.md
-      spec: docs/specs/spec_asdl_view_config.md
-    files:
-      - tests/unit_tests/cli/test_netlist.py
-      - tests/unit_tests/views/test_view_resolver.py
-  - id: T-293
-    title: Apply resolved view bindings to netlist emission input
-    owner: Executor
-    depends_on:
-      - T-291
-      - T-295
-    dod: >
-      Ensure resolved view bindings are applied to emitted instance references
-      before netlist rendering so profile selection changes netlist output as
-      required by `spec_asdl_view_config.md`. Preserve deterministic sidecar
-      ordering and keep existing emission naming/disambiguation behavior.
-      Add a regression that proves two different profiles produce different
-      emitted instance refs when bindings differ.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/views/test_view_apply.py tests/unit_tests/cli/test_netlist.py -k "view and binding" -v
-    links:
-      scratchpad: agents/scratchpads/T-293_apply_view_bindings_to_emission.md
-      adr: agents/adr/ADR-0033-view-binding-config-and-sidecar.md
-      spec: docs/specs/spec_asdl_view_config.md
-    files:
-      - src/asdl/views/api.py
-      - src/asdl/cli/__init__.py
-      - src/asdl/emit/netlist_ir.py
-      - tests/unit_tests/views/test_view_apply.py
-      - tests/unit_tests/cli/test_netlist.py
-  - id: T-294
-    title: Enforce decorated module symbol grammar in AST parse/schema
-    owner: Executor
-    depends_on:
-      - T-295
-    dod: >
-      Enforce `cell` / `cell@view` grammar for module symbols in AST validation
-      so malformed symbols like `@view`, `cell@`, and `cell@view@extra` are
-      rejected with diagnostics at parse/schema stage per
-      `spec_asdl_views.md`. Cover both module declaration names and instance
-      references, and include targeted negative tests.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/ast/test_models.py tests/unit_tests/parser/test_parser.py -k "view or decorated or module symbol" -v
-    links:
-      scratchpad: agents/scratchpads/T-294_ast_module_symbol_validation.md
+      scratchpad: agents/scratchpads/T-297_qualified_refs_with_view_validation.md
       adr: agents/adr/ADR-0032-view-decorated-module-symbols.md
       spec: docs/specs/spec_asdl_views.md
     files:
       - src/asdl/ast/models.py
-      - src/asdl/ast/parser.py
       - tests/unit_tests/ast/test_models.py
       - tests/unit_tests/parser/test_parser.py
-  - id: T-295
-    title: Build stable view fixture foundation for binding regressions
-    owner: Executor
-    dod: >
-      Add dedicated stable fixtures under `tests/unit_tests/views/fixtures/`
-      (or equivalent test fixture path) that encode baseline selection, scoped
-      override, and later-rule precedence for view binding. Migrate at least
-      one resolver test and one CLI netlist test to these fixtures so follow-up
-      tasks can validate behavior without `examples/` coupling. Fixtures should
-      be fully self-contained and may use hypothetical ASDL modules/views to
-      stress edge cases.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/views/test_view_resolver.py tests/unit_tests/cli/test_netlist.py -k "view and fixture" -v
-    links:
-      scratchpad: agents/scratchpads/T-295_stable_view_fixtures.md
-      adr: agents/adr/ADR-0033-view-binding-config-and-sidecar.md
-      spec: docs/specs/spec_asdl_view_config.md
-    files:
-      - tests/unit_tests/views/fixtures
-      - tests/unit_tests/views/test_view_resolver.py
       - tests/unit_tests/cli/test_netlist.py
-  - id: T-296
-    title: Remove remaining example-based view regressions
+  - id: T-298
+    title: Support occurrence-specific view application for reused module definitions
     owner: Executor
     depends_on:
-      - T-293
-      - T-294
-      - T-295
+      - T-297
     dod: >
-      Remove remaining regression-test dependencies on `examples/` for view
-      binding and mixed-view emission coverage. Update resolver and CLI tests
-      to consume only stable fixtures under `tests/`, and preserve scenario
-      coverage for global substitution, scoped override, and later-rule
-      precedence. Resulting fixture suite must be self-contained and support
-      hypothetical stress cases independent of project example libraries.
+      Remove the non-uniform rewrite failure mode in view-binding application so
+      path-scoped overrides work when the same module definition is instantiated
+      at multiple hierarchy paths with different resolved refs. Ensure emission
+      uses per-occurrence resolved symbols deterministically and keeps existing
+      sidecar semantics. Include self-contained regressions under `tests/` for
+      divergent path binding on reused module definitions and verify sidecar +
+      emitted call refs.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/views/test_view_resolver.py tests/unit_tests/cli/test_netlist.py -k "view and fixture" -v
+      - ./venv/bin/pytest tests/unit_tests/views/test_view_apply.py tests/unit_tests/views/test_view_resolver.py tests/unit_tests/cli/test_netlist.py -k "view_fixture_binding_profiles_change_emitted_instance_refs or non_uniform or scoped_override or divergent" -v
     links:
-      scratchpad: agents/scratchpads/T-296_remove_example_view_regressions.md
+      scratchpad: agents/scratchpads/T-298_occurrence_specific_view_apply.md
       adr: agents/adr/ADR-0033-view-binding-config-and-sidecar.md
       spec: docs/specs/spec_asdl_view_config.md
     files:
-      - tests/unit_tests/views/test_view_resolver.py
+      - src/asdl/views/api.py
+      - src/asdl/cli/__init__.py
+      - src/asdl/emit/netlist/render.py
+      - tests/unit_tests/views/test_view_apply.py
       - tests/unit_tests/cli/test_netlist.py
-      - tests/unit_tests/views/fixtures
+
 backlog: []

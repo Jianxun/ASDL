@@ -1,6 +1,16 @@
 schema_version: 1
 
 archive:
+  - T-296: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-296_remove_example_view_regressions.md, pr: 319}
+  - T-295: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-295_stable_view_fixtures.md, pr: 318}
+  - T-294: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-294_ast_module_symbol_validation.md, pr: 317}
+  - T-293: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-293_apply_view_bindings_to_emission.md, pr: 316}
+  - T-292: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-292_swmatrix_view_binding_regressions.md, pr: 315}
+  - T-291: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-291_emit_mixed_view_realizations.md, pr: 314}
+  - T-290: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-290_cli_view_binding_integration.md, pr: 313}
+  - T-289: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-289_view_binding_resolver.md, pr: 312}
+  - T-288: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-288_view_instance_index.md, pr: 311}
+  - T-287: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-287_view_config_parser.md, pr: 310}
   - T-286: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-286_structured_instance_regressions.md, pr: 308}
   - T-285: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-285_structured_instance_lowering_fix.md, pr: 307}
   - T-284: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-284_import_entry_top_resolution.md, pr: 299}
