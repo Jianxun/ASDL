@@ -28,7 +28,7 @@ T-293:
   pr: 316
   merged: true
 T-294:
-  status: request_changes
+  status: ready_for_review
   pr: 317
   merged: false
 T-295:
