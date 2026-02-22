@@ -50,6 +50,10 @@ class _NetlistIRSymbolMaps:
 
 
 _ENV_VAR_PATTERN = re.compile(r"\$(\w+|\{[^}]+\})")
+_MODULE_SYMBOL_PATTERN = re.compile(
+    r"^(?P<cell>[A-Za-z_][A-Za-z0-9_]*)(?:@(?P<view>[A-Za-z_][A-Za-z0-9_]*))?$"
+)
+_SANITIZE_TOKEN_PATTERN = re.compile(r"[^A-Za-z0-9_]+")
 _MAX_PORT_PREVIEW = 8
 _MAX_PORT_MATCH_SCAN = 200
 
@@ -539,22 +543,55 @@ def _hash_file_id(file_id: str) -> str:
     return hashlib.sha1(file_id.encode("utf-8")).hexdigest()[:8]
 
 
+def _realization_name_from_symbol(symbol: str) -> str:
+    """Map a module symbol (`cell` or `cell@view`) to emitted realization name."""
+    match = _MODULE_SYMBOL_PATTERN.fullmatch(symbol)
+    if match is not None:
+        cell = match.group("cell")
+        view = match.group("view")
+        if view is None or view == "default":
+            return cell
+        return f"{cell}_{_sanitize_realization_token(view)}"
+    if symbol.count("@") == 1:
+        cell, _, view = symbol.partition("@")
+        cell_token = _sanitize_realization_token(cell)
+        if view == "" or view == "default":
+            return cell_token
+        return f"{cell_token}_{_sanitize_realization_token(view)}"
+    return _sanitize_realization_token(symbol.replace("@", "_"))
+
+
+def _sanitize_realization_token(value: str) -> str:
+    """Sanitize one realization token for simulator-facing symbol names."""
+    sanitized = _SANITIZE_TOKEN_PATTERN.sub("_", value).strip("_")
+    if sanitized:
+        return sanitized
+    return "view"
+
+
 def _build_module_emitted_names_ir(
     modules: List[NetlistModule],
     modules_by_name: Dict[str, List[NetlistModule]],
 ) -> Dict[Tuple[Optional[str], str], str]:
-    duplicate_names = {
-        name for name, module_list in modules_by_name.items() if len(module_list) > 1
-    }
+    _ = modules_by_name
+    base_names: Dict[Tuple[Optional[str], str], str] = {}
+    realized_counts: Dict[str, int] = {}
+    for module in modules:
+        base_name = _realization_name_from_symbol(module.name)
+        module_key = _module_key_ir(module)
+        base_names[module_key] = base_name
+        realized_counts[base_name] = realized_counts.get(base_name, 0) + 1
+
     emitted_names: Dict[Tuple[Optional[str], str], str] = {}
     for module in modules:
-        name = module.name
+        module_key = _module_key_ir(module)
+        name = base_names[module_key]
         file_id = module.file_id
-        if name in duplicate_names and file_id is not None:
+        if realized_counts.get(name, 0) > 1 and file_id is not None:
             emitted = f"{name}__{_hash_file_id(file_id)}"
         else:
             emitted = name
-        emitted_names[_module_key_ir(module)] = emitted
+        emitted_names[module_key] = emitted
     return emitted_names
 
 

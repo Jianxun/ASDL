@@ -1051,7 +1051,7 @@ def test_emit_netlist_realizes_view_symbols_and_hashes_duplicate_realizations() 
     entry_file_id = "entry.asdl"
     default_file_id = "lib_default.asdl"
     behave_file_id = "lib_behave.asdl"
-    behave_hash = hashlib.sha1(behave_file_id.encode("utf-8")).hexdigest()[:8]
+    entry_hash = hashlib.sha1(entry_file_id.encode("utf-8")).hexdigest()[:8]
     explicit_default_hash = hashlib.sha1(default_file_id.encode("utf-8")).hexdigest()[:8]
 
     default_module = ModuleOp(
@@ -1116,16 +1116,16 @@ def test_emit_netlist_realizes_view_symbols_and_hashes_duplicate_realizations() 
         [
             "HEADER top",
             ".subckt top A",
-            "XU0 A amp",
+            f"XU0 A amp__{entry_hash}",
             f"XU1 A amp__{explicit_default_hash}",
-            f"XU2 A amp_behave__{behave_hash}",
+            "XU2 A amp_behave",
             ".ends top",
-            ".subckt amp A",
-            ".ends amp",
+            f".subckt amp__{entry_hash} A",
+            f".ends amp__{entry_hash}",
             f".subckt amp__{explicit_default_hash} A",
             f".ends amp__{explicit_default_hash}",
-            f".subckt amp_behave__{behave_hash} A",
-            f".ends amp_behave__{behave_hash}",
+            ".subckt amp_behave A",
+            ".ends amp_behave",
             "FOOTER top",
         ]
     )
