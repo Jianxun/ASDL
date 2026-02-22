@@ -1,10 +1,33 @@
 """Unit tests for profile-based view binding resolution."""
 
+from pathlib import Path
+
 import pytest
+import yaml
 
 from asdl.emit.netlist_ir import NetlistDesign, NetlistInstance, NetlistModule
+from asdl.lowering import run_netlist_ir_pipeline
+from asdl.views.config import load_view_config
 from asdl.views.models import ViewProfile
 from asdl.views.resolver import resolve_view_bindings
+
+SWMATRIX_ASDL = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl")
+SWMATRIX_CONFIG = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.config.yaml")
+SWMATRIX_BINDING = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.binding.yaml")
+
+
+def _swmatrix_design() -> NetlistDesign:
+    design, diagnostics = run_netlist_ir_pipeline(entry_file=SWMATRIX_ASDL, verify=True)
+    assert diagnostics == []
+    assert design is not None
+    return design
+
+
+def _swmatrix_profile(name: str) -> ViewProfile:
+    config, diagnostics = load_view_config(SWMATRIX_CONFIG)
+    assert diagnostics == []
+    assert config is not None
+    return config.profiles[name]
 
 
 def _design_for_resolution() -> NetlistDesign:
@@ -165,3 +188,39 @@ def test_resolve_view_bindings_raises_for_unknown_match_path() -> None:
 
     with pytest.raises(ValueError, match="match.path 'tb.missing'"):
         resolve_view_bindings(design, profile)
+
+
+def test_resolve_view_bindings_swmatrix_global_module_substitution() -> None:
+    """Global module match rewrites all root-scoped swmatrix_Tgate instances."""
+    resolved = resolve_view_bindings(_swmatrix_design(), _swmatrix_profile("config_1"))
+
+    assert [(entry.path, entry.instance, entry.resolved) for entry in resolved] == [
+        ("tb", "dut", "swmatrix_row_25_w_clkbuf"),
+        ("tb.dut", "SR_row", "ShiftReg_row_25"),
+        ("tb.dut", "Tgate2", "swmatrix_Tgate@behave"),
+        ("tb.dut", "Tgate1", "swmatrix_Tgate@behave"),
+        ("tb.dut", "Tgate_dbg", "swmatrix_Tgate@behave"),
+    ]
+
+
+def test_resolve_view_bindings_swmatrix_scoped_path_override() -> None:
+    """Scoped path+instance override rewrites only SR_row under tb.dut."""
+    resolved = resolve_view_bindings(_swmatrix_design(), _swmatrix_profile("config_2"))
+
+    assert [(entry.path, entry.instance, entry.resolved) for entry in resolved] == [
+        ("tb", "dut", "swmatrix_row_25_w_clkbuf"),
+        ("tb.dut", "SR_row", "ShiftReg_row_25@behave"),
+        ("tb.dut", "Tgate2", "swmatrix_Tgate"),
+        ("tb.dut", "Tgate1", "swmatrix_Tgate"),
+        ("tb.dut", "Tgate_dbg", "swmatrix_Tgate@behave"),
+    ]
+
+
+def test_resolve_view_bindings_swmatrix_later_rule_precedence_matches_fixture() -> None:
+    """Later rules override earlier ones and match checked-in binding expectations."""
+    resolved = resolve_view_bindings(_swmatrix_design(), _swmatrix_profile("config_3"))
+    expected = yaml.safe_load(SWMATRIX_BINDING.read_text(encoding="utf-8"))
+
+    assert [(entry.path, entry.instance, entry.resolved) for entry in resolved] == [
+        (record["path"], record["instance"], record["resolved"]) for record in expected
+    ]

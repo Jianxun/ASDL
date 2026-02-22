@@ -2,10 +2,15 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 
 from click.testing import CliRunner
 
 from asdl.cli import cli
+
+SWMATRIX_ASDL = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl")
+SWMATRIX_CONFIG = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.config.yaml")
+SWMATRIX_BINDING = Path("examples/libs/tb/tb_swmatrix/tb_swmatrix_row.binding.yaml")
 
 
 def _pipeline_yaml() -> str:
@@ -625,6 +630,45 @@ def test_cli_netlist_view_config_profile_writes_binding_sidecar(
             "rule_id": None,
         }
     ]
+
+
+def test_cli_netlist_swmatrix_fixture_sidecar_and_mixed_view_emission(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    sidecar_path = tmp_path / "swmatrix_bindings.json"
+    output_path = tmp_path / "swmatrix.spice"
+    expected = yaml.safe_load(SWMATRIX_BINDING.read_text(encoding="utf-8"))
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "netlist",
+            str(SWMATRIX_ASDL),
+            "--view-config",
+            str(SWMATRIX_CONFIG),
+            "--view-profile",
+            "config_3",
+            "--binding-sidecar",
+            str(sidecar_path),
+            "-o",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert sidecar_path.exists()
+    payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    assert [{k: entry[k] for k in ("path", "instance", "resolved")} for entry in payload] == expected
+
+    assert output_path.exists()
+    call_refs = [
+        line.rsplit(" ", 1)[-1]
+        for line in output_path.read_text(encoding="utf-8").splitlines()
+        if line.startswith("X")
+    ]
+    assert "swmatrix_Tgate" in call_refs
+    assert "swmatrix_Tgate_behave" in call_refs
 
 
 def test_cli_netlist_view_resolution_failure_exits_nonzero(
