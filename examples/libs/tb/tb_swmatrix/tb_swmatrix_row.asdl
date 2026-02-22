@@ -1,9 +1,59 @@
-imports: 
-  swm_row: sw_matrix/swmatrix_row_25_w_clkbuf.asdl
+top: tb
 
 modules:
   tb:
     instances:
-      dut: swm_row.swmatrix_row_25_w_clkbuf
+      dut: swmatrix_row_25_w_clkbuf
+    nets:
+      $IN: [dut.IN]
+      $OUT: [dut.OUT]
+      $DBG: [dut.DBG]
 
-  
+  swmatrix_row_25_w_clkbuf:
+    instances:
+      SR_row: ShiftReg_row_25
+      Tgate<2:1>: swmatrix_Tgate
+      Tgate_dbg: swmatrix_Tgate@behave
+    nets:
+      $IN: [SR_row.IN]
+      sr_out: [SR_row.OUT, Tgate<2>.control]
+      tgate_mid: [Tgate<2>.switch, Tgate<1>.control]
+      $OUT: [Tgate<1>.switch, Tgate_dbg.control]
+      $DBG: [Tgate_dbg.switch]
+
+  ShiftReg_row_25:
+    instances:
+      R1: res r=1k
+    nets:
+      $IN: [R1.P]
+      $OUT: [R1.N]
+
+  ShiftReg_row_25@behave:
+    instances:
+      R1: res r=2k
+    nets:
+      $IN: [R1.P]
+      $OUT: [R1.N]
+
+  swmatrix_Tgate:
+    instances:
+      R1: res r=3k
+    nets:
+      $control: [R1.P]
+      $switch: [R1.N]
+
+  swmatrix_Tgate@behave:
+    instances:
+      R1: res r=4k
+    nets:
+      $control: [R1.P]
+      $switch: [R1.N]
+
+devices:
+  res:
+    ports: [P, N]
+    parameters:
+      r: 1k
+    backends:
+      sim.ngspice:
+        template: "R{name} {ports} {params}"
