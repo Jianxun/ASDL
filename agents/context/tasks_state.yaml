@@ -4,7 +4,7 @@ T-287:
   pr: 310
   merged: true
 T-288:
-  status: ready_for_review
+  status: request_changes
   pr: 311
   merged: false
 T-289:
