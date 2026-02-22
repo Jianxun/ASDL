@@ -4,6 +4,6 @@ T-297:
   pr: 320
   merged: true
 T-298:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 321
   merged: false
