@@ -1,6 +1,8 @@
 schema_version: 1
 
 archive:
+  - T-286: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-286_structured_instance_regressions.md, pr: 308}
+  - T-285: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-285_structured_instance_lowering_fix.md, pr: 307}
   - T-284: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-284_import_entry_top_resolution.md, pr: 299}
   - T-283: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-283_module_variable_e2e.md, pr: 306}
   - T-282: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-282_module_variable_substitution.md, pr: 305}

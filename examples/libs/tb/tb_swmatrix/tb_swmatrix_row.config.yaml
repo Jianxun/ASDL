@@ -1,4 +1,4 @@
-config1:
+config_0:
   description: Testbench for swmatrix row
   view_order: [default, behave]
 
