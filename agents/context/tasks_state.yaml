@@ -1,29 +1,9 @@
 schema_version: 2
-T-284:
-  status: done
-  pr: 299
-  merged: true
-T-278:
-  status: done
-  pr: 300
-  merged: true
-T-279:
-  status: done
-  pr: 302
-  merged: true
-T-280:
-  status: done
-  pr: 303
-  merged: true
-T-281:
-  status: done
-  pr: 304
-  merged: true
-T-282:
-  status: done
-  pr: 305
-  merged: true
-T-283:
-  status: done
-  pr: 306
-  merged: true
+T-285:
+  status: ready
+  pr: null
+  merged: false
+T-286:
+  status: ready
+  pr: null
+  merged: false

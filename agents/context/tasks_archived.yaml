@@ -1,6 +1,13 @@
 schema_version: 1
 
 archive:
+  - T-284: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-284_import_entry_top_resolution.md, pr: 299}
+  - T-283: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-283_module_variable_e2e.md, pr: 306}
+  - T-282: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-282_module_variable_substitution.md, pr: 305}
+  - T-281: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-281_module_variables_pipeline.md, pr: 304}
+  - T-280: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-280_instance_parameter_docs_completion.md, pr: 303}
+  - T-279: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-279_inline_instance_quote_tokenization.md, pr: 302}
+  - T-278: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-278_structured_instance_parameters.md, pr: 300}
   - T-277: {completed_on: 2026-02-14, owner: Executor, scratchpad: agents/scratchpads/T-277_extension_worker_integration.md, pr: 298}
   - T-276: {completed_on: 2026-02-14, owner: Executor, scratchpad: agents/scratchpads/T-276_completion_worker_core.md, pr: 297}
   - T-275: {completed_on: 2026-02-14, owner: Executor, scratchpad: agents/scratchpads/T-275_asdl_language_tools_scaffold.md, pr: 296}

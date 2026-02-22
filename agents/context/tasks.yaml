@@ -1,153 +1,45 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-284
-    title: Fix imported-program top inference to respect entry-file module scope
+  - id: T-285
+    title: Normalize structured instance declarations in AST-to-PatternedGraph lowering
     owner: Executor
     dod: >
-      Preserve entry-file identity through NetlistIR lowering when `top` is
-      omitted, and resolve implicit top only from modules defined in the entry
-      file. Keep error behavior deterministic when the entry file has zero or
-      multiple modules without an explicit `top`, even if imported modules exist.
-      Add regression tests for import-driven entry builds that have one local
-      module and no explicit `top`.
+      Ensure lowering accepts both inline instance strings and structured
+      instance objects (`ref` + optional `parameters`) by using the shared
+      instance parsing helper. Structured instances must no longer raise raw
+      exceptions during lowering; malformed instance payloads must emit
+      lowering diagnostics instead.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/cli/test_netlist.py -v
+      - ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/e2e/test_pipeline_mvp.py -v
     links:
-      scratchpad: agents/scratchpads/T-284_import_entry_top_resolution.md
-      spec: docs/specs/spec_netlist_emission.md
-    files:
-      - src/asdl/lowering/atomized_graph_to_netlist_ir.py
-      - src/asdl/lowering/__init__.py
-      - src/asdl/emit/netlist/ir_utils.py
-      - src/asdl/emit/netlist/render.py
-      - tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py
-      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
-      - tests/unit_tests/cli/test_netlist.py
-  - id: T-278
-    title: Add structured instance form with canonical `parameters` map
-    owner: Executor
-    dod: >
-      Extend AST models/parsing to allow instance entries as either legacy inline
-      strings or structured objects with `ref` and optional `parameters`. Treat
-      `parameters` as canonical and reject `params` alias in structured instances.
-      Preserve source location metadata for structured instance values and keep
-      backward compatibility for existing inline strings.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/ast -v
-    links:
-      scratchpad: agents/scratchpads/T-278_structured_instance_parameters.md
-      adr: agents/adr/ADR-0031-instance-parameter-syntax.md
-      spec: docs/specs/spec_ast.md
-    files:
-      - src/asdl/ast/models.py
-      - src/asdl/ast/parser.py
-      - tests/unit_tests/ast/test_models.py
-      - tests/unit_tests/ast/test_parser.py
-  - id: T-279
-    title: Make inline instance parsing quote-aware for whitespace parameter values
-    owner: Executor
-    depends_on:
-      - T-278
-    dod: >
-      Replace whitespace-splitting instance token parsing with quote-aware
-      tokenization so inline shorthand supports values containing spaces (for
-      example `cmd='.TRAN 0 10u'`). Ensure lowering and named-pattern handling
-      keep stable behavior for existing syntax while supporting quoted values.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/lowering -v
-    links:
-      scratchpad: agents/scratchpads/T-279_inline_instance_quote_tokenization.md
+      scratchpad: agents/scratchpads/T-285_structured_instance_lowering_fix.md
       adr: agents/adr/ADR-0031-instance-parameter-syntax.md
       spec: docs/specs/spec_ast.md
     files:
       - src/asdl/lowering/ast_to_patterned_graph_instances.py
-      - src/asdl/ast/named_patterns.py
-      - src/asdl/tools/completion/engine.py
-      - tests/unit_tests/lowering/test_ast_to_patterned_graph_instances.py
-  - id: T-280
-    title: Unify docs/completion parsing and add pass-through parameter coverage
+      - src/asdl/ast/instance_expr.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+      - tests/unit_tests/e2e/test_pipeline_mvp.py
+  - id: T-286
+    title: Add dedicated regression coverage for structured instance lowering and netlist CLI
     owner: Executor
     depends_on:
-      - T-279
+      - T-285
     dod: >
-      Update docs/depgraph/completion helpers to consume the shared dual-form
-      instance parsing behavior and add regression tests/examples covering
-      pass-through command-style parameters with spaces (including structured
-      `parameters` and quoted shorthand forms).
+      Add explicit regression tests that fail if structured instance forms crash
+      or diverge from inline semantics in end-to-end netlist generation. Cover at
+      least one positive case and one malformed case that must report diagnostics
+      rather than raising exceptions.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/docs tests/unit_tests/tools -v
+      - ./venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/cli/test_netlist.py -v
     links:
-      scratchpad: agents/scratchpads/T-280_instance_parameter_docs_completion.md
+      scratchpad: agents/scratchpads/T-286_structured_instance_regressions.md
       adr: agents/adr/ADR-0031-instance-parameter-syntax.md
-      spec: docs/specs/spec_ast.md
-    files:
-      - src/asdl/docs/depgraph.py
-      - src/asdl/docs/render_helpers.py
-      - src/asdl/docs/markdown.py
-      - tests/unit_tests/docs/test_depgraph.py
-      - tests/unit_tests/tools/test_completion_engine.py
-  - id: T-281
-    title: Propagate module variables through graph models and lowering pipeline
-    owner: Executor
-    depends_on:
-      - T-279
-    dod: >
-      Preserve `module.variables` beyond AST parsing by threading module variable
-      maps through PatternedGraph/AtomizedGraph data models and lowering paths so
-      later substitution stages can consume them deterministically.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/core tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py -v
-    links:
-      scratchpad: agents/scratchpads/T-281_module_variables_pipeline.md
-      adr: agents/adr/ADR-0016-variables.md
-      spec: docs/specs/spec_ast.md
-    files:
-      - src/asdl/core/graph.py
-      - src/asdl/core/atomized_graph.py
-      - src/asdl/core/graph_builder.py
-      - src/asdl/lowering/ast_to_patterned_graph.py
-      - src/asdl/lowering/patterned_graph_to_atomized.py
-  - id: T-282
-    title: Implement module variable substitution with IR-012 and IR-013 diagnostics
-    owner: Executor
-    depends_on:
-      - T-281
-    dod: >
-      Implement `{var}` substitution for module variables in instance parameter
-      values before parameter pattern expansion, including diagnostics for
-      undefined variables (`IR-012`) and recursive variable references (`IR-013`)
-      with source spans where available.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/lowering tests/unit_tests/netlist -v
-    links:
-      scratchpad: agents/scratchpads/T-282_module_variable_substitution.md
-      adr: agents/adr/ADR-0016-variables.md
-      spec: docs/specs/spec_diagnostic_codes.md
-    files:
-      - src/asdl/lowering/patterned_graph_to_atomized_instances.py
-      - src/asdl/lowering/patterned_graph_to_atomized_context.py
-      - src/asdl/emit/netlist/verify.py
-      - tests/unit_tests/lowering/test_patterned_graph_to_atomized.py
-      - tests/unit_tests/netlist/test_netlist_emitter.py
-  - id: T-283
-    title: Add end-to-end coverage for module variables in examples and diagnostics
-    owner: Executor
-    depends_on:
-      - T-282
-    dod: >
-      Add regression coverage proving module variables substitute correctly in
-      emitted netlists and add executable diagnostics cases for `IR-012`/`IR-013`
-      so undefined and recursive module-variable failures are continuously tested.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/e2e/test_pipeline_mvp.py tests/unit_tests/cli/test_netlist.py -v
-    links:
-      scratchpad: agents/scratchpads/T-283_module_variable_e2e.md
       spec: docs/specs/spec_netlist_emission.md
     files:
-      - examples/libs/sw_matrix/swmatrix_Tgate/swmatrix_Tgate.asdl
-      - tests/unit_tests/e2e/test_pipeline_mvp.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
       - tests/unit_tests/cli/test_netlist.py
       - tests/e2e/diagnostics/manifest.yaml
-
+      - tests/e2e/diagnostics/README.md
 backlog: []

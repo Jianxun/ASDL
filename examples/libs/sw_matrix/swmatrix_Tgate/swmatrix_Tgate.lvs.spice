@@ -3,5 +3,5 @@
 Xinv1 net1 gated_control VDDd VDDd VSSd VSSd gf180mcu_fd_sc_mcu9t5v0__inv_1
 Xinv2 gated_control gated_controlb VDDd VDDd VSSd VSSd gf180mcu_fd_sc_mcu9t5v0__inv_1
 Xnand2 control enable net1 VDDd VDDd VSSd VSSd gf180mcu_fd_sc_mcu9t5v0__nand2_1
-Mmn T1 gated_control T2 VSSd nfet_03v3 L={L} W=1*{NF}*{W}
-Mmp T1 gated_controlb T2 VDDd pfet_03v3 L={L} W=3*{NF}*{W}
+Mmn T1 gated_control T2 VSSd nfet_03v3 L=0.28u W=1*6*8u
+Mmp T1 gated_controlb T2 VDDd pfet_03v3 L=0.28u W=3*6*8u
