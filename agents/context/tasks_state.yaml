@@ -4,7 +4,7 @@ T-299:
   pr: 322
   merged: true
 T-300:
-  status: ready_for_review
+  status: request_changes
   pr: 323
   merged: false
 T-301:
