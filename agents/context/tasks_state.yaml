@@ -8,7 +8,7 @@ T-300:
   pr: 323
   merged: true
 T-301:
-  status: review_in_progress
+  status: review_clean
   pr: 324
   merged: false
 T-302:
