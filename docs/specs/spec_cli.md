@@ -22,7 +22,7 @@ Non-goals (v0):
 
 ## Command
 ```
-asdlc netlist <file.asdl> [--config <path>] [-o <out.ext>] [--verify|--no-verify] [--backend <name>] [--top-as-subckt] [--lib <dir> ...]
+asdlc netlist <file.asdl> [--config <path>] [-o <out.ext>] [--log <path>] [--verify|--no-verify] [--backend <name>] [--top-as-subckt] [--lib <dir> ...]
 ```
 
 ### Options
@@ -30,6 +30,11 @@ asdlc netlist <file.asdl> [--config <path>] [-o <out.ext>] [--verify|--no-verify
   - Explicit `.asdlrc` path (overrides discovery).
 - `-o, --output <path>`: output file path.
   - Default: `{asdl_basename}{extension}` in the same directory as the input file.
+- `--log <path>`:
+  - Compile log output path override.
+  - Default: `<entry_file_basename>.log.json` in the same directory as the input file.
+  - Log format is JSON and may include sections such as view-binding resolution,
+    emitted-name disambiguation mappings, and warnings/diagnostics metadata.
 - `--verify` / `--no-verify`:
   - Default: `--verify`.
   - Controls whether verifier passes run in the pipeline.
@@ -84,6 +89,7 @@ Precedence:
    - PatternedGraph -> AtomizedGraph -> NetlistIR (verify gates based on `--verify`).
 3. Emit backend netlist using `emit_netlist`.
 4. Write output file when no error diagnostics are present.
+5. Write compile log JSON to `--log` path (or default log path).
 
 ---
 

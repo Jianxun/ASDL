@@ -1,6 +1,8 @@
 schema_version: 1
 
 archive:
+  - T-298: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-298_occurrence_specific_view_apply.md, pr: 321}
+  - T-297: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-297_qualified_refs_with_view_validation.md, pr: 320}
   - T-296: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-296_remove_example_view_regressions.md, pr: 319}
   - T-295: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-295_stable_view_fixtures.md, pr: 318}
   - T-294: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-294_ast_module_symbol_validation.md, pr: 317}

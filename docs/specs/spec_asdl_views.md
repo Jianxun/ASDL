@@ -39,6 +39,8 @@ Invalid forms:
 - Logical cell identity is `cell`.
 - `view` is a selectable implementation token for that cell.
 - Undecorated `cell` is the default realization token.
+- `cell@default` is allowed as an explicit authored alias and normalizes to the
+  default realization at emission.
 
 Examples:
 - `ota_nmos` (canonical/default)
@@ -52,9 +54,19 @@ Examples:
 - Emission is realization-based: one emitted subckt/module per resolved
   `(cell, view)` used by the design.
 - Default/undecorated realization emits as `cell`.
+- `cell@default` also emits as `cell`.
 - Non-default realization emits as `cell_<view>` (deterministic, sanitized).
 - Internal `@view` tokens are not emitted directly in simulator-facing names.
 - This enables mixed-view subtree substitution inside a single emitted netlist.
+- Collision disambiguation policy (v0):
+  - emit modules in deterministic traversal order from lowering/emission
+  - allocate simulator-facing names incrementally from a global used-name set
+  - first occurrence uses base realization name (`cell` or `cell_<view>`)
+  - later collisions append ordinal suffixes `__2`, `__3`, ... until unique
+  - this rule also covers collisions where `cell_<view>` matches an existing
+    undecorated module name
+- Emitters SHOULD report collision renames as warnings and provide a deterministic
+  logical-to-emitted mapping artifact for inspection/debug.
 
 ---
 

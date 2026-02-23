@@ -39,6 +39,7 @@ canonical connectivity.
 - Emission consumes already-resolved module selections.
 - Emit one realization per unique resolved `(cell, view)`:
   - default/undecorated realization name: `cell`
+  - explicit default alias `cell@default` also realizes as `cell`
   - non-default realization name: `cell_<view>` (deterministic, sanitized)
 - Instance calls must reference the resolved realization name.
 - Emitters must not leak internal `@view` tokens directly into `.subckt` names,
@@ -207,15 +208,24 @@ Every backend must define the following system devices in `backends.yaml`:
 ### File identity placeholders
 - `{file_id}` in `__subckt_header__` is the defining module `file_id`.
 - `{file_id}` in `__netlist_header__`/`__netlist_footer__` is the entry file `file_id`.
+- In end-to-end pipeline execution, `file_id` is expected to be a normalized
+  absolute ASDL file path.
+- Backends SHOULD include `{file_id}` in subckt header comments for source
+  provenance.
 
 ### Subckt name disambiguation
 - Subckt identifiers must be globally unique in emitted netlists.
-- If multiple modules share the same `sym_name` across different files, the
-  emitter MUST deterministically rename those subckts for emission.
-- Emitted module names:
-  - If `sym_name` is unique across all `file_id` values: use `sym_name`.
-  - Otherwise: use `{sym_name}__{hash8}` where `hash8` is the first 8 hex chars
-    of `sha1(file_id)`.
+- Realization base name:
+  - `cell` for undecorated and `cell@default`
+  - `cell_<view>` for non-default decorated realizations
+- Collision resolution algorithm:
+  - process modules in deterministic emission traversal order (do not reorder for
+    collision grouping)
+  - maintain a global set of already-assigned emitted names
+  - assign the base name if unused
+  - if used, assign `base__2`, then `base__3`, ... until unused
+- This also covers clashes where a decorated realization base name (for example
+  `cell_<view>`) collides with an existing undecorated module name.
 - The emitted name is used for:
   - `{name}` in `__subckt_header__`
   - `{ref}` in `__subckt_call__`
@@ -223,6 +233,10 @@ Every backend must define the following system devices in `backends.yaml`:
     module
 - `{sym_name}` and `{top_sym_name}` always refer to the original module name
   before disambiguation.
+- Emitters SHOULD warn when suffix disambiguation is applied and SHOULD emit a
+  deterministic logical-to-emitted name mapping artifact.
+- When CLI compile logging is enabled, this mapping SHOULD be recorded in the
+  compile log JSON (for example under an `emission_name_map` section).
 
 ### Validation
 - Backend config is loaded and validated at emission time

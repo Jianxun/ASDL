@@ -102,6 +102,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - ADR-0031: Instance parameter syntax supports quote-aware inline shorthand plus structured `parameters` objects.
 - ADR-0032: View-decorated module symbols use `cell@view` and emission supports mixed-view realizations with deterministic emitted names.
 - ADR-0033: View-binding config uses profile `view_order` plus ordered rule overrides and emits resolved binding sidecars.
+- ADR-0034: Netlist emission collision policy uses DFS-stable ordinal suffixes (`__2`, `__3`, ...) with provenance via `{file_id}`.
+- ADR-0035: Consolidated compile logging uses `--log` with default `<entry_file_basename>.log.json` and JSON sections for bindings/name-map/diagnostics metadata.
 
 - 2026-01-24: ADR-0024 -- Replace IFIR with NetlistIR dataclass model; remove xDSL from the refactor pipeline (supersedes ADR-0014).
 - 2026-01-23: ADR-0023 -- Core graphs include device definitions; modules/devices use `ports` lists (never None); backend templates stay outside core graphs.
@@ -115,6 +117,8 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-02-21: ADR-0031 -- Instance parameter syntax supports quoted inline shorthand and structured instance objects with canonical `parameters`.
 - 2026-02-22: ADR-0032 -- Module symbols may use `cell@view` for selectable implementation variants; emission supports one realized subckt per resolved `(cell, view)` using deterministic names (default `cell`, otherwise `cell_<view>`).
 - 2026-02-22: ADR-0033 -- View-binding config resolves instances via `view_order` baseline plus ordered rules (later wins), with optional rule IDs (default `rule<k>`) and inspectable sidecar entries using full resolved module symbols.
+- 2026-02-23: ADR-0034 -- Netlist emission name collisions resolve in deterministic DFS order using ordinal suffixes (`__2`, `__3`, ...); backends should expose full-path `{file_id}` provenance in subckt headers.
+- 2026-02-23: ADR-0035 -- Consolidate compile-time inspection outputs into one JSON log (`--log`, default `<entry_file_basename>.log.json`) with deterministic sections such as `view_bindings` and `emission_name_map`.
 - 2026-02-22: View-binding regressions must use stable test fixtures under `tests/` rather than `examples/` because examples are experimental and can change independently of compiler contracts.
 - 2026-02-01: Docs pipeline now supports Sphinx (Tier 1/2) for ASDL library documentation; Markdown generation remains supported but Sphinx-native rendering is in scope.
 

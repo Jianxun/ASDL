@@ -2,7 +2,7 @@
 
 ## Purpose
 Define profile-based binding resolution for view-decorated module symbols and
-the inspectable sidecar output consumed by lowering/emission workflows.
+the inspectable compile-log output consumed by lowering/emission workflows.
 
 ---
 
@@ -10,7 +10,7 @@ the inspectable sidecar output consumed by lowering/emission workflows.
 - Profile schema (`view_order`, ordered `rules`).
 - Match semantics (`path`, `instance`, `module`).
 - Deterministic resolution algorithm.
-- Sidecar schema for resolved instance bindings.
+- Compile-log schema section for resolved instance bindings.
 
 Out of scope:
 - CLI flag design and UX.
@@ -96,17 +96,24 @@ Given a selected profile:
      - `default` -> `cell`
      - `v` -> `cell@v`
    - if no candidate exists, emit an error.
-   - authored explicit decorated refs (`cell@view`) remain as authored in v0.
+   - authored explicit decorated refs (`cell@view`) remain as authored before
+     rule application.
 3. Apply rules in listed order:
    - each matching rule sets resolved symbol to `bind`
    - later matches override earlier matches
+   - rules apply to all instances, including those with authored explicit
+     decorated refs (`cell@view`)
 4. Final resolved symbol per instance is used by lowering/emission.
+
+Traversal order for resolution and compile-log `view_bindings` emission is deterministic:
+- preorder depth-first over elaborated instance hierarchy
+- children visited in authored instance declaration order
 
 ---
 
-## Sidecar output (resolved bindings)
+## Compile log output (resolved bindings)
 
-Compiler emits a sidecar list for inspectability:
+Compiler records resolved bindings in the compile log under `view_bindings`:
 
 ```json
 [
@@ -115,14 +122,18 @@ Compiler emits a sidecar list for inspectability:
 ]
 ```
 
-### Sidecar fields
+### `view_bindings` entry fields
 - `path: str` (parent hierarchy path; does not include `instance`)
 - `instance: str` (leaf instance name)
 - `resolved: str` (resolved module symbol `cell` or `cell@view`)
 - `rule_id: str | null` (optional in payload; matched rule ID or null if only
   baseline resolution applied)
 
-Sidecar ordering must be deterministic (stable hierarchy traversal order).
+`view_bindings` ordering must be deterministic (stable hierarchy traversal order).
+
+CLI default compile log path:
+- `<entry_file_basename>.log.json`
+- Override with `--log <path>`
 
 ---
 

@@ -1,52 +1,95 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-297
-    title: Restore import-qualified instance refs with decorated-symbol validation
+  - id: T-299
+    title: Implement deterministic ordinal collision allocator in netlist emission
     owner: Executor
     dod: >
-      Fix AST instance-ref validation so import-qualified refs (`ns.symbol`) are
-      accepted again while preserving decorated view grammar checks for symbol
-      tokens (`cell` or `cell@view`). Keep module declaration-name validation
-      strict (`cell`/`cell@view` only) and ensure parser diagnostics remain
-      specific for malformed `@` usage. Include self-contained regressions under
-      `tests/` for valid qualified refs (`ns.symbol`, `ns.symbol@view`) and
-      malformed variants.
+      Replace hash-based cross-file disambiguation in emitted module names with a
+      deterministic ordinal allocator (`base`, `base__2`, `base__3`, ...),
+      preserving emission traversal order and handling decorated-vs-literal base
+      collisions. Emit warning diagnostics on renamed collisions and expose
+      deterministic rename mapping data for compile-log integration. Include
+      self-contained regressions under `tests/` for duplicate bases, decorated
+      collisions, and pre-existing suffixed names.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/ast/test_models.py tests/unit_tests/parser/test_parser.py tests/unit_tests/cli/test_netlist.py -k "imports_with or malformed_decorated or module_symbol or qualified" -v
+      - ./venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/netlist/test_netlist_emitter.py -k "view or collision or disambiguation" -v
     links:
-      scratchpad: agents/scratchpads/T-297_qualified_refs_with_view_validation.md
-      adr: agents/adr/ADR-0032-view-decorated-module-symbols.md
-      spec: docs/specs/spec_asdl_views.md
+      scratchpad: agents/scratchpads/T-299_emission_collision_allocator.md
+      adr: agents/adr/ADR-0034-netlist-emission-collision-policy.md
+      spec: docs/specs/spec_netlist_emission.md
     files:
-      - src/asdl/ast/models.py
-      - tests/unit_tests/ast/test_models.py
-      - tests/unit_tests/parser/test_parser.py
-      - tests/unit_tests/cli/test_netlist.py
-  - id: T-298
-    title: Support occurrence-specific view application for reused module definitions
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/diagnostics.py
+      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+  - id: T-300
+    title: Remove occurrence-specialized `__occ` view-apply naming and align with global emission naming
     owner: Executor
     depends_on:
-      - T-297
+      - T-299
     dod: >
-      Remove the non-uniform rewrite failure mode in view-binding application so
-      path-scoped overrides work when the same module definition is instantiated
-      at multiple hierarchy paths with different resolved refs. Ensure emission
-      uses per-occurrence resolved symbols deterministically and keeps existing
-      sidecar semantics. Include self-contained regressions under `tests/` for
-      divergent path binding on reused module definitions and verify sidecar +
-      emitted call refs.
+      Remove occurrence-specialized module naming (`__occ_<hash>`) from view
+      binding application so emitted naming is governed only by the global
+      collision allocator policy. Ensure mixed-view/path-scoped outcomes remain
+      deterministic and represented via emission naming/disambiguation; if an
+      unsupported non-uniform case remains, emit a clear diagnostic rather than
+      silently specializing names. Update view apply/resolver/CLI regressions.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/views/test_view_apply.py tests/unit_tests/views/test_view_resolver.py tests/unit_tests/cli/test_netlist.py -k "view_fixture_binding_profiles_change_emitted_instance_refs or non_uniform or scoped_override or divergent" -v
+      - ./venv/bin/pytest tests/unit_tests/views/test_view_apply.py tests/unit_tests/views/test_view_resolver.py tests/unit_tests/cli/test_netlist.py -k "view or divergent or scoped or mixed" -v
     links:
-      scratchpad: agents/scratchpads/T-298_occurrence_specific_view_apply.md
+      scratchpad: agents/scratchpads/T-300_remove_occurrence_specialization.md
       adr: agents/adr/ADR-0033-view-binding-config-and-sidecar.md
       spec: docs/specs/spec_asdl_view_config.md
     files:
       - src/asdl/views/api.py
-      - src/asdl/cli/__init__.py
-      - src/asdl/emit/netlist/render.py
       - tests/unit_tests/views/test_view_apply.py
+      - tests/unit_tests/views/test_view_resolver.py
+      - tests/unit_tests/cli/test_netlist.py
+  - id: T-301
+    title: Implement consolidated compile log JSON and CLI `--log` hard cutover
+    owner: Executor
+    depends_on:
+      - T-299
+    dod: >
+      Add CLI `--log <path>` and default compile-log output path
+      `<entry_file_basename>.log.json`; remove legacy `--binding-sidecar` flow
+      in a hard cutover. Emit deterministic compile log JSON with at least
+      `view_bindings`, `emission_name_map`, and warning/diagnostic metadata, and
+      surface write failures as CLI diagnostics.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/cli/test_netlist.py tests/unit_tests/views/test_view_resolver.py -k "log or view_bindings or emission_name_map or sidecar" -v
+    links:
+      scratchpad: agents/scratchpads/T-301_compile_log_cli_cutover.md
+      adr: agents/adr/ADR-0035-compile-log-consolidation.md
+      spec: docs/specs/spec_cli.md
+    files:
+      - src/asdl/cli/__init__.py
+      - src/asdl/views/api.py
+      - src/asdl/emit/netlist/render.py
+      - tests/unit_tests/cli/test_netlist.py
+  - id: T-302
+    title: Add provenance warnings and deterministic compile-log regression coverage
+    owner: Executor
+    depends_on:
+      - T-300
+      - T-301
+    dod: >
+      Emit warnings when module/file provenance metadata is missing or unknown
+      (including non-end-to-end partial pipeline cases), keep `{file_id}`
+      provenance behavior in subckt headers, and add deterministic regression
+      coverage for emitted collision naming and compile-log ordering/contents.
+      Remove obsolete assertions for hash-based names and sidecar-only outputs.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/cli/test_netlist.py tests/unit_tests/views -k "collision or provenance or log or deterministic" -v
+    links:
+      scratchpad: agents/scratchpads/T-302_provenance_warning_regressions.md
+      adr: agents/adr/ADR-0035-compile-log-consolidation.md
+      spec: docs/specs/spec_netlist_emission.md
+    files:
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/cli/__init__.py
+      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
       - tests/unit_tests/cli/test_netlist.py
 
 backlog: []
