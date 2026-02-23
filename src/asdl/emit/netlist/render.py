@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import os
 import re
 from dataclasses import dataclass
@@ -20,6 +19,7 @@ from asdl.emit.netlist_ir import (
 )
 
 from .diagnostics import (
+    EMISSION_NAME_COLLISION,
     MALFORMED_TEMPLATE,
     MISSING_BACKEND,
     MISSING_TOP,
@@ -47,6 +47,17 @@ from .templates import (
 class _NetlistIRSymbolMaps:
     index: "NetlistIRIndex"
     module_emitted_names: Dict[Tuple[Optional[str], str], str]
+
+
+@dataclass(frozen=True)
+class EmissionNameMapEntry:
+    """Deterministic logical-to-emitted module name mapping entry."""
+
+    symbol: str
+    file_id: Optional[str]
+    base_name: str
+    emitted_name: str
+    renamed: bool
 
 
 _ENV_VAR_PATTERN = re.compile(r"\$(\w+|\{[^}]+\})")
@@ -125,9 +136,7 @@ def _emit_netlist_ir_design(
         )
         return None, diagnostics
 
-    module_emitted_names = _build_module_emitted_names_ir(
-        design.modules, index.modules_by_name
-    )
+    module_emitted_names = _build_module_emitted_names_ir(design.modules, diagnostics)
     top_emitted_name = _module_emitted_name_ir(top_module, module_emitted_names)
 
     lines: List[str] = []
@@ -539,10 +548,6 @@ def _module_key_ir(module: NetlistModule) -> Tuple[Optional[str], str]:
     return module.file_id, module.name
 
 
-def _hash_file_id(file_id: str) -> str:
-    return hashlib.sha1(file_id.encode("utf-8")).hexdigest()[:8]
-
-
 def _realization_name_from_symbol(symbol: str) -> str:
     """Map a module symbol (`cell` or `cell@view`) to emitted realization name."""
     match = _MODULE_SYMBOL_PATTERN.fullmatch(symbol)
@@ -571,26 +576,36 @@ def _sanitize_realization_token(value: str) -> str:
 
 def _build_module_emitted_names_ir(
     modules: List[NetlistModule],
-    modules_by_name: Dict[str, List[NetlistModule]],
+    diagnostics: Optional[List[Diagnostic]] = None,
 ) -> Dict[Tuple[Optional[str], str], str]:
-    _ = modules_by_name
-    base_names: Dict[Tuple[Optional[str], str], str] = {}
-    realized_counts: Dict[str, int] = {}
-    for module in modules:
-        base_name = _realization_name_from_symbol(module.name)
-        module_key = _module_key_ir(module)
-        base_names[module_key] = base_name
-        realized_counts[base_name] = realized_counts.get(base_name, 0) + 1
-
+    used_names: set[str] = set()
+    next_suffix_by_base: Dict[str, int] = {}
     emitted_names: Dict[Tuple[Optional[str], str], str] = {}
     for module in modules:
         module_key = _module_key_ir(module)
-        name = base_names[module_key]
-        file_id = module.file_id
-        if realized_counts.get(name, 0) > 1 and file_id is not None:
-            emitted = f"{name}__{_hash_file_id(file_id)}"
+        base_name = _realization_name_from_symbol(module.name)
+        emitted = base_name
+        if emitted in used_names:
+            next_suffix = next_suffix_by_base.get(base_name, 2)
+            while f"{base_name}__{next_suffix}" in used_names:
+                next_suffix += 1
+            emitted = f"{base_name}__{next_suffix}"
+            next_suffix_by_base[base_name] = next_suffix + 1
+            if diagnostics is not None:
+                file_id_suffix = f" (file '{module.file_id}')" if module.file_id else ""
+                diagnostics.append(
+                    _diagnostic(
+                        EMISSION_NAME_COLLISION,
+                        (
+                            f"Module symbol '{module.name}'{file_id_suffix} emits as "
+                            f"'{emitted}' after collision on base name '{base_name}'."
+                        ),
+                        Severity.WARNING,
+                    )
+                )
         else:
-            emitted = name
+            next_suffix_by_base.setdefault(base_name, 2)
+        used_names.add(emitted)
         emitted_names[module_key] = emitted
     return emitted_names
 
@@ -599,6 +614,25 @@ def _module_emitted_name_ir(
     module: NetlistModule, emitted_names: Dict[Tuple[Optional[str], str], str]
 ) -> str:
     return emitted_names.get(_module_key_ir(module), module.name)
+
+
+def build_emission_name_map(design: NetlistDesign) -> List[EmissionNameMapEntry]:
+    """Build deterministic logical/base/emitted module-name mapping entries."""
+    emitted_names = _build_module_emitted_names_ir(design.modules, diagnostics=None)
+    entries: List[EmissionNameMapEntry] = []
+    for module in design.modules:
+        base_name = _realization_name_from_symbol(module.name)
+        emitted_name = emitted_names[_module_key_ir(module)]
+        entries.append(
+            EmissionNameMapEntry(
+                symbol=module.name,
+                file_id=module.file_id,
+                base_name=base_name,
+                emitted_name=emitted_name,
+                renamed=emitted_name != base_name,
+            )
+        )
+    return entries
 
 
 def _ordered_conns_netlist_ir(

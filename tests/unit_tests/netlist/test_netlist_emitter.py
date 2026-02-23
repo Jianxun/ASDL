@@ -1,5 +1,4 @@
 import datetime
-import hashlib
 from dataclasses import dataclass
 from itertools import count
 from pathlib import Path
@@ -976,7 +975,7 @@ def test_emit_netlist_exposes_emit_timestamp_placeholders() -> None:
     )
 
 
-def test_emit_netlist_hashes_duplicate_module_names() -> None:
+def test_emit_netlist_uses_ordinal_suffix_for_duplicate_module_names() -> None:
     backend_config = _backend_config(
         {
             "__subckt_header__": ".subckt {name} {ports}",
@@ -988,10 +987,8 @@ def test_emit_netlist_hashes_duplicate_module_names() -> None:
     )
     entry_file_id = "entry.asdl"
     imported_file_id = "lib.asdl"
-    entry_hash = hashlib.sha1(entry_file_id.encode("utf-8")).hexdigest()[:8]
-    imported_hash = hashlib.sha1(imported_file_id.encode("utf-8")).hexdigest()[:8]
-    entry_name = f"amp__{entry_hash}"
-    imported_name = f"amp__{imported_hash}"
+    entry_name = "amp"
+    imported_name = "amp__2"
 
     imported = ModuleOp(
         name="amp",
@@ -1024,7 +1021,9 @@ def test_emit_netlist_hashes_duplicate_module_names() -> None:
         top_as_subckt=True,
     )
 
-    assert diagnostics == []
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.WARNING
+    assert diagnostics[0].code == format_code("EMIT", 14)
     assert netlist == "\n".join(
         [
             f"HEADER {entry_name}",
@@ -1038,7 +1037,7 @@ def test_emit_netlist_hashes_duplicate_module_names() -> None:
     )
 
 
-def test_emit_netlist_realizes_view_symbols_and_hashes_duplicate_realizations() -> None:
+def test_emit_netlist_realizes_view_symbols_and_ordinally_disambiguates_collisions() -> None:
     backend_config = _backend_config(
         {
             "__subckt_header__": ".subckt {name} {ports}",
@@ -1051,8 +1050,6 @@ def test_emit_netlist_realizes_view_symbols_and_hashes_duplicate_realizations() 
     entry_file_id = "entry.asdl"
     default_file_id = "lib_default.asdl"
     behave_file_id = "lib_behave.asdl"
-    entry_hash = hashlib.sha1(entry_file_id.encode("utf-8")).hexdigest()[:8]
-    explicit_default_hash = hashlib.sha1(default_file_id.encode("utf-8")).hexdigest()[:8]
 
     default_module = ModuleOp(
         name="amp",
@@ -1111,21 +1108,98 @@ def test_emit_netlist_realizes_view_symbols_and_hashes_duplicate_realizations() 
         top_as_subckt=True,
     )
 
-    assert diagnostics == []
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.WARNING
+    assert diagnostics[0].code == format_code("EMIT", 14)
     assert netlist == "\n".join(
         [
             "HEADER top",
             ".subckt top A",
-            f"XU0 A amp__{entry_hash}",
-            f"XU1 A amp__{explicit_default_hash}",
+            "XU0 A amp",
+            "XU1 A amp__2",
             "XU2 A amp_behave",
             ".ends top",
-            f".subckt amp__{entry_hash} A",
-            f".ends amp__{entry_hash}",
-            f".subckt amp__{explicit_default_hash} A",
-            f".ends amp__{explicit_default_hash}",
+            ".subckt amp A",
+            ".ends amp",
+            ".subckt amp__2 A",
+            ".ends amp__2",
             ".subckt amp_behave A",
             ".ends amp_behave",
+            "FOOTER top",
+        ]
+    )
+
+
+def test_emit_netlist_disambiguates_decorated_base_collision() -> None:
+    backend_config = _backend_config(
+        {
+            "__subckt_header__": ".subckt {name} {ports}",
+            "__subckt_footer__": ".ends {name}",
+            "__subckt_call__": "X{name} {ports} {ref}",
+            "__netlist_header__": "HEADER {top}",
+            "__netlist_footer__": "FOOTER {top}",
+        }
+    )
+
+    literal = ModuleOp(
+        name="amp_behave",
+        port_order=["A"],
+        file_id="literal.asdl",
+        region=[NetOp(name="A")],
+    )
+    decorated = ModuleOp(
+        name="amp@behave",
+        port_order=["A"],
+        file_id="decorated.asdl",
+        region=[NetOp(name="A")],
+    )
+    top = ModuleOp(
+        name="top",
+        port_order=["A"],
+        file_id="top.asdl",
+        region=[
+            NetOp(name="A"),
+            InstanceOp(
+                name="U0",
+                ref="amp_behave",
+                ref_file_id="literal.asdl",
+                conns=[ConnAttr(StringAttr("A"), StringAttr("A"))],
+            ),
+            InstanceOp(
+                name="U1",
+                ref="amp@behave",
+                ref_file_id="decorated.asdl",
+                conns=[ConnAttr(StringAttr("A"), StringAttr("A"))],
+            ),
+        ],
+    )
+    design = DesignOp(
+        region=[top, literal, decorated],
+        top="top",
+        entry_file_id="top.asdl",
+    )
+
+    netlist, diagnostics = _emit_from_graphir(
+        design,
+        backend_name="test.backend",
+        backend_config=backend_config,
+        top_as_subckt=True,
+    )
+
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.WARNING
+    assert diagnostics[0].code == format_code("EMIT", 14)
+    assert netlist == "\n".join(
+        [
+            "HEADER top",
+            ".subckt top A",
+            "XU0 A amp_behave",
+            "XU1 A amp_behave__2",
+            ".ends top",
+            ".subckt amp_behave A",
+            ".ends amp_behave",
+            ".subckt amp_behave__2 A",
+            ".ends amp_behave__2",
             "FOOTER top",
         ]
     )
