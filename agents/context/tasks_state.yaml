@@ -8,9 +8,9 @@ T-300:
   pr: 323
   merged: true
 T-301:
-  status: review_clean
+  status: done
   pr: 324
-  merged: false
+  merged: true
 T-302:
   status: ready
   pr: null
