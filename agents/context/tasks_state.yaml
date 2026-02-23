@@ -12,6 +12,6 @@ T-301:
   pr: 324
   merged: true
 T-302:
-  status: review_clean
+  status: done
   pr: 325
-  merged: false
+  merged: true
