@@ -729,10 +729,10 @@ def test_cli_netlist_reports_recursive_module_variable(
     assert "IR-013" in combined
 
 
-def test_cli_netlist_view_fixture_config_profile_writes_binding_sidecar(
+def test_cli_netlist_view_fixture_config_profile_writes_compile_log(
     tmp_path: Path, backend_config: Path
 ) -> None:
-    sidecar_path = tmp_path / "bindings.json"
+    log_path = tmp_path / "compile.log.json"
     output_path = tmp_path / "view_fixture_config1.spice"
 
     runner = CliRunner()
@@ -745,16 +745,16 @@ def test_cli_netlist_view_fixture_config_profile_writes_binding_sidecar(
             str(VIEW_FIXTURE_CONFIG),
             "--view-profile",
             "config_1",
-            "--binding-sidecar",
-            str(sidecar_path),
+            "--log",
+            str(log_path),
             "-o",
             str(output_path),
         ],
     )
 
     assert result.exit_code == 0
-    assert sidecar_path.exists()
-    payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    assert log_path.exists()
+    payload = json.loads(log_path.read_text(encoding="utf-8"))
     expected = [
         {"path": "tb", "instance": "dut", "resolved": "row"},
         {"path": "tb.dut", "instance": "SR_row", "resolved": "shift_row@behave"},
@@ -762,8 +762,13 @@ def test_cli_netlist_view_fixture_config_profile_writes_binding_sidecar(
         {"path": "tb.dut", "instance": "Tgate2", "resolved": "sw_tgate@behave"},
         {"path": "tb.dut", "instance": "Tgate_dbg", "resolved": "sw_tgate@behave"},
     ]
-    assert [{k: entry[k] for k in ("path", "instance", "resolved")} for entry in payload] == expected
-    assert all(entry["rule_id"] is None for entry in payload)
+    assert [
+        {k: entry[k] for k in ("path", "instance", "resolved")}
+        for entry in payload["view_bindings"]
+    ] == expected
+    assert all(entry["rule_id"] is None for entry in payload["view_bindings"])
+    assert "emission_name_map" in payload
+    assert "diagnostics" in payload
 
 
 def test_cli_netlist_view_fixture_scoped_override_changes_emitted_refs(
@@ -798,10 +803,10 @@ def test_cli_netlist_view_fixture_scoped_override_changes_emitted_refs(
     assert "sw_tgate_behave" in call_refs
 
 
-def test_cli_netlist_view_fixture_sidecar_and_mixed_view_emission(
+def test_cli_netlist_view_fixture_compile_log_and_mixed_view_emission(
     tmp_path: Path, backend_config: Path
 ) -> None:
-    sidecar_path = tmp_path / "view_fixture_bindings.json"
+    log_path = tmp_path / "view_fixture.compile.log.json"
     output_path = tmp_path / "view_fixture.spice"
     expected = yaml.safe_load(VIEW_FIXTURE_BINDING.read_text(encoding="utf-8"))
 
@@ -815,17 +820,20 @@ def test_cli_netlist_view_fixture_sidecar_and_mixed_view_emission(
             str(VIEW_FIXTURE_CONFIG),
             "--view-profile",
             "config_3",
-            "--binding-sidecar",
-            str(sidecar_path),
+            "--log",
+            str(log_path),
             "-o",
             str(output_path),
         ],
     )
 
     assert result.exit_code == 0
-    assert sidecar_path.exists()
-    payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
-    assert [{k: entry[k] for k in ("path", "instance", "resolved")} for entry in payload] == expected
+    assert log_path.exists()
+    payload = json.loads(log_path.read_text(encoding="utf-8"))
+    assert [
+        {k: entry[k] for k in ("path", "instance", "resolved")}
+        for entry in payload["view_bindings"]
+    ] == expected
 
     assert output_path.exists()
     call_refs = [
@@ -926,7 +934,7 @@ def test_cli_netlist_view_config_scoped_override_divergent_reused_module_occurre
 ) -> None:
     input_path = tmp_path / "divergent_view_reuse.asdl"
     config_path = tmp_path / "divergent_view_reuse.yaml"
-    sidecar_path = tmp_path / "divergent_view_reuse.bindings.json"
+    log_path = tmp_path / "divergent_view_reuse.log.json"
     output_path = tmp_path / "divergent_view_reuse.spice"
     input_path.write_text(_divergent_view_reuse_yaml(), encoding="utf-8")
     config_path.write_text(_divergent_view_reuse_config_yaml(), encoding="utf-8")
@@ -941,15 +949,15 @@ def test_cli_netlist_view_config_scoped_override_divergent_reused_module_occurre
             str(config_path),
             "--view-profile",
             "profile_divergent",
-            "--binding-sidecar",
-            str(sidecar_path),
+            "--log",
+            str(log_path),
             "-o",
             str(output_path),
         ],
     )
 
     assert result.exit_code == 0
-    sidecar_payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    compile_log = json.loads(log_path.read_text(encoding="utf-8"))
     expected = [
         {"path": "tb", "instance": "L", "resolved": "left"},
         {"path": "tb.L", "instance": "U", "resolved": "stage"},
@@ -959,7 +967,8 @@ def test_cli_netlist_view_config_scoped_override_divergent_reused_module_occurre
         {"path": "tb.R.U", "instance": "core", "resolved": "leaf@dbg"},
     ]
     assert [
-        {k: entry[k] for k in ("path", "instance", "resolved")} for entry in sidecar_payload
+        {k: entry[k] for k in ("path", "instance", "resolved")}
+        for entry in compile_log["view_bindings"]
     ] == expected
 
     call_refs = [
@@ -972,6 +981,66 @@ def test_cli_netlist_view_config_scoped_override_divergent_reused_module_occurre
     assert "stage__2" in call_refs
     assert "stage__3" in call_refs
     assert not any("__occ_" in ref for ref in call_refs)
+
+
+def test_cli_netlist_writes_default_compile_log_path(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "default_log_test.asdl"
+    input_path.write_text(_pipeline_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["netlist", str(input_path)])
+
+    assert result.exit_code == 0
+    default_log_path = tmp_path / "default_log_test.log.json"
+    assert default_log_path.exists()
+    payload = json.loads(default_log_path.read_text(encoding="utf-8"))
+    assert "view_bindings" in payload
+    assert "emission_name_map" in payload
+    assert "warnings" in payload
+    assert "diagnostics" in payload
+
+
+def test_cli_netlist_binding_sidecar_option_is_removed(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "removed_sidecar_option.asdl"
+    input_path.write_text(_pipeline_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["netlist", str(input_path), "--binding-sidecar", str(tmp_path / "unused.json")],
+    )
+
+    assert result.exit_code != 0
+    assert "No such option: --binding-sidecar" in result.output
+
+
+def test_cli_netlist_reports_compile_log_write_failure(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "compile_log_write_fail.asdl"
+    input_path.write_text(_pipeline_yaml(), encoding="utf-8")
+    log_path = tmp_path / "missing-dir" / "compile.log.json"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "netlist",
+            str(input_path),
+            "--log",
+            str(log_path),
+        ],
+    )
+
+    assert result.exit_code == 1
+    stderr = getattr(result, "stderr", "")
+    combined = f"{result.output}{stderr}"
+    assert "TOOL-002" in combined
+    assert "Failed to write compile log" in combined
 
 
 def test_cli_help() -> None:

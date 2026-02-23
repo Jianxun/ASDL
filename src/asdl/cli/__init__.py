@@ -3,12 +3,18 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Any, Iterable, List, Optional
 
 import click
 import yaml
 
-from asdl.diagnostics import Diagnostic, Severity, format_code, render_text
+from asdl.diagnostics import (
+    Diagnostic,
+    Severity,
+    diagnostics_to_jsonable,
+    format_code,
+    render_text,
+)
 
 NO_SPAN_NOTE = "No source span available."
 
@@ -481,10 +487,13 @@ def visualizer_dump(
     help="View-binding profile name from --view-config.",
 )
 @click.option(
-    "--binding-sidecar",
-    "binding_sidecar_path",
+    "--log",
+    "compile_log_path",
     type=click.Path(dir_okay=False, path_type=Path),
-    help="Optional output path for resolved binding sidecar JSON.",
+    help=(
+        "Compile log output path (default: "
+        "<entry_file_basename>.log.json next to the input file)."
+    ),
 )
 def netlist(
     input_file: Path,
@@ -496,7 +505,7 @@ def netlist(
     top_as_subckt: bool,
     view_config_path: Optional[Path],
     view_profile: Optional[str],
-    binding_sidecar_path: Optional[Path],
+    compile_log_path: Optional[Path],
 ) -> None:
     """Generate a netlist from ASDL.
 
@@ -518,13 +527,11 @@ def netlist(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    if view_config_path is None and (
-        view_profile is not None or binding_sidecar_path is not None
-    ):
+    if view_config_path is None and view_profile is not None:
         diagnostics.append(
             _diagnostic(
                 CLI_SCHEMA_ERROR,
-                "--view-profile and --binding-sidecar require --view-config.",
+                "--view-profile requires --view-config.",
             )
         )
         _emit_diagnostics(diagnostics)
@@ -559,7 +566,6 @@ def netlist(
                 VIEW_APPLY_ERROR,
                 apply_resolved_view_bindings,
                 resolve_design_view_bindings,
-                view_sidecar_to_jsonable,
             )
         except Exception as exc:  # pragma: no cover - defensive: missing optional deps
             diagnostics.append(
@@ -607,6 +613,8 @@ def netlist(
 
     if output_path is None:
         output_path = input_file.with_suffix(backend_config.extension)
+    if compile_log_path is None:
+        compile_log_path = input_file.with_name(f"{input_file.stem}.log.json")
 
     try:
         output_path.write_text(netlist_text, encoding="utf-8")
@@ -620,22 +628,76 @@ def netlist(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    if binding_sidecar_path is not None:
-        sidecar_payload = view_sidecar_to_jsonable(resolved_bindings or ())
-        sidecar_text = json.dumps(sidecar_payload, indent=2) + "\n"
-        try:
-            binding_sidecar_path.write_text(sidecar_text, encoding="utf-8")
-        except OSError as exc:
-            diagnostics.append(
-                _diagnostic(
-                    CLI_WRITE_ERROR,
-                    f"Failed to write binding sidecar to '{binding_sidecar_path}': {exc}",
-                )
+    try:
+        from asdl.emit.netlist.render import build_emission_name_map
+        from asdl.views.api import view_sidecar_to_jsonable
+    except Exception as exc:  # pragma: no cover - defensive: missing optional deps
+        diagnostics.append(
+            _diagnostic(
+                CLI_IMPORT_ERROR,
+                f"Failed to load compile log dependencies: {exc}",
             )
-            _emit_diagnostics(diagnostics)
-            raise click.exceptions.Exit(1)
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    compile_log_payload = _build_compile_log_payload(
+        resolved_bindings=resolved_bindings,
+        emission_name_map=build_emission_name_map(design),
+        diagnostics=diagnostics,
+        view_json_converter=view_sidecar_to_jsonable,
+    )
+    compile_log_text = json.dumps(compile_log_payload, sort_keys=True, indent=2) + "\n"
+    try:
+        compile_log_path.write_text(compile_log_text, encoding="utf-8")
+    except OSError as exc:
+        diagnostics.append(
+            _diagnostic(
+                CLI_WRITE_ERROR,
+                f"Failed to write compile log to '{compile_log_path}': {exc}",
+            )
+        )
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
 
     _emit_diagnostics(diagnostics)
+
+
+def _build_compile_log_payload(
+    *,
+    resolved_bindings: Optional[tuple[Any, ...]],
+    emission_name_map: list[Any],
+    diagnostics: list[Diagnostic],
+    view_json_converter: Any,
+) -> dict[str, Any]:
+    """Build deterministic compile-log JSON payload for `asdlc netlist`."""
+    warnings = [
+        diagnostic for diagnostic in diagnostics if diagnostic.severity == Severity.WARNING
+    ]
+    severity_counts = {
+        severity.value: 0
+        for severity in (Severity.INFO, Severity.WARNING, Severity.ERROR, Severity.FATAL)
+    }
+    for diagnostic in diagnostics:
+        severity_counts[diagnostic.severity.value] += 1
+    return {
+        "view_bindings": view_json_converter(resolved_bindings or ()),
+        "emission_name_map": [
+            {
+                "symbol": entry.symbol,
+                "file_id": entry.file_id,
+                "base_name": entry.base_name,
+                "emitted_name": entry.emitted_name,
+                "renamed": entry.renamed,
+            }
+            for entry in emission_name_map
+        ],
+        "warning_count": len(warnings),
+        "warnings": diagnostics_to_jsonable(warnings),
+        "diagnostic_count": len(diagnostics),
+        "diagnostic_severity_counts": severity_counts,
+        "diagnostics": diagnostics_to_jsonable(diagnostics),
+    }
 
 
 def _emit_diagnostics(diagnostics: Iterable[Diagnostic]) -> None:
