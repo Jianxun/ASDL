@@ -1,7 +1,7 @@
 schema_version: 2
 T-299:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 322
   merged: false
 T-300:
   status: ready
