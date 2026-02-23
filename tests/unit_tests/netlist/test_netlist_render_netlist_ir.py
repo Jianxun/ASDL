@@ -420,3 +420,82 @@ def test_render_netlist_ir_requires_explicit_top_without_unique_entry_module() -
     assert netlist is None
     assert len(diagnostics) == 1
     assert diagnostics[0].code == "EMIT-001"
+
+
+def test_render_netlist_ir_warns_on_missing_provenance_and_keeps_file_id_placeholders() -> None:
+    backend_config = BackendConfig(
+        name=BACKEND_NAME,
+        extension=".spice",
+        comment_prefix="*",
+        templates={
+            "__subckt_header__": SystemDeviceTemplate(
+                template=".subckt {name} {ports} ; file={file_id}"
+            ),
+            "__subckt_footer__": SystemDeviceTemplate(template=".ends {name}"),
+            "__subckt_call__": SystemDeviceTemplate(
+                template="X{name} {ports} {ref} ; file={file_id}"
+            ),
+            "__netlist_header__": SystemDeviceTemplate(
+                template="* header {top} file={file_id}"
+            ),
+            "__netlist_footer__": SystemDeviceTemplate(template=".end"),
+        },
+        pattern_rendering="{N}",
+    )
+
+    top = NetlistModule(
+        name="TOP",
+        file_id=None,
+        ports=[],
+        nets=[],
+        instances=[
+            NetlistInstance(
+                name="U1",
+                ref="CELL",
+                ref_file_id=None,
+                conns=[],
+            )
+        ],
+    )
+    cell_missing = NetlistModule(
+        name="CELL",
+        file_id=None,
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    cell_known = NetlistModule(
+        name="CELL",
+        file_id="lib_known.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    design = NetlistDesign(
+        modules=[top, cell_missing, cell_known],
+        devices=[],
+        top="TOP",
+        entry_file_id=None,
+    )
+
+    netlist, diagnostics = _emit(design, backend_config)
+
+    assert netlist == "\n".join(
+        [
+            "* header TOP file=",
+            "XU1 CELL__2 ; file=lib_known.asdl",
+            ".subckt CELL ; file=",
+            ".ends CELL",
+            ".subckt CELL__2 ; file=lib_known.asdl",
+            ".ends CELL__2",
+            ".end",
+        ]
+    )
+
+    warning_codes = [diag.code for diag in diagnostics if diag.severity is Severity.WARNING]
+    assert warning_codes.count(format_code("EMIT", 15)) >= 3
+    assert format_code("EMIT", 14) in warning_codes
+    warning_messages = [diag.message for diag in diagnostics if diag.severity is Severity.WARNING]
+    assert any("entry_file_id is missing" in message for message in warning_messages)
+    assert any("missing file_id provenance" in message for message in warning_messages)
+    assert any("name-only fallback is ambiguous" in message for message in warning_messages)

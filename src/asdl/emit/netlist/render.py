@@ -24,6 +24,7 @@ from .diagnostics import (
     MISSING_BACKEND,
     MISSING_TOP,
     MISSING_CONN,
+    PROVENANCE_METADATA_WARNING,
     UNKNOWN_CONN_PORT,
     UNKNOWN_REFERENCE,
     UNRESOLVED_ENV_VAR,
@@ -46,7 +47,7 @@ from .templates import (
 @dataclass(frozen=True)
 class _NetlistIRSymbolMaps:
     index: "NetlistIRIndex"
-    module_emitted_names: Dict[Tuple[Optional[str], str], str]
+    module_emitted_names: Dict[int, str]
 
 
 @dataclass(frozen=True)
@@ -67,6 +68,11 @@ _MODULE_SYMBOL_PATTERN = re.compile(
 _SANITIZE_TOKEN_PATTERN = re.compile(r"[^A-Za-z0-9_]+")
 _MAX_PORT_PREVIEW = 8
 _MAX_PORT_MATCH_SCAN = 200
+
+
+def _has_known_file_id(file_id: Optional[str]) -> bool:
+    """Return whether provenance file_id metadata is present and non-empty."""
+    return isinstance(file_id, str) and bool(file_id.strip())
 
 
 def _preview_names(names: Iterable[str], limit: int) -> Tuple[List[str], bool]:
@@ -136,6 +142,7 @@ def _emit_netlist_ir_design(
         )
         return None, diagnostics
 
+    _emit_provenance_diagnostics_ir(design, index, top_module, diagnostics)
     module_emitted_names = _build_module_emitted_names_ir(design.modules, diagnostics)
     top_emitted_name = _module_emitted_name_ir(top_module, module_emitted_names)
 
@@ -539,13 +546,15 @@ def _emit_timestamp_context(emit_timestamp) -> Dict[str, str]:
 def _entry_file_id_value_ir(
     entry_file_id: Optional[str], top_module: NetlistModule
 ) -> str:
-    if entry_file_id is not None:
+    if _has_known_file_id(entry_file_id):
         return entry_file_id
-    return top_module.file_id or ""
+    if _has_known_file_id(top_module.file_id):
+        return top_module.file_id
+    return ""
 
 
-def _module_key_ir(module: NetlistModule) -> Tuple[Optional[str], str]:
-    return module.file_id, module.name
+def _module_key_ir(module: NetlistModule) -> int:
+    return id(module)
 
 
 def _realization_name_from_symbol(symbol: str) -> str:
@@ -577,10 +586,10 @@ def _sanitize_realization_token(value: str) -> str:
 def _build_module_emitted_names_ir(
     modules: List[NetlistModule],
     diagnostics: Optional[List[Diagnostic]] = None,
-) -> Dict[Tuple[Optional[str], str], str]:
+) -> Dict[int, str]:
     used_names: set[str] = set()
     next_suffix_by_base: Dict[str, int] = {}
-    emitted_names: Dict[Tuple[Optional[str], str], str] = {}
+    emitted_names: Dict[int, str] = {}
     for module in modules:
         module_key = _module_key_ir(module)
         base_name = _realization_name_from_symbol(module.name)
@@ -611,9 +620,101 @@ def _build_module_emitted_names_ir(
 
 
 def _module_emitted_name_ir(
-    module: NetlistModule, emitted_names: Dict[Tuple[Optional[str], str], str]
+    module: NetlistModule, emitted_names: Dict[int, str]
 ) -> str:
     return emitted_names.get(_module_key_ir(module), module.name)
+
+
+def _emit_provenance_diagnostics_ir(
+    design: NetlistDesign,
+    index: "NetlistIRIndex",
+    top_module: NetlistModule,
+    diagnostics: List[Diagnostic],
+) -> None:
+    """Warn when module/file provenance metadata is missing or unknown."""
+    if not _has_known_file_id(design.entry_file_id):
+        fallback = _entry_file_id_value_ir(design.entry_file_id, top_module)
+        if fallback:
+            fallback_desc = f"top module file_id '{fallback}'"
+        else:
+            fallback_desc = "empty string"
+        diagnostics.append(
+            _diagnostic(
+                PROVENANCE_METADATA_WARNING,
+                (
+                    "Design entry_file_id is missing; __netlist_header__/__netlist_footer__ "
+                    f"{{file_id}} uses {fallback_desc}."
+                ),
+                Severity.WARNING,
+            )
+        )
+
+    for module in design.modules:
+        if _has_known_file_id(module.file_id):
+            continue
+        diagnostics.append(
+            _diagnostic(
+                PROVENANCE_METADATA_WARNING,
+                (
+                    f"Module symbol '{module.name}' has missing file_id provenance; "
+                    "__subckt_header__ {file_id} emits as empty string."
+                ),
+                Severity.WARNING,
+            )
+        )
+
+    for module in design.modules:
+        for instance in module.instances:
+            ref_name = instance.ref
+            ref_file_id = instance.ref_file_id
+            module_candidates = index.modules_by_name.get(ref_name, [])
+            device_candidates = index.devices_by_name.get(ref_name, [])
+            if _has_known_file_id(ref_file_id):
+                has_exact = (ref_file_id, ref_name) in index.modules_by_key or (
+                    ref_file_id,
+                    ref_name,
+                ) in index.devices_by_key
+                if has_exact or (not module_candidates and not device_candidates):
+                    continue
+                diagnostics.append(
+                    _diagnostic(
+                        PROVENANCE_METADATA_WARNING,
+                        (
+                            f"Instance '{module.name}.{instance.name}' declares unknown "
+                            f"ref_file_id '{ref_file_id}' for symbol '{ref_name}'."
+                        ),
+                        Severity.WARNING,
+                    )
+                )
+                continue
+
+            if not module_candidates and not device_candidates:
+                diagnostics.append(
+                    _diagnostic(
+                        PROVENANCE_METADATA_WARNING,
+                        (
+                            f"Instance '{module.name}.{instance.name}' is missing "
+                            f"ref_file_id for symbol '{ref_name}'."
+                        ),
+                        Severity.WARNING,
+                    )
+                )
+                continue
+
+            candidate_count = len(module_candidates) + len(device_candidates)
+            if candidate_count > 1:
+                diagnostics.append(
+                    _diagnostic(
+                        PROVENANCE_METADATA_WARNING,
+                        (
+                            f"Instance '{module.name}.{instance.name}' is missing "
+                            f"ref_file_id for symbol '{ref_name}'; "
+                            "name-only fallback is ambiguous and resolves "
+                            "deterministically by declaration order."
+                        ),
+                        Severity.WARNING,
+                    )
+                )
 
 
 def build_emission_name_map(design: NetlistDesign) -> List[EmissionNameMapEntry]:
