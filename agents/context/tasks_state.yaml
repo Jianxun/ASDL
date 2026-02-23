@@ -8,8 +8,8 @@ T-300:
   pr: 323
   merged: true
 T-301:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 324
   merged: false
 T-302:
   status: ready
