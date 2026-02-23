@@ -12,6 +12,6 @@ T-301:
   pr: 324
   merged: true
 T-302:
-  status: ready
+  status: in_progress
   pr: null
   merged: false

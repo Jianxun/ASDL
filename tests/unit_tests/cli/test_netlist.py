@@ -297,6 +297,52 @@ def _divergent_view_reuse_config_yaml() -> str:
     )
 
 
+def _collision_compile_log_yaml() -> str:
+    return "\n".join(
+        [
+            "top: top",
+            "modules:",
+            "  top:",
+            "    instances:",
+            "      U1: leaf@behave",
+            "      U2: leaf_behave",
+            "    nets:",
+            "      $IN1:",
+            "        - U1.IN",
+            "      $OUT1:",
+            "        - U1.OUT",
+            "      $IN2:",
+            "        - U2.IN",
+            "      $OUT2:",
+            "        - U2.OUT",
+            "  leaf@behave:",
+            "    instances:",
+            "      R1: res r=2k",
+            "    nets:",
+            "      $IN:",
+            "        - R1.P",
+            "      $OUT:",
+            "        - R1.N",
+            "  leaf_behave:",
+            "    instances:",
+            "      R2: res r=3k",
+            "    nets:",
+            "      $IN:",
+            "        - R2.P",
+            "      $OUT:",
+            "        - R2.N",
+            "devices:",
+            "  res:",
+            "    ports: [P, N]",
+            "    parameters:",
+            "      r: 1k",
+            "    backends:",
+            "      sim.ngspice:",
+            "        template: \"R{name} {ports} {params}\"",
+        ]
+    )
+
+
 def _write_import_entry(path: Path, import_path: str) -> None:
     lines = [
         "imports:",
@@ -981,6 +1027,73 @@ def test_cli_netlist_view_config_scoped_override_divergent_reused_module_occurre
     assert "stage__2" in call_refs
     assert "stage__3" in call_refs
     assert not any("__occ_" in ref for ref in call_refs)
+
+
+def test_cli_netlist_compile_log_collision_payload_is_deterministic(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "collision_log.asdl"
+    output_path = tmp_path / "collision_log.spice"
+    log_path = tmp_path / "collision_log.log.json"
+    input_path.write_text(_collision_compile_log_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "netlist",
+            str(input_path),
+            "--log",
+            str(log_path),
+            "-o",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert output_path.exists()
+    call_refs = [
+        line.rsplit(" ", 1)[-1]
+        for line in output_path.read_text(encoding="utf-8").splitlines()
+        if line.startswith("X")
+    ]
+    assert call_refs == ["leaf_behave", "leaf_behave__2"]
+
+    payload = json.loads(log_path.read_text(encoding="utf-8"))
+    assert payload["view_bindings"] == []
+    assert payload["emission_name_map"] == [
+        {
+            "symbol": "top",
+            "file_id": str(input_path),
+            "base_name": "top",
+            "emitted_name": "top",
+            "renamed": False,
+        },
+        {
+            "symbol": "leaf@behave",
+            "file_id": str(input_path),
+            "base_name": "leaf_behave",
+            "emitted_name": "leaf_behave",
+            "renamed": False,
+        },
+        {
+            "symbol": "leaf_behave",
+            "file_id": str(input_path),
+            "base_name": "leaf_behave",
+            "emitted_name": "leaf_behave__2",
+            "renamed": True,
+        },
+    ]
+    assert payload["warning_count"] == 1
+    assert payload["diagnostic_count"] == 1
+    assert payload["diagnostic_severity_counts"] == {
+        "info": 0,
+        "warning": 1,
+        "error": 0,
+        "fatal": 0,
+    }
+    assert [diag["code"] for diag in payload["warnings"]] == ["EMIT-014"]
+    assert [diag["code"] for diag in payload["diagnostics"]] == ["EMIT-014"]
 
 
 def test_cli_netlist_writes_default_compile_log_path(
