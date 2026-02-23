@@ -128,6 +128,9 @@ def apply_resolved_view_bindings(
     modules_by_name: dict[str, list[NetlistModule]] = {}
     for module in design.modules:
         modules_by_name.setdefault(module.name, []).append(module)
+    base_modules_by_name = {
+        module_name: candidates.copy() for module_name, candidates in modules_by_name.items()
+    }
 
     top_module = _resolve_top_module(design)
     if top_module is None:
@@ -140,9 +143,11 @@ def apply_resolved_view_bindings(
     used_module_keys = {(module.file_id, module.name) for module in design.modules}
     specialized_modules: list[NetlistModule] = []
     top_override: Optional[NetlistModule] = None
-    specialized_ref_by_path: dict[str, str] = {}
+    specialized_ref_by_path: dict[str, tuple[str, str]] = {}
 
-    def _specialize_occurrence(path: str, module: NetlistModule, *, is_top: bool) -> str:
+    def _specialize_occurrence(
+        path: str, module: NetlistModule, *, is_top: bool
+    ) -> tuple[str, str]:
         nonlocal top_override
         cached = specialized_ref_by_path.get(path)
         if cached is not None:
@@ -150,8 +155,8 @@ def apply_resolved_view_bindings(
 
         child_entries = child_entries_by_parent.get(path, [])
         if not child_entries:
-            specialized_ref_by_path[path] = module.name
-            return module.name
+            specialized_ref_by_path[path] = (module.name, module.file_id)
+            return module.name, module.file_id
 
         child_entries_by_instance = {
             child_entry.instance: child_entry for child_entry in child_entries
@@ -168,17 +173,18 @@ def apply_resolved_view_bindings(
             child_module = _select_module(
                 modules_by_name,
                 modules_by_key,
+                base_modules_by_name,
                 name=resolved_symbol,
                 file_id=child_entry.ref_file_id,
             )
             rewritten_ref = resolved_symbol
             rewritten_ref_file_id = instance.ref_file_id
             if child_module is not None:
-                rewritten_ref = _specialize_occurrence(
-                    child_entry.full_path, child_module, is_top=False
+                rewritten_ref, rewritten_ref_file_id = _specialize_occurrence(
+                    child_entry.full_path,
+                    child_module,
+                    is_top=False,
                 )
-                if child_module.file_id is not None:
-                    rewritten_ref_file_id = child_module.file_id
 
             if rewritten_ref == instance.ref and rewritten_ref_file_id == instance.ref_file_id:
                 rewritten_instances.append(instance)
@@ -190,28 +196,31 @@ def apply_resolved_view_bindings(
             changed = True
 
         if not changed:
-            specialized_ref_by_path[path] = module.name
-            return module.name
+            specialized_ref_by_path[path] = (module.name, module.file_id)
+            return module.name, module.file_id
 
         rewritten_module = replace(module, instances=rewritten_instances)
         if is_top:
             top_override = rewritten_module
-            specialized_ref_by_path[path] = rewritten_module.name
-            return rewritten_module.name
+            specialized_ref_by_path[path] = (rewritten_module.name, rewritten_module.file_id)
+            return rewritten_module.name, rewritten_module.file_id
 
-        specialized_name = _build_occurrence_module_name(
-            module.name,
+        specialized_file_id = _build_occurrence_module_file_id(
             path,
+            module_name=module.name,
             file_id=module.file_id,
             used_module_keys=used_module_keys,
         )
-        specialized_module = replace(rewritten_module, name=specialized_name)
+        specialized_module = replace(rewritten_module, file_id=specialized_file_id)
         specialized_modules.append(specialized_module)
         used_module_keys.add((specialized_module.file_id, specialized_module.name))
         modules_by_key[(specialized_module.file_id, specialized_module.name)] = specialized_module
         modules_by_name.setdefault(specialized_module.name, []).append(specialized_module)
-        specialized_ref_by_path[path] = specialized_module.name
-        return specialized_module.name
+        specialized_ref_by_path[path] = (
+            specialized_module.name,
+            specialized_module.file_id,
+        )
+        return specialized_module.name, specialized_module.file_id
 
     _specialize_occurrence(top_module.name, top_module, is_top=True)
 
@@ -254,6 +263,7 @@ def _resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
 def _select_module(
     modules_by_name: dict[str, list[NetlistModule]],
     modules_by_key: dict[tuple[Optional[str], str], NetlistModule],
+    base_modules_by_name: dict[str, list[NetlistModule]],
     *,
     name: str,
     file_id: Optional[str],
@@ -268,24 +278,27 @@ def _select_module(
     if len(candidates) == 1:
         return candidates[0]
     if candidates:
+        base_candidates = base_modules_by_name.get(name, [])
+        if base_candidates:
+            return base_candidates[-1]
         return candidates[-1]
     return None
 
 
-def _build_occurrence_module_name(
-    module_name: str,
+def _build_occurrence_module_file_id(
     path: str,
     *,
+    module_name: str,
     file_id: Optional[str],
     used_module_keys: set[tuple[Optional[str], str]],
 ) -> str:
-    """Build a deterministic, collision-safe module symbol for one occurrence."""
+    """Build a deterministic, collision-safe module file-id for one occurrence."""
     digest = hashlib.sha1(path.encode("utf-8")).hexdigest()[:8]
-    base_name = f"{module_name}__occ_{digest}"
-    candidate = base_name
-    suffix = 1
-    while (file_id, candidate) in used_module_keys:
-        candidate = f"{base_name}_{suffix}"
+    base_file_id = f"{file_id}#viewocc_{digest}" if file_id else f"viewocc:{digest}"
+    candidate = base_file_id
+    suffix = 2
+    while (candidate, module_name) in used_module_keys:
+        candidate = f"{base_file_id}_{suffix}"
         suffix += 1
     return candidate
 

@@ -225,3 +225,72 @@ def test_resolve_view_bindings_fixture_later_rule_precedence_matches_fixture() -
     assert [(entry.path, entry.instance, entry.resolved) for entry in resolved] == [
         (record["path"], record["instance"], record["resolved"]) for record in expected
     ]
+
+
+def test_resolve_view_bindings_keeps_deterministic_order_for_divergent_paths() -> None:
+    """Resolver preserves stable DFS order for path-scoped divergent rewrites."""
+    design = NetlistDesign(
+        modules=[
+            NetlistModule(
+                name="tb",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="L", ref="left", ref_file_id="file://tb"),
+                    NetlistInstance(name="R", ref="right", ref_file_id="file://tb"),
+                ],
+            ),
+            NetlistModule(
+                name="left",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="U", ref="stage", ref_file_id="file://tb"),
+                ],
+            ),
+            NetlistModule(
+                name="right",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="U", ref="stage", ref_file_id="file://tb"),
+                ],
+            ),
+            NetlistModule(
+                name="stage",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="core", ref="leaf", ref_file_id="file://tb"),
+                ],
+            ),
+            NetlistModule(name="leaf", file_id="file://tb"),
+            NetlistModule(name="leaf@alt", file_id="file://tb"),
+            NetlistModule(name="leaf@dbg", file_id="file://tb"),
+        ],
+        top="tb",
+    )
+    profile = ViewProfile.model_validate(
+        {
+            "view_order": ["default"],
+            "rules": [
+                {
+                    "id": "left_alt",
+                    "match": {"path": "tb.L.U", "instance": "core"},
+                    "bind": "leaf@alt",
+                },
+                {
+                    "id": "right_dbg",
+                    "match": {"path": "tb.R.U", "instance": "core"},
+                    "bind": "leaf@dbg",
+                },
+            ],
+        }
+    )
+
+    result = resolve_view_bindings(design, profile)
+
+    assert [(entry.path, entry.instance, entry.resolved, entry.rule_id) for entry in result] == [
+        ("tb", "L", "left", None),
+        ("tb.L", "U", "stage", None),
+        ("tb.L.U", "core", "leaf@alt", "left_alt"),
+        ("tb", "R", "right", None),
+        ("tb.R", "U", "stage", None),
+        ("tb.R.U", "core", "leaf@dbg", "right_dbg"),
+    ]

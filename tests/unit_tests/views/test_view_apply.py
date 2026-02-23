@@ -64,7 +64,13 @@ def test_apply_resolved_view_bindings_rewrites_emission_refs() -> None:
 
     updated = apply_resolved_view_bindings(design, resolved)
 
-    top_cell = [module for module in updated.modules if module.name == "TopCell"][0]
+    tb_module = [module for module in updated.modules if module.name == "tb"][0]
+    dut_instance = [instance for instance in tb_module.instances if instance.name == "dut"][0]
+    top_cell = [
+        module
+        for module in updated.modules
+        if module.name == dut_instance.ref and module.file_id == dut_instance.ref_file_id
+    ][0]
     refs = {instance.name: instance.ref for instance in top_cell.instances}
 
     assert refs == {
@@ -79,7 +85,7 @@ def test_apply_resolved_view_bindings_rewrites_emission_refs() -> None:
 
 
 def test_apply_resolved_view_bindings_supports_non_uniform_shared_module_rewrites() -> None:
-    """Apply pass specializes shared modules when descendant rewrites diverge by path."""
+    """Apply pass specializes shared modules by file id when rewrites diverge by path."""
     design = NetlistDesign(
         modules=[
             NetlistModule(
@@ -113,16 +119,98 @@ def test_apply_resolved_view_bindings_supports_non_uniform_shared_module_rewrite
     updated = apply_resolved_view_bindings(design, resolved)
 
     tb_module = [module for module in updated.modules if module.name == "tb"][0]
-    a1_ref = [instance.ref for instance in tb_module.instances if instance.name == "A1"][0]
-    a2_ref = [instance.ref for instance in tb_module.instances if instance.name == "A2"][0]
-    assert a1_ref != a2_ref
-    assert a1_ref.startswith("branch__occ_")
-    assert a2_ref.startswith("branch__occ_")
+    instance_refs = {
+        instance.name: (instance.ref, instance.ref_file_id) for instance in tb_module.instances
+    }
+    a1_ref, a1_ref_file_id = instance_refs["A1"]
+    a2_ref, a2_ref_file_id = instance_refs["A2"]
 
-    a1_module = [module for module in updated.modules if module.name == a1_ref][0]
-    a2_module = [module for module in updated.modules if module.name == a2_ref][0]
+    assert a1_ref == "branch"
+    assert a2_ref == "branch"
+    assert a1_ref_file_id != a2_ref_file_id
+    assert all("__occ_" not in module.name for module in updated.modules)
+
+    a1_module = [
+        module
+        for module in updated.modules
+        if module.name == a1_ref and module.file_id == a1_ref_file_id
+    ][0]
+    a2_module = [
+        module
+        for module in updated.modules
+        if module.name == a2_ref and module.file_id == a2_ref_file_id
+    ][0]
     assert [instance.ref for instance in a1_module.instances] == ["leaf@alt"]
     assert [instance.ref for instance in a2_module.instances] == ["leaf@dbg"]
 
-    base_branch = [module for module in updated.modules if module.name == "branch"][0]
+    base_branch = [
+        module
+        for module in updated.modules
+        if module.name == "branch" and module.file_id == "file://tb"
+    ][0]
     assert [instance.ref for instance in base_branch.instances] == ["leaf"]
+
+
+def test_apply_resolved_view_bindings_missing_ref_file_id_avoids_chained_specialization() -> None:
+    """Sibling rewrites without provenance must each specialize from the base module."""
+    design = NetlistDesign(
+        modules=[
+            NetlistModule(
+                name="tb",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="A1", ref="branch", ref_file_id=None),
+                    NetlistInstance(name="A2", ref="branch", ref_file_id=None),
+                ],
+            ),
+            NetlistModule(
+                name="branch",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="core", ref="leaf", ref_file_id="file://tb"),
+                ],
+            ),
+            NetlistModule(name="leaf", file_id="file://tb"),
+            NetlistModule(name="leaf@alt", file_id="file://tb"),
+            NetlistModule(name="leaf@dbg", file_id="file://tb"),
+        ],
+        top="tb",
+    )
+    resolved = (
+        ResolvedViewBindingEntry(path="tb", instance="A1", resolved="branch", rule_id=None),
+        ResolvedViewBindingEntry(path="tb.A1", instance="core", resolved="leaf@alt", rule_id="r1"),
+        ResolvedViewBindingEntry(path="tb", instance="A2", resolved="branch", rule_id=None),
+        ResolvedViewBindingEntry(path="tb.A2", instance="core", resolved="leaf@dbg", rule_id="r2"),
+    )
+
+    updated = apply_resolved_view_bindings(design, resolved)
+
+    tb_module = [module for module in updated.modules if module.name == "tb"][0]
+    instance_refs = {
+        instance.name: (instance.ref, instance.ref_file_id) for instance in tb_module.instances
+    }
+    a1_ref, a1_ref_file_id = instance_refs["A1"]
+    a2_ref, a2_ref_file_id = instance_refs["A2"]
+
+    assert a1_ref == "branch"
+    assert a2_ref == "branch"
+    assert a1_ref_file_id != a2_ref_file_id
+    assert a1_ref_file_id is not None
+    assert a2_ref_file_id is not None
+    assert "#viewocc_" in a1_ref_file_id
+    assert "#viewocc_" in a2_ref_file_id
+    assert a2_ref_file_id.startswith("file://tb#viewocc_")
+    assert not a2_ref_file_id.startswith(f"{a1_ref_file_id}#viewocc_")
+
+    a1_module = [
+        module
+        for module in updated.modules
+        if module.name == a1_ref and module.file_id == a1_ref_file_id
+    ][0]
+    a2_module = [
+        module
+        for module in updated.modules
+        if module.name == a2_ref and module.file_id == a2_ref_file_id
+    ][0]
+    assert [instance.ref for instance in a1_module.instances] == ["leaf@alt"]
+    assert [instance.ref for instance in a2_module.instances] == ["leaf@dbg"]
