@@ -969,6 +969,9 @@ def test_cli_netlist_view_config_scoped_override_divergent_reused_module_occurre
     ]
     assert "leaf_alt" in call_refs
     assert "leaf_dbg" in call_refs
+    assert "stage__2" in call_refs
+    assert "stage__3" in call_refs
+    assert not any("__occ_" in ref for ref in call_refs)
 
 
 def test_cli_help() -> None:
