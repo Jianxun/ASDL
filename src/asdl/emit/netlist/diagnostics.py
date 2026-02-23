@@ -30,6 +30,7 @@ NETLIST_VERIFY_CRASH = format_code("EMIT", 10)
 UNRESOLVED_ENV_VAR = format_code("EMIT", 11)
 INSTANCE_VARIABLE_OVERRIDE = format_code("EMIT", 12)
 VARIABLE_KEY_COLLISION = format_code("EMIT", 13)
+EMISSION_NAME_COLLISION = format_code("EMIT", 14)
 
 
 def _emit_diagnostic(

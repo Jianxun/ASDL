@@ -1,9 +1,9 @@
 import datetime
-import hashlib
 
+from asdl.diagnostics import Severity, format_code
 from asdl.emit.backend_config import BackendConfig, SystemDeviceTemplate
 from asdl.emit.netlist.api import EmitOptions
-from asdl.emit.netlist.render import _emit_design
+from asdl.emit.netlist.render import _emit_design, build_emission_name_map
 from asdl.emit.netlist_ir import (
     NetlistBackend,
     NetlistConn,
@@ -48,10 +48,6 @@ def _emit(design: NetlistDesign, config: BackendConfig) -> tuple[str | None, lis
         emit_timestamp=datetime.datetime(2026, 1, 1, 12, 0, 0),
     )
     return _emit_design(design, options)
-
-
-def _hash(file_id: str) -> str:
-    return hashlib.sha1(file_id.encode("utf-8")).hexdigest()[:8]
 
 
 def test_render_netlist_ir_device_params_and_pattern_ports() -> None:
@@ -169,19 +165,127 @@ def test_render_netlist_ir_module_reference_uses_file_id() -> None:
 
     netlist, diagnostics = _emit(design, backend_config)
 
-    assert diagnostics == []
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.WARNING
+    assert diagnostics[0].code == format_code("EMIT", 14)
     expected = "\n".join(
         [
             "* header TOP",
-            f"XU1 CELL__{_hash('lib1.asdl')}",
-            f".subckt CELL__{_hash('lib1.asdl')}",
-            f".ends CELL__{_hash('lib1.asdl')}",
-            f".subckt CELL__{_hash('lib2.asdl')}",
-            f".ends CELL__{_hash('lib2.asdl')}",
+            "XU1 CELL",
+            ".subckt CELL",
+            ".ends CELL",
+            ".subckt CELL__2",
+            ".ends CELL__2",
             ".end",
         ]
     )
     assert netlist == expected
+
+
+def test_render_netlist_ir_collision_allocator_skips_preexisting_suffixes() -> None:
+    backend_config = _backend_config()
+
+    top = NetlistModule(
+        name="TOP",
+        file_id="top.asdl",
+        ports=[],
+        nets=[],
+        instances=[
+            NetlistInstance(
+                name="U1",
+                ref="CELL",
+                ref_file_id="lib_dup.asdl",
+                conns=[],
+            )
+        ],
+    )
+    cell_base = NetlistModule(
+        name="CELL",
+        file_id="lib_base.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    cell_literal_suffixed = NetlistModule(
+        name="CELL__2",
+        file_id="lib_literal.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    cell_duplicate = NetlistModule(
+        name="CELL",
+        file_id="lib_dup.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+
+    design = NetlistDesign(
+        modules=[top, cell_base, cell_literal_suffixed, cell_duplicate],
+        devices=[],
+        top="TOP",
+        entry_file_id="top.asdl",
+    )
+
+    netlist, diagnostics = _emit(design, backend_config)
+
+    assert len(diagnostics) == 1
+    assert diagnostics[0].severity is Severity.WARNING
+    assert diagnostics[0].code == format_code("EMIT", 14)
+    expected = "\n".join(
+        [
+            "* header TOP",
+            "XU1 CELL__3",
+            ".subckt CELL",
+            ".ends CELL",
+            ".subckt CELL__2",
+            ".ends CELL__2",
+            ".subckt CELL__3",
+            ".ends CELL__3",
+            ".end",
+        ]
+    )
+    assert netlist == expected
+
+
+def test_build_emission_name_map_reports_logical_base_and_emitted_names() -> None:
+    top = NetlistModule(
+        name="TOP",
+        file_id="top.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    literal = NetlistModule(
+        name="CELL_behave",
+        file_id="literal.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    decorated = NetlistModule(
+        name="CELL@behave",
+        file_id="decorated.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    design = NetlistDesign(
+        modules=[top, literal, decorated],
+        devices=[],
+        top="TOP",
+        entry_file_id="top.asdl",
+    )
+
+    name_map = build_emission_name_map(design)
+
+    assert [(entry.symbol, entry.base_name, entry.emitted_name) for entry in name_map] == [
+        ("TOP", "TOP", "TOP"),
+        ("CELL_behave", "CELL_behave", "CELL_behave"),
+        ("CELL@behave", "CELL_behave", "CELL_behave__2"),
+    ]
+    assert [entry.renamed for entry in name_map] == [False, False, True]
 
 
 def test_render_netlist_ir_realizes_view_decorated_modules() -> None:
