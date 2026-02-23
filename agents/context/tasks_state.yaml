@@ -1,6 +1,6 @@
 schema_version: 2
 T-299:
-  status: ready_for_review
+  status: review_clean
   pr: 322
   merged: false
 T-300:
