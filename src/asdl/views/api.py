@@ -128,6 +128,9 @@ def apply_resolved_view_bindings(
     modules_by_name: dict[str, list[NetlistModule]] = {}
     for module in design.modules:
         modules_by_name.setdefault(module.name, []).append(module)
+    base_modules_by_name = {
+        module_name: candidates.copy() for module_name, candidates in modules_by_name.items()
+    }
 
     top_module = _resolve_top_module(design)
     if top_module is None:
@@ -170,6 +173,7 @@ def apply_resolved_view_bindings(
             child_module = _select_module(
                 modules_by_name,
                 modules_by_key,
+                base_modules_by_name,
                 name=resolved_symbol,
                 file_id=child_entry.ref_file_id,
             )
@@ -259,6 +263,7 @@ def _resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
 def _select_module(
     modules_by_name: dict[str, list[NetlistModule]],
     modules_by_key: dict[tuple[Optional[str], str], NetlistModule],
+    base_modules_by_name: dict[str, list[NetlistModule]],
     *,
     name: str,
     file_id: Optional[str],
@@ -273,6 +278,9 @@ def _select_module(
     if len(candidates) == 1:
         return candidates[0]
     if candidates:
+        base_candidates = base_modules_by_name.get(name, [])
+        if base_candidates:
+            return base_candidates[-1]
         return candidates[-1]
     return None
 
