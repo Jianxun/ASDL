@@ -60,6 +60,17 @@ class QueryTreeEntry:
     depth: int
 
 
+@dataclass(frozen=True)
+class QueryBindingsEntry:
+    """One `asdlc query bindings` payload row."""
+
+    path: str
+    instance: str
+    authored_ref: str
+    resolved: str
+    rule_id: Optional[str]
+
+
 def query_common_options(func: Callable[..., Any]) -> Callable[..., Any]:
     """Attach shared query options to a Click subcommand callback.
 
@@ -372,6 +383,49 @@ def build_query_tree_payload(runtime: QueryRuntime) -> list[dict[str, Any]]:
     ]
 
 
+def build_query_bindings_payload(runtime: QueryRuntime) -> list[dict[str, Any]]:
+    """Build deterministic `query.bindings` payload rows.
+
+    Args:
+        runtime: Query runtime with authored design and resolved bindings.
+
+    Returns:
+        Ordered list of binding rows sorted by `(path, instance)`.
+    """
+
+    authored_index = build_instance_index(runtime.authored_design)
+    authored_by_path = {entry.full_path: entry.ref for entry in authored_index.entries}
+
+    rows: list[QueryBindingsEntry] = []
+    for binding in sorted(
+        runtime.resolved_bindings,
+        key=lambda entry: (entry.path, entry.instance),
+    ):
+        full_path = (
+            f"{binding.path}.{binding.instance}" if binding.path else binding.instance
+        )
+        rows.append(
+            QueryBindingsEntry(
+                path=binding.path,
+                instance=binding.instance,
+                authored_ref=authored_by_path.get(full_path, binding.resolved),
+                resolved=binding.resolved,
+                rule_id=binding.rule_id,
+            )
+        )
+
+    return [
+        {
+            "path": entry.path,
+            "instance": entry.instance,
+            "authored_ref": entry.authored_ref,
+            "resolved": entry.resolved,
+            "rule_id": entry.rule_id,
+        }
+        for entry in rows
+    ]
+
+
 def _build_emission_lookup(
     runtime: QueryRuntime,
 ) -> tuple[dict[tuple[Optional[str], str], str], dict[str, tuple[EmissionNameMapEntry, ...]]]:
@@ -450,6 +504,7 @@ def _diagnostic(message: str, *, code: str = QUERY_RUNTIME_ERROR) -> Diagnostic:
 __all__ = [
     "QueryRuntime",
     "QueryStage",
+    "build_query_bindings_payload",
     "build_query_tree_payload",
     "build_query_runtime",
     "finalize_query_output",

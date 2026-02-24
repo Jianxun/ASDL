@@ -10,6 +10,7 @@ import yaml
 
 from asdl.cli.query_runtime import (
     QueryStage,
+    build_query_bindings_payload,
     build_query_tree_payload,
     build_query_runtime,
     finalize_query_output,
@@ -491,6 +492,66 @@ def query_tree(
     exit_code, output_text = finalize_query_output(
         kind="query.tree",
         payload=build_query_tree_payload(runtime),
+        json_output=json_output,
+        diagnostics=diagnostics,
+    )
+    click.echo(output_text, nl=False)
+    _emit_diagnostics(diagnostics)
+    if exit_code != 0:
+        raise click.exceptions.Exit(exit_code)
+
+
+@query.command("bindings")
+@query_common_options
+def query_bindings(
+    input_file: Path,
+    config_path: Optional[Path],
+    lib_roots: tuple[Path, ...],
+    view_config_path: Optional[Path],
+    view_profile: Optional[str],
+    top_name: Optional[str],
+    stage: str,
+    json_output: bool,
+) -> None:
+    """Emit resolved view-binding rows for indexed hierarchy instances."""
+    del top_name  # Consumed by follow-up query tasks.
+    diagnostics: List[Diagnostic] = []
+
+    if view_config_path is None or view_profile is None:
+        diagnostics.append(
+            _diagnostic(
+                CLI_SCHEMA_ERROR,
+                "query bindings requires --view-config and --view-profile.",
+            )
+        )
+    for message in validate_query_common_options(
+        view_config_path=view_config_path,
+        view_profile=view_profile,
+    ):
+        diagnostics.append(_diagnostic(CLI_SCHEMA_ERROR, message))
+    if _has_error_diagnostics(diagnostics):
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    resolved_lib_roots, _backend_config_path = _resolve_rc_settings(
+        input_file, config_path, lib_roots, diagnostics
+    )
+    runtime, runtime_diags = build_query_runtime(
+        entry_file=input_file,
+        config_path=config_path,
+        lib_roots=resolved_lib_roots,
+        stage=QueryStage(stage),
+        view_config_path=view_config_path,
+        view_profile=view_profile,
+    )
+    diagnostics.extend(runtime_diags)
+    if runtime is None:
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    exit_code, output_text = finalize_query_output(
+        kind="query.bindings",
+        payload=build_query_bindings_payload(runtime),
         json_output=json_output,
         diagnostics=diagnostics,
     )
