@@ -145,7 +145,7 @@ def _emit_netlist_ir_design(
     reachable_modules = _collect_reachable_modules_ir(design, index, top_module)
 
     _emit_provenance_diagnostics_ir(reachable_modules, design, index, top_module, diagnostics)
-    module_emitted_names = _build_module_emitted_names_ir(design.modules, diagnostics)
+    module_emitted_names = _build_module_emitted_names_ir(reachable_modules, diagnostics)
     top_emitted_name = _module_emitted_name_ir(top_module, module_emitted_names)
 
     lines: List[str] = []
@@ -759,9 +759,10 @@ def _emit_provenance_diagnostics_ir(
 
 def build_emission_name_map(design: NetlistDesign) -> List[EmissionNameMapEntry]:
     """Build deterministic logical/base/emitted module-name mapping entries."""
-    emitted_names = _build_module_emitted_names_ir(design.modules, diagnostics=None)
+    modules_for_mapping = _collect_reachable_modules_for_mapping_ir(design)
+    emitted_names = _build_module_emitted_names_ir(modules_for_mapping, diagnostics=None)
     entries: List[EmissionNameMapEntry] = []
-    for module in design.modules:
+    for module in modules_for_mapping:
         base_name = _realization_name_from_symbol(module.name)
         emitted_name = emitted_names[_module_key_ir(module)]
         entries.append(
@@ -774,6 +775,29 @@ def build_emission_name_map(design: NetlistDesign) -> List[EmissionNameMapEntry]
             )
         )
     return entries
+
+
+def _collect_reachable_modules_for_mapping_ir(design: NetlistDesign) -> List[NetlistModule]:
+    """Collect modules to include in compile-log emission-name mapping.
+
+    This mirrors emission scoping: map entries and collision allocation are
+    based on modules reachable from the final resolved top realization.
+    """
+    collector = DiagnosticCollector()
+    index = _build_netlist_ir_index(design, collector)
+    if index is None:
+        return list(design.modules)
+
+    top_module = _select_netlist_ir_symbol(
+        index.modules_by_name,
+        index.modules_by_key,
+        index.top_name,
+        design.entry_file_id,
+    )
+    if top_module is None:
+        return list(design.modules)
+
+    return _collect_reachable_modules_ir(design, index, top_module)
 
 
 def _ordered_conns_netlist_ir(
