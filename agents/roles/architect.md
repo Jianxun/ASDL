@@ -88,6 +88,7 @@ Architecture Decision Records capture durable decisions. Follow these rules:
    - `agents/context/tasks_state.yaml`
    - `agents/context/tasks_icebox.yaml`
    - `agents/context/tasks_archived.yaml`
+   - `agents/scratchpads/architect_scratchpad.md`
    - `agents/context/project_status.md`
    - `agents/context/codebase_map.md`
 2. Read them in this order:
@@ -96,9 +97,12 @@ Architecture Decision Records capture durable decisions. Follow these rules:
    3) tasks.yaml
    4) tasks_state.yaml
    5) tasks_icebox.yaml (only if needed)
-   6) project_status.md
-   7) tasks_archived.yaml (only if needed)
-   8) codebase_map.md (skim to refresh on structure)
+   6) architect_scratchpad.md
+   7) project_status.md
+   8) tasks_archived.yaml (only if needed)
+   9) codebase_map.md (skim to refresh on structure)
+   - `architect_scratchpad.md` and `project_status.md` must always be read
+     together in the same session context refresh.
 3. Run `./venv/bin/python scripts/lint_tasks_state.py` after reading task files; rerun it after any edits to `agents/context/tasks.yaml` or `agents/context/tasks_state.yaml`.
 4. Identify:
    - current objective(s)

@@ -15,21 +15,23 @@ Brief context record for the Architect; reconcile from task status and reviews.
   traversal order, including decorated-vs-literal base clashes.
 - Full-path provenance via `{file_id}` in subckt headers remains the preferred
   end-to-end behavior; partial pipeline invocation must provide metadata.
-- Completed tasks `T-299`..`T-302` are archived.
-- New active task wave is `T-303`..`T-304` for reachable-only emission cutover.
+- Executor batch `T-303` and `T-304` is complete and merged (PRs 326, 327),
+  and latest PR changes are pulled locally.
+- Query subsystem scope is now drafted in `docs/specs/spec_cli_query.md`
+  (`asdlc query` with stage-aware inspection subcommands).
 
 ## Last verified status
-- `./venv/bin/python scripts/lint_tasks_state.py` (run after archiving/slicing `T-299`..`T-302` and reslicing reachable-only cutover tasks)
+- `./venv/bin/python scripts/lint_tasks_state.py` (OK with `T-303`/`T-304` marked done)
 
 ## Next steps (1-3)
-1. T-303: emit only modules reachable from final resolved top realization.
-2. T-304: preserve canonical realized naming (`cell`/`cell_<view>`) with deterministic collision suffixing under reachable-only emission.
-3. Ensure each implementation task lands with its own regression updates (no standalone regression follow-up task).
+1. Slice the next wave for `asdlc query` implementation against `docs/specs/spec_cli_query.md` (tree/bindings/emit-plan/refs/instance/net/net-trace).
+2. Resolve v0.x open decisions captured in the query spec (path canonicalization, emitted-stage defaults, `net-trace` equivalence boundaries, diagnostics policy).
+3. Ship an initial query MVP with deterministic JSON output contracts and regression tests.
 
 ## Risks / unknowns
-- Reachability pruning is a behavioral break for any flow relying on emitted
-  but unreachable authored modules.
-- Collision suffix numbering can shift when previously unreachable colliders are
-  removed from traversal; regression updates must assert only the new policy.
-- Compile-log expectations (`emission_name_map`, warning counts) need careful
-  fixture updates to avoid flaky diffs during cutover.
+- Query output contract may churn if open decisions are implemented ad hoc
+  without freezing schema/version semantics first.
+- Path canonicalization for patterned instance names can create hidden mismatch
+  between authored references and query selectors if not defined early.
+- `net-trace` hierarchy equivalence semantics need clear boundaries to avoid
+  ambiguous downstream plotting/postprocessing behavior.

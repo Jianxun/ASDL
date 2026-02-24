@@ -1,6 +1,24 @@
 # Architect Scratchpad
 
 ## Architecture notes (session summary; not yet ADRs)
+## Current status (2026-02-24)
+- Executor delivery wave completed:
+  - `T-303` done, merged via PR #326.
+  - `T-304` done, merged via PR #327.
+- Latest merged changes are pulled locally; task state now reflects both as
+  `done`.
+- Reachable-only emission cutover is in place with ADR-0036 policy:
+  - emission rooted at final resolved top
+  - emit reachable modules only
+  - keep default naming as `cell`, non-default as `cell_<view>`
+- Next architecture focus moved to query tooling:
+  - new spec drafted: `docs/specs/spec_cli_query.md`
+  - command group: `asdlc query`
+  - planned subcommands: `tree`, `bindings`, `emit-plan`, `refs`,
+    `instance`, `net`, `net-trace`
+  - traversal order semantics documented (`dfs-pre`, `dfs-post`)
+  - v0.x open decisions captured for pre-implementation closure
+
 ## Current status (2026-02-23)
 - Finalized view/emission collision strategy and logging consolidation decisions.
 - Specs updated:

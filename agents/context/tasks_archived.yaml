@@ -1,6 +1,8 @@
 schema_version: 1
 
 archive:
+  - T-304: {completed_on: 2026-02-24, owner: Executor, scratchpad: agents/scratchpads/T-304_reachable_naming_collision.md, pr: 327}
+  - T-303: {completed_on: 2026-02-24, owner: Executor, scratchpad: agents/scratchpads/T-303_reachable_only_emission.md, pr: 326}
   - T-302: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-302_provenance_warning_regressions.md, pr: 325}
   - T-301: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-301_compile_log_cli_cutover.md, pr: 324}
   - T-300: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-300_remove_occurrence_specialization.md, pr: 323}
