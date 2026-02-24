@@ -4,7 +4,7 @@ T-305:
   pr: 328
   merged: true
 T-306:
-  status: ready_for_review
+  status: review_in_progress
   pr: 329
   merged: false
 T-307:
