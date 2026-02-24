@@ -59,7 +59,8 @@ def test_query_tree_json_envelope_stable() -> None:
     payload = json.loads(result.output)
     assert payload["schema_version"] == 1
     assert payload["kind"] == "query.tree"
-    assert payload["payload"] == []
+    assert isinstance(payload["payload"], list)
+    assert payload["payload"][0]["path"] == "tb"
 
 
 def test_runtime_builds_authored_resolved_and_emitted_stages() -> None:

@@ -10,6 +10,7 @@ import yaml
 
 from asdl.cli.query_runtime import (
     QueryStage,
+    build_query_tree_payload,
     build_query_runtime,
     finalize_query_output,
     query_common_options,
@@ -458,7 +459,7 @@ def query_tree(
     stage: str,
     json_output: bool,
 ) -> None:
-    """Emit hierarchical query rows (foundation scaffold in T-305)."""
+    """Emit hierarchical query rows."""
     del top_name  # Consumed by follow-up query tasks.
     diagnostics: List[Diagnostic] = []
 
@@ -487,10 +488,9 @@ def query_tree(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    del runtime  # Query tree payload wiring lands in T-306.
     exit_code, output_text = finalize_query_output(
         kind="query.tree",
-        payload=[],
+        payload=build_query_tree_payload(runtime),
         json_output=json_output,
         diagnostics=diagnostics,
     )

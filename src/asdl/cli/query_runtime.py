@@ -11,8 +11,10 @@ from typing import Any, Callable, Iterable, Optional
 import click
 
 from asdl.diagnostics import Diagnostic, Severity, format_code
-from asdl.emit.netlist_ir import NetlistDesign
+from asdl.emit.netlist.render import EmissionNameMapEntry, build_emission_name_map
+from asdl.emit.netlist_ir import NetlistDesign, NetlistModule
 from asdl.lowering import run_netlist_ir_pipeline
+from asdl.views.instance_index import build_instance_index
 
 QUERY_RUNTIME_ERROR = format_code("TOOL", 4)
 QUERY_JSON_SCHEMA_VERSION = 1
@@ -43,6 +45,19 @@ class QueryRuntime:
     resolved_design: NetlistDesign
     stage_design: NetlistDesign
     resolved_bindings: tuple[Any, ...]
+
+
+@dataclass(frozen=True)
+class QueryTreeEntry:
+    """One `asdlc query tree` payload row."""
+
+    path: str
+    parent_path: Optional[str]
+    instance: Optional[str]
+    authored_ref: str
+    resolved_ref: Optional[str]
+    emitted_name: Optional[str]
+    depth: int
 
 
 def query_common_options(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -269,6 +284,151 @@ def finalize_query_output(
     return exit_code, str(payload)
 
 
+def build_query_tree_payload(runtime: QueryRuntime) -> list[dict[str, Any]]:
+    """Build deterministic `query.tree` payload rows for one runtime.
+
+    Args:
+        runtime: Query runtime with authored/resolved designs.
+
+    Returns:
+        Ordered list of tree rows encoded as JSON-ready dictionaries.
+    """
+
+    authored_top = _resolve_top_module(runtime.authored_design)
+    if authored_top is None:
+        return []
+
+    authored_index = build_instance_index(runtime.authored_design)
+    authored_by_path = {entry.full_path: entry for entry in authored_index.entries}
+
+    resolved_top = _resolve_top_module(runtime.resolved_design)
+    resolved_index = build_instance_index(runtime.resolved_design)
+    resolved_by_path = {entry.full_path: entry for entry in resolved_index.entries}
+
+    emission_lookup = _build_emission_lookup(runtime) if runtime.stage == QueryStage.EMITTED else None
+
+    entries: list[QueryTreeEntry] = []
+    top_resolved_ref = (
+        resolved_top.name if runtime.stage in (QueryStage.RESOLVED, QueryStage.EMITTED) and resolved_top else None
+    )
+    top_emitted_name = None
+    if emission_lookup is not None and top_resolved_ref is not None:
+        top_file_id = resolved_top.file_id if resolved_top is not None else authored_top.file_id
+        top_emitted_name = _lookup_emitted_name(
+            top_resolved_ref,
+            top_file_id,
+            emission_lookup,
+        )
+    entries.append(
+        QueryTreeEntry(
+            path=authored_top.name,
+            parent_path=None,
+            instance=None,
+            authored_ref=authored_top.name,
+            resolved_ref=top_resolved_ref,
+            emitted_name=top_emitted_name,
+            depth=0,
+        )
+    )
+
+    for authored_entry in authored_index.entries:
+        full_path = authored_entry.full_path
+        resolved_entry = resolved_by_path.get(full_path)
+        resolved_ref: Optional[str] = None
+        if runtime.stage in (QueryStage.RESOLVED, QueryStage.EMITTED):
+            resolved_ref = resolved_entry.ref if resolved_entry is not None else None
+
+        emitted_name: Optional[str] = None
+        if emission_lookup is not None and resolved_ref is not None:
+            emitted_name = _lookup_emitted_name(
+                resolved_ref,
+                resolved_entry.ref_file_id if resolved_entry is not None else authored_entry.ref_file_id,
+                emission_lookup,
+            )
+
+        entries.append(
+            QueryTreeEntry(
+                path=full_path,
+                parent_path=authored_entry.path,
+                instance=authored_entry.instance,
+                authored_ref=authored_entry.ref,
+                resolved_ref=resolved_ref,
+                emitted_name=emitted_name,
+                depth=full_path.count("."),
+            )
+        )
+
+    return [
+        {
+            "path": entry.path,
+            "parent_path": entry.parent_path,
+            "instance": entry.instance,
+            "authored_ref": entry.authored_ref,
+            "resolved_ref": entry.resolved_ref,
+            "emitted_name": entry.emitted_name,
+            "depth": entry.depth,
+        }
+        for entry in entries
+    ]
+
+
+def _build_emission_lookup(
+    runtime: QueryRuntime,
+) -> tuple[dict[tuple[Optional[str], str], str], dict[str, tuple[EmissionNameMapEntry, ...]]]:
+    """Build emitted-name lookups for symbol/file-id keyed queries."""
+
+    by_key: dict[tuple[Optional[str], str], str] = {}
+    by_symbol: dict[str, list[EmissionNameMapEntry]] = {}
+    for entry in build_emission_name_map(runtime.stage_design):
+        by_key[(entry.file_id, entry.symbol)] = entry.emitted_name
+        by_symbol.setdefault(entry.symbol, []).append(entry)
+    return by_key, {symbol: tuple(entries) for symbol, entries in by_symbol.items()}
+
+
+def _lookup_emitted_name(
+    symbol: str,
+    file_id: Optional[str],
+    lookup: tuple[dict[tuple[Optional[str], str], str], dict[str, tuple[EmissionNameMapEntry, ...]]],
+) -> Optional[str]:
+    """Resolve emitted name by exact `(file_id, symbol)` then unique `symbol`."""
+
+    by_key, by_symbol = lookup
+    exact = by_key.get((file_id, symbol))
+    if exact is not None:
+        return exact
+
+    candidates = by_symbol.get(symbol, ())
+    if len(candidates) == 1:
+        return candidates[0].emitted_name
+    return None
+
+
+def _resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
+    """Resolve top module using design top and entry-file semantics."""
+
+    if design.top is not None:
+        if design.entry_file_id is not None:
+            for module in design.modules:
+                if module.name == design.top and module.file_id == design.entry_file_id:
+                    return module
+        for module in design.modules:
+            if module.name == design.top:
+                return module
+        return None
+
+    if design.entry_file_id is not None:
+        entry_modules = [
+            module for module in design.modules if module.file_id == design.entry_file_id
+        ]
+        if len(entry_modules) == 1:
+            return entry_modules[0]
+        return None
+
+    if len(design.modules) == 1:
+        return design.modules[0]
+    return None
+
+
 def _has_error_diagnostics(diagnostics: Iterable[Diagnostic]) -> bool:
     return any(
         diagnostic.severity in (Severity.ERROR, Severity.FATAL)
@@ -290,6 +450,7 @@ def _diagnostic(message: str, *, code: str = QUERY_RUNTIME_ERROR) -> Diagnostic:
 __all__ = [
     "QueryRuntime",
     "QueryStage",
+    "build_query_tree_payload",
     "build_query_runtime",
     "finalize_query_output",
     "query_common_options",
