@@ -294,9 +294,11 @@ def test_emit_netlist_device_params_and_top_default() -> None:
         ]
     )
     assert netlist == expected
-    assert len(diagnostics) == 1
-    assert diagnostics[0].severity is Severity.WARNING
-    assert diagnostics[0].code == format_code("EMIT", 2)
+    assert [diag.severity for diag in diagnostics] == [Severity.WARNING, Severity.WARNING]
+    assert [diag.code for diag in diagnostics] == [
+        format_code("EMIT", 15),
+        format_code("EMIT", 2),
+    ]
     assert diagnostics[0].primary_span is None
 
 
@@ -1200,6 +1202,70 @@ def test_emit_netlist_disambiguates_decorated_base_collision() -> None:
             ".ends amp_behave",
             ".subckt amp_behave__2 A",
             ".ends amp_behave__2",
+            "FOOTER top",
+        ]
+    )
+
+
+def test_emit_netlist_reachable_naming_ignores_unreachable_colliders() -> None:
+    backend_config = _backend_config(
+        {
+            "__subckt_header__": ".subckt {name} {ports}",
+            "__subckt_footer__": ".ends {name}",
+            "__subckt_call__": "X{name} {ports} {ref}",
+            "__netlist_header__": "HEADER {top}",
+            "__netlist_footer__": "FOOTER {top}",
+        }
+    )
+
+    reachable = ModuleOp(
+        name="amp@behave",
+        port_order=["A"],
+        file_id="reachable.asdl",
+        region=[NetOp(name="A")],
+    )
+    unreachable = ModuleOp(
+        name="amp_behave",
+        port_order=["A"],
+        file_id="unreachable.asdl",
+        region=[NetOp(name="A")],
+    )
+    top = ModuleOp(
+        name="top",
+        port_order=["A"],
+        file_id="top.asdl",
+        region=[
+            NetOp(name="A"),
+            InstanceOp(
+                name="U1",
+                ref="amp@behave",
+                ref_file_id="reachable.asdl",
+                conns=[ConnAttr(StringAttr("A"), StringAttr("A"))],
+            ),
+        ],
+    )
+    design = DesignOp(
+        region=[top, reachable, unreachable],
+        top="top",
+        entry_file_id="top.asdl",
+    )
+
+    netlist, diagnostics = _emit_from_graphir(
+        design,
+        backend_name="test.backend",
+        backend_config=backend_config,
+        top_as_subckt=True,
+    )
+
+    assert diagnostics == []
+    assert netlist == "\n".join(
+        [
+            "HEADER top",
+            ".subckt top A",
+            "XU1 A amp_behave",
+            ".ends top",
+            ".subckt amp_behave A",
+            ".ends amp_behave",
             "FOOTER top",
         ]
     )

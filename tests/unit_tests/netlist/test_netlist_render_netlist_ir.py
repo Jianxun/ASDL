@@ -230,19 +230,13 @@ def test_render_netlist_ir_collision_allocator_skips_preexisting_suffixes() -> N
 
     netlist, diagnostics = _emit(design, backend_config)
 
-    assert len(diagnostics) == 1
-    assert diagnostics[0].severity is Severity.WARNING
-    assert diagnostics[0].code == format_code("EMIT", 14)
+    assert diagnostics == []
     expected = "\n".join(
         [
             "* header TOP",
-            "XU1 CELL__3",
+            "XU1 CELL",
             ".subckt CELL",
             ".ends CELL",
-            ".subckt CELL__2",
-            ".ends CELL__2",
-            ".subckt CELL__3",
-            ".ends CELL__3",
             ".end",
         ]
     )
@@ -255,7 +249,20 @@ def test_build_emission_name_map_reports_logical_base_and_emitted_names() -> Non
         file_id="top.asdl",
         ports=[],
         nets=[],
-        instances=[],
+        instances=[
+            NetlistInstance(
+                name="U1",
+                ref="CELL_behave",
+                ref_file_id="literal.asdl",
+                conns=[],
+            ),
+            NetlistInstance(
+                name="U2",
+                ref="CELL@behave",
+                ref_file_id="decorated.asdl",
+                conns=[],
+            ),
+        ],
     )
     literal = NetlistModule(
         name="CELL_behave",
@@ -286,6 +293,50 @@ def test_build_emission_name_map_reports_logical_base_and_emitted_names() -> Non
         ("CELL@behave", "CELL_behave", "CELL_behave__2"),
     ]
     assert [entry.renamed for entry in name_map] == [False, False, True]
+
+
+def test_build_emission_name_map_ignores_unreachable_module_colliders() -> None:
+    top = NetlistModule(
+        name="TOP",
+        file_id="top.asdl",
+        ports=[],
+        nets=[],
+        instances=[
+            NetlistInstance(
+                name="U1",
+                ref="CELL@behave",
+                ref_file_id="reachable.asdl",
+                conns=[],
+            )
+        ],
+    )
+    reachable = NetlistModule(
+        name="CELL@behave",
+        file_id="reachable.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    unreachable = NetlistModule(
+        name="CELL_behave",
+        file_id="unreachable.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    design = NetlistDesign(
+        modules=[top, reachable, unreachable],
+        devices=[],
+        top="TOP",
+        entry_file_id="top.asdl",
+    )
+
+    name_map = build_emission_name_map(design)
+
+    assert [(entry.symbol, entry.emitted_name) for entry in name_map] == [
+        ("TOP", "TOP"),
+        ("CELL@behave", "CELL_behave"),
+    ]
 
 
 def test_render_netlist_ir_realizes_view_decorated_modules() -> None:
@@ -428,6 +479,58 @@ def test_render_netlist_ir_emits_only_modules_reachable_from_top() -> None:
     assert netlist is not None
     assert ".subckt LEAF " not in netlist
     assert ".subckt UNUSED_BLOCK" not in netlist
+
+
+def test_render_netlist_ir_ignores_unreachable_name_colliders() -> None:
+    backend_config = _backend_config()
+
+    top = NetlistModule(
+        name="TOP",
+        file_id="top.asdl",
+        ports=[],
+        nets=[],
+        instances=[
+            NetlistInstance(
+                name="U1",
+                ref="LEAF@behave",
+                ref_file_id="reachable.asdl",
+                conns=[],
+            ),
+        ],
+    )
+    reachable = NetlistModule(
+        name="LEAF@behave",
+        file_id="reachable.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    unreachable = NetlistModule(
+        name="LEAF_behave",
+        file_id="unreachable.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    design = NetlistDesign(
+        modules=[top, reachable, unreachable],
+        devices=[],
+        top="TOP",
+        entry_file_id="top.asdl",
+    )
+
+    netlist, diagnostics = _emit(design, backend_config)
+
+    assert diagnostics == []
+    assert netlist == "\n".join(
+        [
+            "* header TOP",
+            "XU1 LEAF_behave",
+            ".subckt LEAF_behave",
+            ".ends LEAF_behave",
+            ".end",
+        ]
+    )
 
 
 def test_render_netlist_ir_infers_top_from_entry_file_scope() -> None:
