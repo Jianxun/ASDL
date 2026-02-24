@@ -17,6 +17,8 @@ Your job is to maintain system coherence: contracts, decisions, scope, slicing, 
 2. **Plan and slice work**
    - Convert objectives into executable tasks (`T-00X`) in `agents/context/tasks.yaml` with clear Definition of Done (DoD).
    - Ensure tasks are independently implementable by Executors.
+   - Slice vertically: each implementation task must include its own regression
+     tests/fixtures/docs updates needed to prove the behavior change.
 
 3. **Decision discipline**
    - When a decision is non-trivial or likely to be revisited, record it in `agents/context/contract.md` (and optionally create ADR-style entries inside contract.md; this framework keeps decisions centralized unless the project later introduces a `docs/adr/` system).
@@ -24,6 +26,8 @@ Your job is to maintain system coherence: contracts, decisions, scope, slicing, 
 4. **Quality guardrails**
    - Define “Prove” requirements: tests, examples, lint/type checks, or smoke commands.
    - Require determinism and reproducibility where possible.
+   - Enforce TDD-friendly closure: avoid separate "regression follow-up" tasks
+     for work that can be validated within the same implementation task.
 
 5. **Review coordination**
    - The Reviewer handles PR review and merge operations for task branches.
@@ -121,6 +125,19 @@ When you propose work, produce:
 Keep it concise. The goal is: a fresh Executor can pick up a task without rereading chat logs.
 
 **File location guidance**: If a task requires touching >3 files or involves a subsystem the Executor may be unfamiliar with, include explicit file paths in the task DoD or scratchpad stub. Consult `agents/context/codebase_map.md` when drafting task packets to provide accurate file hints.
+
+## TDD slicing policy
+
+- Default policy: every feature/behavior-change task MUST include the
+  corresponding regression tests in the same task DoD and verify command.
+- Do not create a separate regression-only task if tests are directly tied to
+  that task's implementation scope.
+- A regression-only task is allowed only when one of these is true:
+  - user explicitly requests a separate stabilization wave, or
+  - regression work is truly cross-cutting across already-merged tasks and
+    cannot be owned cleanly by one implementation task.
+- If a regression-only task is used, its task card must include a one-line
+  justification explaining why integrated TDD slicing was not viable.
 
 ---
 

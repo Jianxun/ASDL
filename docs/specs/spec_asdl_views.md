@@ -9,7 +9,8 @@ cell using decorated module symbols, without relying on file-name heuristics.
 ## Scope (v0)
 - Module symbol grammar for view-decorated names.
 - Logical identity model (`cell` vs `view` token).
-- Netlist emission surface rule for mixed-view realizations.
+- Netlist emission surface rule for mixed-view realizations and reachable-only
+  emission from the final resolved top.
 - Validation constraints for malformed decorated symbols.
 
 Out of scope (deferred):
@@ -51,13 +52,16 @@ Examples:
 ---
 
 ## Emission surface
-- Emission is realization-based: one emitted subckt/module per resolved
-  `(cell, view)` used by the design.
+- Emission is realization-based and rooted at the final resolved top module.
+- Emit only modules reachable from that final top via transitive instance
+  references.
 - Default/undecorated realization emits as `cell`.
 - `cell@default` also emits as `cell`.
 - Non-default realization emits as `cell_<view>` (deterministic, sanitized).
 - Internal `@view` tokens are not emitted directly in simulator-facing names.
 - This enables mixed-view subtree substitution inside a single emitted netlist.
+- Path-scoped view overrides may produce multiple realized variants of the same
+  logical cell; all reachable realized variants are emitted.
 - Collision disambiguation policy (v0):
   - emit modules in deterministic traversal order from lowering/emission
   - allocate simulator-facing names incrementally from a global used-name set

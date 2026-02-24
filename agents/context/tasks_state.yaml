@@ -1,17 +1,9 @@
 schema_version: 2
-T-299:
-  status: done
-  pr: 322
-  merged: true
-T-300:
-  status: done
-  pr: 323
-  merged: true
-T-301:
-  status: done
-  pr: 324
-  merged: true
-T-302:
-  status: done
-  pr: 325
-  merged: true
+T-303:
+  status: ready
+  pr: null
+  merged: false
+T-304:
+  status: ready
+  pr: null
+  merged: false

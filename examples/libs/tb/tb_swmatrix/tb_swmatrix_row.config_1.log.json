@@ -1,0 +1,123 @@
+{
+  "diagnostic_count": 1,
+  "diagnostic_severity_counts": {
+    "error": 0,
+    "fatal": 0,
+    "info": 0,
+    "warning": 1
+  },
+  "diagnostics": [
+    {
+      "code": "EMIT-014",
+      "fixits": [],
+      "help": null,
+      "labels": [],
+      "message": "Module symbol 'swmatrix_row_25_w_clkbuf' (file '/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl#viewocc_e6210a6c') emits as 'swmatrix_row_25_w_clkbuf__2' after collision on base name 'swmatrix_row_25_w_clkbuf'.",
+      "notes": [
+        "No source span available."
+      ],
+      "primary_span": null,
+      "severity": "warning",
+      "source": "emit"
+    }
+  ],
+  "emission_name_map": [
+    {
+      "base_name": "tb",
+      "emitted_name": "tb",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl",
+      "renamed": false,
+      "symbol": "tb"
+    },
+    {
+      "base_name": "swmatrix_row_25_w_clkbuf",
+      "emitted_name": "swmatrix_row_25_w_clkbuf",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl",
+      "renamed": false,
+      "symbol": "swmatrix_row_25_w_clkbuf"
+    },
+    {
+      "base_name": "ShiftReg_row_25",
+      "emitted_name": "ShiftReg_row_25",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl",
+      "renamed": false,
+      "symbol": "ShiftReg_row_25"
+    },
+    {
+      "base_name": "ShiftReg_row_25_behave",
+      "emitted_name": "ShiftReg_row_25_behave",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl",
+      "renamed": false,
+      "symbol": "ShiftReg_row_25@behave"
+    },
+    {
+      "base_name": "swmatrix_Tgate",
+      "emitted_name": "swmatrix_Tgate",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl",
+      "renamed": false,
+      "symbol": "swmatrix_Tgate"
+    },
+    {
+      "base_name": "swmatrix_Tgate_behave",
+      "emitted_name": "swmatrix_Tgate_behave",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl",
+      "renamed": false,
+      "symbol": "swmatrix_Tgate@behave"
+    },
+    {
+      "base_name": "swmatrix_row_25_w_clkbuf",
+      "emitted_name": "swmatrix_row_25_w_clkbuf__2",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl#viewocc_e6210a6c",
+      "renamed": true,
+      "symbol": "swmatrix_row_25_w_clkbuf"
+    }
+  ],
+  "view_bindings": [
+    {
+      "instance": "dut",
+      "path": "tb",
+      "resolved": "swmatrix_row_25_w_clkbuf",
+      "rule_id": null
+    },
+    {
+      "instance": "SR_row",
+      "path": "tb.dut",
+      "resolved": "ShiftReg_row_25",
+      "rule_id": null
+    },
+    {
+      "instance": "Tgate2",
+      "path": "tb.dut",
+      "resolved": "swmatrix_Tgate@behave",
+      "rule_id": "global_tgate_behave"
+    },
+    {
+      "instance": "Tgate1",
+      "path": "tb.dut",
+      "resolved": "swmatrix_Tgate@behave",
+      "rule_id": "global_tgate_behave"
+    },
+    {
+      "instance": "Tgate_dbg",
+      "path": "tb.dut",
+      "resolved": "swmatrix_Tgate@behave",
+      "rule_id": "global_tgate_behave"
+    }
+  ],
+  "warning_count": 1,
+  "warnings": [
+    {
+      "code": "EMIT-014",
+      "fixits": [],
+      "help": null,
+      "labels": [],
+      "message": "Module symbol 'swmatrix_row_25_w_clkbuf' (file '/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/tb/tb_swmatrix/tb_swmatrix_row.asdl#viewocc_e6210a6c') emits as 'swmatrix_row_25_w_clkbuf__2' after collision on base name 'swmatrix_row_25_w_clkbuf'.",
+      "notes": [
+        "No source span available."
+      ],
+      "primary_span": null,
+      "severity": "warning",
+      "source": "emit"
+    }
+  ]
+}

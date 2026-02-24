@@ -10,6 +10,7 @@ the inspectable compile-log output consumed by lowering/emission workflows.
 - Profile schema (`view_order`, ordered `rules`).
 - Match semantics (`path`, `instance`, `module`).
 - Deterministic resolution algorithm.
+- Handoff semantics from binding resolution to netlist emission.
 - Compile-log schema section for resolved instance bindings.
 
 Out of scope:
@@ -104,6 +105,11 @@ Given a selected profile:
    - rules apply to all instances, including those with authored explicit
      decorated refs (`cell@view`)
 4. Final resolved symbol per instance is used by lowering/emission.
+5. Emission handoff:
+   - determine the final resolved top realization for the selected entry top
+   - emit only modules reachable from that final top realization
+   - unreachable authored definitions are not required to appear in emitted
+     netlist/module blocks
 
 Traversal order for resolution and compile-log `view_bindings` emission is deterministic:
 - preorder depth-first over elaborated instance hierarchy

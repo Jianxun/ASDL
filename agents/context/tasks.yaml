@@ -1,95 +1,57 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-299
-    title: Implement deterministic ordinal collision allocator in netlist emission
+  - id: T-303
+    title: Emit reachable-only module set from final resolved top realization
     owner: Executor
     dod: >
-      Replace hash-based cross-file disambiguation in emitted module names with a
-      deterministic ordinal allocator (`base`, `base__2`, `base__3`, ...),
-      preserving emission traversal order and handling decorated-vs-literal base
-      collisions. Emit warning diagnostics on renamed collisions and expose
-      deterministic rename mapping data for compile-log integration. Include
-      self-contained regressions under `tests/` for duplicate bases, decorated
-      collisions, and pre-existing suffixed names.
+      Change netlist emission traversal to root at the final resolved top
+      realization after view binding and emit only modules reachable from that
+      top via transitive instance references. Unreachable authored/original
+      module definitions must not be emitted. Preserve deterministic traversal
+      and output ordering for reachable modules. Include regression updates in
+      netlist and CLI tests that prove unreachable module blocks are pruned and
+      top-level instantiation targets the final resolved top realization.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/netlist/test_netlist_emitter.py -k "view or collision or disambiguation" -v
+      - ./venv/bin/pytest tests/unit_tests/views/test_view_apply.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/cli/test_netlist.py -k "reachable or view or top" -v
     links:
-      scratchpad: agents/scratchpads/T-299_emission_collision_allocator.md
-      adr: agents/adr/ADR-0034-netlist-emission-collision-policy.md
-      spec: docs/specs/spec_netlist_emission.md
+      scratchpad: agents/scratchpads/T-303_reachable_only_emission.md
+      adr: agents/adr/ADR-0036-reachable-only-emission-for-final-view-top.md
+      spec: docs/specs/spec_asdl_views.md
     files:
+      - src/asdl/views/api.py
+      - src/asdl/emit/netlist/api.py
       - src/asdl/emit/netlist/render.py
-      - src/asdl/emit/netlist/diagnostics.py
+      - tests/unit_tests/cli/test_netlist.py
       - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
-      - tests/unit_tests/netlist/test_netlist_emitter.py
-  - id: T-300
-    title: Remove occurrence-specialized `__occ` view-apply naming and align with global emission naming
+      - tests/unit_tests/views/test_view_apply.py
+  - id: T-304
+    title: Preserve canonical realized naming under reachable-only emission
     owner: Executor
     depends_on:
-      - T-299
+      - T-303
     dod: >
-      Remove occurrence-specialized module naming (`__occ_<hash>`) from view
-      binding application so emitted naming is governed only by the global
-      collision allocator policy. Ensure mixed-view/path-scoped outcomes remain
-      deterministic and represented via emission naming/disambiguation; if an
-      unsupported non-uniform case remains, emit a clear diagnostic rather than
-      silently specializing names. Update view apply/resolver/CLI regressions.
+      Keep emitted name policy consistent with ADR-0036 while enforcing
+      uniqueness only within the reachable module set: default/undecorated and
+      `cell@default` emit as `cell`; non-default emits as `cell_<view>`;
+      collisions allocate deterministic ordinal suffixes (`__2`, `__3`, ...).
+      Ensure mixed-view realized variants remain deterministic and readable
+      without reintroducing occurrence-specialized naming. Include regression
+      updates in CLI/view/netlist tests for `emission_name_map`, warning
+      counts/messages, and deterministic naming under reachable-only emission.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/views/test_view_apply.py tests/unit_tests/views/test_view_resolver.py tests/unit_tests/cli/test_netlist.py -k "view or divergent or scoped or mixed" -v
+      - ./venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/netlist/test_netlist_emitter.py tests/unit_tests/views/test_view_resolver.py tests/unit_tests/cli/test_netlist.py -k "view or collision or default or deterministic or emission_name_map or warning" -v
     links:
-      scratchpad: agents/scratchpads/T-300_remove_occurrence_specialization.md
-      adr: agents/adr/ADR-0033-view-binding-config-and-sidecar.md
+      scratchpad: agents/scratchpads/T-304_reachable_naming_collision.md
+      adr: agents/adr/ADR-0036-reachable-only-emission-for-final-view-top.md
       spec: docs/specs/spec_asdl_view_config.md
     files:
-      - src/asdl/views/api.py
-      - tests/unit_tests/views/test_view_apply.py
-      - tests/unit_tests/views/test_view_resolver.py
-      - tests/unit_tests/cli/test_netlist.py
-  - id: T-301
-    title: Implement consolidated compile log JSON and CLI `--log` hard cutover
-    owner: Executor
-    depends_on:
-      - T-299
-    dod: >
-      Add CLI `--log <path>` and default compile-log output path
-      `<entry_file_basename>.log.json`; remove legacy `--binding-sidecar` flow
-      in a hard cutover. Emit deterministic compile log JSON with at least
-      `view_bindings`, `emission_name_map`, and warning/diagnostic metadata, and
-      surface write failures as CLI diagnostics.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/cli/test_netlist.py tests/unit_tests/views/test_view_resolver.py -k "log or view_bindings or emission_name_map or sidecar" -v
-    links:
-      scratchpad: agents/scratchpads/T-301_compile_log_cli_cutover.md
-      adr: agents/adr/ADR-0035-compile-log-consolidation.md
-      spec: docs/specs/spec_cli.md
-    files:
       - src/asdl/cli/__init__.py
-      - src/asdl/views/api.py
       - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/diagnostics.py
       - tests/unit_tests/cli/test_netlist.py
-  - id: T-302
-    title: Add provenance warnings and deterministic compile-log regression coverage
-    owner: Executor
-    depends_on:
-      - T-300
-      - T-301
-    dod: >
-      Emit warnings when module/file provenance metadata is missing or unknown
-      (including non-end-to-end partial pipeline cases), keep `{file_id}`
-      provenance behavior in subckt headers, and add deterministic regression
-      coverage for emitted collision naming and compile-log ordering/contents.
-      Remove obsolete assertions for hash-based names and sidecar-only outputs.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/cli/test_netlist.py tests/unit_tests/views -k "collision or provenance or log or deterministic" -v
-    links:
-      scratchpad: agents/scratchpads/T-302_provenance_warning_regressions.md
-      adr: agents/adr/ADR-0035-compile-log-consolidation.md
-      spec: docs/specs/spec_netlist_emission.md
-    files:
-      - src/asdl/emit/netlist/render.py
-      - src/asdl/cli/__init__.py
       - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
-      - tests/unit_tests/cli/test_netlist.py
+      - tests/unit_tests/netlist/test_netlist_emitter.py
+      - tests/unit_tests/views/test_view_resolver.py
 
 backlog: []

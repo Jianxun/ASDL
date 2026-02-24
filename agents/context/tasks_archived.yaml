@@ -1,6 +1,10 @@
 schema_version: 1
 
 archive:
+  - T-302: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-302_provenance_warning_regressions.md, pr: 325}
+  - T-301: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-301_compile_log_cli_cutover.md, pr: 324}
+  - T-300: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-300_remove_occurrence_specialization.md, pr: 323}
+  - T-299: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-299_emission_collision_allocator.md, pr: 322}
   - T-298: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-298_occurrence_specific_view_apply.md, pr: 321}
   - T-297: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-297_qualified_refs_with_view_validation.md, pr: 320}
   - T-296: {completed_on: 2026-02-22, owner: Executor, scratchpad: agents/scratchpads/T-296_remove_example_view_regressions.md, pr: 319}

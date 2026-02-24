@@ -1,6 +1,40 @@
 # Architect Scratchpad
 
 ## Architecture notes (session summary; not yet ADRs)
+## Current status (2026-02-23)
+- Finalized view/emission collision strategy and logging consolidation decisions.
+- Specs updated:
+  - `docs/specs/spec_asdl_views.md`
+  - `docs/specs/spec_asdl_view_config.md`
+  - `docs/specs/spec_netlist_emission.md`
+  - `docs/specs/spec_cli.md`
+- ADRs added:
+  - ADR-0034: DFS-stable ordinal collision naming (`base`, `base__2`, ...)
+  - ADR-0035: consolidated compile log via `--log` with default
+    `<entry_file_basename>.log.json`
+- Policy decisions locked:
+  - Keep `cell@default` normalization to default realization.
+  - Hard cutover from `--binding-sidecar` to compile log artifact.
+  - Deprecate/remove `__occ_*` occurrence-specialized naming for consistency
+    with global collision allocator.
+  - Emit warnings for missing/unknown `file_id` (non-fatal).
+- Task housekeeping completed:
+  - Archived done tasks: `T-297`, `T-298`.
+  - Active sprint sliced to: `T-299`..`T-302`.
+  - State file lint passes after updates.
+
+## Execution packet (2026-02-23)
+- Recommended implementation order:
+  1. `T-299` collision allocator + warning + mapping data
+  2. `T-300` remove `__occ_*` path / align apply behavior
+  3. `T-301` CLI `--log` + compile log schema + hard cutover
+  4. `T-302` provenance-warning and deterministic regression hardening
+- Required acceptance themes:
+  - deterministic emission naming under collisions
+  - deterministic compile-log content/order
+  - stable warning behavior for provenance gaps
+  - removal of hash-name and sidecar-only legacy assertions
+
 ## Deferred follow-up (2026-02-22)
 - Deferred CLI hierarchy introspection (`asdlc hier`) to a later cycle.
 - Resume with subcommands oriented for agent/tooling use:
