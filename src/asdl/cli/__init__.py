@@ -8,6 +8,13 @@ from typing import Any, Iterable, List, Optional
 import click
 import yaml
 
+from asdl.cli.query_runtime import (
+    QueryStage,
+    build_query_runtime,
+    finalize_query_output,
+    query_common_options,
+    validate_query_common_options,
+)
 from asdl.diagnostics import (
     Diagnostic,
     Severity,
@@ -432,6 +439,65 @@ def visualizer_dump(
 
     click.echo(output_text, nl=False)
     _emit_diagnostics(diagnostics)
+
+
+@cli.group("query")
+def query() -> None:
+    """Inspect compiled design state via stage-aware query helpers."""
+
+
+@query.command("tree")
+@query_common_options
+def query_tree(
+    input_file: Path,
+    config_path: Optional[Path],
+    lib_roots: tuple[Path, ...],
+    view_config_path: Optional[Path],
+    view_profile: Optional[str],
+    top_name: Optional[str],
+    stage: str,
+    json_output: bool,
+) -> None:
+    """Emit hierarchical query rows (foundation scaffold in T-305)."""
+    del top_name  # Consumed by follow-up query tasks.
+    diagnostics: List[Diagnostic] = []
+
+    for message in validate_query_common_options(
+        view_config_path=view_config_path,
+        view_profile=view_profile,
+    ):
+        diagnostics.append(_diagnostic(CLI_SCHEMA_ERROR, message))
+    if _has_error_diagnostics(diagnostics):
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    resolved_lib_roots, _backend_config_path = _resolve_rc_settings(
+        input_file, config_path, lib_roots, diagnostics
+    )
+    runtime, runtime_diags = build_query_runtime(
+        entry_file=input_file,
+        config_path=config_path,
+        lib_roots=resolved_lib_roots,
+        stage=QueryStage(stage),
+        view_config_path=view_config_path,
+        view_profile=view_profile,
+    )
+    diagnostics.extend(runtime_diags)
+    if runtime is None:
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
+
+    del runtime  # Query tree payload wiring lands in T-306.
+    exit_code, output_text = finalize_query_output(
+        kind="query.tree",
+        payload=[],
+        json_output=json_output,
+        diagnostics=diagnostics,
+    )
+    click.echo(output_text, nl=False)
+    _emit_diagnostics(diagnostics)
+    if exit_code != 0:
+        raise click.exceptions.Exit(exit_code)
 
 
 @cli.command("netlist")
