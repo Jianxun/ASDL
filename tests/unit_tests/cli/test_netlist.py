@@ -849,6 +849,35 @@ def test_cli_netlist_view_fixture_scoped_override_changes_emitted_refs(
     assert "sw_tgate_behave" in call_refs
 
 
+def test_cli_netlist_view_fixture_emits_reachable_only_from_final_top(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    output_path = tmp_path / "view_fixture_reachable_only.spice"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "netlist",
+            str(VIEW_FIXTURE_ASDL),
+            "--view-config",
+            str(VIEW_FIXTURE_CONFIG),
+            "--view-profile",
+            "config_1",
+            "-o",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    netlist_text = output_path.read_text(encoding="utf-8")
+    call_refs = [line.rsplit(" ", 1)[-1] for line in netlist_text.splitlines() if line.startswith("X")]
+    assert "shift_row_behave" in call_refs
+    assert "shift_row" not in call_refs
+    assert ".subckt shift_row_behave " in netlist_text
+    assert ".subckt shift_row " not in netlist_text
+
+
 def test_cli_netlist_view_fixture_compile_log_and_mixed_view_emission(
     tmp_path: Path, backend_config: Path
 ) -> None:

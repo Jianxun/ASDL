@@ -142,7 +142,9 @@ def _emit_netlist_ir_design(
         )
         return None, diagnostics
 
-    _emit_provenance_diagnostics_ir(design, index, top_module, diagnostics)
+    reachable_modules = _collect_reachable_modules_ir(design, index, top_module)
+
+    _emit_provenance_diagnostics_ir(reachable_modules, design, index, top_module, diagnostics)
     module_emitted_names = _build_module_emitted_names_ir(design.modules, diagnostics)
     top_emitted_name = _module_emitted_name_ir(top_module, module_emitted_names)
 
@@ -170,7 +172,7 @@ def _emit_netlist_ir_design(
     symbol_maps = _NetlistIRSymbolMaps(
         index=index, module_emitted_names=module_emitted_names
     )
-    for module in design.modules:
+    for module in reachable_modules:
         module_lines, module_error = _emit_netlist_ir_module(
             module,
             symbol_maps,
@@ -201,6 +203,43 @@ def _emit_netlist_ir_design(
     if had_error:
         return None, diagnostics
     return "\n".join(lines), diagnostics
+
+
+def _collect_reachable_modules_ir(
+    design: NetlistDesign,
+    index: "NetlistIRIndex",
+    top_module: NetlistModule,
+) -> List[NetlistModule]:
+    """Collect modules transitively reachable from the selected top module.
+
+    Traversal order is deterministic: depth-first by instance declaration order,
+    with symbol lookup following existing NetlistIR resolution rules.
+    """
+    module_order = {_module_key_ir(module): idx for idx, module in enumerate(design.modules)}
+    reachable_by_key: Dict[int, NetlistModule] = {}
+    visited: set[int] = set()
+
+    def _visit(module: NetlistModule) -> None:
+        module_key = _module_key_ir(module)
+        if module_key in visited:
+            return
+        visited.add(module_key)
+        reachable_by_key[module_key] = module
+        for instance in module.instances:
+            child_module = _select_netlist_ir_symbol(
+                index.modules_by_name,
+                index.modules_by_key,
+                instance.ref,
+                instance.ref_file_id,
+            )
+            if child_module is not None:
+                _visit(child_module)
+
+    _visit(top_module)
+    return sorted(
+        reachable_by_key.values(),
+        key=lambda module: module_order.get(_module_key_ir(module), len(design.modules)),
+    )
 
 
 def _emit_netlist_ir_module(
@@ -626,6 +665,7 @@ def _module_emitted_name_ir(
 
 
 def _emit_provenance_diagnostics_ir(
+    modules: List[NetlistModule],
     design: NetlistDesign,
     index: "NetlistIRIndex",
     top_module: NetlistModule,
@@ -649,7 +689,7 @@ def _emit_provenance_diagnostics_ir(
             )
         )
 
-    for module in design.modules:
+    for module in modules:
         if _has_known_file_id(module.file_id):
             continue
         diagnostics.append(
@@ -663,7 +703,7 @@ def _emit_provenance_diagnostics_ir(
             )
         )
 
-    for module in design.modules:
+    for module in modules:
         for instance in module.instances:
             ref_name = instance.ref
             ref_file_id = instance.ref_file_id
