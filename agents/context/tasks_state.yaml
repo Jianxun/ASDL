@@ -8,9 +8,9 @@ T-306:
   pr: 329
   merged: true
 T-307:
-  status: review_clean
+  status: done
   pr: 330
-  merged: false
+  merged: true
 T-308:
   status: ready
   pr: null
