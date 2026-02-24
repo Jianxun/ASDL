@@ -54,17 +54,17 @@
     - shared envelope/exit helper behavior.
 
 ## PR URL
-- Pending.
+- https://github.com/Jianxun/ASDL/pull/328
 
 ## Verification
 - `./venv/bin/pytest tests/unit_tests/cli/test_query_cli_runtime.py -v`
   - Result: 5 passed.
 
 ## Status request (Done / Blocked / In Progress)
-- In Progress
+- Done
 
 ## Blockers / Questions
 - None.
 
 ## Next steps
-- Implement T-305 scope and update verification.
+- Reviewer validation for T-305.
