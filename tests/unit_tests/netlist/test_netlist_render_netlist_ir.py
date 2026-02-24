@@ -367,6 +367,69 @@ def test_render_netlist_ir_realizes_view_decorated_modules() -> None:
     assert netlist == expected
 
 
+def test_render_netlist_ir_emits_only_modules_reachable_from_top() -> None:
+    backend_config = _backend_config()
+
+    top = NetlistModule(
+        name="TOP",
+        file_id="top.asdl",
+        ports=[],
+        nets=[],
+        instances=[
+            NetlistInstance(
+                name="U1",
+                ref="LEAF@behave",
+                ref_file_id="lib_behave.asdl",
+                conns=[],
+            ),
+        ],
+    )
+    leaf_default = NetlistModule(
+        name="LEAF",
+        file_id="lib_default.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    leaf_behave = NetlistModule(
+        name="LEAF@behave",
+        file_id="lib_behave.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+    unreachable = NetlistModule(
+        name="UNUSED_BLOCK",
+        file_id="unused.asdl",
+        ports=[],
+        nets=[],
+        instances=[],
+    )
+
+    design = NetlistDesign(
+        modules=[top, leaf_default, leaf_behave, unreachable],
+        devices=[],
+        top="TOP",
+        entry_file_id="top.asdl",
+    )
+
+    netlist, diagnostics = _emit(design, backend_config)
+
+    assert diagnostics == []
+    assert netlist == "\n".join(
+        [
+            "* header TOP",
+            "XU1 LEAF_behave",
+            ".subckt LEAF_behave",
+            ".ends LEAF_behave",
+            ".end",
+        ]
+    )
+    assert netlist is not None
+    assert ".subckt LEAF " not in netlist
+    assert ".subckt UNUSED_BLOCK" not in netlist
+
+
 def test_render_netlist_ir_infers_top_from_entry_file_scope() -> None:
     backend_config = _backend_config()
 
