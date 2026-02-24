@@ -8,8 +8,8 @@ T-306:
   pr: 329
   merged: true
 T-307:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 330
   merged: false
 T-308:
   status: ready
