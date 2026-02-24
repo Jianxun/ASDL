@@ -8,7 +8,7 @@ T-306:
   pr: 329
   merged: true
 T-307:
-  status: review_in_progress
+  status: review_clean
   pr: 330
   merged: false
 T-308:
