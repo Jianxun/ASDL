@@ -4,6 +4,6 @@ T-303:
   pr: 326
   merged: true
 T-304:
-  status: ready_for_review
+  status: review_clean
   pr: 327
   merged: false
