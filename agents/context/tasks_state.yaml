@@ -1,6 +1,6 @@
 schema_version: 2
 T-305:
-  status: review_in_progress
+  status: review_clean
   pr: 328
   merged: false
 T-306:
