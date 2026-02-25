@@ -8,9 +8,9 @@ T-314:
   pr: 334
   merged: true
 T-315:
-  status: review_clean
+  status: done
   pr: 335
-  merged: false
+  merged: true
 T-316:
   status: ready
   pr: null
