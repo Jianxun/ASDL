@@ -10,6 +10,7 @@ from typing import Any, Callable, Iterable, Optional
 
 import click
 
+from asdl.core.hierarchy import traverse_hierarchy
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.emit.netlist.render import EmissionNameMapEntry, build_emission_name_map
 from asdl.emit.netlist_ir import NetlistDesign, NetlistModule
@@ -69,18 +70,6 @@ class QueryBindingsEntry:
     authored_ref: str
     resolved: str
     rule_id: Optional[str]
-
-
-@dataclass(frozen=True)
-class _TreeInstanceEntry:
-    """One hierarchical instance occurrence for query tree construction."""
-
-    path: str
-    parent_path: str
-    instance: str
-    ref: str
-    ref_file_id: str
-    depth: int
 
 
 def query_common_options(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -321,11 +310,15 @@ def build_query_tree_payload(runtime: QueryRuntime) -> dict[str, Any]:
     if authored_top is None:
         return {}
 
-    authored_entries = _collect_tree_instances(runtime.authored_design, authored_top)
+    authored_entries = traverse_hierarchy(
+        runtime.authored_design,
+        include_devices=True,
+        order="dfs-pre",
+    )
 
     resolved_top = _resolve_top_module(runtime.resolved_design)
     resolved_entries = (
-        _collect_tree_instances(runtime.resolved_design, resolved_top)
+        traverse_hierarchy(runtime.resolved_design, include_devices=True, order="dfs-pre")
         if resolved_top is not None
         else []
     )
@@ -477,58 +470,13 @@ def _build_emission_lookup(
     return by_key, {symbol: tuple(entries) for symbol, entries in by_symbol.items()}
 
 
-def _collect_tree_instances(
-    design: NetlistDesign, top: NetlistModule
-) -> list[_TreeInstanceEntry]:
-    """Collect hierarchical instances from top, including module and device refs."""
-
-    modules_by_key = {(module.file_id, module.name): module for module in design.modules}
-    modules_by_name: dict[str, list[NetlistModule]] = {}
-    for module in design.modules:
-        modules_by_name.setdefault(module.name, []).append(module)
-
-    entries: list[_TreeInstanceEntry] = []
-
-    def _visit(
-        module: NetlistModule,
-        parent_path: str,
-        ancestry: tuple[tuple[Optional[str], str], ...],
-    ) -> None:
-        for instance in module.instances:
-            full_path = f"{parent_path}.{instance.name}"
-            entries.append(
-                _TreeInstanceEntry(
-                    path=full_path,
-                    parent_path=parent_path,
-                    instance=instance.name,
-                    ref=instance.ref,
-                    ref_file_id=instance.ref_file_id,
-                    depth=full_path.count("."),
-                )
-            )
-
-            target = _select_module(
-                modules_by_name,
-                modules_by_key,
-                instance.ref,
-                instance.ref_file_id,
-            )
-            if target is None:
-                continue
-            target_key: tuple[Optional[str], str] = (target.file_id, target.name)
-            if target_key in ancestry:
-                continue
-            _visit(target, full_path, ancestry + (target_key,))
-
-    top_key: tuple[Optional[str], str] = (top.file_id, top.name)
-    _visit(top, top.name, (top_key,))
-    return entries
-
-
 def _lookup_emitted_name(
     symbol: str,
     file_id: Optional[str],
-    lookup: tuple[dict[tuple[Optional[str], str], str], dict[str, tuple[EmissionNameMapEntry, ...]]],
+    lookup: tuple[
+        dict[tuple[Optional[str], str], str],
+        dict[str, tuple[EmissionNameMapEntry, ...]],
+    ],
 ) -> Optional[str]:
     """Resolve emitted name by exact `(file_id, symbol)` then unique `symbol`."""
 
@@ -540,24 +488,6 @@ def _lookup_emitted_name(
     candidates = by_symbol.get(symbol, ())
     if len(candidates) == 1:
         return candidates[0].emitted_name
-    return None
-
-
-def _select_module(
-    modules_by_name: dict[str, list[NetlistModule]],
-    modules_by_key: dict[tuple[Optional[str], str], NetlistModule],
-    name: str,
-    file_id: Optional[str],
-) -> Optional[NetlistModule]:
-    """Select a module symbol by name and optional file id."""
-
-    if file_id is not None:
-        return modules_by_key.get((file_id, name))
-    candidates = modules_by_name.get(name, [])
-    if len(candidates) == 1:
-        return candidates[0]
-    if candidates:
-        return candidates[-1]
     return None
 
 
