@@ -1,6 +1,11 @@
 """Unit tests for deterministic hierarchical view-binding instance indexing."""
 
-from asdl.emit.netlist_ir import NetlistDesign, NetlistInstance, NetlistModule
+from asdl.emit.netlist_ir import (
+    NetlistDesign,
+    NetlistDevice,
+    NetlistInstance,
+    NetlistModule,
+)
 from asdl.views.instance_index import build_instance_index, match_index_entries
 from asdl.views.models import ViewMatch
 
@@ -141,3 +146,28 @@ def test_build_instance_index_normalizes_decorated_module_symbols() -> None:
 
     assert len(index.entries) == 1
     assert index.entries[0].module == "swmatrix_Tgate"
+
+
+def test_build_instance_index_excludes_device_targets() -> None:
+    """Indexer remains module-only when shared traversal can include devices."""
+    design = NetlistDesign(
+        modules=[
+            NetlistModule(
+                name="tb",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="xmod", ref="LeafMod", ref_file_id="file://tb"),
+                    NetlistInstance(name="xdev", ref="nmos", ref_file_id="file://tb"),
+                ],
+            ),
+            NetlistModule(name="LeafMod", file_id="file://tb"),
+        ],
+        devices=[NetlistDevice(name="nmos", file_id="file://tb")],
+        top="tb",
+    )
+
+    index = build_instance_index(design)
+
+    assert [(entry.path, entry.instance, entry.module) for entry in index.entries] == [
+        ("tb", "xmod", "LeafMod")
+    ]
