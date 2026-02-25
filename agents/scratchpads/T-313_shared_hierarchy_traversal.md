@@ -31,15 +31,31 @@
 
 ## Milestone notes
 - Intake complete; implementation pending.
+- Added dedicated hierarchy traversal unit tests first (TDD), confirmed initial
+  failure because `asdl.core.hierarchy` was missing.
+- Implemented shared traversal API with deterministic DFS-pre ordering,
+  ancestry-based cycle stop, and centralized symbol selection fallback.
+- Ran task verify command; hierarchy unit tests pass.
 
 ## Patch summary
-- Pending.
+- `src/asdl/core/hierarchy.py`
+  - Added `HierarchyEntry` dataclass and `traverse_hierarchy(...)` public API.
+  - Implemented deterministic DFS-pre traversal rooted at resolved top module.
+  - Added centralized symbol selection with exact `(file_id, symbol)` lookup,
+    unique-name fallback, and deterministic last-candidate fallback.
+  - Implemented include-device policy and ancestry-based module cycle stop.
+- `src/asdl/core/__init__.py`
+  - Exported `HierarchyEntry` and `traverse_hierarchy` from `asdl.core`.
+- `tests/unit_tests/core/test_hierarchy.py`
+  - Added unit coverage for include/exclude-device policy, DFS-pre ordering,
+    module-selection fallback semantics, and cycle handling.
 
 ## PR URL
 - Pending.
 
 ## Verification
-- Pending.
+- `./venv/bin/pytest tests/unit_tests/core/test_hierarchy.py -v`
+  - Result: 4 passed.
 
 ## Status request (Done / Blocked / In Progress)
 - In Progress
@@ -48,4 +64,4 @@
 - None.
 
 ## Next steps
-- Implement and validate T-313 scope.
+- Push branch, open PR, and transition task state to `ready_for_review`.
