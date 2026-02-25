@@ -11,10 +11,12 @@ import yaml
 from asdl.cli.query_runtime import (
     QueryStage,
     build_query_bindings_payload,
+    build_query_tree_compact_payload,
     build_query_tree_payload,
     build_query_runtime,
     finalize_query_output,
     query_common_options,
+    render_query_json,
     validate_query_common_options,
 )
 from asdl.diagnostics import (
@@ -448,8 +450,65 @@ def query() -> None:
     """Inspect compiled design state via stage-aware query helpers."""
 
 
+def _render_compact_tree_text(payload: dict[str, Any]) -> str:
+    """Render compact query-tree payload as an ASCII hierarchy tree."""
+
+    if not payload:
+        return ""
+
+    lines: list[str] = []
+
+    def _visit(label: str, subtree: dict[str, Any], prefix: str, is_last: bool) -> None:
+        connector = "└── " if is_last else "├── "
+        lines.append(f"{prefix}{connector}{label}")
+        child_items = [
+            (child_label, child_tree)
+            for child_label, child_tree in subtree.items()
+            if isinstance(child_tree, dict)
+        ]
+        child_prefix = f"{prefix}{'    ' if is_last else '│   '}"
+        for index, (child_label, child_tree) in enumerate(child_items):
+            _visit(
+                child_label,
+                child_tree,
+                child_prefix,
+                is_last=index == len(child_items) - 1,
+            )
+
+    root_items = [
+        (root_label, root_tree)
+        for root_label, root_tree in payload.items()
+        if isinstance(root_tree, dict)
+    ]
+    for root_index, (root_label, root_tree) in enumerate(root_items):
+        if root_index > 0:
+            lines.append("")
+        lines.append(root_label)
+        children = list(root_tree.items())
+        for child_index, (child_label, child_tree) in enumerate(children):
+            if not isinstance(child_tree, dict):
+                continue
+            _visit(
+                child_label,
+                child_tree,
+                "",
+                is_last=child_index == len(children) - 1,
+            )
+
+    return "\n".join(lines)
+
+
 @query.command("tree")
 @query_common_options
+@click.option(
+    "--compact-view/--verbose-view",
+    "compact_view",
+    default=True,
+    help=(
+        "Choose compact nested `<instance>:<resolved_ref>` payload "
+        "(default) or verbose metadata payload."
+    ),
+)
 def query_tree(
     input_file: Path,
     config_path: Optional[Path],
@@ -459,6 +518,7 @@ def query_tree(
     top_name: Optional[str],
     stage: str,
     json_output: bool,
+    compact_view: bool,
 ) -> None:
     """Emit hierarchical query rows."""
     del top_name  # Consumed by follow-up query tasks.
@@ -489,12 +549,28 @@ def query_tree(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    exit_code, output_text = finalize_query_output(
-        kind="query.tree",
-        payload=build_query_tree_payload(runtime),
-        json_output=json_output,
-        diagnostics=diagnostics,
-    )
+    payload: Any
+    kind: str
+    if compact_view:
+        kind = "query.tree.compact"
+        payload = build_query_tree_compact_payload(runtime)
+    else:
+        kind = "query.tree"
+        payload = build_query_tree_payload(runtime)
+
+    if compact_view:
+        exit_code = 1 if _has_error_diagnostics(diagnostics) else 0
+        if json_output:
+            output_text = render_query_json(kind=kind, payload=payload, compact=False)
+        else:
+            output_text = _render_compact_tree_text(payload)
+    else:
+        exit_code, output_text = finalize_query_output(
+            kind=kind,
+            payload=payload,
+            json_output=json_output,
+            diagnostics=diagnostics,
+        )
     click.echo(output_text, nl=False)
     _emit_diagnostics(diagnostics)
     if exit_code != 0:

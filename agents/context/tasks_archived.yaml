@@ -1,6 +1,9 @@
 schema_version: 1
 
 archive:
+  - T-307: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-307_query_bindings.md, pr: 330}
+  - T-306: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-306_query_tree.md, pr: 329}
+  - T-305: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-305_query_cli_foundation.md, pr: 328}
   - T-304: {completed_on: 2026-02-24, owner: Executor, scratchpad: agents/scratchpads/T-304_reachable_naming_collision.md, pr: 327}
   - T-303: {completed_on: 2026-02-24, owner: Executor, scratchpad: agents/scratchpads/T-303_reachable_only_emission.md, pr: 326}
   - T-302: {completed_on: 2026-02-23, owner: Executor, scratchpad: agents/scratchpads/T-302_provenance_warning_regressions.md, pr: 325}

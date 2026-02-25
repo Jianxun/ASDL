@@ -49,7 +49,7 @@ class QueryRuntime:
 
 @dataclass(frozen=True)
 class QueryTreeEntry:
-    """One `asdlc query tree` payload row."""
+    """One query-tree node row before nested assembly."""
 
     path: str
     parent_path: Optional[str]
@@ -69,6 +69,18 @@ class QueryBindingsEntry:
     authored_ref: str
     resolved: str
     rule_id: Optional[str]
+
+
+@dataclass(frozen=True)
+class _TreeInstanceEntry:
+    """One hierarchical instance occurrence for query tree construction."""
+
+    path: str
+    parent_path: str
+    instance: str
+    ref: str
+    ref_file_id: str
+    depth: int
 
 
 def query_common_options(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -295,26 +307,29 @@ def finalize_query_output(
     return exit_code, str(payload)
 
 
-def build_query_tree_payload(runtime: QueryRuntime) -> list[dict[str, Any]]:
-    """Build deterministic `query.tree` payload rows for one runtime.
+def build_query_tree_payload(runtime: QueryRuntime) -> dict[str, Any]:
+    """Build deterministic `query.tree` nested payload for one runtime.
 
     Args:
         runtime: Query runtime with authored/resolved designs.
 
     Returns:
-        Ordered list of tree rows encoded as JSON-ready dictionaries.
+        Root tree node encoded as a JSON-ready dictionary.
     """
 
     authored_top = _resolve_top_module(runtime.authored_design)
     if authored_top is None:
-        return []
+        return {}
 
-    authored_index = build_instance_index(runtime.authored_design)
-    authored_by_path = {entry.full_path: entry for entry in authored_index.entries}
+    authored_entries = _collect_tree_instances(runtime.authored_design, authored_top)
 
     resolved_top = _resolve_top_module(runtime.resolved_design)
-    resolved_index = build_instance_index(runtime.resolved_design)
-    resolved_by_path = {entry.full_path: entry for entry in resolved_index.entries}
+    resolved_entries = (
+        _collect_tree_instances(runtime.resolved_design, resolved_top)
+        if resolved_top is not None
+        else []
+    )
+    resolved_by_path = {entry.path: entry for entry in resolved_entries}
 
     emission_lookup = _build_emission_lookup(runtime) if runtime.stage == QueryStage.EMITTED else None
 
@@ -342,35 +357,40 @@ def build_query_tree_payload(runtime: QueryRuntime) -> list[dict[str, Any]]:
         )
     )
 
-    for authored_entry in authored_index.entries:
-        full_path = authored_entry.full_path
+    for authored_entry in authored_entries:
+        full_path = authored_entry.path
         resolved_entry = resolved_by_path.get(full_path)
         resolved_ref: Optional[str] = None
         if runtime.stage in (QueryStage.RESOLVED, QueryStage.EMITTED):
-            resolved_ref = resolved_entry.ref if resolved_entry is not None else None
+            resolved_ref = (
+                resolved_entry.ref if resolved_entry is not None else authored_entry.ref
+            )
 
         emitted_name: Optional[str] = None
         if emission_lookup is not None and resolved_ref is not None:
             emitted_name = _lookup_emitted_name(
                 resolved_ref,
-                resolved_entry.ref_file_id if resolved_entry is not None else authored_entry.ref_file_id,
+                resolved_entry.ref_file_id
+                if resolved_entry is not None
+                else authored_entry.ref_file_id,
                 emission_lookup,
             )
 
         entries.append(
             QueryTreeEntry(
                 path=full_path,
-                parent_path=authored_entry.path,
+                parent_path=authored_entry.parent_path,
                 instance=authored_entry.instance,
                 authored_ref=authored_entry.ref,
                 resolved_ref=resolved_ref,
                 emitted_name=emitted_name,
-                depth=full_path.count("."),
+                depth=authored_entry.depth,
             )
         )
 
-    return [
-        {
+    nodes_by_path: dict[str, dict[str, Any]] = {}
+    for entry in entries:
+        nodes_by_path[entry.path] = {
             "path": entry.path,
             "parent_path": entry.parent_path,
             "instance": entry.instance,
@@ -378,9 +398,27 @@ def build_query_tree_payload(runtime: QueryRuntime) -> list[dict[str, Any]]:
             "resolved_ref": entry.resolved_ref,
             "emitted_name": entry.emitted_name,
             "depth": entry.depth,
+            "children": {},
         }
-        for entry in entries
-    ]
+
+    for entry in entries:
+        if entry.parent_path is None or entry.instance is None:
+            continue
+        parent_node = nodes_by_path.get(entry.parent_path)
+        child_node = nodes_by_path[entry.path]
+        if parent_node is not None:
+            parent_node["children"][entry.instance] = child_node
+
+    return nodes_by_path.get(authored_top.name, {})
+
+
+def build_query_tree_compact_payload(runtime: QueryRuntime) -> dict[str, Any]:
+    """Build compact `query.tree` payload keyed by `<instance>:<resolved_ref>`."""
+
+    verbose_root = build_query_tree_payload(runtime)
+    if not verbose_root:
+        return {}
+    return _compact_tree_node(verbose_root)
 
 
 def build_query_bindings_payload(runtime: QueryRuntime) -> list[dict[str, Any]]:
@@ -439,6 +477,54 @@ def _build_emission_lookup(
     return by_key, {symbol: tuple(entries) for symbol, entries in by_symbol.items()}
 
 
+def _collect_tree_instances(
+    design: NetlistDesign, top: NetlistModule
+) -> list[_TreeInstanceEntry]:
+    """Collect hierarchical instances from top, including module and device refs."""
+
+    modules_by_key = {(module.file_id, module.name): module for module in design.modules}
+    modules_by_name: dict[str, list[NetlistModule]] = {}
+    for module in design.modules:
+        modules_by_name.setdefault(module.name, []).append(module)
+
+    entries: list[_TreeInstanceEntry] = []
+
+    def _visit(
+        module: NetlistModule,
+        parent_path: str,
+        ancestry: tuple[tuple[Optional[str], str], ...],
+    ) -> None:
+        for instance in module.instances:
+            full_path = f"{parent_path}.{instance.name}"
+            entries.append(
+                _TreeInstanceEntry(
+                    path=full_path,
+                    parent_path=parent_path,
+                    instance=instance.name,
+                    ref=instance.ref,
+                    ref_file_id=instance.ref_file_id,
+                    depth=full_path.count("."),
+                )
+            )
+
+            target = _select_module(
+                modules_by_name,
+                modules_by_key,
+                instance.ref,
+                instance.ref_file_id,
+            )
+            if target is None:
+                continue
+            target_key: tuple[Optional[str], str] = (target.file_id, target.name)
+            if target_key in ancestry:
+                continue
+            _visit(target, full_path, ancestry + (target_key,))
+
+    top_key: tuple[Optional[str], str] = (top.file_id, top.name)
+    _visit(top, top.name, (top_key,))
+    return entries
+
+
 def _lookup_emitted_name(
     symbol: str,
     file_id: Optional[str],
@@ -455,6 +541,44 @@ def _lookup_emitted_name(
     if len(candidates) == 1:
         return candidates[0].emitted_name
     return None
+
+
+def _select_module(
+    modules_by_name: dict[str, list[NetlistModule]],
+    modules_by_key: dict[tuple[Optional[str], str], NetlistModule],
+    name: str,
+    file_id: Optional[str],
+) -> Optional[NetlistModule]:
+    """Select a module symbol by name and optional file id."""
+
+    if file_id is not None:
+        return modules_by_key.get((file_id, name))
+    candidates = modules_by_name.get(name, [])
+    if len(candidates) == 1:
+        return candidates[0]
+    if candidates:
+        return candidates[-1]
+    return None
+
+
+def _compact_tree_node(node: dict[str, Any]) -> dict[str, Any]:
+    """Convert one verbose tree node into compact recursive mapping."""
+
+    node_instance = node.get("instance")
+    label_instance = node.get("path") if node_instance is None else node_instance
+    label_ref = node.get("resolved_ref") or node.get("authored_ref")
+    label = f"{label_instance}:{label_ref}"
+
+    children = node.get("children")
+    if not isinstance(children, dict) or not children:
+        return {label: {}}
+
+    compact_children: dict[str, Any] = {}
+    for child in children.values():
+        if not isinstance(child, dict):
+            continue
+        compact_children.update(_compact_tree_node(child))
+    return {label: compact_children}
 
 
 def _resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
@@ -505,6 +629,7 @@ __all__ = [
     "QueryRuntime",
     "QueryStage",
     "build_query_bindings_payload",
+    "build_query_tree_compact_payload",
     "build_query_tree_payload",
     "build_query_runtime",
     "finalize_query_output",

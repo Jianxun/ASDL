@@ -58,9 +58,10 @@ def test_query_tree_json_envelope_stable() -> None:
     assert result.exit_code == 0
     payload = json.loads(result.output)
     assert payload["schema_version"] == 1
-    assert payload["kind"] == "query.tree"
-    assert isinstance(payload["payload"], list)
-    assert payload["payload"][0]["path"] == "tb"
+    assert payload["kind"] == "query.tree.compact"
+    assert isinstance(payload["payload"], dict)
+    assert "tb:tb" in payload["payload"]
+    assert "\n" in result.output
 
 
 def test_runtime_builds_authored_resolved_and_emitted_stages() -> None:
@@ -103,10 +104,10 @@ def test_runtime_builds_authored_resolved_and_emitted_stages() -> None:
 
 
 def test_query_runtime_envelope_and_exit_helpers() -> None:
-    envelope = query_json_envelope(kind="query.tree", payload=[])
-    assert envelope == {"schema_version": 1, "kind": "query.tree", "payload": []}
-    assert render_query_json(kind="query.tree", payload=[]) == (
-        '{"kind":"query.tree","payload":[],"schema_version":1}'
+    envelope = query_json_envelope(kind="query.tree", payload={})
+    assert envelope == {"schema_version": 1, "kind": "query.tree", "payload": {}}
+    assert render_query_json(kind="query.tree", payload={}) == (
+        '{"kind":"query.tree","payload":{},"schema_version":1}'
     )
     assert query_exit_code((), missing_anchor=False) == 0
     assert query_exit_code((), missing_anchor=True) == 1

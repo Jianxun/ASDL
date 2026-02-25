@@ -74,11 +74,16 @@ Rules:
 ### `asdlc query tree`
 Purpose:
 - Show hierarchical instance tree rooted at top.
+- Includes both module instances and device instances (devices are leaves).
+- Hierarchy traversal semantics are defined by
+  `docs/specs/spec_hierarchy_traversal.md` with `include_devices=True`.
 
 Options:
 - supports common options.
+- `--compact-view/--verbose-view`: choose compact (default) or verbose payload.
+  - default is `--compact-view`.
 
-JSON entry fields:
+Verbose JSON payload fields (`--verbose-view`):
 - `path: str`
 - `parent_path: str | null`
 - `instance: str | null` (null at root)
@@ -86,6 +91,18 @@ JSON entry fields:
 - `resolved_ref: str | null`
 - `emitted_name: str | null`
 - `depth: int`
+- `children: dict[str, TreeNode]` (keyed by child instance name)
+
+`TreeNode` is recursive and uses the same fields listed above.
+
+Compact JSON payload shape (default, `--compact-view`):
+- recursive dictionary
+- key format: `<instance>:<resolved_ref>`
+- value: nested child mapping (empty object for leaves)
+- JSON output is pretty-printed for readability in compact mode.
+
+Default non-JSON output (`--compact-view`):
+- ASCII hierarchy tree using the same `<instance>:<resolved_ref>` labels.
 
 ### `asdlc query bindings`
 Purpose:
@@ -235,8 +252,8 @@ JSON payload fields:
   paths where available).
 
 ### Deterministic ordering keys (v0)
-- `tree`: traversal order from `--order` (`dfs-pre` default; `dfs-post`
-  optional where supported).
+- `tree`: recursive `children` map order is deterministic and keyed by child
+  instance name.
 - `bindings`: `(path, instance)`.
 - `emit-plan.reachable_modules`: deterministic emission traversal order.
 - `emit-plan.pruned_modules`: `(symbol, file_id)`.
@@ -256,6 +273,7 @@ Every JSON payload includes:
 
 `kind` values:
 - `query.tree`
+- `query.tree.compact`
 - `query.bindings`
 - `query.emit_plan`
 - `query.refs`

@@ -1,0 +1,50 @@
+{
+  "diagnostic_count": 0,
+  "diagnostic_severity_counts": {
+    "error": 0,
+    "fatal": 0,
+    "info": 0,
+    "warning": 0
+  },
+  "diagnostics": [],
+  "emission_name_map": [
+    {
+      "base_name": "top_mosbius_devices_v1_nmos",
+      "emitted_name": "top_mosbius_devices_v1_nmos",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/mosbius_devices/top_mosbius_devices_v1_nmos/top_mosbius_devices_v1_nmos.asdl",
+      "renamed": false,
+      "symbol": "top_mosbius_devices_v1_nmos"
+    },
+    {
+      "base_name": "ota_nmos",
+      "emitted_name": "ota_nmos",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/mosbius_devices/ota_nmos/ota_nmos.asdl",
+      "renamed": false,
+      "symbol": "ota_nmos"
+    },
+    {
+      "base_name": "current_mirror_array_nmos",
+      "emitted_name": "current_mirror_array_nmos",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/mosbius_devices/current_mirror_array_nmos/current_mirror_array_nmos.asdl",
+      "renamed": false,
+      "symbol": "current_mirror_array_nmos"
+    },
+    {
+      "base_name": "current_mirror_nmos",
+      "emitted_name": "current_mirror_nmos",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/mosbius_devices/current_mirror_nmos/current_mirror_nmos.asdl",
+      "renamed": false,
+      "symbol": "current_mirror_nmos"
+    },
+    {
+      "base_name": "inv",
+      "emitted_name": "inv",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/mosbius_devices/inv/inv.asdl",
+      "renamed": false,
+      "symbol": "inv"
+    }
+  ],
+  "view_bindings": [],
+  "warning_count": 0,
+  "warnings": []
+}

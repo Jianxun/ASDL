@@ -85,3 +85,5 @@ Examples:
 ## Notes
 - View selection/binding resolution is defined in
   `docs/specs/spec_asdl_view_config.md`.
+- Hierarchy instance indexing should follow the shared traversal contract in
+  `docs/specs/spec_hierarchy_traversal.md` with module-only inclusion.
