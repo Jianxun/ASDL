@@ -8,8 +8,8 @@ T-314:
   pr: 334
   merged: true
 T-315:
-  status: in_progress
-  pr: null
+  status: ready_for_review
+  pr: 335
   merged: false
 T-316:
   status: ready
