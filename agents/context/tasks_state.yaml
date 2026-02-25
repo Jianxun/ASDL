@@ -1,6 +1,6 @@
 schema_version: 2
 T-313:
-  status: ready_for_review
+  status: review_in_progress
   pr: 332
   merged: false
 T-314:
