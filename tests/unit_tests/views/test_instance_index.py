@@ -1,5 +1,6 @@
 """Unit tests for deterministic hierarchical view-binding instance indexing."""
 
+import asdl.views.instance_index as instance_index_module
 from asdl.emit.netlist_ir import (
     NetlistDesign,
     NetlistDevice,
@@ -171,3 +172,8 @@ def test_build_instance_index_excludes_device_targets() -> None:
     assert [(entry.path, entry.instance, entry.module) for entry in index.entries] == [
         ("tb", "xmod", "LeafMod")
     ]
+
+
+def test_build_instance_index_has_no_local_top_resolution_helper() -> None:
+    """Views index must rely on shared hierarchy top-resolution logic."""
+    assert not hasattr(instance_index_module, "_resolve_top_module")
