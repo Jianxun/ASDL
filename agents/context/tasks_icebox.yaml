@@ -1,6 +1,106 @@
 schema_version: 1
 
 icebox:
+  - id: T-308
+    title: Implement `asdlc query emit-plan`
+    owner: Executor
+    depends_on:
+      - T-305
+    dod: >
+      Implement `asdlc query emit-plan` with top symbol fields and deterministic
+      reachable/pruned module payloads aligned to reachable-only emission and
+      realized naming semantics. Ensure stage behavior and baseline emitted-mode
+      defaults match the query spec. Add regression tests for mapping payload
+      structure and deterministic ordering.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/cli/test_query_emit_plan.py -v
+    links:
+      scratchpad: agents/scratchpads/T-308_query_emit_plan.md
+      spec: docs/specs/spec_cli_query.md
+    files:
+      - src/asdl/cli/__init__.py
+      - src/asdl/cli/query_runtime.py
+      - src/asdl/emit/netlist/render.py
+      - tests/unit_tests/cli/test_query_emit_plan.py
+  - id: T-309
+    title: Implement `asdlc query refs`
+    owner: Executor
+    depends_on:
+      - T-305
+    dod: >
+      Implement `asdlc query refs` using exact `--module` symbol match in v0
+      (no wildcard/decorated-family expansion), with deterministic result
+      ordering and stage-aware fields. Add regression tests covering exact-match
+      behavior, empty-success behavior, and ordering.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/cli/test_query_refs.py -v
+    links:
+      scratchpad: agents/scratchpads/T-309_query_refs.md
+      spec: docs/specs/spec_cli_query.md
+    files:
+      - src/asdl/cli/__init__.py
+      - src/asdl/cli/query_runtime.py
+      - tests/unit_tests/cli/test_query_refs.py
+  - id: T-310
+    title: Implement `asdlc query instance`
+    owner: Executor
+    depends_on:
+      - T-305
+    dod: >
+      Implement `asdlc query instance --path` with anchor-not-found hard-error
+      behavior and payload fields per v0 contract. Ensure `children` ordering is
+      deterministic and `connected_nets` uses lexical ordering (provisional v0
+      rule). Add regression tests for success, missing-anchor, and ordering.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/cli/test_query_instance.py -v
+    links:
+      scratchpad: agents/scratchpads/T-310_query_instance.md
+      spec: docs/specs/spec_cli_query.md
+    files:
+      - src/asdl/cli/__init__.py
+      - src/asdl/cli/query_runtime.py
+      - tests/unit_tests/cli/test_query_instance.py
+  - id: T-311
+    title: Implement `asdlc query net`
+    owner: Executor
+    depends_on:
+      - T-305
+    dod: >
+      Implement `asdlc query net --module --net` with user-facing `connections`
+      records and `terminal` naming (not internal endpoint terminology). Enforce
+      missing-anchor hard errors and deterministic `(instance_path, terminal)`
+      ordering for connection rows. Add regression tests for schema shape and
+      ordering.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/cli/test_query_net.py -v
+    links:
+      scratchpad: agents/scratchpads/T-311_query_net.md
+      spec: docs/specs/spec_cli_query.md
+    files:
+      - src/asdl/cli/__init__.py
+      - src/asdl/cli/query_runtime.py
+      - tests/unit_tests/cli/test_query_net.py
+  - id: T-312
+    title: Implement experimental `asdlc query net-trace`
+    owner: Executor
+    depends_on:
+      - T-305
+      - T-311
+    dod: >
+      Implement `asdlc query net-trace` in a follow-up wave with explicitly
+      provisional semantics as documented in the v0 spec open decisions.
+      Preserve deterministic output ordering for `equivalents` and
+      `connections`, and retain user-facing `terminal` naming. Include focused
+      regression coverage for direction/order switches and deterministic output.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/cli/test_query_net_trace.py -v
+    links:
+      scratchpad: agents/scratchpads/T-312_query_net_trace.md
+      spec: docs/specs/spec_cli_query.md
+    files:
+      - src/asdl/cli/__init__.py
+      - src/asdl/cli/query_runtime.py
+      - tests/unit_tests/cli/test_query_net_trace.py
   - id: T-052
     title: Backend lowering refactor
     owner: Executor
