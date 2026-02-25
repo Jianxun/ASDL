@@ -12,6 +12,6 @@ T-315:
   pr: 335
   merged: true
 T-316:
-  status: ready_for_review
+  status: review_clean
   pr: 336
   merged: false
