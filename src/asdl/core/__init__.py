@@ -40,6 +40,7 @@ from .graph import (
     NetId,
     ProgramGraph,
 )
+from .hierarchy import HierarchyEntry, traverse_hierarchy
 from .index import GraphIndex
 from .query import DesignQuery, query
 from .pipeline import run_patterned_graph_pipeline
@@ -106,6 +107,7 @@ __all__ = [
     "GraphId",
     "GroupSlice",
     "GraphIndex",
+    "HierarchyEntry",
     "InstanceBundle",
     "InstId",
     "ModuleGraph",
@@ -131,6 +133,7 @@ __all__ = [
     "query",
     "RegistrySet",
     "run_patterned_graph_pipeline",
+    "traverse_hierarchy",
     "SchematicHints",
     "SourceSpanIndex",
     "UNKNOWN_ENDPOINT_PORT",
