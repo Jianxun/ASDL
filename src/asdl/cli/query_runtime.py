@@ -10,10 +10,10 @@ from typing import Any, Callable, Iterable, Optional
 
 import click
 
-from asdl.core.hierarchy import traverse_hierarchy
+from asdl.core.hierarchy import resolve_top_module, traverse_hierarchy
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.emit.netlist.render import EmissionNameMapEntry, build_emission_name_map
-from asdl.emit.netlist_ir import NetlistDesign, NetlistModule
+from asdl.emit.netlist_ir import NetlistDesign
 from asdl.lowering import run_netlist_ir_pipeline
 from asdl.views.instance_index import build_instance_index
 
@@ -306,7 +306,7 @@ def build_query_tree_payload(runtime: QueryRuntime) -> dict[str, Any]:
         Root tree node encoded as a JSON-ready dictionary.
     """
 
-    authored_top = _resolve_top_module(runtime.authored_design)
+    authored_top = resolve_top_module(runtime.authored_design)
     if authored_top is None:
         return {}
 
@@ -316,7 +316,7 @@ def build_query_tree_payload(runtime: QueryRuntime) -> dict[str, Any]:
         order="dfs-pre",
     )
 
-    resolved_top = _resolve_top_module(runtime.resolved_design)
+    resolved_top = resolve_top_module(runtime.resolved_design)
     resolved_entries = (
         traverse_hierarchy(runtime.resolved_design, include_devices=True, order="dfs-pre")
         if resolved_top is not None
@@ -509,32 +509,6 @@ def _compact_tree_node(node: dict[str, Any]) -> dict[str, Any]:
             continue
         compact_children.update(_compact_tree_node(child))
     return {label: compact_children}
-
-
-def _resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
-    """Resolve top module using design top and entry-file semantics."""
-
-    if design.top is not None:
-        if design.entry_file_id is not None:
-            for module in design.modules:
-                if module.name == design.top and module.file_id == design.entry_file_id:
-                    return module
-        for module in design.modules:
-            if module.name == design.top:
-                return module
-        return None
-
-    if design.entry_file_id is not None:
-        entry_modules = [
-            module for module in design.modules if module.file_id == design.entry_file_id
-        ]
-        if len(entry_modules) == 1:
-            return entry_modules[0]
-        return None
-
-    if len(design.modules) == 1:
-        return design.modules[0]
-    return None
 
 
 def _has_error_diagnostics(diagnostics: Iterable[Diagnostic]) -> bool:

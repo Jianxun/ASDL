@@ -56,7 +56,7 @@ def traverse_hierarchy(
     if order != "dfs-pre":
         raise ValueError(f"Unsupported hierarchy traversal order: {order!r}")
 
-    top = _resolve_top_module(design)
+    top = resolve_top_module(design)
     if top is None:
         return []
 
@@ -122,7 +122,7 @@ def traverse_hierarchy(
     return entries
 
 
-def _resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
+def resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
     """Resolve top module using current NetlistIR top/entry-file semantics."""
 
     if design.top is not None:
@@ -167,4 +167,4 @@ def _select_symbol(
     return None
 
 
-__all__ = ["HierarchyEntry", "traverse_hierarchy"]
+__all__ = ["HierarchyEntry", "resolve_top_module", "traverse_hierarchy"]

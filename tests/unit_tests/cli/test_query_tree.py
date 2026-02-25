@@ -5,7 +5,16 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
+import asdl.cli.query_runtime as query_runtime_module
 from asdl.cli import cli
+from asdl.cli.query_runtime import QueryRuntime, QueryStage, build_query_tree_payload
+from asdl.emit.netlist_ir import (
+    NetlistDesign,
+    NetlistDevice,
+    NetlistInstance,
+    NetlistModule,
+)
+from asdl.views.instance_index import build_instance_index
 
 VIEW_FIXTURE_DIR = Path(__file__).parent.parent / "views" / "fixtures"
 VIEW_FIXTURE_ASDL = VIEW_FIXTURE_DIR / "view_binding_fixture.asdl"
@@ -178,3 +187,54 @@ def test_query_tree_non_json_defaults_to_ascii_tree() -> None:
         "    └── Tgate_dbg:sw_tgate@behave\n"
         "        └── R4:res"
     )
+
+
+def test_query_tree_includes_devices_while_views_index_remains_module_only() -> None:
+    """Shared traversal policy diverges by consumer include-devices setting."""
+    design = NetlistDesign(
+        modules=[
+            NetlistModule(
+                name="tb",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="xmod", ref="LeafMod", ref_file_id="file://tb"),
+                    NetlistInstance(name="xdev_top", ref="nmos", ref_file_id="file://tb"),
+                ],
+            ),
+            NetlistModule(
+                name="LeafMod",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="xdev_leaf", ref="nmos", ref_file_id="file://tb"),
+                ],
+            ),
+        ],
+        devices=[NetlistDevice(name="nmos", file_id="file://tb")],
+        top="tb",
+    )
+    runtime = QueryRuntime(
+        stage=QueryStage.AUTHORED,
+        authored_design=design,
+        resolved_design=design,
+        stage_design=design,
+        resolved_bindings=(),
+    )
+
+    tree_payload = build_query_tree_payload(runtime)
+    views_index = build_instance_index(design)
+
+    query_children = tree_payload["children"]
+    assert isinstance(query_children, dict)
+    assert set(query_children.keys()) == {"xmod", "xdev_top"}
+    leaf_children = query_children["xmod"]["children"]
+    assert isinstance(leaf_children, dict)
+    assert set(leaf_children.keys()) == {"xdev_leaf"}
+
+    assert [(entry.path, entry.instance, entry.ref) for entry in views_index.entries] == [
+        ("tb", "xmod", "LeafMod")
+    ]
+
+
+def test_query_runtime_has_no_local_top_resolution_helper() -> None:
+    """Query runtime must rely on shared hierarchy top-resolution logic."""
+    assert not hasattr(query_runtime_module, "_resolve_top_module")

@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from asdl.core.hierarchy import traverse_hierarchy
-from asdl.emit.netlist_ir import NetlistDesign, NetlistModule
+from asdl.core.hierarchy import resolve_top_module, traverse_hierarchy
+from asdl.emit.netlist_ir import NetlistDesign
 
 from .models import ViewMatch
 
@@ -57,7 +57,7 @@ def build_instance_index(design: NetlistDesign) -> ViewInstanceIndex:
     Returns:
         Deterministic instance index.
     """
-    top = _resolve_top_module(design)
+    top = resolve_top_module(design)
     if top is None:
         return ViewInstanceIndex(entries=(), root_path=None)
 
@@ -110,31 +110,6 @@ def _entry_matches_scope(
 def _logical_module_name(module_symbol: str) -> str:
     """Return logical cell name for a module symbol (`cell` or `cell@view`)."""
     return module_symbol.split("@", 1)[0]
-
-
-def _resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
-    """Resolve the top module for hierarchical index traversal."""
-    if design.top is not None:
-        if design.entry_file_id is not None:
-            for module in design.modules:
-                if module.name == design.top and module.file_id == design.entry_file_id:
-                    return module
-        for module in design.modules:
-            if module.name == design.top:
-                return module
-        return None
-
-    if design.entry_file_id is not None:
-        entry_modules = [
-            module for module in design.modules if module.file_id == design.entry_file_id
-        ]
-        if len(entry_modules) == 1:
-            return entry_modules[0]
-        return None
-
-    if len(design.modules) == 1:
-        return design.modules[0]
-    return None
 
 
 __all__ = [
