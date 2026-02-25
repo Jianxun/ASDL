@@ -106,6 +106,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - ADR-0035: Consolidated compile logging uses `--log` with default `<entry_file_basename>.log.json` and JSON sections for bindings/name-map/diagnostics metadata.
 - ADR-0036: Netlist emission is rooted at the final resolved top and emits reachable modules only; default naming remains `cell` while non-default uses `cell_<view>`.
 - ADR-0037: CLI query uses stage-aware v0 semantics with a stable JSON envelope, deterministic ordering, exact-match refs behavior, and explicit error/empty-result rules.
+- ADR-0038: Shared hierarchy traversal infrastructure centralizes deterministic traversal/module selection with policy flags for module-only vs module+device inclusion.
 
 - 2026-01-24: ADR-0024 -- Replace IFIR with NetlistIR dataclass model; remove xDSL from the refactor pipeline (supersedes ADR-0014).
 - 2026-01-23: ADR-0023 -- Core graphs include device definitions; modules/devices use `ports` lists (never None); backend templates stay outside core graphs.
@@ -123,6 +124,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-02-23: ADR-0035 -- Consolidate compile-time inspection outputs into one JSON log (`--log`, default `<entry_file_basename>.log.json`) with deterministic sections such as `view_bindings` and `emission_name_map`.
 - 2026-02-24: ADR-0036 -- Emit netlists only from modules reachable from the final resolved top realization after view-binding; keep default emitted names as `cell` and non-default as `cell_<view>`.
 - 2026-02-24: ADR-0037 -- Freeze CLI query v0 semantics for stage behavior, JSON envelope (`schema_version` + `kind`), deterministic ordering, exact `refs --module` matching, user-facing `connections/terminal`, and hard-error vs empty-success semantics.
+- 2026-02-25: ADR-0038 -- Introduce shared hierarchy traversal infrastructure with explicit inclusion policy (`module_only` vs `module_and_device`) to eliminate duplicated traversal/module-selection logic across views and query.
 - 2026-02-22: View-binding regressions must use stable test fixtures under `tests/` rather than `examples/` because examples are experimental and can change independently of compiler contracts.
 - 2026-02-01: Docs pipeline now supports Sphinx (Tier 1/2) for ASDL library documentation; Markdown generation remains supported but Sphinx-native rendering is in scope.
 
