@@ -1,0 +1,39 @@
+{
+  "kind": "query.tree.compact",
+  "payload": {
+    "top_mosbius_devices_v1_nmos:top_mosbius_devices_v1_nmos": {
+      "inv:inv": {
+        "mn:nfet_03v3": {},
+        "mp:pfet_03v3": {}
+      },
+      "mn_cs_4x_a:nfet_03v3": {},
+      "mn_cs_4x_b:nfet_03v3": {},
+      "mn_dp_1x_a:nfet_03v3": {},
+      "mn_dp_1x_b:nfet_03v3": {},
+      "mn_dp_4x_a:nfet_03v3": {},
+      "mn_dp_4x_b:nfet_03v3": {},
+      "mn_dummy:nfet_03v3": {},
+      "mp_dummy:pfet_03v3": {},
+      "nmos_cm:current_mirror_nmos": {
+        "mn_out:nfet_03v3": {},
+        "mn_ref:nfet_03v3": {}
+      },
+      "nmos_cm_array:current_mirror_array_nmos": {
+        "mn_out16:nfet_03v3": {},
+        "mn_out1:nfet_03v3": {},
+        "mn_out2:nfet_03v3": {},
+        "mn_out4:nfet_03v3": {},
+        "mn_out8:nfet_03v3": {},
+        "mn_ref:nfet_03v3": {}
+      },
+      "nmos_ota:ota_nmos": {
+        "mn_in_n:nfet_03v3": {},
+        "mn_in_p:nfet_03v3": {},
+        "mn_tail:nfet_03v3": {},
+        "mp_cs:pfet_03v3": {},
+        "mp_ref:pfet_03v3": {}
+      }
+    }
+  },
+  "schema_version": 1
+}
