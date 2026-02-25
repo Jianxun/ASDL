@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
+from asdl.core.hierarchy import traverse_hierarchy
 from asdl.emit.netlist_ir import NetlistDesign, NetlistModule
 
 from .models import ViewMatch
@@ -60,48 +61,18 @@ def build_instance_index(design: NetlistDesign) -> ViewInstanceIndex:
     if top is None:
         return ViewInstanceIndex(entries=(), root_path=None)
 
-    modules_by_key = {
-        (module.file_id, module.name): module for module in design.modules
-    }
-    modules_by_name: Dict[str, List[NetlistModule]] = {}
-    for module in design.modules:
-        modules_by_name.setdefault(module.name, []).append(module)
-
-    entries: list[ViewInstanceIndexEntry] = []
-
-    def _visit(
-        module: NetlistModule,
-        parent_path: str,
-        ancestry: Tuple[Tuple[Optional[str], str], ...],
-    ) -> None:
-        for instance in module.instances:
-            target = _select_module(
-                modules_by_name,
-                modules_by_key,
-                instance.ref,
-                instance.ref_file_id,
-            )
-            if target is None:
-                continue
-
-            entry = ViewInstanceIndexEntry(
-                path=parent_path,
-                instance=instance.name,
-                module=_logical_module_name(instance.ref),
-                ref=instance.ref,
-                ref_file_id=instance.ref_file_id,
-            )
-            entries.append(entry)
-
-            child_parent_path = entry.full_path
-            target_key: Tuple[Optional[str], str] = (target.file_id, target.name)
-            if target_key in ancestry:
-                continue
-            _visit(target, child_parent_path, ancestry + (target_key,))
-
-    top_key: Tuple[Optional[str], str] = (top.file_id, top.name)
-    _visit(top, top.name, (top_key,))
-    return ViewInstanceIndex(entries=tuple(entries), root_path=top.name)
+    traversal = traverse_hierarchy(design, include_devices=False, order="dfs-pre")
+    entries = tuple(
+        ViewInstanceIndexEntry(
+            path=row.parent_path,
+            instance=row.instance,
+            module=_logical_module_name(row.ref),
+            ref=row.ref,
+            ref_file_id=row.ref_file_id,
+        )
+        for row in traversal
+    )
+    return ViewInstanceIndex(entries=entries, root_path=top.name)
 
 
 def match_index_entries(
@@ -163,23 +134,6 @@ def _resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
 
     if len(design.modules) == 1:
         return design.modules[0]
-    return None
-
-
-def _select_module(
-    modules_by_name: Dict[str, List[NetlistModule]],
-    modules_by_key: Dict[Tuple[Optional[str], str], NetlistModule],
-    name: str,
-    file_id: Optional[str],
-) -> Optional[NetlistModule]:
-    """Select a module symbol by name and optional file id."""
-    if file_id is not None:
-        return modules_by_key.get((file_id, name))
-    candidates = modules_by_name.get(name, [])
-    if len(candidates) == 1:
-        return candidates[0]
-    if candidates:
-        return candidates[-1]
     return None
 
 

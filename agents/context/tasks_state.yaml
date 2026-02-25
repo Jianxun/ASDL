@@ -4,9 +4,9 @@ T-313:
   pr: 333
   merged: true
 T-314:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 334
+  merged: true
 T-315:
   status: ready
   pr: null
