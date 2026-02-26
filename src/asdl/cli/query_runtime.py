@@ -11,6 +11,10 @@ from typing import Any, Callable, Iterable, Optional
 import click
 
 from asdl.core.hierarchy import resolve_top_module, traverse_hierarchy
+from asdl.cli.runtime_common import (
+    resolve_and_apply_view_bindings,
+    validate_view_binding_options,
+)
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.emit.netlist.render import EmissionNameMapEntry, build_emission_name_map
 from asdl.emit.netlist_ir import NetlistDesign
@@ -150,12 +154,10 @@ def validate_query_common_options(
         Error messages for invalid option combinations.
     """
 
-    errors: list[str] = []
-    if view_config_path is None and view_profile is not None:
-        errors.append("--view-profile requires --view-config.")
-    if view_config_path is not None and view_profile is None:
-        errors.append("--view-config requires --view-profile.")
-    return errors
+    return validate_view_binding_options(
+        view_config_path=view_config_path,
+        view_profile=view_profile,
+    )
 
 
 def build_query_runtime(
@@ -194,35 +196,16 @@ def build_query_runtime(
     if authored_design is None or _has_error_diagnostics(diagnostics):
         return None, diagnostics
 
-    resolved_design = authored_design
-    resolved_bindings: tuple[Any, ...] = ()
-    if view_config_path is not None and view_profile is not None:
-        try:
-            from asdl.views.api import (
-                VIEW_APPLY_ERROR,
-                apply_resolved_view_bindings,
-                resolve_design_view_bindings,
-            )
-        except Exception as exc:  # pragma: no cover - defensive
-            diagnostics.append(
-                _diagnostic(f"Failed to load view-binding dependencies: {exc}")
-            )
-            return None, diagnostics
-
-        bindings, view_diags = resolve_design_view_bindings(
-            authored_design,
-            config_path=view_config_path,
-            profile_name=view_profile,
-        )
-        diagnostics.extend(view_diags)
-        if bindings is None or _has_error_diagnostics(diagnostics):
-            return None, diagnostics
-        resolved_bindings = tuple(bindings)
-        try:
-            resolved_design = apply_resolved_view_bindings(authored_design, bindings)
-        except ValueError as exc:
-            diagnostics.append(_diagnostic(str(exc), code=VIEW_APPLY_ERROR))
-            return None, diagnostics
+    resolved_design, resolved_bindings, view_diags = resolve_and_apply_view_bindings(
+        design=authored_design,
+        view_config_path=view_config_path,
+        view_profile=view_profile,
+        diagnostic_builder=lambda code, message: _diagnostic(message, code=code),
+        import_error_code=QUERY_RUNTIME_ERROR,
+    )
+    diagnostics.extend(view_diags)
+    if resolved_design is None:
+        return None, diagnostics
 
     stage_design = authored_design
     if stage in (QueryStage.RESOLVED, QueryStage.EMITTED):

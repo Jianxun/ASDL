@@ -19,6 +19,10 @@ from asdl.cli.query_runtime import (
     render_query_json,
     validate_query_common_options,
 )
+from asdl.cli.runtime_common import (
+    resolve_and_apply_view_bindings,
+    validate_view_binding_options,
+)
 from asdl.diagnostics import (
     Diagnostic,
     Severity,
@@ -730,22 +734,12 @@ def netlist(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    if view_config_path is None and view_profile is not None:
-        diagnostics.append(
-            _diagnostic(
-                CLI_SCHEMA_ERROR,
-                "--view-profile requires --view-config.",
-            )
-        )
-        _emit_diagnostics(diagnostics)
-        raise click.exceptions.Exit(1)
-    if view_config_path is not None and view_profile is None:
-        diagnostics.append(
-            _diagnostic(
-                CLI_SCHEMA_ERROR,
-                "--view-config requires --view-profile.",
-            )
-        )
+    for message in validate_view_binding_options(
+        view_config_path=view_config_path,
+        view_profile=view_profile,
+    ):
+        diagnostics.append(_diagnostic(CLI_SCHEMA_ERROR, message))
+    if _has_error_diagnostics(diagnostics):
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
@@ -762,38 +756,17 @@ def netlist(
         _emit_diagnostics(diagnostics)
         raise click.exceptions.Exit(1)
 
-    resolved_bindings = None
-    if view_config_path is not None and view_profile is not None:
-        try:
-            from asdl.views.api import (
-                VIEW_APPLY_ERROR,
-                apply_resolved_view_bindings,
-                resolve_design_view_bindings,
-            )
-        except Exception as exc:  # pragma: no cover - defensive: missing optional deps
-            diagnostics.append(
-                _diagnostic(
-                    CLI_IMPORT_ERROR,
-                    f"Failed to load view-binding dependencies: {exc}",
-                )
-            )
-            _emit_diagnostics(diagnostics)
-            raise click.exceptions.Exit(1)
-        resolved_bindings, view_diags = resolve_design_view_bindings(
-            design,
-            config_path=view_config_path,
-            profile_name=view_profile,
-        )
-        diagnostics.extend(view_diags)
-        if resolved_bindings is None or _has_error_diagnostics(diagnostics):
-            _emit_diagnostics(diagnostics)
-            raise click.exceptions.Exit(1)
-        try:
-            design = apply_resolved_view_bindings(design, resolved_bindings)
-        except ValueError as exc:
-            diagnostics.append(_diagnostic(VIEW_APPLY_ERROR, str(exc)))
-            _emit_diagnostics(diagnostics)
-            raise click.exceptions.Exit(1)
+    design, resolved_bindings, view_diags = resolve_and_apply_view_bindings(
+        design=design,
+        view_config_path=view_config_path,
+        view_profile=view_profile,
+        diagnostic_builder=_diagnostic,
+        import_error_code=CLI_IMPORT_ERROR,
+    )
+    diagnostics.extend(view_diags)
+    if design is None or _has_error_diagnostics(diagnostics):
+        _emit_diagnostics(diagnostics)
+        raise click.exceptions.Exit(1)
 
     backend_config, backend_diags = load_backend(
         backend, backend_config_path=backend_config_path
