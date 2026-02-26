@@ -28,9 +28,15 @@ def _backend_config(pattern_rendering: str = "{N}") -> BackendConfig:
             "__subckt_header__": SystemDeviceTemplate(
                 template=".subckt {name} {ports}"
             ),
+            "__subckt_header_params__": SystemDeviceTemplate(
+                template=".subckt {name} {ports} {params}"
+            ),
             "__subckt_footer__": SystemDeviceTemplate(template=".ends {name}"),
             "__subckt_call__": SystemDeviceTemplate(
                 template="X{name} {ports} {ref}"
+            ),
+            "__subckt_call_params__": SystemDeviceTemplate(
+                template="X{name} {ports} {ref} {params}"
             ),
             "__netlist_header__": SystemDeviceTemplate(
                 template="* header {top}"
@@ -619,9 +625,15 @@ def test_render_netlist_ir_warns_on_missing_provenance_and_keeps_file_id_placeho
             "__subckt_header__": SystemDeviceTemplate(
                 template=".subckt {name} {ports} ; file={file_id}"
             ),
+            "__subckt_header_params__": SystemDeviceTemplate(
+                template=".subckt {name} {ports} ; file={file_id} ; params={params}"
+            ),
             "__subckt_footer__": SystemDeviceTemplate(template=".ends {name}"),
             "__subckt_call__": SystemDeviceTemplate(
                 template="X{name} {ports} {ref} ; file={file_id}"
+            ),
+            "__subckt_call_params__": SystemDeviceTemplate(
+                template="X{name} {ports} {ref} {params} ; file={file_id}"
             ),
             "__netlist_header__": SystemDeviceTemplate(
                 template="* header {top} file={file_id}"
@@ -685,3 +697,111 @@ def test_render_netlist_ir_warns_on_missing_provenance_and_keeps_file_id_placeho
     assert any("entry_file_id is missing" in message for message in warning_messages)
     assert any("missing file_id provenance" in message for message in warning_messages)
     assert any("name-only fallback is ambiguous" in message for message in warning_messages)
+
+
+def test_render_netlist_ir_uses_backend_owned_parameterized_subckt_call_templates() -> None:
+    top = NetlistModule(
+        name="TOP",
+        file_id="top.asdl",
+        ports=["A", "Y"],
+        nets=[NetlistNet(name="A"), NetlistNet(name="Y")],
+        instances=[
+            NetlistInstance(
+                name="U1",
+                ref="CHILD",
+                ref_file_id="lib.asdl",
+                params={"L": "2u", "W": "1u"},
+                conns=[
+                    NetlistConn(port="IN", net="A"),
+                    NetlistConn(port="OUT", net="Y"),
+                ],
+            )
+        ],
+    )
+    child = NetlistModule(
+        name="CHILD",
+        file_id="lib.asdl",
+        ports=["IN", "OUT"],
+        nets=[],
+        instances=[],
+    )
+    design = NetlistDesign(
+        modules=[top, child],
+        devices=[],
+        top="TOP",
+        entry_file_id="top.asdl",
+    )
+
+    backends = {
+        "sim.ngspice": BackendConfig(
+            name="sim.ngspice",
+            extension=".spice",
+            comment_prefix="*",
+            templates={
+                "__subckt_header__": SystemDeviceTemplate(template=".subckt {name} {ports}"),
+                "__subckt_header_params__": SystemDeviceTemplate(
+                    template=".subckt {name} {ports} {params}"
+                ),
+                "__subckt_footer__": SystemDeviceTemplate(template=".ends {name}"),
+                "__subckt_call__": SystemDeviceTemplate(template="X{name} {ports} {ref}"),
+                "__subckt_call_params__": SystemDeviceTemplate(
+                    template="X{name} {ports} {ref} {params}"
+                ),
+                "__netlist_header__": SystemDeviceTemplate(template="* header {top}"),
+                "__netlist_footer__": SystemDeviceTemplate(template=".end"),
+            },
+        ),
+        "sim.xyce": BackendConfig(
+            name="sim.xyce",
+            extension=".spice",
+            comment_prefix="*",
+            templates={
+                "__subckt_header__": SystemDeviceTemplate(template=".SUBCKT {name} {ports}"),
+                "__subckt_header_params__": SystemDeviceTemplate(
+                    template=".SUBCKT {name} {ports} PARAMS: {params}"
+                ),
+                "__subckt_footer__": SystemDeviceTemplate(template=".ENDS {name}"),
+                "__subckt_call__": SystemDeviceTemplate(template="X{name} {ports} {ref}"),
+                "__subckt_call_params__": SystemDeviceTemplate(
+                    template="X{name} {ports} {ref} PARAMS: {params}"
+                ),
+                "__netlist_header__": SystemDeviceTemplate(template="* header {top}"),
+                "__netlist_footer__": SystemDeviceTemplate(template=".END"),
+            },
+        ),
+        "sim.spectre": BackendConfig(
+            name="sim.spectre",
+            extension=".scs",
+            comment_prefix="//",
+            templates={
+                "__subckt_header__": SystemDeviceTemplate(template="subckt {name} ({ports})"),
+                "__subckt_header_params__": SystemDeviceTemplate(
+                    template="subckt {name} ({ports}) parameters {params}"
+                ),
+                "__subckt_footer__": SystemDeviceTemplate(template="ends"),
+                "__subckt_call__": SystemDeviceTemplate(template="{name} ({ports}) {ref}"),
+                "__subckt_call_params__": SystemDeviceTemplate(
+                    template="{name} ({ports}) {ref} parameters {params}"
+                ),
+                "__netlist_header__": SystemDeviceTemplate(template="// header {top}"),
+                "__netlist_footer__": SystemDeviceTemplate(template=""),
+            },
+        ),
+    }
+
+    expected_call_line = {
+        "sim.ngspice": "XU1 A Y CHILD L=2u W=1u",
+        "sim.xyce": "XU1 A Y CHILD PARAMS: L=2u W=1u",
+        "sim.spectre": "U1 (A Y) CHILD parameters L=2u W=1u",
+    }
+    for backend_name, backend_config in backends.items():
+        options = EmitOptions(
+            backend_name=backend_name,
+            backend_config=backend_config,
+            emit_timestamp=datetime.datetime(2026, 1, 1, 12, 0, 0),
+        )
+        netlist, diagnostics = _emit_design(design, options)
+
+        assert diagnostics == []
+        assert netlist is not None
+        assert expected_call_line[backend_name] in netlist.splitlines()

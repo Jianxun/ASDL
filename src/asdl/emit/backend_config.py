@@ -16,8 +16,10 @@ MISSING_BACKEND = format_code("EMIT", 4)
 # Required system devices (backends MUST define these)
 REQUIRED_SYSTEM_DEVICES = {
     "__subckt_header__",
+    "__subckt_header_params__",
     "__subckt_footer__",
     "__subckt_call__",
+    "__subckt_call_params__",
     "__netlist_header__",
     "__netlist_footer__",
 }
