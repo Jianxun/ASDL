@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
+from typing import Callable, Optional, TypeVar
 
 from asdl.diagnostics import SourcePos, SourceSpan
 
@@ -380,6 +380,17 @@ def _registry_set_to_dict(registries: RegistrySet) -> dict:
     }
 
 
+_T = TypeVar("_T")
+
+
+def _serialize_sorted_mapping(
+    items: dict[str, _T],
+    serializer: Callable[[_T], dict],
+) -> list[dict]:
+    """Serialize a string-keyed mapping in deterministic key order."""
+    return [serializer(items[item_id]) for item_id in sorted(items.keys())]
+
+
 def _net_bundle_to_dict(net: NetBundle) -> dict:
     """Convert a net bundle into a JSON-ready dict.
 
@@ -443,18 +454,9 @@ def _module_graph_to_dict(module: ModuleGraph) -> dict:
     Returns:
         Mapping payload for the module graph.
     """
-    nets = [
-        _net_bundle_to_dict(module.nets[net_id])
-        for net_id in sorted(module.nets.keys())
-    ]
-    instances = [
-        _instance_bundle_to_dict(module.instances[inst_id])
-        for inst_id in sorted(module.instances.keys())
-    ]
-    endpoints = [
-        _endpoint_bundle_to_dict(module.endpoints[endpoint_id])
-        for endpoint_id in sorted(module.endpoints.keys())
-    ]
+    nets = _serialize_sorted_mapping(module.nets, _net_bundle_to_dict)
+    instances = _serialize_sorted_mapping(module.instances, _instance_bundle_to_dict)
+    endpoints = _serialize_sorted_mapping(module.endpoints, _endpoint_bundle_to_dict)
     return {
         "module_id": module.module_id,
         "name": module.name,
@@ -536,18 +538,9 @@ def _atomized_module_graph_to_dict(module: AtomizedModuleGraph) -> dict:
     Returns:
         Mapping payload for the atomized module graph.
     """
-    nets = [
-        _atomized_net_to_dict(module.nets[net_id])
-        for net_id in sorted(module.nets.keys())
-    ]
-    instances = [
-        _atomized_instance_to_dict(module.instances[inst_id])
-        for inst_id in sorted(module.instances.keys())
-    ]
-    endpoints = [
-        _atomized_endpoint_to_dict(module.endpoints[endpoint_id])
-        for endpoint_id in sorted(module.endpoints.keys())
-    ]
+    nets = _serialize_sorted_mapping(module.nets, _atomized_net_to_dict)
+    instances = _serialize_sorted_mapping(module.instances, _atomized_instance_to_dict)
+    endpoints = _serialize_sorted_mapping(module.endpoints, _atomized_endpoint_to_dict)
     return {
         "module_id": module.module_id,
         "name": module.name,
@@ -609,14 +602,8 @@ def patterned_graph_to_jsonable(graph: ProgramGraph) -> dict:
     Returns:
         JSON-ready mapping containing modules and registries.
     """
-    modules = [
-        _module_graph_to_dict(graph.modules[module_id])
-        for module_id in sorted(graph.modules.keys())
-    ]
-    devices = [
-        _device_def_to_dict(graph.devices[device_id])
-        for device_id in sorted(graph.devices.keys())
-    ]
+    modules = _serialize_sorted_mapping(graph.modules, _module_graph_to_dict)
+    devices = _serialize_sorted_mapping(graph.devices, _device_def_to_dict)
     return {
         "modules": modules,
         "devices": devices,
@@ -633,14 +620,8 @@ def atomized_graph_to_jsonable(graph: AtomizedProgramGraph) -> dict:
     Returns:
         JSON-ready mapping containing modules and registries.
     """
-    modules = [
-        _atomized_module_graph_to_dict(graph.modules[module_id])
-        for module_id in sorted(graph.modules.keys())
-    ]
-    devices = [
-        _atomized_device_def_to_dict(graph.devices[device_id])
-        for device_id in sorted(graph.devices.keys())
-    ]
+    modules = _serialize_sorted_mapping(graph.modules, _atomized_module_graph_to_dict)
+    devices = _serialize_sorted_mapping(graph.devices, _atomized_device_def_to_dict)
     return {
         "modules": modules,
         "devices": devices,
