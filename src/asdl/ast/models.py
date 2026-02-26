@@ -248,6 +248,7 @@ class ModuleDecl(AstBaseModel):
     instances: Optional[InstancesBlock] = None
     nets: Optional[NetsBlock] = None
     patterns: Optional[PatternsBlock] = None
+    parameters: Optional[Dict[str, ParamValue]] = None
     variables: Optional[Dict[str, ParamValue]] = None
     instance_defaults: Optional[InstanceDefaultsBlock] = None
     _instances_loc: Dict[str, "Locatable"] = PrivateAttr(default_factory=dict)

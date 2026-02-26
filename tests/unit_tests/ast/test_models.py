@@ -169,6 +169,11 @@ def test_module_accepts_patterns_and_instance_defaults() -> None:
     assert module.instance_defaults["mos"].bindings == {"B": "$VSS"}
 
 
+def test_module_accepts_parameters_map() -> None:
+    module = ModuleDecl.model_validate({"parameters": {"mode": "ac", "m": 2}})
+    assert module.parameters == {"mode": "ac", "m": 2}
+
+
 def test_module_rejects_invalid_pattern_group() -> None:
     with pytest.raises(ValidationError):
         ModuleDecl.model_validate({"patterns": {"k": "MN<1|2>"}})
@@ -212,6 +217,8 @@ def test_parse_variables_blocks() -> None:
             "top: top",
             "modules:",
             "  top:",
+            "    parameters:",
+            "      mode: ac",
             "    variables:",
             "      ratio: 2",
             "    instances:",
@@ -248,6 +255,7 @@ def test_parse_variables_blocks() -> None:
     module = document.modules["top"]
     device = document.devices["res"]
     backend = device.backends["sim.ngspice"]
+    assert module.parameters == {"mode": "ac"}
     assert module.variables == {"ratio": 2}
     assert device.parameters == {"r": "1k"}
     assert device.variables == {"family": "base"}

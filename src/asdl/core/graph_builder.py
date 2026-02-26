@@ -80,6 +80,7 @@ class PatternedGraphBuilder:
         name: str,
         file_id: str,
         *,
+        parameters: Optional[Dict[str, object]] = None,
         variables: Optional[Dict[str, object]] = None,
     ) -> ModuleGraph:
         """Create a module graph and register it in the program.
@@ -87,6 +88,7 @@ class PatternedGraphBuilder:
         Args:
             name: Module name.
             file_id: Source file identifier.
+            parameters: Optional parameter metadata.
             variables: Optional variable metadata.
 
         Returns:
@@ -97,6 +99,7 @@ class PatternedGraphBuilder:
             module_id=module_id,
             name=name,
             file_id=file_id,
+            parameters=parameters or None,
             variables=variables or None,
         )
         self._modules[module_id] = module
