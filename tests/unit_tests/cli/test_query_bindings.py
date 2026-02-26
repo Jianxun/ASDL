@@ -6,6 +6,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from asdl.cli import cli
+from asdl.views.pathing import is_path_within_scope, join_hierarchy_path
 
 VIEW_FIXTURE_DIR = Path(__file__).parent.parent / "views" / "fixtures"
 VIEW_FIXTURE_ASDL = VIEW_FIXTURE_DIR / "view_binding_fixture.asdl"
@@ -87,3 +88,10 @@ def test_query_bindings_payload_shape_and_ordering() -> None:
         (entry["path"], entry["instance"]) for entry in payload
     )
 
+
+def test_path_helpers_cover_join_and_scope_contract() -> None:
+    assert join_hierarchy_path("tb.dut", "Tgate2") == "tb.dut.Tgate2"
+    assert join_hierarchy_path("", "tb") == "tb"
+    assert is_path_within_scope("tb.dut.Tgate2", "tb.dut")
+    assert is_path_within_scope("tb.dut", "tb.dut")
+    assert not is_path_within_scope("tb.dut2", "tb.dut")

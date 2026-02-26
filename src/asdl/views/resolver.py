@@ -15,6 +15,7 @@ from .instance_index import (
     match_index_entries,
 )
 from .models import ViewProfile
+from .pathing import join_hierarchy_path
 
 
 @dataclass(frozen=True)
@@ -36,9 +37,7 @@ class ResolvedViewBindingEntry:
     @property
     def full_path(self) -> str:
         """Return the full hierarchical instance path including the leaf."""
-        if self.path:
-            return f"{self.path}.{self.instance}"
-        return self.instance
+        return join_hierarchy_path(self.path, self.instance)
 
 
 def resolve_view_bindings(

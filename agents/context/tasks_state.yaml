@@ -12,6 +12,6 @@ T-319:
   pr: 339
   merged: true
 T-320:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 340
+  merged: true

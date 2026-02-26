@@ -20,6 +20,7 @@ from asdl.emit.netlist.render import EmissionNameMapEntry, build_emission_name_m
 from asdl.emit.netlist_ir import NetlistDesign
 from asdl.lowering import run_netlist_ir_pipeline
 from asdl.views.instance_index import build_instance_index
+from asdl.views.pathing import join_hierarchy_path
 
 QUERY_RUNTIME_ERROR = format_code("TOOL", 4)
 QUERY_JSON_SCHEMA_VERSION = 1
@@ -415,9 +416,7 @@ def build_query_bindings_payload(runtime: QueryRuntime) -> list[dict[str, Any]]:
         runtime.resolved_bindings,
         key=lambda entry: (entry.path, entry.instance),
     ):
-        full_path = (
-            f"{binding.path}.{binding.instance}" if binding.path else binding.instance
-        )
+        full_path = join_hierarchy_path(binding.path, binding.instance)
         rows.append(
             QueryBindingsEntry(
                 path=binding.path,
