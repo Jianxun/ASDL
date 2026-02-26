@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from asdl.emit.netlist_ir import NetlistDesign, NetlistDevice, NetlistModule
+from asdl.core.top_resolution import PERMISSIVE_TOP_POLICY, resolve_top_symbol
 
 
 @dataclass(frozen=True)
@@ -124,28 +125,13 @@ def traverse_hierarchy(
 
 def resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
     """Resolve top module using current NetlistIR top/entry-file semantics."""
-
-    if design.top is not None:
-        if design.entry_file_id is not None:
-            for module in design.modules:
-                if module.name == design.top and module.file_id == design.entry_file_id:
-                    return module
-        for module in design.modules:
-            if module.name == design.top:
-                return module
-        return None
-
-    if design.entry_file_id is not None:
-        entry_modules = [
-            module for module in design.modules if module.file_id == design.entry_file_id
-        ]
-        if len(entry_modules) == 1:
-            return entry_modules[0]
-        return None
-
-    if len(design.modules) == 1:
-        return design.modules[0]
-    return None
+    result = resolve_top_symbol(
+        design.modules,
+        top_name=design.top,
+        entry_file_id=design.entry_file_id,
+        policy=PERMISSIVE_TOP_POLICY,
+    )
+    return result.symbol
 
 
 def _select_symbol(
