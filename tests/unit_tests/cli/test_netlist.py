@@ -991,6 +991,42 @@ def test_cli_netlist_view_resolution_failure_exits_nonzero(
     assert "Unable to resolve baseline view" in combined
 
 
+def test_cli_netlist_rejects_view_profile_without_view_config(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "design.asdl"
+    input_path.write_text(_pipeline_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["netlist", str(input_path), "--view-profile", "config_3"],
+    )
+
+    assert result.exit_code == 1
+    stderr = getattr(result, "stderr", "")
+    combined = f"{result.output}{stderr}"
+    assert "--view-profile requires --view-config." in combined
+
+
+def test_cli_netlist_rejects_view_config_without_view_profile(
+    tmp_path: Path, backend_config: Path
+) -> None:
+    input_path = tmp_path / "design.asdl"
+    input_path.write_text(_pipeline_yaml(), encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["netlist", str(input_path), "--view-config", str(VIEW_FIXTURE_CONFIG)],
+    )
+
+    assert result.exit_code == 1
+    stderr = getattr(result, "stderr", "")
+    combined = f"{result.output}{stderr}"
+    assert "--view-config requires --view-profile." in combined
+
+
 def test_cli_netlist_view_fixture_binding_profiles_change_emitted_instance_refs(
     tmp_path: Path, backend_config: Path
 ) -> None:

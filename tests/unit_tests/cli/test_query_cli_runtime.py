@@ -13,6 +13,7 @@ from asdl.cli.query_runtime import (
     query_json_envelope,
     render_query_json,
 )
+from asdl.cli.runtime_common import validate_view_binding_options
 from asdl.views.instance_index import build_instance_index
 
 VIEW_FIXTURE_DIR = Path(__file__).parent.parent / "views" / "fixtures"
@@ -111,3 +112,15 @@ def test_query_runtime_envelope_and_exit_helpers() -> None:
     )
     assert query_exit_code((), missing_anchor=False) == 0
     assert query_exit_code((), missing_anchor=True) == 1
+
+
+def test_validate_view_binding_options_requires_paired_flags() -> None:
+    assert validate_view_binding_options(view_config_path=None, view_profile="config_3") == [
+        "--view-profile requires --view-config."
+    ]
+    assert validate_view_binding_options(
+        view_config_path=VIEW_FIXTURE_CONFIG, view_profile=None
+    ) == ["--view-config requires --view-profile."]
+    assert validate_view_binding_options(
+        view_config_path=VIEW_FIXTURE_CONFIG, view_profile="config_3"
+    ) == []
