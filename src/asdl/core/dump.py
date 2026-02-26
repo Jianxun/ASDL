@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Iterable, Optional
 
 from asdl.diagnostics import Diagnostic, Severity, SourcePos, SourceSpan, format_code
-from asdl.patterns_refactor import VisualizerPatternAtom, expand_literal_enums_for_visualizer
+from asdl.patterns import VisualizerPatternAtom, expand_literal_enums_for_visualizer
 
 from .atomized_graph import (
     AtomizedDeviceDef,

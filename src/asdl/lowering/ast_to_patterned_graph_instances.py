@@ -12,7 +12,7 @@ from asdl.core.graph_builder import PatternedGraphBuilder
 from asdl.core.registries import PatternExprKind
 from asdl.diagnostics import Diagnostic
 from asdl.imports import NameEnv, ProgramDB
-from asdl.patterns_refactor.parser import NamedPattern
+from asdl.patterns.parser import NamedPattern
 
 from .ast_to_patterned_graph_diagnostics import (
     INVALID_INSTANCE_EXPR,

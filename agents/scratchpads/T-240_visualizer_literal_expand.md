@@ -35,7 +35,7 @@
 - 2026-01-29 21:03 — Set T-240 status to done (merged true); next step commit review updates and merge PR.
 
 ## Patch summary
-- Added visualizer enum expansion + numeric label helpers in `src/asdl/patterns_refactor/expand.py` and exported via `src/asdl/patterns_refactor/__init__.py`.
+- Added visualizer enum expansion + numeric label helpers in `src/asdl/patterns/expand.py` and exported via `src/asdl/patterns/__init__.py`.
 - Updated visualizer dump to expand instances/endpoints, emit numeric `conn_label`, and sync net endpoint IDs in `src/asdl/core/dump.py`.
 - Added CLI test covering literal enum expansion and numeric labels in `tests/unit_tests/cli/test_visualizer_dump.py`.
 

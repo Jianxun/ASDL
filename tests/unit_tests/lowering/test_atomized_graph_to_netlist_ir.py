@@ -10,7 +10,7 @@ from asdl.core.atomized_graph import (
 from asdl.core.registries import DeviceBackendInfo, RegistrySet
 from asdl.emit.netlist_ir import NetlistDesign
 from asdl.lowering import build_netlist_ir_design
-from asdl.patterns_refactor.parser import parse_pattern_expr
+from asdl.patterns.parser import parse_pattern_expr
 
 
 def test_build_netlist_ir_design_happy_path() -> None:

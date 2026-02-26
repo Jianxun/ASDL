@@ -3,7 +3,7 @@ from __future__ import annotations
 from asdl.core import PatternedGraphBuilder
 from asdl.diagnostics import SourcePos, SourceSpan
 from asdl.lowering import build_atomized_graph
-from asdl.patterns_refactor import NamedPattern, parse_pattern_expr
+from asdl.patterns import NamedPattern, parse_pattern_expr
 
 
 def _parse_expr(

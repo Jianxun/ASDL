@@ -1,4 +1,4 @@
-"""Parse pattern expressions for the refactor pattern service."""
+"""Parse pattern expressions for the pattern service."""
 
 from __future__ import annotations
 

@@ -3,7 +3,7 @@
 ## Task summary (DoD + verify)
 - Build pure pattern service modules for parsing PatternExpr, named pattern substitution, expansion, and binding (named-axis broadcast).
 - Add tests for splice flattening, endpoint expansion, and axis broadcast mismatches.
-- Verify: `venv/bin/pytest tests/unit_tests/patterns_refactor -v`
+- Verify: `venv/bin/pytest tests/unit_tests/patterns -v`
 
 ## Read (paths)
 - `agents/context/lessons.md`
@@ -35,7 +35,7 @@
 - https://github.com/Jianxun/ASDL/pull/186
 
 ## Verification
-- `venv/bin/pytest tests/unit_tests/patterns_refactor -v`
+- `venv/bin/pytest tests/unit_tests/patterns -v`
 
 ## Status request
 - Done

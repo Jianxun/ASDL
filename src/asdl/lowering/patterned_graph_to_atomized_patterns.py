@@ -7,7 +7,7 @@ from typing import Iterable, Optional
 from asdl.core.atomized_graph import AtomizedPatternOrigin, PatternPart
 from asdl.core.registries import PatternExpressionRegistry
 from asdl.diagnostics import Diagnostic, SourceSpan
-from asdl.patterns_refactor import (
+from asdl.patterns import (
     BindingPlan,
     DEFAULT_MAX_ATOMS,
     PatternError,

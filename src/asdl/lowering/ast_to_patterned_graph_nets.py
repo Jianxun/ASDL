@@ -9,7 +9,7 @@ from asdl.ast.location import Locatable
 from asdl.core.graph_builder import PatternedGraphBuilder
 from asdl.core.registries import GroupSlice, PatternExprKind
 from asdl.diagnostics import Diagnostic
-from asdl.patterns_refactor.parser import NamedPattern
+from asdl.patterns.parser import NamedPattern
 
 from .ast_to_patterned_graph_diagnostics import INVALID_ENDPOINT_EXPR
 from .ast_to_patterned_graph_diagnostics import _diagnostic, _register_span

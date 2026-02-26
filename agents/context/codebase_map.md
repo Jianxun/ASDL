@@ -1,7 +1,7 @@
 # Codebase Map
 
 ## Directories
-- `src/asdl/`: active refactor code (`ast/`, `core/`, `diagnostics/`, `cli/`, `emit/`, `imports/`, `lowering/`, `patterns_refactor/`).
+- `src/asdl/`: active refactor code (`ast/`, `core/`, `diagnostics/`, `cli/`, `emit/`, `imports/`, `lowering/`, `patterns/`).
 - `docs/`: design docs (parser, elaborator, diagnostic system, CLI, schema, logging, xDSL plans, etc.).
 - `docs/legacy/`: decommissioned xDSL-era specs and pipeline docs (GraphIR/IFIR/NFIR).
 - `docs/specs_mvp/`: MVP specs (AST, NFIR, IFIR, netlist emission).
