@@ -9,6 +9,7 @@ from asdl.core.hierarchy import resolve_top_module, traverse_hierarchy
 from asdl.emit.netlist_ir import NetlistDesign
 
 from .models import ViewMatch
+from .pathing import is_path_within_scope, join_hierarchy_path
 
 
 @dataclass(frozen=True)
@@ -32,9 +33,7 @@ class ViewInstanceIndexEntry:
     @property
     def full_path(self) -> str:
         """Return the full instance occurrence path including the leaf."""
-        if self.path:
-            return f"{self.path}.{self.instance}"
-        return self.instance
+        return join_hierarchy_path(self.path, self.instance)
 
 
 @dataclass(frozen=True)
@@ -103,8 +102,7 @@ def _entry_matches_scope(
     if path is None:
         return root_path is not None and entry.path == root_path
 
-    full_path = entry.full_path
-    return full_path == path or full_path.startswith(f"{path}.")
+    return is_path_within_scope(entry.full_path, path)
 
 
 def _logical_module_name(module_symbol: str) -> str:
