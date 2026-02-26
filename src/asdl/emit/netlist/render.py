@@ -260,15 +260,21 @@ def _emit_netlist_ir_module(
     ports = [net_name_map.get(port, port) for port in module.ports]
 
     module_name = _module_emitted_name_ir(module, symbols.module_emitted_names)
+    module_params = _dict_attr_to_strings(getattr(module, "params", None))
+    module_params_str = _format_params_tokens(module_params)
     if not (is_top and not options.top_as_subckt):
         header_context = {
             "name": module_name,
             "sym_name": module.name,
             "ports": " ".join(ports),
+            "params": module_params_str,
             "file_id": module.file_id or "",
         }
+        header_template = (
+            "__subckt_header_params__" if module_params_str else "__subckt_header__"
+        )
         header, header_error = _render_system_device(
-            "__subckt_header__",
+            header_template,
             options.backend_config,
             header_context,
             diagnostics,
@@ -349,11 +355,15 @@ def _emit_netlist_ir_instance(
             "name": instance_name,
             "ports": " ".join(conns),
             "ref": ref_name,
+            "params": _format_params_tokens(_dict_attr_to_strings(instance.params)),
             "sym_name": module.name,
             "file_id": module.file_id or "",
         }
+        call_template = (
+            "__subckt_call_params__" if call_context["params"] else "__subckt_call__"
+        )
         return _render_system_device(
-            "__subckt_call__",
+            call_template,
             options.backend_config,
             call_context,
             diagnostics,
@@ -590,6 +600,12 @@ def _entry_file_id_value_ir(
     if _has_known_file_id(top_module.file_id):
         return top_module.file_id
     return ""
+
+
+def _format_params_tokens(params: Mapping[str, str]) -> str:
+    """Render deterministic `key=value` params using existing token ordering."""
+    tokens = [f"{key}={params[key]}" for key in params]
+    return " ".join(tokens)
 
 
 def _module_key_ir(module: NetlistModule) -> int:
@@ -898,16 +914,8 @@ def _render_system_device(
     template = sys_device.template
     escaped_template, env_vars = _escape_braced_env_vars(template)
 
-    try:
-        placeholders = _template_field_roots(template)
-    except ValueError as exc:
-        diagnostics.append(
-            _diagnostic(
-                MALFORMED_TEMPLATE,
-                f"System device '{device_name}' template is malformed: {exc}",
-                Severity.ERROR,
-            )
-        )
+    placeholders = _validate_template(template, device_name, diagnostics)
+    if placeholders is None:
         return None, True
 
     try:
@@ -938,6 +946,8 @@ def _render_system_device(
 
     should_collapse = False
     if "ports" in placeholders and context.get("ports", "") == "":
+        should_collapse = True
+    if "params" in placeholders and context.get("params", "") == "":
         should_collapse = True
     if should_collapse:
         rendered = _collapse_whitespace(rendered)

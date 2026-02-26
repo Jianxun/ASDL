@@ -27,16 +27,20 @@ from .diagnostics import (
 
 SYSTEM_DEVICE_REQUIRED_PLACEHOLDERS: Dict[str, set[str]] = {
     "__subckt_header__": {"name"},
+    "__subckt_header_params__": {"name", "params"},
     "__subckt_footer__": set(),
     "__subckt_call__": {"name", "ports", "ref"},
+    "__subckt_call_params__": {"name", "ports", "ref", "params"},
     "__netlist_header__": set(),
     "__netlist_footer__": set(),
 }
 
 SYSTEM_DEVICE_ALLOWED_PLACEHOLDERS: Dict[str, set[str]] = {
     "__subckt_header__": {"name", "ports", "file_id", "sym_name"},
+    "__subckt_header_params__": {"name", "ports", "params", "file_id", "sym_name"},
     "__subckt_footer__": {"name", "sym_name"},
     "__subckt_call__": {"name", "ports", "ref", "file_id", "sym_name"},
+    "__subckt_call_params__": {"name", "ports", "ref", "params", "file_id", "sym_name"},
     "__netlist_header__": {
         "backend",
         "top",
