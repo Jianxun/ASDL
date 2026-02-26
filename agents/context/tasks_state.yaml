@@ -28,6 +28,6 @@ T-323:
   pr: 345
   merged: true
 T-324:
-  status: ready_for_review
+  status: review_clean
   pr: 347
   merged: false
