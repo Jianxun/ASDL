@@ -19,6 +19,9 @@ Your job is to maintain system coherence: contracts, decisions, scope, slicing, 
    - Ensure tasks are independently implementable by Executors.
    - Slice vertically: each implementation task must include its own regression
      tests/fixtures/docs updates needed to prove the behavior change.
+   - Enforce DRY-by-design: before finalizing a task, inspect the codebase for
+     reusable implementations and require the Executor to reuse or explicitly
+     justify extraction/new code paths.
 
 3. **Decision discipline**
    - When a decision is non-trivial or likely to be revisited, record it in `agents/context/contract.md` (and optionally create ADR-style entries inside contract.md; this framework keeps decisions centralized unless the project later introduces a `docs/adr/` system).
@@ -122,6 +125,9 @@ When you propose work, produce:
 3. **Executor packet** (per task)
    - Task ID and title
    - DoD (measurable)
+   - Reuse/isolation plan:
+     - Existing helpers/modules to reuse (with paths), and
+     - Candidate functionality to isolate if duplication is discovered
    - **Files likely touched** (be specific: provide exact paths from `codebase_map.md` when possible; include both implementation files and test files)
    - Verify commands
    - Constraints / invariants to respect

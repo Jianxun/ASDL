@@ -37,9 +37,12 @@ Traversal returns ordered `HierarchyEntry` rows:
 
 Shared utility target:
 - `src/asdl/core/hierarchy.py`
+- `src/asdl/core/top_resolution.py` (shared top-selection policy helper)
 
 Core entrypoint:
 - `traverse_hierarchy(design, *, include_devices, order="dfs-pre") -> list[HierarchyEntry]`
+- `resolve_top_module(design) -> NetlistModule | None` (permissive convenience API
+  for traversal/query/view callers)
 
 Parameters:
 - `include_devices: bool`
@@ -52,7 +55,13 @@ Parameters:
 ## Semantics
 
 1. Top resolution:
-- Use NetlistIR top resolution semantics already used in query/views.
+- Top selection must flow through the shared policy helper in
+  `src/asdl/core/top_resolution.py`.
+- Traversal/query/views use permissive policy:
+  - `design.top` + optional `entry_file_id` exact match preferred
+  - when `design.top` is absent, infer only for a unique entry-file module or
+    unique global module
+  - ambiguous/missing top resolves to `None` (non-fatal at this layer)
 
 2. Traversal:
 - Walk instances in authored module instance order.
@@ -83,6 +92,9 @@ Parameters:
 - `asdl.cli.query_runtime` tree payload builders must call shared traversal
   with `include_devices=True`.
 - Subsystems must not duplicate module-selection helpers once migrated.
+- Subsystems must not duplicate top-resolution semantics once migrated; both
+  traversal and emission-facing code paths must consume the shared top policy
+  helper with caller-appropriate strictness.
 
 ---
 
@@ -97,5 +109,6 @@ For fixed design inputs:
 
 ## References
 - ADR: `agents/adr/ADR-0038-shared-hierarchy-traversal.md`
+- ADR: `agents/adr/ADR-0039-shared-top-resolution-policy.md` (Proposed)
 - Query semantics: `docs/specs/spec_cli_query.md`
 - View semantics: `docs/specs/spec_asdl_view_config.md`

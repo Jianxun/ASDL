@@ -27,9 +27,19 @@ canonical connectivity.
 ---
 
 ## Top selection
-- If `design.top` is set, emit that module.
-- If `design.top` is absent and only one module exists, emit that module.
-- If multiple modules exist and `design.top` is absent, emit an error diagnostic.
+- Top selection for emission must use the shared top-resolution policy helper
+  in strict mode (see ADR-0039).
+- If `design.top` is set:
+  - resolve by top name
+  - when `entry_file_id` is present, the selected top must be resolvable in the
+    entry file for emission
+  - unresolved top emits `EMIT-001`
+- If `design.top` is absent:
+  - if `entry_file_id` has exactly one module, use it
+  - else if design has exactly one module, use it
+  - otherwise emit `EMIT-001`
+- Strict emission semantics are diagnostic-producing; permissive non-fatal
+  behavior is reserved for traversal/query/view inspection flows.
 
 ---
 

@@ -1,94 +1,103 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-313
-    title: Add shared hierarchy traversal utility (v0)
+  - id: T-317
+    title: Unify top-module resolution contract with shared policy helper
     owner: Executor
     dod: >
-      Implement shared traversal infrastructure in `src/asdl/core/hierarchy.py`
-      with a single public API
-      `traverse_hierarchy(design, *, include_devices, order="dfs-pre")`.
-      The traversal must be deterministic DFS-pre, include centralized module
-      selection by `(file_id, symbol)`, and enforce ancestry-based cycle stop
-      behavior. Add dedicated unit tests for include/exclude-device policy,
-      stable ordering, module-selection fallback, and cycle handling.
+      Introduce a shared top-resolution helper under `src/asdl/core/` with
+      explicit policy controls for permissive traversal callers vs strict
+      emission callers, then migrate `asdl.core.hierarchy` and
+      `asdl.emit.netlist.ir_utils` to consume it. Preserve existing emission
+      diagnostics behavior (`EMIT-001` cases/messages) while removing duplicated
+      top-resolution semantics between hierarchy and netlist emission. Add
+      regression coverage proving strict/permissive parity on ambiguous/missing
+      top scenarios. Start by auditing existing query/views/emission helpers for
+      reusable top/symbol selection behavior, and document in the scratchpad
+      which logic is reused vs newly isolated.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/core/test_hierarchy.py -v
+      - ./venv/bin/pytest tests/unit_tests/core/test_hierarchy.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
     links:
-      scratchpad: agents/scratchpads/T-313_shared_hierarchy_traversal.md
-      spec: docs/specs/spec_hierarchy_traversal.md
-      adr: agents/adr/ADR-0038-shared-hierarchy-traversal.md
+      scratchpad: agents/scratchpads/T-317_top_resolution_contract_unification.md
+      spec: docs/specs/spec_netlist_emission.md
+      adr: agents/adr/ADR-0039-shared-top-resolution-policy.md
     files:
+      - src/asdl/core/top_resolution.py
       - src/asdl/core/hierarchy.py
-      - src/asdl/core/__init__.py
+      - src/asdl/emit/netlist/ir_utils.py
       - tests/unit_tests/core/test_hierarchy.py
-  - id: T-314
-    title: Migrate views instance index to shared traversal
+      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
+  - id: T-318
+    title: Converge symbol-selection policy across hierarchy and views
     owner: Executor
     depends_on:
-      - T-313
+      - T-317
     dod: >
-      Refactor `asdl.views.instance_index.build_instance_index` to consume
-      shared traversal with `include_devices=False` and preserve current
-      module-only index behavior. Remove duplicated traversal and module
-      selection helpers from views index code once migrated. Keep existing
-      view-binding matching semantics/output unchanged and update regressions
-      to prove no behavior drift.
+      Audit existing symbol-selection/existence logic in hierarchy and views,
+      then introduce one shared symbol-selection helper in `src/asdl/core/`
+      that preserves deterministic `(file_id, symbol)` exact match and name-only
+      fallback behavior. Migrate `asdl.core.hierarchy`, `asdl.views.resolver`,
+      and `asdl.views.api` to consume the shared helper instead of local logic.
+      Document in scratchpad which legacy helpers were removed and which shared
+      APIs are now the source of truth. Add regressions covering ambiguous
+      same-name symbols and deterministic fallback behavior.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/views/test_instance_index.py tests/unit_tests/views/test_view_resolver.py -v
+      - ./venv/bin/pytest tests/unit_tests/core/test_hierarchy.py tests/unit_tests/views/test_view_resolver.py tests/unit_tests/views/test_view_apply.py -v
     links:
-      scratchpad: agents/scratchpads/T-314_views_instance_index_migration.md
+      scratchpad: agents/scratchpads/T-318_symbol_selection_convergence.md
       spec: docs/specs/spec_hierarchy_traversal.md
       adr: agents/adr/ADR-0038-shared-hierarchy-traversal.md
     files:
-      - src/asdl/views/instance_index.py
+      - src/asdl/core/symbol_resolution.py
+      - src/asdl/core/hierarchy.py
       - src/asdl/views/resolver.py
-      - tests/unit_tests/views/test_instance_index.py
+      - src/asdl/views/api.py
       - tests/unit_tests/views/test_view_resolver.py
-  - id: T-315
-    title: Migrate query tree traversal to shared utility
+  - id: T-319
+    title: Deduplicate query and netlist view-resolution orchestration
     owner: Executor
     depends_on:
-      - T-313
+      - T-318
     dod: >
-      Refactor query-tree payload construction to consume shared traversal with
-      `include_devices=True`, preserving current compact/verbose JSON payloads
-      and default ASCII tree text output exactly. Remove duplicate traversal
-      helpers from query runtime once migrated. Retain stage-aware behavior and
-      deterministic ordering with no output contract changes.
+      Audit shared query/netlist CLI flow for view option validation and
+      resolve+apply view-binding orchestration, then extract reusable runtime
+      helper(s) under `src/asdl/cli/` and migrate both
+      `asdl.cli.query_runtime.build_query_runtime` and `asdl.cli.netlist`
+      command flow to use them. Preserve diagnostics and exit-code behavior.
+      Document what orchestration was reused vs isolated in the scratchpad.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/cli/test_query_tree.py tests/unit_tests/cli/test_query_cli_runtime.py -v
+      - ./venv/bin/pytest tests/unit_tests/cli/test_query_cli_runtime.py tests/unit_tests/cli/test_netlist.py -v
     links:
-      scratchpad: agents/scratchpads/T-315_query_tree_traversal_migration.md
-      spec: docs/specs/spec_hierarchy_traversal.md
-      adr: agents/adr/ADR-0038-shared-hierarchy-traversal.md
+      scratchpad: agents/scratchpads/T-319_cli_runtime_orchestration_dedupe.md
+      spec: docs/specs/spec_cli_query.md
+      adr: agents/adr/ADR-0037-cli-query-semantics.md
     files:
+      - src/asdl/cli/runtime_common.py
       - src/asdl/cli/query_runtime.py
       - src/asdl/cli/__init__.py
-      - tests/unit_tests/cli/test_query_tree.py
       - tests/unit_tests/cli/test_query_cli_runtime.py
-  - id: T-316
-    title: Shared traversal convergence and guardrail tests
+      - tests/unit_tests/cli/test_netlist.py
+  - id: T-320
+    title: Unify hierarchy path identity helpers for query and views
     owner: Executor
     depends_on:
-      - T-314
-      - T-315
+      - T-319
     dod: >
-      Add convergence coverage that jointly validates module-only behavior for
-      views indexing and module+device behavior for query tree after shared
-      traversal migration. Confirm duplicate traversal/module-selection logic is
-      removed from migrated subsystems and shared utility is the sole source of
-      hierarchy traversal truth.
+      Audit path composition/parsing logic used by query bindings and view
+      resolver/index data models, then isolate shared path helper(s) to avoid
+      duplicated full-path string assembly. Migrate `asdl.views.instance_index`,
+      `asdl.views.resolver`, and `asdl.cli.query_runtime` to use the shared
+      helper(s), preserving output payload contracts. Record legacy path logic
+      removed and new shared helper API in the scratchpad.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/views/test_instance_index.py tests/unit_tests/cli/test_query_tree.py -v
+      - ./venv/bin/pytest tests/unit_tests/cli/test_query_bindings.py tests/unit_tests/views/test_view_apply.py -v
     links:
-      scratchpad: agents/scratchpads/T-316_shared_traversal_convergence.md
-      spec: docs/specs/spec_hierarchy_traversal.md
-      adr: agents/adr/ADR-0038-shared-hierarchy-traversal.md
+      scratchpad: agents/scratchpads/T-320_path_identity_dedupe.md
+      spec: docs/specs/spec_cli_query.md
     files:
-      - src/asdl/core/hierarchy.py
+      - src/asdl/views/pathing.py
       - src/asdl/views/instance_index.py
+      - src/asdl/views/resolver.py
       - src/asdl/cli/query_runtime.py
-      - tests/unit_tests/views/test_instance_index.py
-      - tests/unit_tests/cli/test_query_tree.py
+      - tests/unit_tests/cli/test_query_bindings.py
 backlog: []

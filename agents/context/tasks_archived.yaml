@@ -1,6 +1,10 @@
 schema_version: 1
 
 archive:
+  - T-316: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-316_shared_traversal_convergence.md, pr: 336}
+  - T-315: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-315_query_tree_traversal_migration.md, pr: 335}
+  - T-314: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-314_views_instance_index_migration.md, pr: 334}
+  - T-313: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-313_shared_hierarchy_traversal.md, pr: 333}
   - T-307: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-307_query_bindings.md, pr: 330}
   - T-306: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-306_query_tree.md, pr: 329}
   - T-305: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-305_query_cli_foundation.md, pr: 328}
