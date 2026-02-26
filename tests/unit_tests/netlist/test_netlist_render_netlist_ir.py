@@ -1,7 +1,12 @@
 import datetime
+from pathlib import Path
 
 from asdl.diagnostics import Severity, format_code
-from asdl.emit.backend_config import BackendConfig, SystemDeviceTemplate
+from asdl.emit.backend_config import (
+    BackendConfig,
+    SystemDeviceTemplate,
+    load_backend_config,
+)
 from asdl.emit.netlist.api import EmitOptions
 from asdl.emit.netlist.render import _emit_design, build_emission_name_map
 from asdl.emit.netlist_ir import (
@@ -17,6 +22,9 @@ from asdl.emit.netlist_ir import (
 )
 
 BACKEND_NAME = "sim.ngspice"
+EXAMPLES_BACKENDS = (
+    Path(__file__).resolve().parents[3] / "examples" / "config" / "backends.yaml"
+)
 
 
 def _backend_config(pattern_rendering: str = "{N}") -> BackendConfig:
@@ -805,6 +813,67 @@ def test_render_netlist_ir_uses_backend_owned_parameterized_subckt_call_template
         assert diagnostics == []
         assert netlist is not None
         assert expected_call_line[backend_name] in netlist.splitlines()
+
+
+def test_render_netlist_ir_uses_examples_backend_parameterized_forms() -> None:
+    top = NetlistModule(
+        name="TOP",
+        file_id="top.asdl",
+        ports=["A", "Y"],
+        nets=[NetlistNet(name="A"), NetlistNet(name="Y")],
+        instances=[
+            NetlistInstance(
+                name="U1",
+                ref="CHILD",
+                ref_file_id="lib.asdl",
+                params={"L": "2u", "W": "1u"},
+                conns=[
+                    NetlistConn(port="IN", net="A"),
+                    NetlistConn(port="OUT", net="Y"),
+                ],
+            )
+        ],
+    )
+    child = NetlistModule(
+        name="CHILD",
+        file_id="lib.asdl",
+        ports=["IN", "OUT"],
+        parameters={"L": "2u", "W": "1u"},
+        nets=[],
+        instances=[],
+    )
+    design = NetlistDesign(
+        modules=[top, child],
+        devices=[],
+        top="TOP",
+        entry_file_id="top.asdl",
+    )
+
+    expected_header_line = {
+        "sim.ngspice": ".subckt CHILD IN OUT L=2u W=1u",
+        "sim.xyce": ".subckt CHILD IN OUT PARAMS: L=2u W=1u",
+        "sim.spectre": "subckt CHILD (IN OUT) parameters L=2u W=1u",
+    }
+    expected_call_line = {
+        "sim.ngspice": "XU1 A Y CHILD L=2u W=1u",
+        "sim.xyce": "XU1 A Y CHILD PARAMS: L=2u W=1u",
+        "sim.spectre": "U1 (A Y) CHILD parameters L=2u W=1u",
+    }
+
+    for backend_name in ("sim.ngspice", "sim.xyce", "sim.spectre"):
+        backend_config = load_backend_config(backend_name, EXAMPLES_BACKENDS)
+        options = EmitOptions(
+            backend_name=backend_name,
+            backend_config=backend_config,
+            emit_timestamp=datetime.datetime(2026, 1, 1, 12, 0, 0),
+        )
+        netlist, diagnostics = _emit_design(design, options)
+
+        assert diagnostics == []
+        assert netlist is not None
+        lines = netlist.splitlines()
+        assert expected_header_line[backend_name] in lines
+        assert expected_call_line[backend_name] in lines
 
 
 def test_render_netlist_ir_uses_module_parameters_for_subckt_header_dispatch() -> None:
