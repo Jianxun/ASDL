@@ -1,0 +1,40 @@
+top: tb
+
+imports:
+    gf: gf180mcu.asdl          # GF180 device library
+    ana: analoglib.asdl          # Analog standard cell library
+    sim: simulation.xyce.asdl      # Simulation templates
+modules:
+
+    tb:
+        instances:
+            #dut: {ref: cc_nmos, parameters: {m: 1}}
+            dut: cc_nmos m=1
+            vsrc_g: ana.vdc dc=0.8
+            vsrc_d: ana.vdc dc=0.8
+
+
+            models: gf.models
+            dc: sim.dc vsrc=vsrc_g from=0 to=2.5 step=0.01
+            save: sim.save sim_type=DC signals='V(*) I(*)'
+
+        nets:
+            '0': [dut.VSS, vsrc_g.n, vsrc_d.n]
+            G: [dut.G, vsrc_g.p]
+            D: [dut.D, vsrc_d.p]
+
+    cc_nmos:
+        parameters:
+            m: 1     # multiplier for the number of fingers
+        variables:
+            
+            L: 0.28u  # gate length
+            W: 8u     # gate width
+            NF: 6     # fingers
+        instances:
+            mn_cs: gf.nfet_03v3 L={L} W={W} NF={NF} m=m
+        nets:
+            $VSS: [mn_cs.<s|b>] 
+            $G: [mn_cs.g]    
+            $D: [mn_cs.d] 
+

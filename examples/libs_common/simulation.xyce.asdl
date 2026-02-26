@@ -31,6 +31,16 @@ devices:
         template: |
           .TRAN {from} {to} {step}
 
+
+  save:
+    parameters:
+      sim_type: ''
+      signals: ''
+    backends:
+      sim.xyce:
+        template: |
+          .PRINT {sim_type} {signals}
+
   save_dc:
     parameters:
       signals: ''

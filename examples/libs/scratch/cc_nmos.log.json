@@ -1,0 +1,29 @@
+{
+  "diagnostic_count": 0,
+  "diagnostic_severity_counts": {
+    "error": 0,
+    "fatal": 0,
+    "info": 0,
+    "warning": 0
+  },
+  "diagnostics": [],
+  "emission_name_map": [
+    {
+      "base_name": "tb",
+      "emitted_name": "tb",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/scratch/cc_nmos.asdl",
+      "renamed": false,
+      "symbol": "tb"
+    },
+    {
+      "base_name": "cc_nmos",
+      "emitted_name": "cc_nmos",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/examples/libs/scratch/cc_nmos.asdl",
+      "renamed": false,
+      "symbol": "cc_nmos"
+    }
+  ],
+  "view_bindings": [],
+  "warning_count": 0,
+  "warnings": []
+}
