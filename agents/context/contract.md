@@ -49,6 +49,9 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - Instance parameter semantics MUST normalize to the same `(ref, parameters)` payload regardless of inline or structured authoring form.
 - System device names (prefixed `__`) are reserved; regular device names MUST NOT use this prefix.
 - Backend config file MUST define all required system devices; missing required system devices emit `MISSING_BACKEND` error and abort emission.
+- Parameterized subckt syntax is backend-defined via system-device templates:
+  `__subckt_header_params__` and `__subckt_call_params__`; emitter policy may
+  branch only on parameter presence, never backend name.
 - When `top_as_subckt` is false, netlist emission MUST NOT emit any top-level subckt wrapper lines.
 - Top-module selection semantics MUST be shared across traversal/query/views and emission via a single core helper; emission MUST use strict diagnostic behavior while traversal/query/views MAY use permissive non-fatal behavior.
 - New algorithms MUST NOT be introduced before checking for reusable implementations in the codebase; if duplication is found, the change MUST centralize or isolate shared behavior with regression coverage.
@@ -112,6 +115,9 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - ADR-0037: CLI query uses stage-aware v0 semantics with a stable JSON envelope, deterministic ordering, exact-match refs behavior, and explicit error/empty-result rules.
 - ADR-0038: Shared hierarchy traversal infrastructure centralizes deterministic traversal/module selection with policy flags for module-only vs module+device inclusion.
 - ADR-0039 (Proposed): Shared top-resolution policy helper centralizes top selection semantics with strict (emission) and permissive (inspection/traversal) modes.
+- ADR-0040 (Proposed): Parameterized subckt syntax is defined via required
+  `__subckt_header_params__`/`__subckt_call_params__` system templates with
+  deterministic `{params}` rendering as space-delimited `key=value` tokens.
 
 - 2026-01-24: ADR-0024 -- Replace IFIR with NetlistIR dataclass model; remove xDSL from the refactor pipeline (supersedes ADR-0014).
 - 2026-01-23: ADR-0023 -- Core graphs include device definitions; modules/devices use `ports` lists (never None); backend templates stay outside core graphs.
@@ -131,6 +137,10 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2026-02-24: ADR-0037 -- Freeze CLI query v0 semantics for stage behavior, JSON envelope (`schema_version` + `kind`), deterministic ordering, exact `refs --module` matching, user-facing `connections/terminal`, and hard-error vs empty-success semantics.
 - 2026-02-25: ADR-0038 -- Introduce shared hierarchy traversal infrastructure with explicit inclusion policy (`module_only` vs `module_and_device`) to eliminate duplicated traversal/module-selection logic across views and query.
 - 2026-02-26: ADR-0039 (Proposed) -- Introduce a shared top-resolution policy helper used by both traversal and emission, with strict diagnostic behavior for emission and permissive behavior for query/views traversal.
+- 2026-02-26: ADR-0040 (Proposed) -- Add required parameterized subckt system
+  templates (`__subckt_header_params__`, `__subckt_call_params__`) so backend
+  syntax differences remain in backend config; `{params}` renders as
+  deterministic space-delimited `key=value` tokens.
 - 2026-02-26: DRY task-slicing rule -- Architect packets must include explicit reuse/isolation instructions so Executors check existing implementations first and centralize duplicated policies.
 - 2026-02-22: View-binding regressions must use stable test fixtures under `tests/` rather than `examples/` because examples are experimental and can change independently of compiler contracts.
 - 2026-02-01: Docs pipeline now supports Sphinx (Tier 1/2) for ASDL library documentation; Markdown generation remains supported but Sphinx-native rendering is in scope.

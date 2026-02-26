@@ -15,3 +15,7 @@ T-320:
   status: done
   pr: 340
   merged: true
+T-321:
+  status: ready
+  pr: null
+  merged: false

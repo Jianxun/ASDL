@@ -10,7 +10,8 @@ canonical connectivity.
 ## MVP scope
 - Target backend is selected via CLI `--backend` (default `sim.ngspice`).
 - Only named connections (no positional conns).
-- Subckt parameters are not supported.
+- Parameterized subckt headers/calls are supported through backend system
+  templates (no backend-name conditionals in emitter code).
 - Device parameters are merged and rendered as `k=v` tokens.
 - Device variables are merged and exposed as `{var}` placeholders.
 - Output extension is determined by backend config (`extension`).
@@ -168,8 +169,10 @@ Every backend must define the following system devices in `backends.yaml`:
 | System Device | Purpose | Required Placeholders | Optional Placeholders |
 |---------------|---------|----------------------|----------------------|
 | `__subckt_header__` | Non-top module header | `{name}` | `{ports}`, `{file_id}`, `{sym_name}` |
+| `__subckt_header_params__` | Non-top module header (module has params) | `{name}`, `{params}` | `{ports}`, `{file_id}`, `{sym_name}` |
 | `__subckt_footer__` | Non-top module footer | - | `{name}` |
 | `__subckt_call__` | Module instantiation | `{name}`, `{ports}`, `{ref}` | `{file_id}`, `{sym_name}` |
+| `__subckt_call_params__` | Module instantiation (instance has params) | `{name}`, `{ports}`, `{ref}`, `{params}` | `{file_id}`, `{sym_name}` |
 | `__netlist_header__` | File-level preamble | - | `{backend}`, `{top}`, `{file_id}`, `{top_sym_name}`, `{emit_date}`, `{emit_time}` |
 | `__netlist_footer__` | File-level postamble | - | `{backend}`, `{top}`, `{file_id}`, `{top_sym_name}`, `{emit_date}`, `{emit_time}` |
 
@@ -183,8 +186,10 @@ Every backend must define the following system devices in `backends.yaml`:
     comment_prefix: "*"
     templates:
       __subckt_header__: ".subckt {name} {ports}"
+      __subckt_header_params__: ".subckt {name} {ports} {params}"
       __subckt_footer__: ".ends {name}"
       __subckt_call__: "X{name} {ports} {ref}"
+      __subckt_call_params__: "X{name} {ports} {ref} {params}"
       __netlist_header__: ""
       __netlist_footer__: ".end"
   ```
@@ -195,6 +200,12 @@ Every backend must define the following system devices in `backends.yaml`:
 - System devices are rendered using `_render_system_device()` (similar to `_emit_instance()`)
 - Placeholder validation applies (same as device backends)
 - Whitespace collapsing applies when `{ports}` is empty
+- For parameterized subckt rendering:
+  - use `__subckt_header_params__` when a module declaration carries subckt
+    default parameters; otherwise use `__subckt_header__`
+  - use `__subckt_call_params__` when a module instance provides subckt
+    parameter overrides; otherwise use `__subckt_call__`
+  - render `{params}` as deterministic, space-joined `key=value` tokens
 - Missing required system devices emit `MISSING_BACKEND` error and abort emission
 - Netlist header/footer are rendered once per file via `__netlist_header__` and
   `__netlist_footer__` (empty templates emit no line)

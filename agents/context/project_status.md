@@ -3,6 +3,10 @@
 Brief context record for the Architect; reconcile from task status and reviews.
 
 ## Current state
+- Drafted ADR-0040 (Proposed) and spec updates for backend-owned
+  parameterized-subckt system templates:
+  `__subckt_header_params__` and `__subckt_call_params__`, with deterministic
+  `{params}` rendering as space-delimited `key=value` tokens.
 - View-decorated symbol and view-binding specs were tightened and aligned with
   accepted ADRs: ADR-0034 (DFS-stable ordinal collision naming) and ADR-0035
   (consolidated compile log).

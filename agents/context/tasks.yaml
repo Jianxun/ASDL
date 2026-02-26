@@ -100,4 +100,30 @@ current_sprint:
       - src/asdl/views/resolver.py
       - src/asdl/cli/query_runtime.py
       - tests/unit_tests/cli/test_query_bindings.py
+  - id: T-321
+    title: Implement parameterized subckt system-template dispatch
+    owner: Executor
+    dod: >
+      Audit existing system-device rendering paths in netlist emission and
+      reuse shared template/placeholder validation helpers where possible.
+      Implement parameter-presence dispatch for module headers/calls:
+      `__subckt_header__` vs `__subckt_header_params__` and `__subckt_call__`
+      vs `__subckt_call_params__`. Render `{params}` as deterministic
+      space-delimited `key=value` tokens with stable ordering, and preserve
+      whitespace-collapsing behavior when optional placeholders are empty. Add
+      regression coverage for ngspice/xyce/spectre-style backend templates to
+      prove backend-owned syntax differences (including keyworded forms such as
+      `PARAMS:`) without backend-name conditionals in compiler code.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/emit/test_backend_config.py -v
+    links:
+      scratchpad: agents/scratchpads/T-321_parameterized_subckt_templates.md
+      spec: docs/specs/spec_netlist_emission.md
+      adr: agents/adr/ADR-0040-parameterized-subckt-system-templates.md
+    files:
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/templates.py
+      - examples/config/backends.yaml
+      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
+      - tests/unit_tests/emit/test_backend_config.py
 backlog: []
