@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
-from asdl.emit.netlist_ir import NetlistDesign
+from asdl.core.symbol_resolution import index_symbols, symbol_exists
+from asdl.emit.netlist_ir import NetlistDesign, NetlistModule
 
 from .instance_index import (
     ViewInstanceIndex,
@@ -60,7 +61,7 @@ def resolve_view_bindings(
             unavailable in the loaded design modules.
     """
     index = build_instance_index(design)
-    modules_by_key, module_name_counts = _build_symbol_indexes(design)
+    modules_by_key, modules_by_name = index_symbols(design.modules)
 
     sidecar: list[ResolvedViewBindingEntry] = []
     sidecar_positions: dict[str, int] = {}
@@ -71,7 +72,7 @@ def resolve_view_bindings(
             index_entry,
             view_order=profile.view_order,
             modules_by_key=modules_by_key,
-            module_name_counts=module_name_counts,
+            modules_by_name=modules_by_name,
         )
         resolved_entry = ResolvedViewBindingEntry(
             path=index_entry.path,
@@ -104,7 +105,7 @@ def resolve_view_bindings(
             symbol=resolved_entry.resolved,
             file_id=source_entry.ref_file_id,
             modules_by_key=modules_by_key,
-            module_name_counts=module_name_counts,
+            modules_by_name=modules_by_name,
         ):
             raise ValueError(
                 "Resolved symbol "
@@ -119,8 +120,8 @@ def _resolve_baseline_symbol(
     entry: ViewInstanceIndexEntry,
     *,
     view_order: list[str],
-    modules_by_key: set[tuple[Optional[str], str]],
-    module_name_counts: Dict[str, int],
+    modules_by_key: dict[tuple[Optional[str], str], NetlistModule],
+    modules_by_name: dict[str, list[NetlistModule]],
 ) -> str:
     """Select baseline resolved symbol for one instance entry.
 
@@ -128,7 +129,7 @@ def _resolve_baseline_symbol(
         entry: Indexed instance entry with logical module context.
         view_order: Ordered precedence list from a view profile.
         modules_by_key: Available modules keyed by `(file_id, symbol)`.
-        module_name_counts: Module-name occurrence counts across the design.
+        modules_by_name: Modules grouped by symbol name.
 
     Returns:
         Resolved symbol selected from authored ref or `view_order` candidates.
@@ -145,7 +146,7 @@ def _resolve_baseline_symbol(
             symbol=candidate,
             file_id=entry.ref_file_id,
             modules_by_key=modules_by_key,
-            module_name_counts=module_name_counts,
+            modules_by_name=modules_by_name,
         ):
             return candidate
 
@@ -155,30 +156,12 @@ def _resolve_baseline_symbol(
     )
 
 
-def _build_symbol_indexes(
-    design: NetlistDesign,
-) -> tuple[set[tuple[Optional[str], str]], Dict[str, int]]:
-    """Build symbol lookup indexes used by baseline and final checks.
-
-    Args:
-        design: NetlistIR design containing module symbols.
-
-    Returns:
-        Tuple of keyed symbol set and global name-count map.
-    """
-    modules_by_key = {(module.file_id, module.name) for module in design.modules}
-    module_name_counts: Dict[str, int] = {}
-    for module in design.modules:
-        module_name_counts[module.name] = module_name_counts.get(module.name, 0) + 1
-    return modules_by_key, module_name_counts
-
-
 def _module_symbol_exists(
     *,
     symbol: str,
     file_id: Optional[str],
-    modules_by_key: set[tuple[Optional[str], str]],
-    module_name_counts: Dict[str, int],
+    modules_by_key: dict[tuple[Optional[str], str], NetlistModule],
+    modules_by_name: dict[str, list[NetlistModule]],
 ) -> bool:
     """Check whether a module symbol is present in the loaded design.
 
@@ -186,14 +169,17 @@ def _module_symbol_exists(
         symbol: Module symbol to validate.
         file_id: Preferred source file identifier context.
         modules_by_key: Available modules keyed by `(file_id, symbol)`.
-        module_name_counts: Module-name occurrence counts across the design.
+        modules_by_name: Modules grouped by symbol name.
 
     Returns:
         True when symbol exists in-file or is globally unambiguous by name.
     """
-    if (file_id, symbol) in modules_by_key:
-        return True
-    return module_name_counts.get(symbol, 0) == 1
+    return symbol_exists(
+        symbols_by_key=modules_by_key,
+        symbols_by_name=modules_by_name,
+        name=symbol,
+        file_id=file_id,
+    )
 
 
 def _index_has_hierarchy_path(index: ViewInstanceIndex, path: str) -> bool:

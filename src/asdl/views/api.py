@@ -7,6 +7,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Optional
 
+from asdl.core.symbol_resolution import index_symbols, select_symbol
 from asdl.diagnostics import Diagnostic, Severity, format_code
 from asdl.emit.netlist_ir import NetlistDesign, NetlistModule
 
@@ -124,10 +125,7 @@ def apply_resolved_view_bindings(
             parts.append(f"unknown paths: {', '.join(extra_paths)}")
         raise ValueError("Resolved sidecar does not match design index (" + "; ".join(parts) + ")")
 
-    modules_by_key = {(module.file_id, module.name): module for module in design.modules}
-    modules_by_name: dict[str, list[NetlistModule]] = {}
-    for module in design.modules:
-        modules_by_name.setdefault(module.name, []).append(module)
+    modules_by_key, modules_by_name = index_symbols(design.modules)
     base_modules_by_name = {
         module_name: candidates.copy() for module_name, candidates in modules_by_name.items()
     }
@@ -269,20 +267,13 @@ def _select_module(
     file_id: Optional[str],
 ) -> Optional[NetlistModule]:
     """Select one module by symbol name with optional file-id disambiguation."""
-    if file_id is not None:
-        exact = modules_by_key.get((file_id, name))
-        if exact is not None:
-            return exact
-
-    candidates = modules_by_name.get(name, [])
-    if len(candidates) == 1:
-        return candidates[0]
-    if candidates:
-        base_candidates = base_modules_by_name.get(name, [])
-        if base_candidates:
-            return base_candidates[-1]
-        return candidates[-1]
-    return None
+    return select_symbol(
+        symbols_by_key=modules_by_key,
+        symbols_by_name=modules_by_name,
+        name=name,
+        file_id=file_id,
+        fallback_by_name=base_modules_by_name,
+    )
 
 
 def _build_occurrence_module_file_id(
