@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from asdl.emit.netlist_ir import NetlistDesign, NetlistDevice, NetlistModule
+from asdl.emit.netlist_ir import NetlistDesign, NetlistModule
+from asdl.core.symbol_resolution import index_symbols, select_symbol
 from asdl.core.top_resolution import PERMISSIVE_TOP_POLICY, resolve_top_symbol
 
 
@@ -61,15 +62,8 @@ def traverse_hierarchy(
     if top is None:
         return []
 
-    modules_by_key = {(module.file_id, module.name): module for module in design.modules}
-    modules_by_name: dict[str, list[NetlistModule]] = {}
-    for module in design.modules:
-        modules_by_name.setdefault(module.name, []).append(module)
-
-    devices_by_key = {(device.file_id, device.name): device for device in design.devices}
-    devices_by_name: dict[str, list[NetlistDevice]] = {}
-    for device in design.devices:
-        devices_by_name.setdefault(device.name, []).append(device)
+    modules_by_key, modules_by_name = index_symbols(design.modules)
+    devices_by_key, devices_by_name = index_symbols(design.devices)
 
     entries: list[HierarchyEntry] = []
 
@@ -81,7 +75,7 @@ def traverse_hierarchy(
         for instance in module.instances:
             full_path = f"{parent_path}.{instance.name}"
 
-            target_module = _select_symbol(
+            target_module = select_symbol(
                 symbols_by_name=modules_by_name,
                 symbols_by_key=modules_by_key,
                 name=instance.ref,
@@ -89,7 +83,7 @@ def traverse_hierarchy(
             )
             is_device = False
             if target_module is None:
-                target_device = _select_symbol(
+                target_device = select_symbol(
                     symbols_by_name=devices_by_name,
                     symbols_by_key=devices_by_key,
                     name=instance.ref,
@@ -132,25 +126,6 @@ def resolve_top_module(design: NetlistDesign) -> Optional[NetlistModule]:
         policy=PERMISSIVE_TOP_POLICY,
     )
     return result.symbol
-
-
-def _select_symbol(
-    *,
-    symbols_by_name: dict[str, list[NetlistModule] | list[NetlistDevice]],
-    symbols_by_key: dict[tuple[Optional[str], str], NetlistModule | NetlistDevice],
-    name: str,
-    file_id: Optional[str],
-) -> Optional[NetlistModule | NetlistDevice]:
-    """Select module/device symbol by exact key or deterministic name fallback."""
-
-    if file_id is not None:
-        return symbols_by_key.get((file_id, name))
-    candidates = symbols_by_name.get(name, [])
-    if len(candidates) == 1:
-        return candidates[0]
-    if candidates:
-        return candidates[-1]
-    return None
 
 
 __all__ = ["HierarchyEntry", "resolve_top_module", "traverse_hierarchy"]

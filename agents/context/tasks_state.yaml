@@ -4,9 +4,9 @@ T-317:
   pr: 337
   merged: true
 T-318:
-  status: ready
-  pr: null
-  merged: false
+  status: done
+  pr: 338
+  merged: true
 T-319:
   status: ready
   pr: null

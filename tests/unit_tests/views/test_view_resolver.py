@@ -151,6 +151,31 @@ def test_resolve_view_bindings_raises_when_baseline_candidate_missing() -> None:
         resolve_view_bindings(design, profile)
 
 
+def test_resolve_view_bindings_uses_deterministic_fallback_for_ambiguous_symbols() -> None:
+    """Ambiguous same-name symbols resolve by deterministic name-only fallback."""
+    design = NetlistDesign(
+        modules=[
+            NetlistModule(
+                name="tb",
+                file_id="file://tb",
+                instances=[
+                    NetlistInstance(name="x1", ref="Dup", ref_file_id=None),
+                ],
+            ),
+            NetlistModule(name="Dup", file_id="file://lib_a"),
+            NetlistModule(name="Dup", file_id="file://lib_b"),
+        ],
+        top="tb",
+    )
+    profile = ViewProfile.model_validate({"view_order": ["default"]})
+
+    result = resolve_view_bindings(design, profile)
+
+    assert [(entry.path, entry.instance, entry.resolved) for entry in result] == [
+        ("tb", "x1", "Dup")
+    ]
+
+
 def test_resolve_view_bindings_raises_for_missing_rule_bind_symbol() -> None:
     """Rules must bind to symbols that exist in loaded design modules."""
     design = _design_for_resolution()
