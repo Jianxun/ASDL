@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from asdl.patterns_refactor import (
+from asdl.patterns import (
     AxisSpec,
     NamedPattern,
     PatternExpr,

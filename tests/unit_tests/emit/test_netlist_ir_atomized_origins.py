@@ -11,7 +11,7 @@ from asdl.core.registries import RegistrySet
 from asdl.emit.backend_config import BackendConfig, SystemDeviceTemplate
 from asdl.emit.netlist import emit_netlist
 from asdl.lowering import build_netlist_ir_design
-from asdl.patterns_refactor.parser import parse_pattern_expr
+from asdl.patterns.parser import parse_pattern_expr
 
 
 def _backend_config(pattern_rendering: str = "{N}") -> BackendConfig:

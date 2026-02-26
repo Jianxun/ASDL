@@ -1,4 +1,4 @@
-"""Refactor pattern service utilities."""
+"""Pattern service utilities."""
 
 from .bind import BindingPlan, bind_patterns
 from .expand import (

@@ -9,7 +9,7 @@ from asdl.ast.location import Locatable
 from asdl.core.graph_builder import PatternedGraphBuilder
 from asdl.core.registries import PatternExprKind
 from asdl.diagnostics import Diagnostic, Severity
-from asdl.patterns_refactor.parser import (
+from asdl.patterns.parser import (
     NamedPattern,
     PatternError,
     parse_pattern_expr,

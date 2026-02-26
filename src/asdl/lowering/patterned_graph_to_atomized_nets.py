@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from asdl.core.atomized_graph import AtomizedEndpoint, AtomizedNet
 from asdl.core.graph import ModuleGraph, NetBundle
-from asdl.patterns_refactor import PatternExpr
+from asdl.patterns import PatternExpr
 
 from .patterned_graph_to_atomized_context import (
     INVALID_ENDPOINT_EXPR,

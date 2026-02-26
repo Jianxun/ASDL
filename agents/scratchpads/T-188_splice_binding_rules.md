@@ -1,6 +1,6 @@
 # Task summary (DoD + verify)
 - DoD: Treat spliced net names as errors in PatternedGraph lowering and add binding tests that allow spliced endpoints only for index or scalar bindings while rejecting spliced broadcast. Ensure diagnostics align with the refactor spec updates.
-- Verify: venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/patterns_refactor/test_binding.py -v
+- Verify: venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/patterns/test_binding.py -v
 
 # Read (paths)
 - agents/context/lessons.md
@@ -30,7 +30,7 @@
 - https://github.com/Jianxun/ASDL/pull/196
 
 # Verification
-- `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/patterns_refactor/test_binding.py -v`
+- `venv/bin/pytest tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/patterns/test_binding.py -v`
 
 # Status request
 - Done

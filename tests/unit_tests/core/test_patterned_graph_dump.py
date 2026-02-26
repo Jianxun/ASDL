@@ -16,7 +16,7 @@ from asdl.core import (
     patterned_graph_to_jsonable,
 )
 from asdl.diagnostics import SourcePos, SourceSpan
-from asdl.patterns_refactor.parser import (
+from asdl.patterns.parser import (
     AxisSpec,
     PatternExpr,
     PatternGroup,

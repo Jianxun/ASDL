@@ -149,7 +149,7 @@ def DesignOp(
     *,
     region: list[object],
     top: str | None = None,
-    entry_file_id: str | None = None,
+    entry_file_id: str | None = DEFAULT_FILE_ID,
 ) -> NetlistDesign:
     modules = [item for item in region if isinstance(item, NetlistModule)]
     devices = [item for item in region if isinstance(item, NetlistDevice)]
@@ -294,11 +294,8 @@ def test_emit_netlist_device_params_and_top_default() -> None:
         ]
     )
     assert netlist == expected
-    assert [diag.severity for diag in diagnostics] == [Severity.WARNING, Severity.WARNING]
-    assert [diag.code for diag in diagnostics] == [
-        format_code("EMIT", 15),
-        format_code("EMIT", 2),
-    ]
+    assert [diag.severity for diag in diagnostics] == [Severity.WARNING]
+    assert [diag.code for diag in diagnostics] == [format_code("EMIT", 2)]
     assert diagnostics[0].primary_span is None
 
 

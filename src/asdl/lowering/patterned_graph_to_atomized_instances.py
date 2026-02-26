@@ -8,7 +8,7 @@ from asdl.core.atomized_graph import AtomizedInstance
 from asdl.core.graph import InstanceBundle, ModuleGraph
 from asdl.core.registries import PatternExpressionRegistry
 from asdl.diagnostics import Diagnostic, SourceSpan
-from asdl.patterns_refactor import PatternError, PatternExpr, parse_pattern_expr
+from asdl.patterns import PatternError, PatternExpr, parse_pattern_expr
 
 from .patterned_graph_to_atomized_context import (
     PATTERN_EXPANSION_ERROR,

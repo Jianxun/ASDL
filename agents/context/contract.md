@@ -4,10 +4,10 @@
 ASDL (Analog Structured Description Language) is a Python framework for analog circuit design: parse YAML ASDL, elaborate/validate, and emit SPICE/netlist artifacts. The refactor pipeline uses a Pydantic AST with ruamel-based parsing, a dataclass PatternedGraph core, an AtomizedGraph derived view, and a dataclass NetlistIR emission model. ngspice emission is the initial backend. Legacy xDSL GraphIR/IFIR remain for reference during migration but are being retired from the refactor path.
 
 ## System boundaries / components
-- Active refactor surface under `src/asdl/ast/`, `src/asdl/core/`, `src/asdl/emit/`, and `src/asdl/lowering/`; legacy xDSL dialects live under `src/asdl/ir/` until retirement. Other pipeline modules are archived under `legacy/src/asdl/`.
+- Active refactor surface under `src/asdl/ast/`, `src/asdl/core/`, `src/asdl/emit/`, and `src/asdl/lowering/`; xDSL pipeline artifacts are decommissioned from the active tree.
 - xDSL refactor work tracked via `agents/context` and `agents/scratchpads/` (e.g., `T-030_ast_parser_mvp.md`).
 - Docs under `docs/`; MVP specs under `docs/specs_mvp/`; full specs under `docs/specs/`.
-- Examples under `examples/`; archived tests under `legacy/tests/`.
+- Examples under `examples/`; historical xDSL references are retained in `docs/legacy/`.
 - Visualization prototypes under `prototype/visualizer_react_flow/` (React Flow) and `prototype/visualization/` (jsPlumb legacy).
 - Context/state under `agents/context`; roles under `agents/roles`; ADRs under `agents/adr/`.
 - Legacy todos in `context/todo_*.md` are frozen pre-xDSL; new tasks live in `agents/context/tasks.yaml` (status in `agents/context/tasks_state.yaml`).
@@ -157,7 +157,7 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - 2025-12-28: ADR-0003 -- SelectView compiler pass validates all views post-config/view_order, selects one per module, defaults to `nominal`, reserves `dummy` for blackout; exclusivity enforced by selection not schema.
 - 2026-01-01: ADR-0004 -- ASDL_NLIR uses a single `asdl_nlir` dialect with explicit `elab_state` ("u"/"e"); ASDL_NLIR_U/E remain semantic IR IDs.
 - 2025-12-29: Approved clean rewrite: Pydantic v2 AST with locatable diagnostics (ruamel LocationIndex) and no backward-compatibility constraints before MVP.
-- 2025-12-30: Archived all non-AST code/tests under `legacy/`; active refactor surface is `src/asdl/ast/`.
+- 2025-12-30: Archived non-AST code/tests out of the active tree; active refactor surface is `src/asdl/ast/`.
 - 2026-01-01: MVP pipeline set to AST -> NFIR -> IFIR -> ngspice emission; CIR removed for MVP and NLIR renamed to IFIR with instance-first semantics.
 - 2026-01-02: Netlist template placeholders: hard switch from `{conns}` to `{ports}`; `{ports}` optional; `{params}` deprecated (no reserved-status enforcement). Device `ports` field becomes optional in the AST schema to permit templates that do not use ports.
 - 2026-01-03: Individual merged parameter values exposed as template placeholders. Templates can now reference device/backend/instance params directly (e.g., `{L}`, `{W}`, `{NF}`, `{m}`). Backward compat preserved for `{params}` formatted string. Props override params if names collide.
