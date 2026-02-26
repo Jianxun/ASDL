@@ -1,6 +1,21 @@
 # Architect Scratchpad
 
 ## Architecture notes (session summary; not yet ADRs)
+## Refactor candidates (>400 LoC, 2026-02-26)
+- `src/asdl/core/dump.py` (1296 LoC)
+- `src/asdl/docs/project_manifest.py` (1025 LoC)
+- `src/asdl/emit/netlist/render.py` (974 LoC)
+- `src/asdl/cli/__init__.py` (964 LoC)
+- `src/asdl/docs/sphinx_domain.py` (779 LoC)
+- `src/asdl/docs/render_helpers.py` (716 LoC)
+- `src/asdl/docs/depgraph.py` (601 LoC)
+- `src/asdl/cli/query_runtime.py` (527 LoC)
+- `src/asdl/ast/parser.py` (507 LoC)
+- `src/asdl/docs/markdown.py` (497 LoC)
+- `src/asdl/patterns/parser.py` (436 LoC)
+- `src/asdl/ast/named_patterns.py` (421 LoC)
+- `src/asdl/emit/verify_netlist_ir.py` (414 LoC)
+
 ## Current status (2026-02-24)
 - Executor delivery wave completed:
   - `T-303` done, merged via PR #326.
