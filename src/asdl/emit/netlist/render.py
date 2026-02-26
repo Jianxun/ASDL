@@ -260,7 +260,7 @@ def _emit_netlist_ir_module(
     ports = [net_name_map.get(port, port) for port in module.ports]
 
     module_name = _module_emitted_name_ir(module, symbols.module_emitted_names)
-    module_params = _dict_attr_to_strings(getattr(module, "params", None))
+    module_params = _dict_attr_to_strings(module.parameters)
     module_params_str = _format_params_tokens(module_params)
     if not (is_top and not options.top_as_subckt):
         header_context = {

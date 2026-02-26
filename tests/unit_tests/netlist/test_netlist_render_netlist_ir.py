@@ -805,3 +805,121 @@ def test_render_netlist_ir_uses_backend_owned_parameterized_subckt_call_template
         assert diagnostics == []
         assert netlist is not None
         assert expected_call_line[backend_name] in netlist.splitlines()
+
+
+def test_render_netlist_ir_uses_module_parameters_for_subckt_header_dispatch() -> None:
+    backend_config = BackendConfig(
+        name=BACKEND_NAME,
+        extension=".spice",
+        comment_prefix="*",
+        templates={
+            "__subckt_header__": SystemDeviceTemplate(template=".subckt {name} {ports}"),
+            "__subckt_header_params__": SystemDeviceTemplate(
+                template=".subckt {name} {ports} PARAMS: {params}"
+            ),
+            "__subckt_footer__": SystemDeviceTemplate(template=".ends {name}"),
+            "__subckt_call__": SystemDeviceTemplate(template="X{name} {ports} {ref}"),
+            "__subckt_call_params__": SystemDeviceTemplate(
+                template="X{name} {ports} {ref} {params}"
+            ),
+            "__netlist_header__": SystemDeviceTemplate(template="* header {top}"),
+            "__netlist_footer__": SystemDeviceTemplate(template=".end"),
+        },
+    )
+    top = NetlistModule(
+        name="TOP",
+        file_id="top.asdl",
+        ports=["A", "Y"],
+        nets=[NetlistNet(name="A"), NetlistNet(name="Y")],
+        instances=[
+            NetlistInstance(
+                name="U1",
+                ref="CHILD",
+                ref_file_id="lib.asdl",
+                conns=[
+                    NetlistConn(port="IN", net="A"),
+                    NetlistConn(port="OUT", net="Y"),
+                ],
+            )
+        ],
+    )
+    child = NetlistModule(
+        name="CHILD",
+        file_id="lib.asdl",
+        ports=["IN", "OUT"],
+        parameters={"L": "2u", "W": "1u"},
+        nets=[],
+        instances=[],
+    )
+    design = NetlistDesign(
+        modules=[top, child],
+        devices=[],
+        top="TOP",
+        entry_file_id="top.asdl",
+    )
+
+    netlist, diagnostics = _emit(design, backend_config)
+
+    assert diagnostics == []
+    assert netlist is not None
+    assert ".subckt CHILD IN OUT PARAMS: L=2u W=1u" in netlist.splitlines()
+
+
+def test_render_netlist_ir_uses_plain_subckt_header_when_module_parameters_empty() -> None:
+    backend_config = BackendConfig(
+        name=BACKEND_NAME,
+        extension=".spice",
+        comment_prefix="*",
+        templates={
+            "__subckt_header__": SystemDeviceTemplate(template=".subckt {name} {ports}"),
+            "__subckt_header_params__": SystemDeviceTemplate(
+                template=".subckt {name} {ports} PARAMS: {params}"
+            ),
+            "__subckt_footer__": SystemDeviceTemplate(template=".ends {name}"),
+            "__subckt_call__": SystemDeviceTemplate(template="X{name} {ports} {ref}"),
+            "__subckt_call_params__": SystemDeviceTemplate(
+                template="X{name} {ports} {ref} {params}"
+            ),
+            "__netlist_header__": SystemDeviceTemplate(template="* header {top}"),
+            "__netlist_footer__": SystemDeviceTemplate(template=".end"),
+        },
+    )
+    top = NetlistModule(
+        name="TOP",
+        file_id="top.asdl",
+        ports=["A", "Y"],
+        nets=[NetlistNet(name="A"), NetlistNet(name="Y")],
+        instances=[
+            NetlistInstance(
+                name="U1",
+                ref="CHILD",
+                ref_file_id="lib.asdl",
+                conns=[
+                    NetlistConn(port="IN", net="A"),
+                    NetlistConn(port="OUT", net="Y"),
+                ],
+            )
+        ],
+    )
+    child = NetlistModule(
+        name="CHILD",
+        file_id="lib.asdl",
+        ports=["IN", "OUT"],
+        parameters={},
+        nets=[],
+        instances=[],
+    )
+    design = NetlistDesign(
+        modules=[top, child],
+        devices=[],
+        top="TOP",
+        entry_file_id="top.asdl",
+    )
+
+    netlist, diagnostics = _emit(design, backend_config)
+
+    assert diagnostics == []
+    assert netlist is not None
+    lines = netlist.splitlines()
+    assert ".subckt CHILD IN OUT" in lines
+    assert ".subckt CHILD IN OUT PARAMS:" not in lines

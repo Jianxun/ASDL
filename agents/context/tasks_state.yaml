@@ -24,8 +24,8 @@ T-322:
   pr: 344
   merged: true
 T-323:
-  status: ready
-  pr: null
+  status: review_clean
+  pr: 345
   merged: false
 T-324:
   status: ready

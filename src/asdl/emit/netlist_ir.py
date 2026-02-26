@@ -143,6 +143,7 @@ class NetlistModule:
         name: Module name.
         file_id: Source file identifier.
         ports: Ordered port list (empty list allowed).
+        parameters: Optional mapping of module parameter defaults.
         nets: Ordered list of nets in the module.
         instances: Ordered list of instances in the module.
         pattern_expression_table: Optional pattern expression metadata.
@@ -151,6 +152,7 @@ class NetlistModule:
     name: str
     file_id: str
     ports: List[str] = field(default_factory=list)
+    parameters: Optional[Dict[str, str]] = None
     nets: List[NetlistNet] = field(default_factory=list)
     instances: List[NetlistInstance] = field(default_factory=list)
     pattern_expression_table: Optional[PatternExpressionTable] = None

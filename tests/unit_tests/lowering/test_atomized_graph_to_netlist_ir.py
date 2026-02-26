@@ -49,6 +49,7 @@ def test_build_netlist_ir_design_happy_path() -> None:
         name="top",
         file_id="design.asdl",
         ports=["VIN", "VOUT"],
+        parameters={"mode": "ac", "m": 2},
     )
     module.instances = {
         "i1": AtomizedInstance(
@@ -116,6 +117,7 @@ def test_build_netlist_ir_design_happy_path() -> None:
     netlist_module = design.modules[0]
     assert netlist_module.name == "top"
     assert netlist_module.ports == ["VIN", "VOUT"]
+    assert netlist_module.parameters == {"mode": "ac", "m": "2"}
     assert [net.name for net in netlist_module.nets] == ["VIN", "VOUT", "VSS"]
     assert netlist_module.pattern_expression_table is not None
     assert netlist_module.pattern_expression_table["expr_net"].expression == "V<IN|OUT>"
