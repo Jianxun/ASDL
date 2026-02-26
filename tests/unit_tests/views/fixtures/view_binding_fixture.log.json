@@ -1,0 +1,74 @@
+{
+  "diagnostic_count": 0,
+  "diagnostic_severity_counts": {
+    "error": 0,
+    "fatal": 0,
+    "info": 0,
+    "warning": 0
+  },
+  "diagnostics": [],
+  "emission_name_map": [
+    {
+      "base_name": "tb",
+      "emitted_name": "tb",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/tests/unit_tests/views/fixtures/view_binding_fixture.asdl",
+      "renamed": false,
+      "symbol": "tb"
+    },
+    {
+      "base_name": "shift_row_behave",
+      "emitted_name": "shift_row_behave",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/tests/unit_tests/views/fixtures/view_binding_fixture.asdl",
+      "renamed": false,
+      "symbol": "shift_row@behave"
+    },
+    {
+      "base_name": "sw_tgate_behave",
+      "emitted_name": "sw_tgate_behave",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/tests/unit_tests/views/fixtures/view_binding_fixture.asdl",
+      "renamed": false,
+      "symbol": "sw_tgate@behave"
+    },
+    {
+      "base_name": "row",
+      "emitted_name": "row",
+      "file_id": "/Users/jianxunzhu/Documents/GitHub/asdl_ecosystem/ASDL/tests/unit_tests/views/fixtures/view_binding_fixture.asdl#viewocc_e6210a6c",
+      "renamed": false,
+      "symbol": "row"
+    }
+  ],
+  "view_bindings": [
+    {
+      "instance": "dut",
+      "path": "tb",
+      "resolved": "row",
+      "rule_id": null
+    },
+    {
+      "instance": "SR_row",
+      "path": "tb.dut",
+      "resolved": "shift_row@behave",
+      "rule_id": null
+    },
+    {
+      "instance": "Tgate1",
+      "path": "tb.dut",
+      "resolved": "sw_tgate@behave",
+      "rule_id": null
+    },
+    {
+      "instance": "Tgate2",
+      "path": "tb.dut",
+      "resolved": "sw_tgate@behave",
+      "rule_id": null
+    },
+    {
+      "instance": "Tgate_dbg",
+      "path": "tb.dut",
+      "resolved": "sw_tgate@behave",
+      "rule_id": null
+    }
+  ],
+  "warning_count": 0,
+  "warnings": []
+}
