@@ -183,6 +183,7 @@ def _convert_module(
         name=module.name,
         file_id=module.file_id,
         ports=list(module.ports or []),
+        parameters=_to_string_dict(module.parameters),
         nets=netlist_nets,
         instances=netlist_instances,
         pattern_expression_table=pattern_expression_table,

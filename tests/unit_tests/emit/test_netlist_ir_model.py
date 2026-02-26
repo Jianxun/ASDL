@@ -67,6 +67,7 @@ def test_netlist_ir_construction_preserves_ordering() -> None:
         name="top",
         file_id="design.asdl",
         ports=["in", "out"],
+        parameters={"mode": "ac", "m": "2"},
         nets=[net_a, net_b],
         instances=[inst],
         pattern_expression_table=pattern_table,
@@ -86,6 +87,7 @@ def test_netlist_ir_construction_preserves_ordering() -> None:
         "in",
         "out",
     ]
+    assert design.modules[0].parameters == {"mode": "ac", "m": "2"}
     assert [backend.name for backend in design.devices[0].backends] == [
         "sim.ngspice"
     ]
