@@ -4,7 +4,7 @@ T-317:
   pr: 337
   merged: true
 T-318:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
 T-319:
