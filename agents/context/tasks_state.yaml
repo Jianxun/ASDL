@@ -20,8 +20,8 @@ T-321:
   pr: 343
   merged: true
 T-322:
-  status: ready
-  pr: null
+  status: ready_for_review
+  pr: 344
   merged: false
 T-323:
   status: ready
