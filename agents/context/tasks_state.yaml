@@ -16,6 +16,6 @@ T-320:
   pr: 340
   merged: true
 T-321:
-  status: review_in_progress
+  status: review_clean
   pr: 343
   merged: false
