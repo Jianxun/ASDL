@@ -28,6 +28,6 @@ T-323:
   pr: 345
   merged: true
 T-324:
-  status: ready
+  status: in_progress
   pr: null
   merged: false
