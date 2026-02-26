@@ -12,6 +12,6 @@ T-319:
   pr: 339
   merged: true
 T-320:
-  status: ready_for_review
+  status: review_in_progress
   pr: 340
   merged: false
