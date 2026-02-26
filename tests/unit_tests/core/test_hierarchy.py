@@ -2,7 +2,7 @@
 
 from asdl.emit.netlist_ir import NetlistDesign, NetlistDevice, NetlistInstance, NetlistModule
 
-from asdl.core.hierarchy import HierarchyEntry, traverse_hierarchy
+from asdl.core.hierarchy import HierarchyEntry, resolve_top_module, traverse_hierarchy
 
 
 def test_traverse_hierarchy_excludes_devices_when_requested() -> None:
@@ -154,3 +154,33 @@ def test_traverse_hierarchy_stops_recursion_on_ancestry_cycles() -> None:
     entries = traverse_hierarchy(design, include_devices=False)
 
     assert [entry.path for entry in entries] == ["A.to_b", "A.to_b.to_a"]
+
+
+def test_resolve_top_module_permissive_falls_back_to_name_when_entry_misses_top() -> None:
+    """Permissive top resolution falls back to name match outside the entry file."""
+    top_module = NetlistModule(name="TOP", file_id="lib.asdl", instances=[])
+    design = NetlistDesign(
+        modules=[NetlistModule(name="ENTRY", file_id="entry.asdl"), top_module],
+        devices=[],
+        top="TOP",
+        entry_file_id="entry.asdl",
+    )
+
+    resolved = resolve_top_module(design)
+
+    assert resolved is top_module
+
+
+def test_resolve_top_module_returns_none_when_entry_scope_is_ambiguous() -> None:
+    """Permissive top resolution returns None for missing-top entry ambiguity."""
+    design = NetlistDesign(
+        modules=[
+            NetlistModule(name="A", file_id="entry.asdl", instances=[]),
+            NetlistModule(name="B", file_id="entry.asdl", instances=[]),
+        ],
+        devices=[],
+        top=None,
+        entry_file_id="entry.asdl",
+    )
+
+    assert resolve_top_module(design) is None
