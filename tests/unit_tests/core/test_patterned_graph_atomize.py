@@ -328,6 +328,24 @@ def test_patterned_graph_atomize_propagates_module_variables() -> None:
     assert atomized_module.variables == {"corner": "tt", "temp": 27}
 
 
+def test_patterned_graph_atomize_propagates_module_parameters() -> None:
+    builder = PatternedGraphBuilder()
+    builder.add_expression(_parse_expr("IN"))
+    module = builder.add_module(
+        "top",
+        "design.asdl",
+        parameters={"mode": "ac", "m": 2},
+    )
+    builder.set_ports(module.module_id, ["IN"])
+
+    graph = builder.build()
+    atomized, diagnostics = build_atomized_graph(graph)
+
+    assert diagnostics == []
+    atomized_module = atomized.modules[module.module_id]
+    assert atomized_module.parameters == {"mode": "ac", "m": 2}
+
+
 def test_patterned_graph_atomize_substitutes_module_variables_in_params() -> None:
     builder = PatternedGraphBuilder()
     module = builder.add_module(

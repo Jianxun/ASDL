@@ -58,7 +58,7 @@ def test_builder_empty_registries_are_none() -> None:
 
 def test_builder_builds_graph_with_registries() -> None:
     builder = PatternedGraphBuilder()
-    module = builder.add_module("top", "file.asdl")
+    module = builder.add_module("top", "file.asdl", parameters={"mode": "ac", "m": 2})
 
     expr = _expr("NET")
     expr_id = builder.add_expression(expr)
@@ -85,6 +85,7 @@ def test_builder_builds_graph_with_registries() -> None:
     graph = builder.build()
     module_graph = graph.modules[module.module_id]
 
+    assert module_graph.parameters == {"mode": "ac", "m": 2}
     assert module_graph.port_order == ["NET"]
     assert module_graph.nets[net_id].endpoint_ids == [endpoint_id]
     assert graph.registries.pattern_expressions == {expr_id: expr}
