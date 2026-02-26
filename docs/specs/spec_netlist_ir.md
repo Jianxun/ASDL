@@ -36,6 +36,7 @@ class NetlistModule:
     name: str
     file_id: str
     ports: list[str]
+    parameters: dict[str, str] | None
     nets: list[NetlistNet]
     instances: list[NetlistInstance]
     pattern_expression_table: dict[str, PatternExpressionEntry] | None = None
@@ -96,6 +97,8 @@ Notes:
   instance ordering as provided.
 - Dictionaries in NetlistIR store literal string values; upstream lowering
   determines the exact formatting. Emitters must treat these as raw strings.
+- `NetlistModule.parameters` preserves deterministic key order for header
+  parameter rendering.
 - Optional `pattern_origin` is provenance-only; identity uses literal names.
 
 ---
@@ -164,6 +167,7 @@ PatternExpressionEntry {
   - Else if only one module exists, use it as top.
 - For each module:
   - copy `name`, `file_id`, `ports`.
+  - copy module `parameters` as string-valued defaults.
   - build `NetlistNet` entries from atomized nets.
   - invert atomized endpoints into instance `conns` (named-only).
   - copy `pattern_origin` metadata when registries exist.

@@ -126,6 +126,24 @@ result params:       w=1u l=120n m=4
 
 ---
 
+## Module parameter rules
+
+### Source of truth
+- Module-level defaults come from `NetlistModule.parameters`.
+- Keys and values are treated as raw strings in NetlistIR.
+
+### Deterministic ordering
+- Preserve the insertion order from `NetlistModule.parameters`.
+
+### Emission
+- Render module parameters as space-joined `k=v` tokens.
+- If empty, emit no params and avoid extra whitespace.
+- Header template dispatch:
+  - non-empty `NetlistModule.parameters` -> `__subckt_header_params__`
+  - empty/missing `NetlistModule.parameters` -> `__subckt_header__`
+
+---
+
 ## Device variable rules
 
 ### Merge order (low -> high precedence)
@@ -213,16 +231,21 @@ Every backend must define the following system devices in `backends.yaml`:
   as `YYYY-MM-DD` and `HH:MM:SS` (local time)
 
 ### Top module handling
-- If `top_as_subckt` is true: use `__subckt_header__` and `__subckt_footer__`
+- If `top_as_subckt` is true:
+  - use `__subckt_header_params__` when top-module parameters are present
+  - otherwise use `__subckt_header__`
+  - always close with `__subckt_footer__`
 - Otherwise: emit no subckt wrapper for the top module
 - This replaces the previous conditional commenting logic
 
 ### Module instantiation
-- Module instances use `__subckt_call__` system device instead of hardcoded `X{name} {conns} {ref}` syntax
+- Module instances use `__subckt_call__`/`__subckt_call_params__` system
+  devices instead of hardcoded `X{name} {conns} {ref}` syntax.
 - Placeholder context:
   - `{name}`: instance name
   - `{ports}`: space-joined connection nets in port order
   - `{ref}`: referenced module name
+  - `{params}`: space-joined `key=value` instance parameter tokens
   - `{file_id}`: referenced module `file_id`
   - `{sym_name}`: referenced module original name (pre-disambiguation)
 

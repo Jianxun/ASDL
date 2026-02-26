@@ -7,6 +7,9 @@ Brief context record for the Architect; reconcile from task status and reviews.
   parameterized-subckt system templates:
   `__subckt_header_params__` and `__subckt_call_params__`, with deterministic
   `{params}` rendering as space-delimited `key=value` tokens.
+- Drafted ADR-0041 (Proposed) to carry module `parameters` end-to-end through
+  AST/PatternedGraph/AtomizedGraph/NetlistIR so header-parameter dispatch is
+  contract-reachable instead of emitter-local.
 - View-decorated symbol and view-binding specs were tightened and aligned with
   accepted ADRs: ADR-0034 (DFS-stable ordinal collision naming) and ADR-0035
   (consolidated compile log).

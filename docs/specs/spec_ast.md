@@ -53,6 +53,7 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 - `patterns: Optional[PatternsBlock]`
 - `instance_defaults: Optional[InstanceDefaultsBlock]`
 - `exports: Optional[ExportsBlock]`
+- `parameters: Optional[Dict[str, ParamValue]]`
 - `variables: Optional[Dict[str, ParamValue]]`
 
 ### Notes
@@ -60,6 +61,9 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 - `instance_defaults` provide default bindings per instance `ref` and are
   overridden by explicit `nets` bindings (override warnings are deferred).
 - Module ports are derived from `$`-prefixed net names (plus forwarded ports from `exports`).
+- `parameters` define module-level default parameter values used when the
+  module is emitted as a subckt definition (for example header parameter
+  clauses); backend syntax is handled by system templates.
 - `variables` are module-local constants usable only in instance parameter values
   via `{var}` placeholders; recursive references are invalid.
 

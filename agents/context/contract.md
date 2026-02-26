@@ -118,6 +118,9 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
 - ADR-0040 (Proposed): Parameterized subckt syntax is defined via required
   `__subckt_header_params__`/`__subckt_call_params__` system templates with
   deterministic `{params}` rendering as space-delimited `key=value` tokens.
+- ADR-0041 (Proposed): Module `parameters` are carried as first-class data
+  through AST/PatternedGraph/AtomizedGraph/NetlistIR so subckt-header
+  parameterized template dispatch is reachable by contract.
 
 - 2026-01-24: ADR-0024 -- Replace IFIR with NetlistIR dataclass model; remove xDSL from the refactor pipeline (supersedes ADR-0014).
 - 2026-01-23: ADR-0023 -- Core graphs include device definitions; modules/devices use `ports` lists (never None); backend templates stay outside core graphs.
@@ -141,6 +144,9 @@ ASDL (Analog Structured Description Language) is a Python framework for analog c
   templates (`__subckt_header_params__`, `__subckt_call_params__`) so backend
   syntax differences remain in backend config; `{params}` renders as
   deterministic space-delimited `key=value` tokens.
+- 2026-02-26: ADR-0041 (Proposed) -- Standardize module-level `parameters`
+  across AST/PatternedGraph/AtomizedGraph/NetlistIR and use
+  `NetlistModule.parameters` for `__subckt_header_params__` dispatch.
 - 2026-02-26: DRY task-slicing rule -- Architect packets must include explicit reuse/isolation instructions so Executors check existing implementations first and centralize duplicated policies.
 - 2026-02-22: View-binding regressions must use stable test fixtures under `tests/` rather than `examples/` because examples are experimental and can change independently of compiler contracts.
 - 2026-02-01: Docs pipeline now supports Sphinx (Tier 1/2) for ASDL library documentation; Markdown generation remains supported but Sphinx-native rendering is in scope.

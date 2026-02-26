@@ -126,4 +126,78 @@ current_sprint:
       - examples/config/backends.yaml
       - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
       - tests/unit_tests/emit/test_backend_config.py
+  - id: T-322
+    title: Thread module parameters through AST and core graph models
+    owner: Executor
+    dod: >
+      Audit existing `parameters` handling across AST and core graph models, then
+      add module-level `parameters` as first-class data in AST `ModuleDecl`,
+      PatternedGraph module bundles/builders, and AtomizedGraph module
+      dataclasses/lowering. Reuse existing parameter validation and string-value
+      conventions; avoid introducing a parallel `params` alias. Include
+      self-contained regressions proving module `parameters` parse, lower, and
+      survive PatternedGraph->AtomizedGraph conversion with deterministic key
+      order.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/ast/test_models.py tests/unit_tests/core/test_patterned_graph_builder.py tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/core/test_patterned_graph_atomize.py -v
+    links:
+      scratchpad: agents/scratchpads/T-322_module_parameters_ast_core.md
+      spec: docs/specs/spec_ast.md
+      adr: agents/adr/ADR-0041-module-parameters-through-netlist-pipeline.md
+    files:
+      - src/asdl/ast/models.py
+      - src/asdl/core/graph.py
+      - src/asdl/core/atomized_graph.py
+      - src/asdl/core/graph_builder.py
+      - src/asdl/lowering/ast_to_patterned_graph.py
+  - id: T-323
+    title: Carry module parameters into NetlistIR and emitter header dispatch
+    owner: Executor
+    depends_on:
+      - T-322
+    dod: >
+      Audit current NetlistIR/lowering/emitter parameter paths and replace
+      emitter-local ad-hoc module param access with `NetlistModule.parameters`
+      as the source of truth. Add `parameters` to NetlistIR module model,
+      populate it in AtomizedGraph->NetlistIR lowering, and update
+      `__subckt_header__` vs `__subckt_header_params__` dispatch to use this
+      field. Include regressions in the same task that prove header dispatch for
+      empty/non-empty module parameters and preserve deterministic `{params}`
+      token formatting.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py tests/unit_tests/emit/test_netlist_ir_model.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
+    links:
+      scratchpad: agents/scratchpads/T-323_module_parameters_netlistir_emit.md
+      spec: docs/specs/spec_netlist_ir.md
+      adr: agents/adr/ADR-0041-module-parameters-through-netlist-pipeline.md
+    files:
+      - src/asdl/emit/netlist_ir.py
+      - src/asdl/lowering/atomized_graph_to_netlist_ir.py
+      - src/asdl/emit/netlist/render.py
+      - tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py
+      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
+  - id: T-324
+    title: Finalize backend template validation and golden config coverage
+    owner: Executor
+    depends_on:
+      - T-323
+    dod: >
+      Re-audit system-device template validation and backend sample templates so
+      module/call parameterized subckt templates align with ADR-0040/0041 and
+      simulator-specific syntax stays config-owned. Tighten validation tests for
+      required template presence and add regression assertions against
+      `examples/config/backends.yaml` for ngspice/xyce/spectre parameterized
+      header/call forms.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/emit/test_backend_config.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
+    links:
+      scratchpad: agents/scratchpads/T-324_backend_template_validation_params.md
+      spec: docs/specs/spec_netlist_emission.md
+      adr: agents/adr/ADR-0040-parameterized-subckt-system-templates.md
+    files:
+      - src/asdl/emit/backend_config.py
+      - src/asdl/emit/netlist/templates.py
+      - examples/config/backends.yaml
+      - tests/unit_tests/emit/test_backend_config.py
+      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
 backlog: []
