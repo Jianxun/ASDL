@@ -142,6 +142,7 @@ class AtomizedModuleGraph:
         name: Module name.
         file_id: Source file identifier.
         ports: Ordered port list (empty list allowed).
+        parameters: Optional mapping of parameter defaults or metadata.
         variables: Optional mapping of variable defaults or metadata.
         nets: Atomized nets keyed by net ID.
         instances: Atomized instances keyed by instance ID.
@@ -153,6 +154,7 @@ class AtomizedModuleGraph:
     name: str
     file_id: str
     ports: list[str] = field(default_factory=list)
+    parameters: Optional[Dict[str, object]] = None
     variables: Optional[Dict[str, object]] = None
     nets: Dict[AtomizedNetId, AtomizedNet] = field(default_factory=dict)
     instances: Dict[AtomizedInstId, AtomizedInstance] = field(default_factory=dict)

@@ -43,6 +43,7 @@ def build_patterned_graph(
         module_graph = builder.add_module(
             name,
             _resolve_file_id(file_id, module),
+            parameters=module.parameters,
             variables=module.variables,
         )
         module_graphs[name] = module_graph.module_id
@@ -91,6 +92,7 @@ def build_patterned_graph_from_import_graph(
             module_graph = builder.add_module(
                 name,
                 str(file_id),
+                parameters=module.parameters,
                 variables=module.variables,
             )
             module_ids[name] = module_graph.module_id
