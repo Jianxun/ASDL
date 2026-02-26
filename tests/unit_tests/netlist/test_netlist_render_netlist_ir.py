@@ -165,17 +165,13 @@ def test_render_netlist_ir_module_reference_uses_file_id() -> None:
 
     netlist, diagnostics = _emit(design, backend_config)
 
-    assert len(diagnostics) == 1
-    assert diagnostics[0].severity is Severity.WARNING
-    assert diagnostics[0].code == format_code("EMIT", 14)
+    assert diagnostics == []
     expected = "\n".join(
         [
             "* header TOP",
             "XU1 CELL",
             ".subckt CELL",
             ".ends CELL",
-            ".subckt CELL__2",
-            ".ends CELL__2",
             ".end",
         ]
     )
@@ -586,6 +582,32 @@ def test_render_netlist_ir_requires_explicit_top_without_unique_entry_module() -
     assert netlist is None
     assert len(diagnostics) == 1
     assert diagnostics[0].code == "EMIT-001"
+    assert (
+        diagnostics[0].message
+        == "Top module is required when entry file has zero or multiple modules"
+    )
+
+
+def test_render_netlist_ir_requires_entry_file_match_for_explicit_top() -> None:
+    """Strict emission top policy rejects explicit top outside entry file scope."""
+    backend_config = _backend_config()
+
+    design = NetlistDesign(
+        modules=[
+            NetlistModule(name="ENTRY", file_id="entry.asdl", ports=[], nets=[], instances=[]),
+            NetlistModule(name="TOP", file_id="lib.asdl", ports=[], nets=[], instances=[]),
+        ],
+        devices=[],
+        top="TOP",
+        entry_file_id="entry.asdl",
+    )
+
+    netlist, diagnostics = _emit(design, backend_config)
+
+    assert netlist is None
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "EMIT-001"
+    assert diagnostics[0].message == "Top module 'TOP' is not defined in entry file"
 
 
 def test_render_netlist_ir_warns_on_missing_provenance_and_keeps_file_id_placeholders() -> None:
@@ -649,18 +671,16 @@ def test_render_netlist_ir_warns_on_missing_provenance_and_keeps_file_id_placeho
     assert netlist == "\n".join(
         [
             "* header TOP file=",
-            "XU1 CELL__2 ; file=lib_known.asdl",
-            ".subckt CELL ; file=",
+            "XU1 CELL ; file=lib_known.asdl",
+            ".subckt CELL ; file=lib_known.asdl",
             ".ends CELL",
-            ".subckt CELL__2 ; file=lib_known.asdl",
-            ".ends CELL__2",
             ".end",
         ]
     )
 
     warning_codes = [diag.code for diag in diagnostics if diag.severity is Severity.WARNING]
     assert warning_codes.count(format_code("EMIT", 15)) >= 3
-    assert format_code("EMIT", 14) in warning_codes
+    assert format_code("EMIT", 14) not in warning_codes
     warning_messages = [diag.message for diag in diagnostics if diag.severity is Severity.WARNING]
     assert any("entry_file_id is missing" in message for message in warning_messages)
     assert any("missing file_id provenance" in message for message in warning_messages)

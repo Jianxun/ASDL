@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, TypeVar
 
+from asdl.core.top_resolution import STRICT_TOP_POLICY, resolve_top_symbol
 from asdl.diagnostics import Severity
 from asdl.diagnostics.collector import DiagnosticCollector
 from asdl.emit.netlist_ir import NetlistDesign, NetlistDevice, NetlistModule
@@ -20,6 +21,7 @@ class NetlistIRIndex:
         modules_by_key: Module map keyed by (file_id, name).
         devices_by_key: Device map keyed by (file_id, name).
         top_name: Resolved top module name.
+        top_file_id: Resolved top module file id.
     """
 
     modules_by_name: Dict[str, List[NetlistModule]]
@@ -27,6 +29,7 @@ class NetlistIRIndex:
     modules_by_key: Dict[Tuple[Optional[str], str], NetlistModule]
     devices_by_key: Dict[Tuple[Optional[str], str], NetlistDevice]
     top_name: str
+    top_file_id: Optional[str]
 
 
 def _build_netlist_ir_index(
@@ -57,8 +60,8 @@ def _build_netlist_ir_index(
         (device.file_id, device.name): device for device in design.devices
     }
 
-    top_name = _resolve_netlist_ir_top_name(design, design.modules, diagnostics)
-    if top_name is None:
+    top_module = _resolve_netlist_ir_top_module(design, diagnostics)
+    if top_module is None:
         return None
 
     return NetlistIRIndex(
@@ -66,63 +69,50 @@ def _build_netlist_ir_index(
         devices_by_name=devices_by_name,
         modules_by_key=modules_by_key,
         devices_by_key=devices_by_key,
-        top_name=top_name,
+        top_name=top_module.name,
+        top_file_id=top_module.file_id,
     )
 
 
-def _resolve_netlist_ir_top_name(
+def _resolve_netlist_ir_top_module(
     design: NetlistDesign,
-    modules: List[NetlistModule],
     diagnostics: DiagnosticCollector,
-) -> Optional[str]:
+) -> Optional[NetlistModule]:
     """Resolve the top module name for a NetlistIR design.
 
     Args:
         design: NetlistIR design to inspect.
-        modules: Modules defined in the design.
         diagnostics: Collector for missing-top diagnostics.
 
     Returns:
-        Resolved top module name, or None when invalid.
+        Resolved top module, or None when invalid.
     """
-    top_name = design.top
-    if top_name is None:
-        if design.entry_file_id is not None:
-            entry_modules = [
-                module
-                for module in modules
-                if module.file_id == design.entry_file_id
-            ]
-            if len(entry_modules) == 1:
-                return entry_modules[0].name
-            diagnostics.emit(
-                _diagnostic(
-                    MISSING_TOP,
-                    "Top module is required when entry file has zero or multiple modules",
-                    Severity.ERROR,
-                )
-            )
-            return None
-        if len(modules) == 1:
-            return modules[0].name
-        diagnostics.emit(
-            _diagnostic(
-                MISSING_TOP,
-                "Top module is required when multiple modules exist",
-                Severity.ERROR,
-            )
-        )
-        return None
-    module_names = {module.name for module in modules}
-    if top_name in module_names:
-        return top_name
-    diagnostics.emit(
-        _diagnostic(
-            MISSING_TOP,
-            f"Top module '{top_name}' is not defined",
-            Severity.ERROR,
-        )
+    result = resolve_top_symbol(
+        design.modules,
+        top_name=design.top,
+        entry_file_id=design.entry_file_id,
+        policy=STRICT_TOP_POLICY,
     )
+    if result.symbol is not None:
+        return result.symbol
+
+    message_by_error = {
+        "missing_top_entry_scope": (
+            "Top module is required when entry file has zero or multiple modules"
+        ),
+        "missing_top_multiple_modules": (
+            "Top module is required when multiple modules exist"
+        ),
+        "top_not_defined": f"Top module '{design.top}' is not defined",
+        "top_not_defined_in_entry_file": (
+            f"Top module '{design.top}' is not defined in entry file"
+        ),
+    }
+    message = message_by_error.get(
+        result.error,
+        "Top module is required when multiple modules exist",
+    )
+    diagnostics.emit(_diagnostic(MISSING_TOP, message, Severity.ERROR))
     return None
 
 

@@ -130,7 +130,7 @@ def _emit_netlist_ir_design(
         index.modules_by_name,
         index.modules_by_key,
         index.top_name,
-        entry_file_id,
+        index.top_file_id,
     )
     if top_module is None:
         diagnostics.append(
@@ -792,7 +792,7 @@ def _collect_reachable_modules_for_mapping_ir(design: NetlistDesign) -> List[Net
         index.modules_by_name,
         index.modules_by_key,
         index.top_name,
-        design.entry_file_id,
+        index.top_file_id,
     )
     if top_module is None:
         return list(design.modules)
