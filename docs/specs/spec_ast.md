@@ -33,6 +33,10 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
   - When decorated symbols are present, `top` refers to logical `cell` name
     (view selection is deferred to binding resolution).
   - Required if **multiple modules** exist; otherwise optional.
+- `global_parameters: Optional[Dict[str, ParamValue]]`
+  - Entry-file deck-level global parameters.
+  - Valid only in the entry document used for compilation/emission.
+  - Imported documents declaring `global_parameters` are invalid.
 - `modules: Optional[Dict[str, ModuleDecl]]`
   - Map of module symbol → module definition.
   - Module symbol may be `cell` or `cell@view` (single `@` max).
@@ -42,6 +46,7 @@ A **loss-minimizing, schema-validated AST** for Tier-1 authoring YAML.
 ### Notes
 - At least one of `modules` or `devices` must be present (import-only files are invalid).
 - Recommended: a name must not appear in both `modules` and `devices`.
+- `global_parameters` names must match `[A-Za-z_][A-Za-z0-9_]*`.
 
 ---
 
@@ -94,6 +99,8 @@ instances:
 - `<TypeName>` may be either `symbol` or `ns.symbol`; pattern syntax is forbidden.
 - Param values may reference module variables via `{var}` placeholders. Substitution
   is raw string replacement and occurs before parameter pattern expansion.
+- Param values may reference entry global parameters via `!{name}` placeholders.
+  `!{name}` is not a module-variable token and is resolved in backend emission.
 
 ---
 

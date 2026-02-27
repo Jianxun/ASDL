@@ -1,203 +1,94 @@
 schema_version: 2
 
 current_sprint:
-  - id: T-317
-    title: Unify top-module resolution contract with shared policy helper
+  - id: T-325
+    title: Add entry-only global_parameters to AST and import validation
     owner: Executor
     dod: >
-      Introduce a shared top-resolution helper under `src/asdl/core/` with
-      explicit policy controls for permissive traversal callers vs strict
-      emission callers, then migrate `asdl.core.hierarchy` and
-      `asdl.emit.netlist.ir_utils` to consume it. Preserve existing emission
-      diagnostics behavior (`EMIT-001` cases/messages) while removing duplicated
-      top-resolution semantics between hierarchy and netlist emission. Add
-      regression coverage proving strict/permissive parity on ambiguous/missing
-      top scenarios. Start by auditing existing query/views/emission helpers for
-      reusable top/symbol selection behavior, and document in the scratchpad
-      which logic is reused vs newly isolated.
+      Introduce top-level `global_parameters` in AST models/spec plumbing and
+      enforce entry-file-only declaration semantics in import-aware lowering.
+      Imported files that declare `global_parameters` must produce a deterministic
+      diagnostic. Preserve existing module/device parsing behavior and
+      deterministic ordering of declared global parameter keys.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/core/test_hierarchy.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
+      - ./venv/bin/pytest tests/unit_tests/ast/test_models.py tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/cli/test_netlist.py -v
     links:
-      scratchpad: agents/scratchpads/T-317_top_resolution_contract_unification.md
-      spec: docs/specs/spec_netlist_emission.md
-      adr: agents/adr/ADR-0039-shared-top-resolution-policy.md
-    files:
-      - src/asdl/core/top_resolution.py
-      - src/asdl/core/hierarchy.py
-      - src/asdl/emit/netlist/ir_utils.py
-      - tests/unit_tests/core/test_hierarchy.py
-      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
-  - id: T-318
-    title: Converge symbol-selection policy across hierarchy and views
-    owner: Executor
-    depends_on:
-      - T-317
-    dod: >
-      Audit existing symbol-selection/existence logic in hierarchy and views,
-      then introduce one shared symbol-selection helper in `src/asdl/core/`
-      that preserves deterministic `(file_id, symbol)` exact match and name-only
-      fallback behavior. Migrate `asdl.core.hierarchy`, `asdl.views.resolver`,
-      and `asdl.views.api` to consume the shared helper instead of local logic.
-      Document in scratchpad which legacy helpers were removed and which shared
-      APIs are now the source of truth. Add regressions covering ambiguous
-      same-name symbols and deterministic fallback behavior.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/core/test_hierarchy.py tests/unit_tests/views/test_view_resolver.py tests/unit_tests/views/test_view_apply.py -v
-    links:
-      scratchpad: agents/scratchpads/T-318_symbol_selection_convergence.md
-      spec: docs/specs/spec_hierarchy_traversal.md
-      adr: agents/adr/ADR-0038-shared-hierarchy-traversal.md
-    files:
-      - src/asdl/core/symbol_resolution.py
-      - src/asdl/core/hierarchy.py
-      - src/asdl/views/resolver.py
-      - src/asdl/views/api.py
-      - tests/unit_tests/views/test_view_resolver.py
-  - id: T-319
-    title: Deduplicate query and netlist view-resolution orchestration
-    owner: Executor
-    depends_on:
-      - T-318
-    dod: >
-      Audit shared query/netlist CLI flow for view option validation and
-      resolve+apply view-binding orchestration, then extract reusable runtime
-      helper(s) under `src/asdl/cli/` and migrate both
-      `asdl.cli.query_runtime.build_query_runtime` and `asdl.cli.netlist`
-      command flow to use them. Preserve diagnostics and exit-code behavior.
-      Document what orchestration was reused vs isolated in the scratchpad.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/cli/test_query_cli_runtime.py tests/unit_tests/cli/test_netlist.py -v
-    links:
-      scratchpad: agents/scratchpads/T-319_cli_runtime_orchestration_dedupe.md
-      spec: docs/specs/spec_cli_query.md
-      adr: agents/adr/ADR-0037-cli-query-semantics.md
-    files:
-      - src/asdl/cli/runtime_common.py
-      - src/asdl/cli/query_runtime.py
-      - src/asdl/cli/__init__.py
-      - tests/unit_tests/cli/test_query_cli_runtime.py
-      - tests/unit_tests/cli/test_netlist.py
-  - id: T-320
-    title: Unify hierarchy path identity helpers for query and views
-    owner: Executor
-    depends_on:
-      - T-319
-    dod: >
-      Audit path composition/parsing logic used by query bindings and view
-      resolver/index data models, then isolate shared path helper(s) to avoid
-      duplicated full-path string assembly. Migrate `asdl.views.instance_index`,
-      `asdl.views.resolver`, and `asdl.cli.query_runtime` to use the shared
-      helper(s), preserving output payload contracts. Record legacy path logic
-      removed and new shared helper API in the scratchpad.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/cli/test_query_bindings.py tests/unit_tests/views/test_view_apply.py -v
-    links:
-      scratchpad: agents/scratchpads/T-320_path_identity_dedupe.md
-      spec: docs/specs/spec_cli_query.md
-    files:
-      - src/asdl/views/pathing.py
-      - src/asdl/views/instance_index.py
-      - src/asdl/views/resolver.py
-      - src/asdl/cli/query_runtime.py
-      - tests/unit_tests/cli/test_query_bindings.py
-  - id: T-321
-    title: Implement parameterized subckt system-template dispatch
-    owner: Executor
-    dod: >
-      Audit existing system-device rendering paths in netlist emission and
-      reuse shared template/placeholder validation helpers where possible.
-      Implement parameter-presence dispatch for module headers/calls:
-      `__subckt_header__` vs `__subckt_header_params__` and `__subckt_call__`
-      vs `__subckt_call_params__`. Render `{params}` as deterministic
-      space-delimited `key=value` tokens with stable ordering, and preserve
-      whitespace-collapsing behavior when optional placeholders are empty. Add
-      regression coverage for ngspice/xyce/spectre-style backend templates to
-      prove backend-owned syntax differences (including keyworded forms such as
-      `PARAMS:`) without backend-name conditionals in compiler code.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/emit/test_backend_config.py -v
-    links:
-      scratchpad: agents/scratchpads/T-321_parameterized_subckt_templates.md
-      spec: docs/specs/spec_netlist_emission.md
-      adr: agents/adr/ADR-0040-parameterized-subckt-system-templates.md
-    files:
-      - src/asdl/emit/netlist/render.py
-      - src/asdl/emit/netlist/templates.py
-      - examples/config/backends.yaml
-      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
-      - tests/unit_tests/emit/test_backend_config.py
-  - id: T-322
-    title: Thread module parameters through AST and core graph models
-    owner: Executor
-    dod: >
-      Audit existing `parameters` handling across AST and core graph models, then
-      add module-level `parameters` as first-class data in AST `ModuleDecl`,
-      PatternedGraph module bundles/builders, and AtomizedGraph module
-      dataclasses/lowering. Reuse existing parameter validation and string-value
-      conventions; avoid introducing a parallel `params` alias. Include
-      self-contained regressions proving module `parameters` parse, lower, and
-      survive PatternedGraph->AtomizedGraph conversion with deterministic key
-      order.
-    verify:
-      - ./venv/bin/pytest tests/unit_tests/ast/test_models.py tests/unit_tests/core/test_patterned_graph_builder.py tests/unit_tests/core/test_patterned_graph_lowering.py tests/unit_tests/core/test_patterned_graph_atomize.py -v
-    links:
-      scratchpad: agents/scratchpads/T-322_module_parameters_ast_core.md
+      scratchpad: agents/scratchpads/T-325_entry_global_parameters_ast_validation.md
       spec: docs/specs/spec_ast.md
-      adr: agents/adr/ADR-0041-module-parameters-through-netlist-pipeline.md
+      adr: agents/adr/ADR-0042-entry-global-parameters.md
     files:
       - src/asdl/ast/models.py
-      - src/asdl/core/graph.py
-      - src/asdl/core/atomized_graph.py
-      - src/asdl/core/graph_builder.py
       - src/asdl/lowering/ast_to_patterned_graph.py
-  - id: T-323
-    title: Carry module parameters into NetlistIR and emitter header dispatch
+      - tests/unit_tests/ast/test_models.py
+      - tests/unit_tests/core/test_patterned_graph_lowering.py
+  - id: T-326
+    title: Carry global parameters through NetlistIR and emit declaration block
     owner: Executor
     depends_on:
-      - T-322
+      - T-325
     dod: >
-      Audit current NetlistIR/lowering/emitter parameter paths and replace
-      emitter-local ad-hoc module param access with `NetlistModule.parameters`
-      as the source of truth. Add `parameters` to NetlistIR module model,
-      populate it in AtomizedGraph->NetlistIR lowering, and update
-      `__subckt_header__` vs `__subckt_header_params__` dispatch to use this
-      field. Include regressions in the same task that prove header dispatch for
-      empty/non-empty module parameters and preserve deterministic `{params}`
-      token formatting.
+      Extend NetlistIR design/lowering structures to carry entry
+      `global_parameters` in deterministic declaration order, then emit
+      backend-owned global-parameter declaration lines immediately after
+      `__netlist_header__` and before first instance/module emission. Keep
+      module parameter semantics unchanged and preserve existing netlist header/
+      footer behavior.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py tests/unit_tests/emit/test_netlist_ir_model.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
+      - ./venv/bin/pytest tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
     links:
-      scratchpad: agents/scratchpads/T-323_module_parameters_netlistir_emit.md
+      scratchpad: agents/scratchpads/T-326_global_parameters_netlistir_emit.md
       spec: docs/specs/spec_netlist_ir.md
-      adr: agents/adr/ADR-0041-module-parameters-through-netlist-pipeline.md
+      adr: agents/adr/ADR-0042-entry-global-parameters.md
     files:
       - src/asdl/emit/netlist_ir.py
       - src/asdl/lowering/atomized_graph_to_netlist_ir.py
       - src/asdl/emit/netlist/render.py
       - tests/unit_tests/lowering/test_atomized_graph_to_netlist_ir.py
       - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
-  - id: T-324
-    title: Finalize backend template validation and golden config coverage
+  - id: T-327
+    title: Implement backend-aware !{name} global-parameter reference resolution
     owner: Executor
     depends_on:
-      - T-323
+      - T-326
     dod: >
-      Re-audit system-device template validation and backend sample templates so
-      module/call parameterized subckt templates align with ADR-0040/0041 and
-      simulator-specific syntax stays config-owned. Tighten validation tests for
-      required template presence and add regression assertions against
-      `examples/config/backends.yaml` for ngspice/xyce/spectre parameterized
-      header/call forms.
+      Implement emission-time resolution for `!{name}` tokens in backend-rendered
+      parameter/template contexts using backend-owned reference style policy
+      (brace vs bare forms). All `!{name}` tokens must resolve against declared
+      entry `global_parameters`; unresolved references emit deterministic fatal
+      diagnostics. Keep `{var}` module-variable substitution behavior unchanged.
     verify:
-      - ./venv/bin/pytest tests/unit_tests/emit/test_backend_config.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py -v
+      - ./venv/bin/pytest tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/cli/test_netlist.py -v
     links:
-      scratchpad: agents/scratchpads/T-324_backend_template_validation_params.md
+      scratchpad: agents/scratchpads/T-327_global_parameter_token_resolution.md
       spec: docs/specs/spec_netlist_emission.md
-      adr: agents/adr/ADR-0040-parameterized-subckt-system-templates.md
+      adr: agents/adr/ADR-0042-entry-global-parameters.md
+    files:
+      - src/asdl/emit/netlist/render.py
+      - src/asdl/emit/netlist/templates.py
+      - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
+      - tests/unit_tests/cli/test_netlist.py
+  - id: T-328
+    title: Add backend config policy, examples, and migration coverage for globals
+    owner: Executor
+    depends_on:
+      - T-327
+    dod: >
+      Add backend config support for global-parameter declaration/reference style
+      (ngspice/xyce/spectre), update example configs/docs to use first-class
+      `global_parameters`, and add regression coverage proving cross-backend
+      emission and unresolved-token diagnostics. Document temporary compatibility
+      posture for legacy `sim.param` device patterns if retained.
+    verify:
+      - ./venv/bin/pytest tests/unit_tests/emit/test_backend_config.py tests/unit_tests/netlist/test_netlist_render_netlist_ir.py tests/unit_tests/e2e/test_pipeline_mvp.py -v
+    links:
+      scratchpad: agents/scratchpads/T-328_global_parameter_backend_coverage.md
+      spec: docs/specs/spec_netlist_emission.md
+      adr: agents/adr/ADR-0042-entry-global-parameters.md
     files:
       - src/asdl/emit/backend_config.py
-      - src/asdl/emit/netlist/templates.py
       - examples/config/backends.yaml
+      - examples/libs/scratch/cc_nmos.asdl
       - tests/unit_tests/emit/test_backend_config.py
       - tests/unit_tests/netlist/test_netlist_render_netlist_ir.py
+      - tests/unit_tests/e2e/test_pipeline_mvp.py
 backlog: []

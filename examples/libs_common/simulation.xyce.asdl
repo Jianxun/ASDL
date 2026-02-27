@@ -31,29 +31,20 @@ devices:
         template: |
           .TRAN {from} {to} {step}
 
+  param:
+    parameters:
+      value: ''
+    backends:
+      sim.xyce:
+        template: |
+          .PARAM {name}={value}
 
   save:
     parameters:
       sim_type: ''
       signals: ''
+      format: 'raw'
     backends:
       sim.xyce:
         template: |
-          .PRINT {sim_type} {signals}
-
-  save_dc:
-    parameters:
-      signals: ''
-    backends:
-      sim.xyce:
-        template: |
-          .PRINT DC {signals}
-
-  save_tran:
-    parameters:
-      signals: ''
-      format: CSV
-    backends:
-      sim.xyce:
-        template: |
-          .PRINT TRAN FORMAT={format} {signals}
+          .PRINT {sim_type} FORMAT={format} {signals}

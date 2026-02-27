@@ -1,0 +1,19 @@
+version: 2
+datasets:
+  - id: dataset-1
+    path: ./cc_nmos.spice.csv
+active_dataset: dataset-1
+active_plot: plot-1
+plots:
+  - id: plot-1
+    name: Plot 1
+    x:
+      dataset: dataset-1
+      signal: V(D)
+    y:
+      - id: lane-1
+        signals:
+          trace-1:
+            dataset: dataset-1
+            signal: I(V_VSRC_D)
+        label: Current (A)

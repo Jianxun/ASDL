@@ -7,16 +7,24 @@ imports:
 modules:
 
     tb:
+        variables:
+            vds: 'vds'
+
         instances:
-            #dut: {ref: cc_nmos, parameters: {m: 1}}
+
+            #global parameters
+            vds: sim.param value=0.8
+
             dut: cc_nmos m=1
             vsrc_g: ana.vdc dc=0.8
-            vsrc_d: ana.vdc dc=0.8
+            vsrc_d: ana.vdc dc='{{vds}}'
+
+
 
 
             models: gf.models
             dc: sim.dc vsrc=vsrc_g from=0 to=2.5 step=0.01
-            save: sim.save sim_type=DC signals='V(*) I(*)'
+            save: sim.save sim_type=DC format=csv signals='V(G) I(*)'
 
         nets:
             '0': [dut.VSS, vsrc_g.n, vsrc_d.n]
@@ -27,7 +35,6 @@ modules:
         parameters:
             m: 1     # multiplier for the number of fingers
         variables:
-            
             L: 0.28u  # gate length
             W: 8u     # gate width
             NF: 6     # fingers
@@ -37,4 +44,3 @@ modules:
             $VSS: [mn_cs.<s|b>] 
             $G: [mn_cs.g]    
             $D: [mn_cs.d] 
-

@@ -10,6 +10,15 @@ Brief context record for the Architect; reconcile from task status and reviews.
 - Drafted ADR-0041 (Proposed) to carry module `parameters` end-to-end through
   AST/PatternedGraph/AtomizedGraph/NetlistIR so header-parameter dispatch is
   contract-reachable instead of emitter-local.
+- Drafted ADR-0042 (Proposed) for first-class entry-only
+  `global_parameters` and explicit `!{name}` global-reference tokens with
+  required-resolution validation and backend-owned declaration/reference syntax.
+- Updated specs (`spec_ast`, `spec_netlist_emission`) to define
+  `global_parameters` scope, `!{name}` semantics, and emission order (after
+  netlist header, before first use).
+- Sliced implementation into executor-ready tasks `T-325`..`T-328` with
+  dependency chain covering AST/import validation, NetlistIR+emit integration,
+  backend-aware token resolution, and backend config/examples regression pass.
 - View-decorated symbol and view-binding specs were tightened and aligned with
   accepted ADRs: ADR-0034 (DFS-stable ordinal collision naming) and ADR-0035
   (consolidated compile log).
@@ -28,17 +37,21 @@ Brief context record for the Architect; reconcile from task status and reviews.
   (`asdlc query` with stage-aware inspection subcommands).
 
 ## Last verified status
-- `./venv/bin/python scripts/lint_tasks_state.py` (OK with `T-303`/`T-304` marked done)
+- `./venv/bin/python scripts/lint_tasks_state.py` (OK with `T-317`..`T-328`)
 
 ## Next steps (1-3)
-1. Slice the next wave for `asdlc query` implementation against `docs/specs/spec_cli_query.md` (tree/bindings/emit-plan/refs/instance/net/net-trace).
-2. Resolve v0.x open decisions captured in the query spec (path canonicalization, emitted-stage defaults, `net-trace` equivalence boundaries, diagnostics policy).
-3. Ship an initial query MVP with deterministic JSON output contracts and regression tests.
+1. Execute `T-325` to land AST/import validation for entry-only
+   `global_parameters`.
+2. Execute `T-326` and `T-327` to carry globals through NetlistIR and enforce
+   backend-aware `!{name}` resolution with fatal unresolved diagnostics.
+3. Execute `T-328` to finalize backend config policy and cross-backend
+   regression coverage (ngspice/xyce/spectre).
 
 ## Risks / unknowns
-- Query output contract may churn if open decisions are implemented ad hoc
-  without freezing schema/version semantics first.
-- Path canonicalization for patterned instance names can create hidden mismatch
-  between authored references and query selectors if not defined early.
-- `net-trace` hierarchy equivalence semantics need clear boundaries to avoid
-  ambiguous downstream plotting/postprocessing behavior.
+- Legacy `sim.param` device patterns may overlap with first-class
+  `global_parameters`; compatibility/migration policy should be explicit in
+  `T-328`.
+- Backend reference-style policy for `!{name}` must stay config-owned to avoid
+  backend-name branching in emitter code.
+- Entry-only scope enforcement depends on robust import-graph context during
+  validation; missing context paths must fail deterministically.

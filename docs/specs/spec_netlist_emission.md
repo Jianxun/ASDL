@@ -14,13 +14,16 @@ canonical connectivity.
   templates (no backend-name conditionals in emitter code).
 - Device parameters are merged and rendered as `k=v` tokens.
 - Device variables are merged and exposed as `{var}` placeholders.
+- Entry-file `global_parameters` are emitted as deck-level parameter
+  declarations using backend-owned syntax.
 - Output extension is determined by backend config (`extension`).
 - Input NetlistIR is lowered from AtomizedGraph after pattern expansion;
   emission performs no pattern expansion or connectivity rewriting. The emitter
   may use structured pattern provenance (`pattern_origin` +
   `pattern_expression_table`) for presentation formatting. Module variable
   substitution occurs earlier; NetlistIR carries substituted instance parameter
-  values.
+  values. Global-parameter reference tokens (`!{name}`) are resolved during
+  backend emission.
 - When a design uses view-decorated module variants (`cell@view`), emission is
   realization-based: emit one subckt/module per resolved `(cell, view)` used in
   the design.
@@ -62,6 +65,38 @@ canonical connectivity.
 - Always emit the top module body.
 - Default behavior: emit no `.subckt`/`.ends` wrapper for the top module.
 - `--top-as-subckt`: emit the top module with the standard subckt wrapper.
+
+---
+
+## Global parameter rules
+
+### Source and scope
+- Global parameters come from entry-document `global_parameters`.
+- Imported files must not declare `global_parameters`.
+- Global parameters are deck-level (single global scope), not module-local.
+
+### Declaration validation
+- Global parameter names must match `[A-Za-z_][A-Za-z0-9_]*`.
+- Declaration order is preserved for deterministic emission.
+
+### Reference token
+- Global parameter references use `!{name}` in authoring expressions/templates.
+- Every `!{name}` must resolve to a declared global parameter.
+- Unresolved `!{name}` is a fatal emission diagnostic.
+- `!{name}` is distinct from module-variable `{name}` substitution.
+
+### Backend rendering
+- Global parameter declaration syntax is backend-owned.
+- Global parameter reference syntax is backend-owned.
+  - Recommended defaults:
+    - `sim.ngspice`: declaration `.param name=value`, ref `{name}`
+    - `sim.xyce`: declaration `.PARAM name=value`, ref `{name}`
+    - `sim.spectre`: declaration `parameters name=value`, ref `name`
+
+### Emission order
+- Emit global parameter declarations immediately after `__netlist_header__`
+  and before any line that may reference them.
+- Netlist footer emission remains unchanged.
 
 ---
 
@@ -227,6 +262,8 @@ Every backend must define the following system devices in `backends.yaml`:
 - Missing required system devices emit `MISSING_BACKEND` error and abort emission
 - Netlist header/footer are rendered once per file via `__netlist_header__` and
   `__netlist_footer__` (empty templates emit no line)
+- Global parameter declarations (if any) are rendered between netlist header and
+  module/instance emission using deterministic declaration order
 - `emit_date`/`emit_time` are captured once per netlist emission and formatted
   as `YYYY-MM-DD` and `HH:MM:SS` (local time)
 

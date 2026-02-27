@@ -30,6 +30,7 @@ class NetlistDesign:
     devices: list[NetlistDevice]
     top: str | None
     entry_file_id: str | None
+    global_parameters: dict[str, str] | None
 
 @dataclass(frozen=True)
 class NetlistModule:
@@ -99,6 +100,8 @@ Notes:
   determines the exact formatting. Emitters must treat these as raw strings.
 - `NetlistModule.parameters` preserves deterministic key order for header
   parameter rendering.
+- `NetlistDesign.global_parameters` preserves deterministic declaration order
+  from entry-document `global_parameters`.
 - Optional `pattern_origin` is provenance-only; identity uses literal names.
 
 ---

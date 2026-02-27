@@ -1,6 +1,14 @@
 schema_version: 1
 
 archive:
+  - T-324: {completed_on: 2026-02-27, owner: Executor, scratchpad: agents/scratchpads/T-324_backend_template_validation_params.md, pr: 347}
+  - T-323: {completed_on: 2026-02-27, owner: Executor, scratchpad: agents/scratchpads/T-323_module_parameters_netlistir_emit.md, pr: 345}
+  - T-322: {completed_on: 2026-02-27, owner: Executor, scratchpad: agents/scratchpads/T-322_module_parameters_ast_core.md, pr: 344}
+  - T-321: {completed_on: 2026-02-27, owner: Executor, scratchpad: agents/scratchpads/T-321_parameterized_subckt_templates.md, pr: 343}
+  - T-320: {completed_on: 2026-02-27, owner: Executor, scratchpad: agents/scratchpads/T-320_path_identity_dedupe.md, pr: 340}
+  - T-319: {completed_on: 2026-02-27, owner: Executor, scratchpad: agents/scratchpads/T-319_cli_runtime_orchestration_dedupe.md, pr: 339}
+  - T-318: {completed_on: 2026-02-27, owner: Executor, scratchpad: agents/scratchpads/T-318_symbol_selection_convergence.md, pr: 338}
+  - T-317: {completed_on: 2026-02-27, owner: Executor, scratchpad: agents/scratchpads/T-317_top_resolution_contract_unification.md, pr: 337}
   - T-316: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-316_shared_traversal_convergence.md, pr: 336}
   - T-315: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-315_query_tree_traversal_migration.md, pr: 335}
   - T-314: {completed_on: 2026-02-25, owner: Executor, scratchpad: agents/scratchpads/T-314_views_instance_index_migration.md, pr: 334}
